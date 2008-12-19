@@ -1,0 +1,75 @@
+libgpg-error
+============
+
+This is a library that defines common error values for all GnuPG
+components.  Among these are GPG, GPGSM, GPGME, GPG-Agent, libgcrypt,
+Libksba, DirMngr, Pinentry, SmartCard Daemon and possibly more in the
+future.
+
+libgpg-error is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as
+published by the Free Software Foundation; either version 2.1 of the
+License, or (at your option) any later version.  See the file
+COPYING.LIB for copyright and warranty information.
+
+However, some files (for example src/mkerrnos.awk) used in the build
+process of the library are covered by a different license.  Please see
+the header of these files and the file COPYING for copyright and
+warranty information on these files.  A special exception in the
+copyright license of these files makes sure that the output in the
+build process, which is used in libgpg-error, is not affected by the
+GPL.
+
+
+Installation
+------------
+
+Please read the file INSTALL!
+
+Here is a quick summary:
+
+1) Check that you have unmodified sources. The below on how to do
+   this.  Don't skip it - this is an important step!
+
+2) Unpack the TAR.  With GNU tar you can do it this way:
+   "tar xzvf libgpg-error-x.y.tar.gz"
+
+3) "cd libgpg-error-x.y"
+
+4) "./configure"
+
+5) "make"
+
+6) "make install"
+
+
+How to Verify the Source
+------------------------
+
+In order to check that the version of libgpg-error which you are going
+to install is an original and unmodified one, you can do it in one of
+the following ways:
+
+a) If you already have a trusted Version of GnuPG installed, you can
+simply check the supplied signature:
+
+$ gpg --verify libgpg-error-x.y.tar.gz.sig
+
+This checks that the detached signature libgpg-error-x.y.tar.gz.sig
+is indeed a a signature of libgpg-error-x.y.tar.gz.
+
+Please note, that you have to use an old version of GnuPG to do all
+this stuff.  *Never* use the version which you are going to check!
+
+
+b) If you don't have any of the above programs, you have to verify the
+MD5 checksum:
+
+$ md5sum libgpg-error-x.y.tar.gz
+
+This should yield an output _similar_ to this:
+
+fd9351b26b3189c1d577f0970f9dcadc  libgpg-error-x.y.tar.gz
+
+Now check that this checksum is _exactly_ the same as the one
+published via the announcement list and probably via Usenet.

@@ -1,0 +1,69 @@
+2008-12-12 Dong H. Ahn <ahn1@llnl.gov>
+	* added x_ac_testnnodes.m4 and modified test driver scripts 
+	  to make test cases more configurable. New options
+	  are supported through --with-testnnodes and
+	  --with-ncore-per-CN.  
+	* added x_ac_bootfabric.m4 and x_ac_rm.m4 to better
+	  support bootscraping comm. fabric and RM support 
+	* removed x_ac_pmgr_collective.m4, x_ac_slurm_srun.m4
+	  and x_ac_bgl_mpirun.m4 
+	* changed several configuration options and their style
+	  --with-bootfabric[=FABRICTYPE]
+	  --with-gcrypt[=ARG]
+	  --with-rm[=RMTYPE]
+	  --with-rm-launcher[=LAUNCHERPATH]
+	  --enable-verbose[=LOGDIR]
+	* Made --with-bootfabric --with-rm --with-gcrypt mandatory 
+	  options for simpler yet better confiration support
+
+2008-09-30 Dong H. Ahn <ahn1@llnl.gov>
+	* Enforced LaunchMON error handling semantics and update man pages
+	* Fixed an incompatibility issue introduced into the 2.6.18 
+	  Linux kernel's thread_db 
+	* Added a verbose mode with an ability to redirect the verbosity
+	  info into files 
+	* Added two-phased polling scheme to the engine
+	* Bug fix for not handling BGL 64-bit mpirun's MPIR_Breakpoint
+	* Bug fix for a memory corruption in the handshape routine 
+	  at large scale 
+	* Added an LaunchMON handler that delivers signals (except for SIGSTOP) 
+	  sent to the RM_job process back to the RM_Job process
+	* Added consistent return code support for LMON_be_sendUsrData 
+	  and LMON_be_recvUsrData for all calling back-end daemons 
+
+2008-06-18 Dong H. Ahn <ahn1@llnl.gov>
+	* Added GNU build system support and restructure the source tree.
+	* Added PMGR Collective support
+	* Added BlueGene/L support including 64 bit mpirun support
+	* Added better support for LaunchMON engine to determine
+	  the return address of a breakpoint. Some architectures
+	  like POWERPC make this info visible via their register
+	  sets while others via the stack memory locations 
+
+2008-03-06 Dong H. Ahn <ahn1@llnl.gov>
+	* Added FE-engine FE-BE timeout support
+	* Added timeout support for fe_detach, fe_kill, 
+	  and fe_shutdownDaemons, too 
+	* Added better verbosity support for remote use of launchmon engine. 
+	* Added test.attach_3_callsafterfail
+	  	test.attach_3_invalidpid
+		test.attach_3_invalidpid_remote	
+
+2008-02-21 Dong H. Ahn <ahn1@llnl.gov>
+	* Added man pages for the back-end API
+	* CHAOS4 packaging support
+	* Added LMON_fe_getProctabSize support
+	* Added LLNS copyright and LGPL terms and conditions 
+	* Added LMON_be_getMyProctabSize support to support STAT better
+	* Added local launchMON engine invocation in addition to remote 
+	  invocation method. This is a more general solution 
+	  Passing NULL to launchAndSpawn or attachAndSpaw now
+	  results in invoking the engine locally 
+	* Introduced a better shared data access policy 
+	  to the front-end API implementation, and enforced the
+	  policy to avoid race conditions 
+
+2008-02-06 Dong H. Ahn <ahn1@llnl.gov>
+	* Added man pages for the front end API 
+	* ChangeLog file created
+
