@@ -103,8 +103,8 @@ otherwise noop.
 .TP
 .B LMON_REMOTE_LOGIN
 overwrites the remote login method that is used to 
-spawn an engine remotely (e.g., "/usr/bin/ssh")
-(default: /usr/bin/rsh).
+spawn an engine remotely (e.g., "/usr/bin/rsh")
+(default: /usr/bin/ssh).
 .TP
 .B LMON_DEBUG_LAUNCHMON_ENGINE
 invokes totalview to aid in debugging of the LaunchMON engine
@@ -139,7 +139,7 @@ tool client before it exits (\fBA.1.3.\fR). RM_job refers to the resource
 manager launcher process that monitors the target job. RM_daemon
 refers to the resource manager launcher process that monitors
 the deamons.   
-[BlueGene/L Note] As BlueGene/L's control system implements
+[BlueGene Note] As BlueGene's control system implements
 daemon co-spawning service as part of its Automatic Process Acquisition
 Interface (APAI), RM_job is equal to RM_daemon.
 
@@ -171,7 +171,7 @@ the engine would perform \fBA.1\fR instead; obviously in this case,
 the failing launchmon engine will keep the RM_daemon process
 running, and won't be able to do \fBA.1.3.\fR
 .PP
-\fB[BlueGene/L Note]\fR As RM_daemon is equal to RM_job on BlueGene/L, 
+\fB[BlueGene Note]\fR As RM_daemon is equal to RM_job on BlueGene, 
 and the system control system doesn't offer a mechanism to 
 clean up daemons, LaunchMON does not currently enforce
 killing of daemons for this condition.   
@@ -185,7 +185,7 @@ However, for some reason, if the engine also gets into trouble,
 it will perform A.1; obviously in this case, it
 doesn't need to perform \fBA.1.2.\fR
 .PP
-\fB[BlueGene/L Note]\fR As RM_daemon is equal to RM_job on BlueGene/L, 
+\fB[BlueGene Note]\fR As RM_daemon is equal to RM_job on BlueGene, 
 and the system control system doesn't offer a mechanism to 
 detect a daemon failure, LaunchMON does not currently enforce
 this semantics on this platform.   
