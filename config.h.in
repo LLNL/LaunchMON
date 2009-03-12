@@ -3,6 +3,10 @@
 /* Define 1 for AIX_CODE_REQUIRED */
 #undef AIX_CODE_REQUIRED
 
+/* Define 1 if debugger interface related header files are available in the
+   system */
+#undef BG_HEADER_EXISTS
+
 /* Define 1 for BIT64 */
 #undef BIT64
 
@@ -12,11 +16,11 @@
 /* Define DEBUG flag */
 #undef DEBUG
 
+/* env command found */
+#undef ENVCMD
+
 /* Define fine grain mpirun interface support */
 #undef FINEGRAIN_MPIRUN_INTERFACE
-
-/* Define dot for GLUESYM */
-#undef GLUESYM
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
@@ -189,9 +193,6 @@
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #undef NO_MINUS_C_MINUS_O
 
-/* Define 1 if TLS libraries are installed under /lib/tls */
-#undef NPTL_UNDER_TLS
-
 /* Name of package */
 #undef PACKAGE
 
@@ -219,11 +220,14 @@
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
 
-/* Define 1 for RM_BGL_MPIRUN */
-#undef RM_BGL_MPIRUN
+/* Define 1 for RM_BG_MPIRUN */
+#undef RM_BG_MPIRUN
 
 /* Define 1 for RM_SLURM_SRUN */
 #undef RM_SLURM_SRUN
+
+/* ssh or its equivalent found */
+#undef SSHCMD
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
@@ -248,6 +252,9 @@
 
 /* Define TOOL_SS_ENV */
 #undef TOOL_SS_ENV
+
+/* totalview found */
+#undef TVCMD
 
 /* Define USE_VERBOSE_LOGDIR flag */
 #undef USE_VERBOSE_LOGDIR

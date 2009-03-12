@@ -4,6 +4,10 @@
 /* Define 1 for AIX_CODE_REQUIRED */
 /* #undef AIX_CODE_REQUIRED */
 
+/* Define 1 if debugger interface related header files are available in the
+   system */
+/* #undef BG_HEADER_EXISTS */
+
 /* Define 1 for BIT64 */
 #define BIT64 1
 
@@ -13,11 +17,11 @@
 /* Define DEBUG flag */
 /* #undef DEBUG */
 
+/* env command found */
+#define ENVCMD "/usr/bin/env"
+
 /* Define fine grain mpirun interface support */
 #define FINEGRAIN_MPIRUN_INTERFACE 1
-
-/* Define dot for GLUESYM */
-#define GLUESYM ""
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #define HAVE_ARPA_INET_H 1
@@ -53,7 +57,7 @@
 #define HAVE_LIBELF_H 1
 
 /* Define to 1 if you have the <libelf/libelf.h> header file. */
-/* #undef HAVE_LIBELF_LIBELF_H */
+#define HAVE_LIBELF_LIBELF_H 1
 
 /* Define to 1 if you have the <libgen.h> header file. */
 #define HAVE_LIBGEN_H 1
@@ -175,7 +179,7 @@
 #define LINUX_CODE_REQUIRED 1
 
 /* Define to header that first defines elf. */
-#define LOCATION_OF_LIBELFHEADER <libelf.h>
+#define LOCATION_OF_LIBELFHEADER <libelf/libelf.h>
 
 /* Define to 1 if `lstat' dereferences a symlink specified with a trailing
    slash. */
@@ -190,9 +194,6 @@
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 /* #undef NO_MINUS_C_MINUS_O */
 
-/* Define 1 if TLS libraries are installed under /lib/tls */
-/* #undef NPTL_UNDER_TLS */
-
 /* Name of package */
 #define PACKAGE "launchmon"
 
@@ -203,34 +204,37 @@
 #define PACKAGE_NAME "LaunchMON"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "LaunchMON 0.6.4"
+#define PACKAGE_STRING "LaunchMON 0.7.0"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "launchmon"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "0.6.4"
+#define PACKAGE_VERSION "0.7.0"
 
 /* Define 1 for PMGR_BASED */
 #define PMGR_BASED 1
 
 /* Define 1 for PPC_ARCHITECTURE */
-/* #undef PPC_ARCHITECTURE */
+#define PPC_ARCHITECTURE 1
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #define RETSIGTYPE void
 
-/* Define 1 for RM_BGL_MPIRUN */
-/* #undef RM_BGL_MPIRUN */
+/* Define 1 for RM_BG_MPIRUN */
+#define RM_BG_MPIRUN 1
 
 /* Define 1 for RM_SLURM_SRUN */
-#define RM_SLURM_SRUN 1
+/* #undef RM_SLURM_SRUN */
+
+/* ssh or its equivalent found */
+#define SSHCMD "/usr/bin/ssh"
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
 
 /* launcher path */
-#define TARGET_JOB_LAUNCHER_PATH "/usr/bin/srun"
+#define TARGET_JOB_LAUNCHER_PATH "/bgl/BlueLight/V1R3M4_300_2008-080728/ppc/bglsys/bin/mpirun64"
 
 /* Define test more coll support */
 #define TEST_MORE_COLL 1
@@ -250,6 +254,9 @@
 /* Define TOOL_SS_ENV */
 #define TOOL_SS_ENV "LMON_SHARED_SECRET"
 
+/* totalview found */
+#define TVCMD "/usr/local/bin/totalview"
+
 /* Define USE_VERBOSE_LOGDIR flag */
 /* #undef USE_VERBOSE_LOGDIR */
 
@@ -260,10 +267,10 @@
 /* #undef VERBOSE_LOGDIR */
 
 /* Version number of package */
-#define VERSION "0.6.4"
+#define VERSION "0.7.0"
 
 /* Define 1 for X86_64_ARCHITECTURE */
-#define X86_64_ARCHITECTURE 1
+/* #undef X86_64_ARCHITECTURE */
 
 /* Define 1 for X86_ARCHITECTURE */
 /* #undef X86_ARCHITECTURE */
