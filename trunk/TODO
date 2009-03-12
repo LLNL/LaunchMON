@@ -1,0 +1,151 @@
+$Header: $
+
+x add self-tracing for the event manager layer and driver layer.
+x add signal handler and better exit support such that any anomalous event including 
+   having a UNIX signal being sent won't leave any deadwood on the resource 
+   manage environment.
+x convert cerr found in sdbg_opt.cxx module into self-tracing format. 
+x devise a better method to transfer pid list info to remote nodes 
+   so that a debug engine process pick it up once spawned. Right now, it is 
+   using ad-hoc environment variable trick. 
+x general project documentation (IPDPS submission paper + API doc)
+x "tour de source" documentation
+x perf/scalability testing
+x using gprof to get performnace profiling against a large job
+x measurements for performance/scalability 
+x performance/scalability tuning 
+v add setting MPIR_debug_gate in rank processes on startup
+  (added MPIR_debug_gate support, but I don't know *when* to set yet)
+x referece BE-FE hostname array in sorting the FE-BE PROCTAB packet so 
+  that be_scatter always works without having to rearrange the proctab
+  data before the scatter.
+x fix an attach bug where test.attach* testcases fail; this crept in 
+  after adding FE-BE proctab sorting support. (high)
+x add pipe_t support 
+x device a way to be able to debug the launchmon engine process with easy using 
+  totalview when it's used with FE API stub.  
+    x "setenv DEBUG_LAUNCHMON_ENGINE yes" will stall the launchmon engine 
+      so that one can debug it with a debugger
+    x "setenv LMON_DEBUG_BES 1" will launchmon daemon under totalview control
+x test the PID environment variable support (just added) 
+  for the standalone launchmon utility. Or even better, add a test case. 
+x keep populating FE-BE API calls
+x a memory error at relatively large scale job
+    x one potential area is in "check_and_undo_context ( const int key )"
+    x looks like a race condition: 
+    x when the driver traverses through the thread list and
+       hit thread_exit event, the trade entry is removed from 
+       the thread map which is a member of the process object (erase method of the map )
+       But it seems that doing this creates some undesirable effect 
+       which could also manifest itself as "memory corruption" at large scale jobs
+    x need further investigation and please see a comment in check_and_undo_context function.
+    NOTE: potential race condition in check_and_undo_context has fixed
+          but this appears not to be the source of the bug
+    x further investigation suggests this is likely a race condition between
+      lmonp_exit event received by a watchdog thread (this invalidate per-session data)
+      and the main thread's using per-session data.
+    NOTE: actually this turns out the problem isn't in the launchmon layer, but 
+    in the test driver passing a buffer whose length is too short.
+x LMONP protocol touch-up for better flowing of proctab information
+x define proctab lmon payload such that a string table packed towards the 
+  tail of the lmonp message
+x define hostname lmon payload such that a string table packed towards the
+  tail of the lmonp message
+x finish up BE-FE user payload pack/unpack funcionality
+x isolate underlying communication implemenation dependent codes into 
+  LMON_be_internal_* calls: lmon_be_internal.hxx/lmon_be_comm.cxx
+x fix a possible race condition: when thread gets an "exit: event 
+  while the thread list is being traversed in the event managen, 
+  the argument into check_and_undo_context can contain garbage. 
+  This occurs very rarely. The fix is basically to copy the thread id 
+  into a local variable before the beginning of thread list traversing.
+x fix a problem running LMON under batchxterm environment 
+  on our AMD64 clusters
+x add LMON_fe_detach 
+x add LMON_fe_sendUsrData LMON_fe_recvUsrData LMON_be_sendUsrData 
+  LMON_be_recvUsrData
+x add more FE cleanup APIs other than fe_detach such as LMON_fe_kill, 
+  LMON_fe_shutdown_be, ...
+x touch up the signal handler as to how this tool should conduct a cleanup 
+  when things are going awry like any LMON components failed... 
+  NOTE: FE client won't do anything since error handling is more 
+  of the resposibility to the client itself when the engine process 
+  gets a signal, it shuts down BEs, then detaches from the target launcher 
+  process 
+x when either FE client or launchmon engine process dies with 
+  an internal error, detect this error using pipe descriptor and 
+  conduct an appropriate cleanup. This is now a first class socket 
+  and I populate more rigorous error checking for such anomalous conditions.
+x add more robust exception handling including stack backtrace support
+  NOTE: stack trace support is only thing missing at this point 
+x add BlueGene/L port
+x restructure the code base with GNU build system support i
+  for an open source release
+x rewrite sdb/README and sdb/INSTALL
+x at large run (e.g., 1024 tasks) on BG/L, the master back-end daemon 
+  hangs in the vector push_back routine. It could be due to a memory error. 
+  NOTE: turns out that this is due to a memory overwrite 
+  during the handshake 
+x at large run (e.g., 6400 tasks) on Juno, the master back-end daemon 
+  is killed due to a segfault. 
+  NOTE: turns out that this is due to a memory overwrite during the 
+  handshake. Same error as above. 
+x race condition on BG/L with a message:
+  proctab_msg has not yet arrived! A race condition?
+  NOTE: turns out the default timeout value wasn't sufficiently large that
+  the main thread returns from a condition variable prematurely.
+x investigate why LaunchMON engine does not catch 64-bit BGL mpirun's 
+  calling MPIR_Breakpoint for abort and fix it. 
+  NOTE: fixed several bug during the investigation, which resolved 
+  this issue.
+  1. The width of an instruction in 64-bit mode is still 4 bytes, 
+     not 8 bytes
+  2. The trap instruction I was using was incorrect.
+x investigate a way to reduce the CPU consumption when the launchmon engine
+  is not expecting the burst of events 
+  (e.g., after the RM process is done with MPIR_Breakpoint for spawn) 
+  Probably, a priority polling scheme is needed.   
+  Note: added two-phased polling scheme, supporting a cold phase 
+  of 10 millisecond block in polling and a warm phase of not
+  blocking at all. Each each invokation of an engine handler 
+  resets the time window for the warm phase (dflt: 10 seconds).
+x add a verbose mode support, including a mode where verbose info is dumped
+  into files. 
+  Note: added 
+  --enable-verbose and --with-verbose-logdir=<base dir for verbose log>
+  to configuration support.
+x enforce the error handling semantics defined in 
+  README.ERROR_HANDLING.
+  NOTE: 9/26/2008, all of A, B, C and D semantics have been enforced. 
+  Added a bunch of test cases that can be used to validate the
+  semantics: test.launch_6_engine_failure.A.1.
+x fix an incompatibility issue introduced into 2.6.18 thread_db
+  NOTE: this is caused by the changes in thread_db library 
+  under this kernel. This added a special case to deal with 
+  the use of this library before its initialization. Changing 
+  the event report to "global" using td_ta_set_event addresses
+  the SEGV problem the engine experienced. 
+x fix a man page problem where some files deep-copied previous 
+  versions of man pages in stead of maintaining sym-link
+  to the master man page files. 
+x add a few few stuff to man pages
+x some configuration option doesn't build
+  NOTE: 12/12/2008, some options actually have conflict with
+  one another. deprecated some options, made some options
+  mandatory and more importantly changed option specification
+  style
+- Investigate how to time when to release the mpirun process properly 
+  so that BGL's APAI extension, which supports co-spawning,
+  does not produce a race condition. 
+  NOTE: 9/24/2008 not scheduled for 0.6 release.
+- add mutliprocess monitoring support, for now launchmon just monitor
+  a single process. But it is okay so far because there is only one
+  srun process it needs to monitor.  
+  NOTE: 9/24/2008 not scheduled for 0.6 release.
+- add launch string support such that it can be overwritten by users
+  if they want. (as simple as an environment variable support?)
+  NOTE: 9/24/2008 not scheduled for 0.6 release.
+- make the selection of low-level communication layer dynamically
+  NOTE: 9/24/2008 not scheduled for 0.6 release.
+- Re-attaching to the BGL mpirun seems to fail 
+  (I just confirmed that TotalView also fails...)

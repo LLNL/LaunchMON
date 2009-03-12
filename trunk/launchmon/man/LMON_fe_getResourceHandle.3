@@ -1,0 +1,110 @@
+.TH LaunchMON 3 "FEBRUARY 2008" LaunchMON "LaunchMON Front-End API"
+
+.SH NAME
+LMON_fe_getProctable LMON_fe_getProctableSize LMON_fe_getResourceHandle \- LaunchMON front-end API: resource manager data access functions
+
+.SH SYNOPSIS
+.nf
+.B #include <lmon_fe.h>
+.PP
+.BI "lmon_rc_e LMON_fe_getProctable ( int " sessionHandle ","
+.BI "  MPIR_PROCDESC_EXT *" proctab ", int *" size ", int " maxlen " );"
+.PP
+.BI "lmon_rc_e LMON_fe_getProctableSize ( int " sessionHandle ", int *" size " );"
+.PP
+.BI "lmon_rc_e LMON_fe_getResourceHandle ( int " sessionHandle ","
+.BI "  char *" handle ", int *" size ", int " maxstring " );"
+.PP
+.B cc ... -lmonfeapi
+.fi
+
+.SH DESCRIPTION
+The \fBLMON_fe_getProctable()\fR function returns the remote
+process descriptor table (RPDTAB) of the job associated with 
+\fIsessionHandle\fR via the \fIproctab\fR argument. The number of table entries
+that this function returns is either the total number of entries in the RPDTAB 
+or \fImaxlen\fR whichever is smaller. In either case, however, this function returns
+the total number of entries of the RPDTAB via the \fIsize\fR argument. 
+This function requires \fBMPIR_PROCDESC_EXT\fR type, a C struct
+extending \fBMPIR_PROCDESC\fR.  
+.PP
+.nf
+.B typedef struct {
+.B "   "char *host_name;
+.B "   "char *executable_name; "
+.B "   "int pid;  " 
+.B "} MPIR_PROCDESC;
+.PP 
+.B typedef struct {
+.B "   "MPIR_PROCDESC pd;
+.B "   "int mpirank;
+.B } MPIR_PROCDESC_EXT;
+.fi
+.PP
+
+The \fBLMON_fe_getProctableSize()\fR function returns the total number
+of entries in the RPDTAB via the \fIsize\fR argument.
+
+The \fBLMON_fe_getResourceHandle()\fR function 
+returns the resource handle associated with 
+\fIsessionHandle\fR via the \fIhandle\fR argument
+when such information is available. For example,  
+for SLURM-based systems, \fIhandle\fR is the \fBjobid\fR 
+of the target job, the RM's handle for the node allocation for this job.  
+.PP
+\fBLMON_fe_getProctable()\fR, \fBLMON_fe_getProctableSize()\fR and \fBLMON_fe_getResourceHandle()\fR
+are valid only when they are called after a successful 
+\fBLMON_fe_attachAndSpawnDaemons()\fR 
+or \fBLMON_fe_launchAndSpawnDaemons()\fR call. 
+
+.SH RETURN VALUE
+Those functions return \fBLMON_OK\fR on success; otherwise, an 
+LMON error code is returned. 
+
+.SH ERRORS
+.TP
+.B LMON_OK
+Success.
+.TP
+.B LMON_EBDARG
+Invalid arguments.
+.TP
+.B LMON_EDUNAV
+The requested information is unavailable.
+.TP
+.B LMON_EINVAL
+Encountered any other errorenous conditions including \fIproctab\fR containing partial RPDTAB. 
+
+.SH AUTHOR
+Dong H. Ahn <ahn1@llnl.gov>
+
+.SH "SEE ALSO"
+.BR LMON_fe_init(3),
+.BR LMON_fe_createSession(3),
+.BR LMON_fe_attachAndSpawnDaemons(3),
+.BR LMON_fe_launchAndSpawnDaemons(3),
+.BR LMON_fe_kill(3),
+.BR LMON_fe_detach(3),
+.BR LMON_fe_shutdownDaemons(3),
+.BR LMON_fe_regUnpackForBeToFe(3),
+.BR LMON_fe_regPackForFeToBe(3),
+.BR LMON_fe_putToBeDaemonEnv(3),
+.BR LMON_fe_sendUsrDataBe(3),
+.BR LMON_fe_recvUsrDataBe(3),
+.BR LMON_be_init(3),
+.BR LMON_be_finalize(3),
+.BR LMON_be_getMyRank(3),
+.BR LMON_be_getSize(3),
+.BR LMON_be_amIMaster(3),
+.BR LMON_be_handshake(3),
+.BR LMON_be_ready(3),
+.BR LMON_be_barrier(3),
+.BR LMON_be_broadcast(3),
+.BR LMON_be_gather(3),
+.BR LMON_be_scatter(3),
+.BR LMON_be_regPackForBeToFe(3),
+.BR LMON_be_regUnpackForFeToBe(3),
+.BR LMON_be_recvUsrData(3),
+.BR LMON_be_sendUsrData(3),
+.BR LMON_be_getMyProctab(3),
+.BR LMON_be_getMyProctabSize(3)

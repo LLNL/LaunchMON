@@ -1,0 +1,90 @@
+2008-03-14 Dong Ahn <ahn1@llnl.gov>
+	
+	* Customize the package for tools use.
+		
+	* command line support: this support allows clients to pick up 
+	  the newtork configuration information such as job size, job id and 
+	  the mpirun's hostname. The mods are contained under the 
+	  COMMLINE_SUPPORT macro. 
+
+	* lazy rank binding support: when there is no rank information 
+	  readily available in clients' environment, this support allows 
+	  mpirun to assign an unque id (first come first served, 0 based 
+	  and monotonically increasing) to each client. The modifications
+	  are contained under LAZY_RANK_BINDING 
+		
+	* fine grain mpirun interface support: under FINEGRAIN_MPIRUN_INTERFACE.
+	  This support is designed to help the caller of the mpirun API easily
+	  get program control transferred from the main mpirun API routine. 
+
+	* more collective operations testing: under TEST_MORE_COLLS.
+
+2008-01-23 Adam Moody <moody20@llnl.gov>
+
+	* src/pmgr_collective_mpirun.c : Replaced tab indents with spaces (code cleanup).
+
+2008-01-22 Adam Moody <moody20@llnl.gov>
+
+	* src/pmgr_collective_client.c : Integrated patch from Chris Morrone
+	  to poll on connection and retry with backoff on configurable
+	  timeout.  The default TCP timeout was causing problems at 8192+
+	  task counts.
+
+	* PMGR_COLLECTIVE.README : Added note about pmgr_connect variables.
+
+2008-01-11 Adam Moody <moody20@llnl.gov>
+
+	* src/pmgr_collective_client.h,
+	  src/pmgr_collective_client.c : Dropped hostname string list
+	  from pmgr_init and corresponding MPIRUN_PROCESSES and
+	  NOT_USE_TOTALVIEW variables.  Added pmgr_allgatherstr to assist
+	  user in gathering this info through PMGR_COLLECTIVE calls.
+	  Added pmgr_allreducemaxint as a utility for pmgr_allgatherstr.
+
+	* test/client.c : Removed hostlist parameter from call to pmgr_init.
+
+	* test/mpirun_rsh.c : Removed code which sets MPIRUN_PROCESSES and
+	  NOT_USE_TOTALVIEW.
+
+	* PMGR_COLLECTIVE.README : Removed documentation about MPIRUN_PROCESSES
+	  and NOT_USE_TOTALVIEW.
+
+2008-01-03 Adam Moody <moody20@llnl.gov>
+
+	* src/pmgr_collective_common.h,
+	  src/pmgr_collective_common.c,
+	  src/pmgr_collective_client.c,
+	  src/pmgr_collective_mpirun.c : Moved pmgr_gettimeofday and pmgr_getsecs
+	  to common.
+
+	* src/pmgr_collective_common.c : Added debug statements to time pmgr_* calls.
+
+2008-01-02 Adam Moody <moody20@llnl.gov>
+
+	* makefile : Moved *.h files to src directory.  Have make copy them
+	  to include directory on build.
+
+	* src/pmgr_collective_client.c,
+	  src/pmgr_collective_mpirun.c : Added filename and line number info
+	  to pmgr_error messages.
+
+	* src/pmgr_collective_mpirun.c : Added timers to debug statements.
+
+	* src/pmgr_collective_common.h,
+	  src/pmgr_collective_common.c : Added debug levels to pmgr_debug().
+
+	* test/mpirun_rsh.c : Added to test pmgr_processops functionality.
+
+	* test/client.c : Added pmgr_barrier() test.
+
+	* PMGR_COLLECTIVE.README : Added readme to describe pros and cons
+	  of current implemenation and to document build-time and run-time
+	  options.
+
+2007-12-28 Adam Moody <moody20@llnl.gov>
+
+	* : cleaning up code and adding more info to error messages.
+
+2007-12-28 Adam Moody <moody20@llnl.gov>
+
+	* : initial import -- current version matches OSU MVAPICH-1 code.

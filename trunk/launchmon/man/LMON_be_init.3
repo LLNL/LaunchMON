@@ -1,0 +1,95 @@
+.TH LaunchMON 3 "FEBRUARY 2008" LaunchMON "LaunchMON Back-End API"
+
+.SH NAME
+LMON_be_init LMON_be_finalize \- LaunchMON back-end API: back-end initialization/finalization functions. 
+
+.SH SYNOPSIS
+.B #include <lmon_be.h>
+.PP
+.BI "lmon_rc_e LMON_be_init ( int " ver ", int *" pargc ", char ***" pargv " );"
+.PP
+.BI "lmon_rc_e LMON_be_finalize ( );"
+.PP
+.B cc ... -lmonbeapi
+
+.SH DESCRIPTION
+The \fBLMON_be_init()\fR function initializes the LaunchMON back-end. 
+Each back-end tool daemon must call this function before using any other
+back-end API calls. \fBLMON_be_init()\fR
+performs the communication subsystem setup as well 
+as other sanity checks including a library-header version 
+mismatch check for its client daemon. 
+The caller must pass \fBLMON_VERSION\fR, 
+a macro defined in the \fBlmon_be.h\fR file, 
+to the \fIver\fR argument for proper version matching. 
+\fIpargc\fR and \fIpargv\fR are the pointers to the 
+argument count and the argument list that the client 
+tool daemon gets passed at the \fImain\fR function. 
+During the communication subsystem setup process, the runtime
+selects a single master, the daemon that coordinates 
+communications with other LaunchMON components on behalf of 
+the rest of back-end daemons. The client daemon
+must use the \fBLMON_be_amIMaster\fR(3) function to determine if it is 
+selected as the master daemon, should that information be needed.  
+
+The \fBLMON_be_finalize ()\fR function finalizes  LaunchMON 
+back-end resources including its communication subsystem. 
+Each back-end daemon must call this fuction to be finalized
+correctly. The behavior of any subsequent LaunchMON back-end API calls 
+after \fBLMON_be_finalize ()\fR is undefined. 
+
+.SH RETURN VALUE
+These functions return \fBLMON_OK\fR
+on success; otherwise, an LMON error code is returned 
+as described below.
+
+.SH ERRORS
+.TP
+.B LMON_OK
+Success.
+.TP
+.B LMON_ESUBCOM
+Encountered an error during a communication subsystem operation. 
+.TP
+.B LMON_ESYS
+Encountered a system error. 
+(likely attributed to an error in a UNIX socket API call.)  
+.TP
+.B LMON_EINVAL
+Encountered any other erroneous conditions including 
+a library-header version mismatch.
+
+.SH AUTHOR
+Dong H. Ahn <ahn1@llnl.gov>
+
+.SH "SEE ALSO"
+.BR LMON_fe_init(3),
+.BR LMON_fe_createSession(3),
+.BR LMON_fe_attachAndSpawnDaemons(3),
+.BR LMON_fe_launchAndSpawnDaemons(3),
+.BR LMON_fe_kill(3),
+.BR LMON_fe_detach(3),
+.BR LMON_fe_shutdownDaemons(3),
+.BR LMON_fe_regUnpackForBeToFe(3),
+.BR LMON_fe_regPackForFeToBe(3),
+.BR LMON_fe_putToBeDaemonEnv(3),
+.BR LMON_fe_sendUsrDataBe(3),
+.BR LMON_fe_recvUsrDataBe(3),
+.BR LMON_fe_getProctable(3),
+.BR LMON_fe_getProctableSize(3),
+.BR LMON_fe_getResourceHandle(3),
+.BR LMON_be_getMyRank(3),
+.BR LMON_be_getSize(3),
+.BR LMON_be_amIMaster(3),
+.BR LMON_be_handshake(3),
+.BR LMON_be_ready(3),
+.BR LMON_be_barrier(3),
+.BR LMON_be_broadcast(3),
+.BR LMON_be_gather(3),
+.BR LMON_be_scatter(3),
+.BR LMON_be_regPackForBeToFe(3),
+.BR LMON_be_regUnpackForFeToBe(3),
+.BR LMON_be_recvUsrData(3),
+.BR LMON_be_sendUsrData(3),
+.BR LMON_be_getMyProctab(3),
+.BR LMON_be_getMyProctabSize(3)

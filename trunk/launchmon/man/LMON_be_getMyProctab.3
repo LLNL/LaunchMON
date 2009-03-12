@@ -1,0 +1,112 @@
+.TH LaunchMON 3 "FEBRUARY 2008" LaunchMON "LaunchMON Back-End API"
+
+.SH NAME
+LMON_be_getMyProctab LMON_be_getMyProctabSize \- LaunchMON back-end API: resource manager data access functions.  
+
+.SH SYNOPSIS
+.B #include <lmon_be.h>
+.PP
+.BI "lmon_rc_e LMON_be_getMyProctab ( MPIR_PROCDESC_EXT *" buf ", int *" size ", int " max " );"
+.PP
+.BI "lmon_rc_e LMON_be_getMyProctabSize ( int *" size " );"
+.PP
+.B cc ... -lmonbeapi
+
+.SH DESCRIPTION
+\fBLMON_be_getMyProctab()\fR returns the per-daemon target process descriptor table via 
+the \fIbuf\fR argument. The maximum number of table entries that \fIbuf\fR can
+hold is specified by \fImax\fR. This function constructs the calling daemon's 
+local target process table 
+using the global remote process descriptor table (RPDTAB) that is
+distributed as part of front-end<->back-end handshake operations 
+(see \fBLMON_be_handshake\fR(3) and \fBLMON_be_ready\fR(3)).  This 
+function requires \fBMPIR_PROCDESC_EXT\fR type, a C struct
+extending \fBMPIR_PROCDESC\fR.
+
+.PP
+.nf
+.B typedef struct {
+.B "   "char *host_name;
+.B "   "char *executable_name; "
+.B "   "int pid;  "
+.B "} MPIR_PROCDESC;
+.PP
+.B typedef struct {
+.B "   "MPIR_PROCDESC pd;
+.B "   "int mpirank;
+.B } MPIR_PROCDESC_EXT;
+.fi
+.PP
+ 
+The \fBLMON_be_getProctableSize()\fR function returns the total number
+of entries in the per-daemon target process descriptor table via the \fIsize\fR argument.
+
+These functions return an invalid return code if the client daemon uses them before 
+\fBLMON_be_ready\fR(3).
+
+.SH RETURN VALUE
+These functions return \fBLMON_OK\fR
+on success; otherwise, an LMON error code is returned 
+as described below. 
+
+.SH ERRORS
+.TP
+.B LMON_OK
+Success.
+.TP
+.B LMON_ESYS
+A system error (likely attributed to an error in a sockets API call).
+.TP
+.B LMON_ENOMEM
+Out of memory.
+.TP
+.B LMON_EDUNAV
+Requested information unavailable.
+.TP
+.B LMON_EINVAL
+Encountered any other erroneous conditions. 
+
+.SH NOTE
+The overhead costs of these functions 
+can be high especially when a daemon invokes it for the first time at large scale. The first invocation
+requires the parsing of the entire global RPDTAB which can be expensive as RPDTAB grows 
+linearly with increasing scale. 
+These functions, 
+however, caches the parsed table during the first invocation,
+amortizing the overhead costs over subsequent invocations made by the daemon. 
+
+.SH AUTHOR
+Dong H. Ahn <ahn1@llnl.gov>
+
+.SH "SEE ALSO"
+.BR LMON_fe_init(3),
+.BR LMON_fe_createSession(3),
+.BR LMON_fe_attachAndSpawnDaemons(3),
+.BR LMON_fe_launchAndSpawnDaemons(3),
+.BR LMON_fe_kill(3),
+.BR LMON_fe_detach(3),
+.BR LMON_fe_shutdownDaemons(3),
+.BR LMON_fe_regUnpackForBeToFe(3),
+.BR LMON_fe_regPackForFeToBe(3),
+.BR LMON_fe_putToBeDaemonEnv(3),
+.BR LMON_fe_sendUsrDataBe(3),
+.BR LMON_fe_recvUsrDataBe(3),
+.BR LMON_fe_getProctable(3),
+.BR LMON_fe_getProctableSize(3),
+.BR LMON_fe_getResourceHandle(3),
+.BR LMON_be_init(3),
+.BR LMON_be_finalize(3),
+.BR LMON_be_getMyRank(3),
+.BR LMON_be_getSize(3),
+.BR LMON_be_amIMaster(3),
+.BR LMON_be_handshake(3),
+.BR LMON_be_ready(3),
+.BR LMON_be_barrier(3),
+.BR LMON_be_broadcast(3),
+.BR LMON_be_gather(3),
+.BR LMON_be_scatter(3),
+.BR LMON_be_regPackForBeToFe(3),
+.BR LMON_be_regUnpackForFeToBe(3),
+.BR LMON_be_recvUsrData(3),
+.BR LMON_be_sendUsrData(3)
+

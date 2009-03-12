@@ -1,0 +1,56 @@
+2008-12-12 Dong H. Ahn <ahn1@llnl.gov>
+        o LaunchMON 0.6.4 service release
+        o Validated the combinations of various configure options and
+	  Changed the configuration policy as follows.
+          + Made --with-bootfabric --with-rm --with-gcrypt mandatory options
+	     - The default for the bootfabric option is --with-bootfabric=pmgr.
+               --with-bootfabric=mpi has been deprecated due to a naming collision 
+	       with the GCRYPT package.
+	     - Merged with-slurm and with-bglrm into --with-rm[=slurm,bglrm]
+ 	       for conciseness. The default for with-rm is slurm. 
+	o Taken together, to configure, to build and to install the package
+	  On X86/X86_64/Linux/SLURM
+                 ./configure --with-bootfabric=pmgr --with-rm=slurm --prefix=/myhome
+                 make check
+                 make install
+          On BlueGene/Linux/BGLRM
+                 ./configure --with-bootfabric=pmgr --with-rm=bglrm --prefix=/myhome
+                 make check
+                 make install
+          Other configuration options can be shown by type
+                 ./configure --help
+
+2008-10-01 Dong H. Ahn <ahn1@llnl.gov>
+	o LaunchMON 0.6 release
+	  + Added more computer architecture and OS kernel support
+	     - computer architecture: 
+	       X86, X86_64, BlueGene/L with front-end POWER5 and PPC970MP.
+	     - tested environments: 
+               X86_64 under 2.6.18-39 and 2.6.18-52;
+	       BlueGene/L front-end POWER5 under pseries64-2.6.5-7.282, 
+	       front-end PPC970MP under pseries64-2.6.5-7.312, and
+	       driver under V1R3M4_300_2008-080728;
+	       X86 under 2.6.9-74. 
+	  + Added more resource manager support
+	     - SLURM (32-bit and 64-bit srun)
+             - BlueGene's native RM (32-bit and 64-bit mpirun) 
+	  + LaunchMON API support
+	     - Full LaunchMON front-end and LaunchMON back-end 
+               interface implementation 
+	     - Interface implementation versioning uses 
+               the libtool notation as follows.  
+	         Interface Current: 0
+	         Revision: 0
+	         Age: 0
+          + Added GNU build system support 
+	     - To configure, to build and to install the package
+	       On X86/X86_64/Linux/SLURM
+	         ./configure --with-slurm --prefix=/myhome
+	         make check
+	         make install	
+	       On BlueGene/Linux/BGLRM
+	         ./configure --with-bglrm --prefix=/myhome
+	         make check
+	         make install	
+             - Other configuration options can be shown by type 
+                 ./configure --help
