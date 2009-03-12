@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Mar 04 2009 DHA: Added generic BG support.
  *        Jun 13 2008 DHA: Added GNU build system support.
  *        Mar 18 2008 DHA: Added BlueGene support. 
  *        Feb 09 2008 DHA: Added LLNS Copyright.
@@ -35,7 +36,7 @@
 
 #include <lmon_api/common.h>
                                                                                                                                         
-#if RM_BGL_MPIRUN
+#if RM_BG_MPIRUN
 /* work around for a compiler problem on BlueGene/L */
 #undef SEEK_SET
 #undef SEEK_END

@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Mar  06 2009 DHA: Remove dynloader_iden
  *        Mar  11 2008 DHA: Linux PowerPC support 
  *        Feb  09 2008 DHA: Added LLNS Copyright
  *        Jan  09 2007 DHA: Linux X86-64 support 
@@ -82,7 +83,7 @@ extern "C" {
 
     General purpose register set (regs) resides at the zero offset. 
     General purpose register set (struct user_regs_struct) is
-                                                                                                             
+
     struct user_regs_struct
     {
     long int ebx;
@@ -124,10 +125,10 @@ extern "C" {
     char                        u_comm [32];
     unsigned long int           u_debugreg [8];
     };
-                                                                                                             
+
     General purpose register set resides at the zero offset.
     General purpose register set (struct user_regs_struct) is
-                                                                                                             
+
     struct user_regs_struct
     {
     unsigned long r15;

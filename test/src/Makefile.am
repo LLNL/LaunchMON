@@ -43,7 +43,7 @@ if WITH_GCRYPT
 INCLUDES                          += -I$(top_srcdir)/@GCRYPTLOC@ -I$(top_srcdir)/@GPGERRLOC@
 endif
 if WITH_CIOD
-INCLUDES                          += -I$(top_srcdir)/@CIODLOC@
+INCLUDES                          += -I@ARCHHEADER@ -I$(top_srcdir)/@CIODLOC@
 endif
 
 bin_PROGRAMS                      = fe_jobsnap \

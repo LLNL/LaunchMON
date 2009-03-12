@@ -45,7 +45,7 @@
  *        Jun 06 2006 DHA: Added comments on the file scope 
  *                         and the class (launchmon_base_t) 
  *                         itself.
- *        Jan 12 2006 DHA: Created file.          
+ *        Jan 12 2006 DHA: Created file.
  */ 
 
 #ifndef SDBG_BASE_LAUNCHMON_HXX
@@ -87,11 +87,11 @@ inline double gettimeofdayD ()
 {
   struct timeval ts;
   double rt;
-                                                                                                                                      
+
   gettimeofday (&ts, NULL);
   rt = (double) (ts.tv_sec);
   rt += (double) ((double)(ts.tv_usec))/1000000.0;
-                                                                                                                                      
+
   return rt;
 }
 
@@ -144,10 +144,10 @@ class launchmon_base_t {
 public:
 
   launchmon_base_t ();
-  
+
   launchmon_base_t ( 
                 const launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>& l );
-  
+
   virtual 
   ~launchmon_base_t();
 
@@ -324,7 +324,7 @@ private:
   // process tracer
   //
   tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *tracer;
-  
+
   //
   // thread tracer
   //

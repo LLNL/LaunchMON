@@ -29,6 +29,13 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        Mar 09 2009 DHA: Added -rdynamic to export process control 
+##                         primities to the dynamic symbol table for
+##                         dlopen to pick up.
+##        Mar 06 2009 DHA: Added sdbg_linux_thr_db.[hxx|cxx] for 
+##                         runtime loading support 
+##                         of the thread debug library.
+##                         Deprecated LIBTHRDDB.
 ##        Jun 12 2008 DHA: Added header files to the dependency list
 ##                         of launchmon_SOURCES. 
 ##        Jun 06 2008 DHA: Taken from the old Makefile, converting
@@ -39,7 +46,7 @@
 ##
 
 SUBDIRS                 = lmon_api
-INCLUDES                = -I..
+INCLUDES                = -I.. -I@ARCHHEADER@
 BITS                    = @LIBBITSUFFIX@
 bin_PROGRAMS            = launchmon
 launchmon_SOURCES       = main.cxx \
@@ -47,6 +54,7 @@ launchmon_SOURCES       = main.cxx \
 	                  lmon_api/lmon_lmonp_msg.cxx \
 	                  sdbg_linux_mach.cxx \
 	                  lmon_api/lmon_say_msg.cxx \
+			  sdbg_linux_thr_db.cxx \
 			  sdbg_proc_service.cxx \
 			  ../sdbg_self_trace.cxx \
 			  ../sdbg_opt.cxx \
@@ -81,11 +89,12 @@ launchmon_SOURCES       = main.cxx \
 			  sdbg_linux_driver_impl.hxx \
 			  sdbg_linux_ptracer.hxx \
 			  sdbg_linux_symtab.hxx \
-		          sdbg_linux_ttracer_impl.hxx
+		          sdbg_linux_ttracer_impl.hxx \
+			  sdbg_linux_thr_db.hxx
 
-launchmon_LDADD         = @LIBTHR_DB@ \
-                          @LIBELF@ 
+launchmon_LDADD         = @LIBELF@ @LIBDL@
 launchmon_CFLAGS        = @LNCHR_BIT_FLAGS@ $(AM_CFLAGS)
 launchmon_CXXFLAGS      = @LNCHR_BIT_FLAGS@ $(AM_CXXFLAGS)
-launchmon_LDFLAGS       = @LNCHR_BIT_FLAGS@ $(AM_LDFLAGS) 
-#
+launchmon_LDFLAGS       = -rdynamic @LNCHR_BIT_FLAGS@ $(AM_LDFLAGS) 
+
+## EOF

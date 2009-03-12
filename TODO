@@ -149,3 +149,5 @@ x some configuration option doesn't build
   NOTE: 9/24/2008 not scheduled for 0.6 release.
 - Re-attaching to the BGL mpirun seems to fail 
   (I just confirmed that TotalView also fails...)
+- linux_launchmon_t::acquire_proctable performance problem at extreme
+  scale?

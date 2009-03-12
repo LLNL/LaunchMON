@@ -48,7 +48,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/x_ac_bootfabric.m4 \
 	$(top_srcdir)/config/x_ac_os_isa.m4 \
 	$(top_srcdir)/config/x_ac_rm.m4 \
 	$(top_srcdir)/config/x_ac_testnnodes.m4 \
-	$(top_srcdir)/config/x_ac_thread_db.m4 \
 	$(top_srcdir)/config/x_ac_tracing_cost.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -64,6 +63,7 @@ am_launchmon_OBJECTS = launchmon-main.$(OBJEXT) \
 	launchmon-lmon_lmonp_msg.$(OBJEXT) \
 	launchmon-sdbg_linux_mach.$(OBJEXT) \
 	launchmon-lmon_say_msg.$(OBJEXT) \
+	launchmon-sdbg_linux_thr_db.$(OBJEXT) \
 	launchmon-sdbg_proc_service.$(OBJEXT) \
 	launchmon-sdbg_self_trace.$(OBJEXT) \
 	launchmon-sdbg_opt.$(OBJEXT)
@@ -105,6 +105,8 @@ AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
 AR = @AR@
+ARCHHEADER = @ARCHHEADER@
+ARCHLIB = @ARCHLIB@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -141,6 +143,7 @@ LDFLAGS = @LDFLAGS@
 LIBBITSUFFIX = @LIBBITSUFFIX@
 LIBCIOD = @LIBCIOD@
 LIBCOMM = @LIBCOMM@
+LIBDL = @LIBDL@
 LIBELF = @LIBELF@
 LIBGCRYPT = @LIBGCRYPT@
 LIBGPGERR = @LIBGPGERR@
@@ -148,7 +151,6 @@ LIBOBJS = @LIBOBJS@
 LIBPTHREAD = @LIBPTHREAD@
 LIBRT = @LIBRT@
 LIBS = @LIBS@
-LIBTHR_DB = @LIBTHR_DB@
 LIBTOOL = @LIBTOOL@
 LMONAPILOC = @LMONAPILOC@
 LMONENABSLOC = @LMONENABSLOC@
@@ -208,6 +210,7 @@ build_cpu = @build_cpu@
 build_os = @build_os@
 build_vendor = @build_vendor@
 datadir = @datadir@
+envcmd = @envcmd@
 exec_prefix = @exec_prefix@
 host = @host@
 host_alias = @host_alias@
@@ -227,17 +230,20 @@ prefix = @prefix@
 program_transform_name = @program_transform_name@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+sshcmd = @sshcmd@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+tvcmd = @tvcmd@
 SUBDIRS = lmon_api
-INCLUDES = -I..
+INCLUDES = -I.. -I@ARCHHEADER@
 BITS = @LIBBITSUFFIX@
 launchmon_SOURCES = main.cxx \
 	                  sdbg_linux_launchmon.cxx \
 	                  lmon_api/lmon_lmonp_msg.cxx \
 	                  sdbg_linux_mach.cxx \
 	                  lmon_api/lmon_say_msg.cxx \
+			  sdbg_linux_thr_db.cxx \
 			  sdbg_proc_service.cxx \
 			  ../sdbg_self_trace.cxx \
 			  ../sdbg_opt.cxx \
@@ -272,14 +278,13 @@ launchmon_SOURCES = main.cxx \
 			  sdbg_linux_driver_impl.hxx \
 			  sdbg_linux_ptracer.hxx \
 			  sdbg_linux_symtab.hxx \
-		          sdbg_linux_ttracer_impl.hxx
+		          sdbg_linux_ttracer_impl.hxx \
+			  sdbg_linux_thr_db.hxx
 
-launchmon_LDADD = @LIBTHR_DB@ \
-                          @LIBELF@ 
-
+launchmon_LDADD = @LIBELF@ @LIBDL@
 launchmon_CFLAGS = @LNCHR_BIT_FLAGS@ $(AM_CFLAGS)
 launchmon_CXXFLAGS = @LNCHR_BIT_FLAGS@ $(AM_CXXFLAGS)
-launchmon_LDFLAGS = @LNCHR_BIT_FLAGS@ $(AM_LDFLAGS) 
+launchmon_LDFLAGS = -rdynamic @LNCHR_BIT_FLAGS@ $(AM_LDFLAGS) 
 all: all-recursive
 
 .SUFFIXES:
@@ -356,6 +361,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-sdbg_linux_launchmon.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-sdbg_linux_mach.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-sdbg_linux_thr_db.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-sdbg_opt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-sdbg_proc_service.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-sdbg_self_trace.Po@am__quote@
@@ -450,6 +456,20 @@ launchmon-lmon_say_msg.obj: lmon_api/lmon_say_msg.cxx
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lmon_api/lmon_say_msg.cxx' object='launchmon-lmon_say_msg.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(launchmon_CXXFLAGS) $(CXXFLAGS) -c -o launchmon-lmon_say_msg.obj `if test -f 'lmon_api/lmon_say_msg.cxx'; then $(CYGPATH_W) 'lmon_api/lmon_say_msg.cxx'; else $(CYGPATH_W) '$(srcdir)/lmon_api/lmon_say_msg.cxx'; fi`
+
+launchmon-sdbg_linux_thr_db.o: sdbg_linux_thr_db.cxx
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(launchmon_CXXFLAGS) $(CXXFLAGS) -MT launchmon-sdbg_linux_thr_db.o -MD -MP -MF "$(DEPDIR)/launchmon-sdbg_linux_thr_db.Tpo" -c -o launchmon-sdbg_linux_thr_db.o `test -f 'sdbg_linux_thr_db.cxx' || echo '$(srcdir)/'`sdbg_linux_thr_db.cxx; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/launchmon-sdbg_linux_thr_db.Tpo" "$(DEPDIR)/launchmon-sdbg_linux_thr_db.Po"; else rm -f "$(DEPDIR)/launchmon-sdbg_linux_thr_db.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sdbg_linux_thr_db.cxx' object='launchmon-sdbg_linux_thr_db.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(launchmon_CXXFLAGS) $(CXXFLAGS) -c -o launchmon-sdbg_linux_thr_db.o `test -f 'sdbg_linux_thr_db.cxx' || echo '$(srcdir)/'`sdbg_linux_thr_db.cxx
+
+launchmon-sdbg_linux_thr_db.obj: sdbg_linux_thr_db.cxx
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(launchmon_CXXFLAGS) $(CXXFLAGS) -MT launchmon-sdbg_linux_thr_db.obj -MD -MP -MF "$(DEPDIR)/launchmon-sdbg_linux_thr_db.Tpo" -c -o launchmon-sdbg_linux_thr_db.obj `if test -f 'sdbg_linux_thr_db.cxx'; then $(CYGPATH_W) 'sdbg_linux_thr_db.cxx'; else $(CYGPATH_W) '$(srcdir)/sdbg_linux_thr_db.cxx'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/launchmon-sdbg_linux_thr_db.Tpo" "$(DEPDIR)/launchmon-sdbg_linux_thr_db.Po"; else rm -f "$(DEPDIR)/launchmon-sdbg_linux_thr_db.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sdbg_linux_thr_db.cxx' object='launchmon-sdbg_linux_thr_db.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(launchmon_CXXFLAGS) $(CXXFLAGS) -c -o launchmon-sdbg_linux_thr_db.obj `if test -f 'sdbg_linux_thr_db.cxx'; then $(CYGPATH_W) 'sdbg_linux_thr_db.cxx'; else $(CYGPATH_W) '$(srcdir)/sdbg_linux_thr_db.cxx'; fi`
 
 launchmon-sdbg_proc_service.o: sdbg_proc_service.cxx
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(launchmon_CXXFLAGS) $(CXXFLAGS) -MT launchmon-sdbg_proc_service.o -MD -MP -MF "$(DEPDIR)/launchmon-sdbg_proc_service.Tpo" -c -o launchmon-sdbg_proc_service.o `test -f 'sdbg_proc_service.cxx' || echo '$(srcdir)/'`sdbg_proc_service.cxx; \
@@ -776,7 +796,6 @@ uninstall-info: uninstall-info-recursive
 	pdf pdf-am ps ps-am tags tags-recursive uninstall uninstall-am \
 	uninstall-binPROGRAMS uninstall-info-am
 
-#
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

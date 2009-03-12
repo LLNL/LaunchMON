@@ -1,3 +1,29 @@
+2009-03-11 Dong H. Ahn <ahn1@llnl.gov>
+	* Generalized the BlueGene support in support of BGP
+	  Configure's --with-rm option now takes "bgrm" instead of 
+	  bglrm or bgprm.
+	* Deprecated the GLUESYM support in favor of indirect
+	  breakpoint support.
+	* launchmon/src/linux/sdbg_linux_ttracer_impl.[hxx|cxx]
+	  launchmon/src/linux/sdbg_linux_thr_db.[hxx|cxx]:
+	  Added runtime linking support for the thread_db library,
+	  and deprecated the static configure check for
+	  that library defined in config/x_ac_thread_db.m4.
+	* Deprecated the library version of ciod_db as IBM
+	  open-sourced the CIOD debugger interface codes 
+	  entire via a header file.
+	* configure.ac
+	  launchmon/src/linux/lmon_api/lmon_fe.cxx:
+	  Bug fix in the pthread_cond_timedwait
+	  return code checking logic for launchmon engine 
+	  connection: the only correct return code
+	  from pthread condition wait is zero; there were
+	  are two call sites testing with the less-than-zero 
+	  conditions for an error.
+	  Added comm_pair_e for readability
+	  Added configure check for env, ssh|rsh, and totalview.
+	  
+
 2008-12-12 Dong H. Ahn <ahn1@llnl.gov>
 	* added x_ac_testnnodes.m4 and modified test driver scripts 
 	  to make test cases more configurable. New options

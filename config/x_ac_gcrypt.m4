@@ -40,8 +40,6 @@ AC_DEFUN([X_AC_GCRYPT], [
     [with_gcrypt="check"]
   )
 
-  #echo ""
-  #echo "***with_gcrypt: $with_gcrypt"
   gcrypt_configured="no"
   if test "x$with_gcrypt" != "xno"; then 
     if test -d tools/libgpg-error -a -d tools/libgcrypt; then

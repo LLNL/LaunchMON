@@ -59,7 +59,7 @@ public:
                                                           { launcher_proc = p; }
  
   static process_base_t<SDBG_DEFAULT_TEMPLPARAM>* get_launcher_proc ( )
-                                                          { return launcher_proc; }     
+                                                          { return launcher_proc; }
 
   static void sighandler ( int sig );
   static void install_hdlr_for_all_sigs ( );

@@ -81,7 +81,7 @@ FILE* self_trace_t::tracefptr = stdout;
     logs self-tracing event
 */
 bool 
-self_trace_t::trace ( bool levelchk, 		      
+self_trace_t::trace ( bool levelchk,
 		      const std::string& mn, 
 		      bool error_or_info,
 		      const char* output, ... )

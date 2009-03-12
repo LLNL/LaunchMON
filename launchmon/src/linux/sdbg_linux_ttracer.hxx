@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Mar 06 2008 DHA: Thread debug library dll support 
  *        Sep 25 2008 DHA: Fixed a compatibility issue against thread_db 
  *                         in the 2.6.18 Linux kernel
  *        Feb 09 2008 DHA: Added LLNS Copyright
@@ -46,6 +47,7 @@
 #include "sdbg_base_ttracer.hxx"
 #include "sdbg_self_trace.hxx"
 #include "sdbg_linux_mach.hxx"
+#include "sdbg_linux_thr_db.hxx"
 
 extern "C" {
 #include <thread_db.h>
@@ -60,12 +62,14 @@ class linux_thread_tracer_t
   : public thread_tracer_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>
 {
 public:
-  
-  linux_thread_tracer_t()          { }   
+
+  linux_thread_tracer_t()          { }
   virtual ~linux_thread_tracer_t() { }
 
   class linux_thread_callback_t {
   public:
+
+    static linux_thr_db td; // Thread debug library DLL support 
 
     static int ttracer_thread_iter_callback ( const td_thrhandle_t* tt,  
 					      void* proc ) 
@@ -74,35 +78,35 @@ public:
 
       td_err_e te;
       int threadpid;
-    
+
 #if X86_ARCHITECTURE || X86_64_ARCHITECTURE
       thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>* thrinfo 
 	     = new linux_x86_thread_t();
 #elif PPC_ARCHITECTURE
       thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>* thrinfo 
-	     = new linux_ppc_thread_t();      
-#endif   
+	     = new linux_ppc_thread_t();
+#endif
 
       process_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>* p 
 	     = (process_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>*) proc;
 
-      if ( (te = td_thr_event_enable(tt, 1)) != TD_OK )
+      if ( (te = td.dll_td_thr_event_enable(tt, 1)) != TD_OK )
 	return SDBG_TTRACE_FAILED;
-      if ( (te = td_thr_get_info(tt, &(thrinfo->get_thread_info()))) != TD_OK )
+      if ( (te = td.dll_td_thr_get_info(tt, &(thrinfo->get_thread_info()))) != TD_OK )
         return SDBG_TTRACE_FAILED;
 
       threadpid = thrinfo->thr2pid(); 
 
       {
 	self_trace_t::trace ( LEVELCHK(level2), 
-			      MODULENAME,0, 
-			      "ttracer_thread_iteration is called back by thread_db" );
+	  MODULENAME,0, 
+	  "ttracer_thread_iteration is called back by thread_db" );
 	self_trace_t::trace ( LEVELCHK(level2), 
-			      MODULENAME,0, 
-			      "this callback is for the thread %d",
-			      threadpid );
+	  MODULENAME,0, 
+	  "this callback is for the thread %d",
+	  threadpid );
       }
-        
+
       if ( p->get_thrlist().find ( threadpid ) 
 	   == p->get_thrlist().end())
 	{
@@ -112,10 +116,7 @@ public:
 	  p->get_thrlist().insert ( make_pair ( threadpid, thrinfo ) );
 	  if( threadpid != p->get_master_thread_pid()) 
 	    {
-              //if ( (te = td_thr_set_event (tt, &thread_event_mask)) != TD_OK )        
-	      //  return SDBG_TTRACE_FAILED;
-      
-      
+
 	      thread_tracer_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>::
 		    get_tracer()->tracer_attach ( *p, false, threadpid );
 	    }
@@ -125,17 +126,16 @@ public:
           // if the process contains the tid, we just want to 
           // refresh its info
           //
-	  te = td_thr_get_info (tt, 
-			       &(p->get_thrlist().find (
-			          (int)thrinfo->thr2pid())->second->get_thread_info()));
+	  te = td.dll_td_thr_get_info (tt, 
+			               &(p->get_thrlist().find (
+			               (int)thrinfo->thr2pid())->second->get_thread_info()));
 
 	  delete thrinfo;	 
  
 	  if (te != TD_OK)  
-	    return SDBG_TTRACE_FAILED;      
-	}              
+	    return SDBG_TTRACE_FAILED;
+	}
 
-      
       return SDBG_TTRACE_OK;
     }
 
@@ -152,26 +152,26 @@ public:
 	= new linux_x86_thread_t();
 #elif PPC_ARCHITECTURE
       thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>* thrinfo 
-	= new linux_ppc_thread_t();      
+	= new linux_ppc_thread_t();
 #endif   
       process_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>* p 
 	     = (process_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>*) proc;
 
-      if ( (te = td_thr_event_enable(tt, 1)) != TD_OK ) 
+      if ( (te = td.dll_td_thr_event_enable(tt, 1)) != TD_OK ) 
 	return SDBG_TTRACE_FAILED;
-      if ( (te = td_thr_get_info(tt, &(thrinfo->get_thread_info()))) != TD_OK )
-	return SDBG_TTRACE_FAILED;     
+      if ( (te = td.dll_td_thr_get_info(tt, &(thrinfo->get_thread_info()))) != TD_OK )
+	return SDBG_TTRACE_FAILED;
 
       threadpid = thrinfo->thr2pid();
 
       {
         self_trace_t::trace ( LEVELCHK(level2),
-                              MODULENAME,0,
-                              "ttracer_thread_iter_attach_callback is called back by thread_db" );
+          MODULENAME,0,
+          "ttracer_thread_iter_attach_callback is called back by thread_db" );
         self_trace_t::trace ( LEVELCHK(level2),
-                              MODULENAME,0,
-                              "this callback is for the thread %d",
-                              threadpid );
+          MODULENAME,0,
+          "this callback is for the thread %d",
+          threadpid );
       }
 
       if ( p->get_thrlist().find ( threadpid )
@@ -183,9 +183,6 @@ public:
           p->get_thrlist().insert ( make_pair ( threadpid, thrinfo ) );
           if( threadpid != p->get_master_thread_pid())
             {
-      	      //if ( (te = td_thr_set_event (tt, &thread_event_mask)) != TD_OK )
-	      //  return SDBG_TTRACE_FAILED;
-     
               thread_tracer_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>::
                     get_tracer()->tracer_attach ( *p, false, threadpid );
             }
@@ -195,9 +192,9 @@ public:
           // if the process contains the tid, we just want to
           // refresh its info
           //
-          te = td_thr_get_info (tt,
-                               &(p->get_thrlist().find (
-                                  (int)thrinfo->thr2pid())->second->get_thread_info()));
+          te = td.dll_td_thr_get_info (tt,
+                                       &(p->get_thrlist().find (
+                                      (int)thrinfo->thr2pid())->second->get_thread_info()));
 
           delete thrinfo;
 

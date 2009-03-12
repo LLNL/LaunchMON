@@ -34,7 +34,7 @@
 AC_DEFUN([X_AC_TESTNNODES], [  
   AC_MSG_CHECKING([the number of compute nodes that standard test cases should use])
   AC_ARG_WITH([testnnodes],  
-    AS_HELP_STRING(--with-testnnodes@<:@=NNodes@:>@,specify the number of compute nodes test cases should use @<:@default=2@:>@), 
+    AS_HELP_STRING(--with-testnnodes@<:@=NNodes@:>@,specify the number of compute nodes test cases should use @<:@BGL Note: use the number of IO nodes instead@:>@ @<:@default=2@:>@), 
     [with_tnn=$withval],  
     [with_tnn="check"])
 
@@ -51,9 +51,9 @@ AC_DEFUN([X_AC_TESTNNODES], [
 ])
 
 AC_DEFUN([X_AC_NCORE_SMP], [  
-  AC_MSG_CHECKING([the number of cores per SMP node @<:@BGL: NCores per IO node@:>@])
+  AC_MSG_CHECKING([the number of cores per SMP node @<:@BGL: the number of compute nodes per IO node@:>@])
   AC_ARG_WITH([ncore-per-CN],  
-    AS_HELP_STRING(--with-ncore-per-CN@<:@=NCores@:>@,specify the core-count per compute node @<:@default=NCore of the configure system@:>@), 
+    AS_HELP_STRING(--with-ncore-per-CN@<:@=NCores@:>@,specify the core-count per compute node @<:@BGL Note: use the number of compute nodes per IO node instead@:>@ @<:@default=NCore of the configure host@:>@), 
     [with_smp=$withval],  
     [with_smp="check"])
 

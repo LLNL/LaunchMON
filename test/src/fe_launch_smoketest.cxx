@@ -29,6 +29,7 @@
  *  ./fe_launch_smoketest.debug /bin/hostname 9 5 pdebug `pwd`/be_kicker.debug
  *
  *  Update Log:
+ *        Mar 04 2008 DHA: Added generic BlueGene support
  *        Jun 16 2008 DHA: Added LMON_fe_recvUsrDataBe at the end to 
  *                         coordinate the testing result with back-end 
  *                         daemons better. 
@@ -74,7 +75,7 @@ main (int argc, char *argv[])
   int psize       = 0;
   int proctabsize = 0;
   int i           = 0;
-  char *part      = NULL;   
+  char *part      = NULL;
   char jobid[PATH_MAX]        = {0};
   char **launcher_argv        = NULL;
   char **daemon_opts          = NULL;
@@ -91,7 +92,7 @@ main (int argc, char *argv[])
         "Usage: fe_launch_smoketest appcode numprocs numnodes partition daemonpath [daemonargs]\n" );
       fprintf ( stdout, 
         "[LMON FE] FAILED\n" );
-      return EXIT_FAILURE;	      
+      return EXIT_FAILURE;
     }
 
   if ( access(argv[1], X_OK) < 0 )
@@ -113,15 +114,15 @@ main (int argc, char *argv[])
             argv[2]);
           fprintf(stdout, 
             "[LMON FE] FAILED\n");
-          return EXIT_FAILURE;	      
+          return EXIT_FAILURE;
         }
     }
 
   if ( argc > 6 )
     daemon_opts = argv+6;
 
-#if RM_BGL_MPIRUN
-  launcher_argv = (char**) malloc(10*sizeof(char*));
+#if RM_BG_MPIRUN
+  launcher_argv = (char **) malloc(12*sizeof(char*));
   launcher_argv[0] = strdup(mylauncher);
   launcher_argv[1] = strdup("-verbose");
   launcher_argv[2] = strdup("1");
@@ -137,7 +138,9 @@ main (int argc, char *argv[])
       return EXIT_FAILURE;
     } 
   launcher_argv[8] = strdup(part);
-  launcher_argv[9] = NULL;
+  launcher_argv[9] = strdup("-mode");
+  launcher_argv[10] = strdup("VN");
+  launcher_argv[11] = NULL;
   fprintf (stdout, "[LMON_FE] launching the job/daemons via %s\n", mylauncher);
 #elif RM_SLURM_SRUN
   numprocs_opt     = string("-n") + string(argv[2]);
@@ -321,7 +324,7 @@ main (int argc, char *argv[])
       fprintf ( stdout, "[LMON FE] FAILED\n");
       return EXIT_FAILURE;
     } 
-  
+
   sleep (3); /* wait until all BE outputs are printed */
 
   if (getenv ("LMON_ADDITIONAL_FE_STALL"))
@@ -331,6 +334,6 @@ main (int argc, char *argv[])
 
   fprintf ( stdout, 
     "\n[LMON FE] PASS: run through the end\n");
-  
+
   return EXIT_SUCCESS;
 }

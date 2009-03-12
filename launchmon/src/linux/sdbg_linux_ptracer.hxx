@@ -61,7 +61,7 @@ const int BPCHAINMAX     = 128;
 */
 class linux_tracer_exception_t : public tracer_exception_t 
 {
-                      
+
 public:
 
   linux_tracer_exception_t ()                          { }
@@ -93,13 +93,13 @@ public:
   			size = backtrace (pcchain_array, BPCHAINMAX);
 			if (size <= 0)
     			  return false;
-                                       
+
 
   			if (size > BPCHAINMAX)
     			  size = BPCHAINMAX;
-                                                                                          
+
   			stacksymbols = backtrace_symbols(pcchain_array, BPCHAINMAX);
-                        std::string mybt;  
+                        std::string mybt;
                         mybt = "BACKTRACE: ";  
                         for( i=0 ; i < size ; ++i)
                         {

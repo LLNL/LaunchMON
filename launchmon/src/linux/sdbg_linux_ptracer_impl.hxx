@@ -26,6 +26,9 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Mar 06 2008 DHA: Added indirection Breakpoint support.
+ *                         insert_breakpoint 
+ *                         and pullout_breakpoint method.
  *        Mar 11 2008 DHA: Added PowerPC support
  *        Feb 09 2008 DHA: Added LLNS Copyright
  *        Jan 09 2007 DHA: Linux X86_64 Support 
@@ -34,9 +37,8 @@
  *        Mar 31 2006 DHA: Added tracer_read_string
  *        Mar 30 2006 DHA: Added exception handling support
  *        Feb 06 2006 DHA: Convert_error_code support
- *        Jan 10 2006 DHA: Created file.          
- */ 
-
+ *        Jan 10 2006 DHA: Created file.
+ */
 
 #ifndef __SDBG_LINUX_PTRACER_IMPL_HXX 
 #define __SDBG_LINUX_PTRACER_IMPL_HXX 
@@ -130,7 +132,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setregs (
   regset->set_ptr_to_regset();
   num_regs = regset->size_in_word();
   offset = regset->get_offset_in_user();
-                                         
+
   for ( i=0; i < num_regs; i++ ) 
     {
       if ( ((1 << i) & regset->get_writable_mask()) == 0 ) 
@@ -153,7 +155,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setregs (
     regset->inc_ptr_by_word();
     offset += sizeof(WT);
   } // for ( i=0; i < num_regs; i++ )
-                        
+
   return SDBG_TRACE_OK;
 
 } // tracer_error_e linux_ptracer_t::tracer_setregs
@@ -350,10 +352,8 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read (
 
     if ( r == -1 && errno != 0 ) 
       {   
-       printf("r: %ld\n", r);
-       printf("errno: %d\n", errno);
 	e = func + ERRMSG_PTRACE + strerror ( errno );
-	throw linux_tracer_exception_t(e, convert_error_code (errno));       
+	throw linux_tracer_exception_t(e, convert_error_code (errno));
       }
 
     (*buf_trav) = r;
@@ -363,17 +363,17 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read (
   if ( addr_trav != trav_end ) 
     {
       r = Pptrace ( PTRACE_PEEKDATA, tpid, (void*) addr_trav, 0); 
-    
+
       if ( r == -1 && errno != 0 ) 
 	{
 
 	  e = func + ERRMSG_PTRACE + strerror ( errno );
-	  throw linux_tracer_exception_t(e, convert_error_code (errno));       
+	  throw linux_tracer_exception_t(e, convert_error_code (errno));
 	}
 
       memcpy((void*) buf_trav, (void*) &r, trav_end - addr_trav);
     }
-  
+
   return SDBG_TRACE_OK;
 
 } // linux_ptracer_t::tracer_read 
@@ -408,7 +408,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read_string (
 
   for ( addr_trav = addr; (addr_trav + sizeof(WT)) <= trav_end; 
 				addr_trav += sizeof(WT)) 
-    {      
+    {
       r = Pptrace (PTRACE_PEEKDATA, tpid, (void*) addr_trav, 0);
 
       if ( r == -1 && errno != 0 ) 
@@ -419,14 +419,13 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read_string (
 
       (*buf_trav) = r;
       buf_trav++;
-   
+
 #if BIT64
       if ( !( r & 0xff00000000000000ULL) || !( r & 0x00ff000000000000ULL)
            || !( r & 0x0000ff0000000000ULL) || !( r & 0x000000ff00000000ULL)
            || !( r & 0x00000000ff000000ULL) || !( r & 0x0000000000ff0000ULL)
            || !( r & 0x000000000000ff00ULL) || !( r & 0x00000000000000ffULL) )
         {
-                                                                                                 
           end_of_string = true;
           break;
         }
@@ -434,7 +433,6 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read_string (
       if ( !( r & 0xff000000) || !( r & 0x00ff0000) 
 	   || !( r & 0x0000ff00) || !( r & 0x000000ff) ) 
 	{
-
 	  end_of_string = true;
 	  break;
 	}
@@ -485,19 +483,19 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_write (
  
   for ( addr_trav = addr; (addr_trav + sizeof(WT)) <= trav_end;
                			addr_trav += sizeof(WT) ) 
-    {      
+    {
       r = Pptrace (PTRACE_POKEDATA, tpid, (void*) addr_trav, (void*) *buf_trav);
-                                                      
+
       if ( r == -1 && errno != 0 ) 
 	{	  
 	  e = func + ERRMSG_PTRACE + strerror (errno);
 	  throw linux_tracer_exception_t(e, convert_error_code (errno));      
 	}
-                                   
+
       buf_trav++;
-      
+
     } // for
-                                                                        
+
   if ( addr_trav != trav_end ) 
     {
 
@@ -517,7 +515,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_write (
 	  throw linux_tracer_exception_t(e, convert_error_code (errno));   
 	}
     } // if ( addr_trav != trav_end )
-                                                      
+
   return SDBG_TRACE_OK;
 
 } // linux_ptracer_t::tracer_write
@@ -792,15 +790,60 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::insert_breakpoint (
                  process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
 		 breakpoint_base_t<VA, IT>& bp, bool use_cxt )
   throw (linux_tracer_exception_t)
-{  
-  IT blend;   
+{
+  IT blend;
 
-  tracer_read (p, bp.get_address_at(),&(bp.get_orig_instruction()),
-	       sizeof(IT),use_cxt);	                   
+  if (bp.get_use_indirection()) 
+    { 
+       if (bp.get_indirect_address_at() == T_UNINIT_HEX) 
+         {
+           //
+           // The upper layer could have filled the
+           // indirect address to handle special cases.
+           //
+           tracer_read (p,
+		   bp.get_address_at(),
+		   &(bp.get_indirect_address_at()),
+		   sizeof(VA),
+		   use_cxt);
+         }
+
+       tracer_read (p, 
+                    bp.get_indirect_address_at(),
+                    &(bp.get_orig_instruction()),
+	            sizeof(IT),
+		    use_cxt);
+    }
+  else
+    {
+      tracer_read (p, 
+                   bp.get_address_at(),
+                   &(bp.get_orig_instruction()),
+	           sizeof(IT),
+                   use_cxt);
+     }
+
   blend = bp.get_orig_instruction();
   blend &= bp.get_blend_mask();
   blend = blend | bp.get_trap_instruction();
-  tracer_write (p, bp.get_address_at(),&blend, sizeof(IT), use_cxt);
+
+  if (bp.get_use_indirection())
+    {
+      tracer_write (p, 
+		    bp.get_indirect_address_at(),
+                    &blend,
+                    sizeof(IT),
+                    use_cxt);
+    }
+  else 
+    {
+      tracer_write (p, 
+		    bp.get_address_at(),
+                    &blend, 
+                    sizeof(IT),
+                    use_cxt);
+    }
+
   bp.status = breakpoint_base_t<VA, IT>::enabled;
 
   return SDBG_TRACE_OK;
@@ -829,8 +872,24 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::pullout_breakpoint (
     {
       return SDBG_TRACE_OK;     
     }
-  tracer_write (p,bp.get_address_at(), &(bp.get_orig_instruction()),
-		sizeof(IT), use_cxt);
+
+  if (bp.get_use_indirection())
+    {
+      tracer_write (p, 
+		    bp.get_indirect_address_at(),
+                    &(bp.get_orig_instruction()),
+                    sizeof(IT),
+                    use_cxt);
+    }
+  else 
+    {
+      tracer_write (p, 
+		    bp.get_address_at(),
+                    &(bp.get_orig_instruction()),
+                    sizeof(IT),
+                    use_cxt);
+    }
+
   bp.status = breakpoint_base_t<T_VA,T_IT>::disabled;
 
   return SDBG_TRACE_OK;
@@ -840,7 +899,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::pullout_breakpoint (
 
 //! PUBLIC: convert_error_code
 /*!
-  
+
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e 
@@ -928,11 +987,11 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::Pptrace (
 
   {
     self_trace_t::trace ( LEVELCHK(level3), 
-			  MODULENAME, 0, 
-			  "ptrace(request[%d], pid[%d], addr[0x%8x], data[0x%8x]",
-			  request, 
-			  pid,
-			  addr);    
+      MODULENAME, 0, 
+      "ptrace(request[%d], pid[%d], addr[0x%8x], data[0x%8x]",
+      request, 
+      pid,
+      addr);
   }
   
   return ( ptrace ( request, pid, addr, data ) );

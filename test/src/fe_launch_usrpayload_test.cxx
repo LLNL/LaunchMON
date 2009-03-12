@@ -25,7 +25,8 @@
  * Place, Suite 330, Boston, MA 02111-1307 USA
  *--------------------------------------------------------------------------------
  *
- *  Update Log:
+ *  Update Log: 
+ *        Mar 04 2008 DHA: Added generic BlueGene support
  *        Jun 17 2008 DHA: Added BlueGene support 
  *        Jun 12 2008 DHA: Added GNU build system support
  *        Feb 09 2008 DHA: Added LLNS Copyright. 
@@ -226,7 +227,7 @@ main (int argc, char* argv[])
   launcher_argv[4] = strdup("-l");
   launcher_argv[5] = strdup(argv[1]);
   launcher_argv[6] = NULL;
-#elif RM_BGL_MPIRUN 
+#elif RM_BG_MPIRUN 
   launcher_argv = (char**) malloc(8*sizeof(char*));
   launcher_argv[0] = strdup(mylauncher);
   launcher_argv[1] = strdup("-verbose");

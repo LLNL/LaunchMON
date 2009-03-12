@@ -1,3 +1,9 @@
+2008-03-11 Dong H. Ahn <ahn1@llnl.gov>
+        o LaunchMON 0.7X beta release 
+        o Added general BlueGene support convering both BlueGene/L 
+	  and BleGene/P
+   	  + --with-rm now takes bgrm instead of bglrm or bgprm
+          
 2008-12-12 Dong H. Ahn <ahn1@llnl.gov>
         o LaunchMON 0.6.4 service release
         o Validated the combinations of various configure options and

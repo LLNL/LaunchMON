@@ -26,10 +26,11 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Mar 06 2008 DHA: Added indirect breakpoint
  *        Feb 09 2008 DHA: Added LLNS Copyright
  *        Jun 06 2006 DHA: Added DOXYGEN comments on the file scope 
  *                         and the class (breakpoint_base_t) 
- *        Jan 12 2006 DHA: Created file.          
+ *        Jan 12 2006 DHA: Created file.
  */ 
 
 //! FILE: sdbg_base_bp.hxx
@@ -61,7 +62,7 @@
     to implement a breakpoint instruction. 
 */
 template <class VA, class IT>
-class breakpoint_base_t 
+class breakpoint_base_t
 {
 
 public:
@@ -75,32 +76,49 @@ public:
 
   bp_status_e status;
   
-  breakpoint_base_t ()                     { status = uninit; }
+  breakpoint_base_t ()                     { 
+					     status = uninit; 
+					   }
+
   breakpoint_base_t ( const breakpoint_base_t<VA, IT>& b )
-                                           {                 
+                                           {
+					     address_at = b.address_at;
+					     indirect_address_at = b.indirect_address_at;
+					     return_addr = b.return_addr;
 					     trap_instruction = b.trap_instruction;
 					     orig_instruction = b.orig_instruction;
-					     status = uninit;
+					     blend_mask = b.blend_mask;
+					     status = b.status;
+					     use_indirection = b.use_indirection;
 					   }
+
   virtual ~breakpoint_base_t ()            { }
 
+  bool get_use_indirection()               { return use_indirection; }
+  VA& get_address_at()                     { return address_at; }
+  VA& get_indirect_address_at()            { return indirect_address_at; }
+  VA& get_return_addr()                    { return return_addr; }
   IT& get_trap_instruction ()              { return trap_instruction; }
   IT& get_orig_instruction ()              { return orig_instruction; }
   IT& get_blend_mask ()                    { return blend_mask; }
-  VA& get_address_at()                     { return address_at; }
-  VA& get_return_addr()                    { return return_addr; }
+
   virtual VA& get_where_pc_would_be()      { return address_at; }
   virtual bool is_pc_part_of_bp_op(VA pc)  { return ((pc==address_at)?true: false); }
 
+  void set_use_indirection ()              { use_indirection = true; }
+  void unset_use_indirection ()            { use_indirection = false; }
+  void set_address_at ( const VA& addr )   { address_at = addr; }
+  void set_indirect_address_at(const VA& addr) { indirect_address_at = addr; }
+  void set_return_addr (const VA& raddr)   { return_addr = raddr; }
   void set_trap_instruction ( const IT& i ){ trap_instruction = i; }
   void set_orig_instruction ( const IT& i ){ orig_instruction = i; }
   void set_blend_mask ( const IT& i)       { blend_mask = i; }
-  void set_address_at ( const VA& addr )   { address_at = addr; }
-  void set_return_addr (const VA& raddr)   { return_addr = raddr; }
 
 private:
 
+  bool use_indirection;
   VA address_at;
+  VA indirect_address_at;
   VA return_addr;
   IT trap_instruction;
   IT orig_instruction;

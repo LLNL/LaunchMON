@@ -26,11 +26,13 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Mar 06 2008 DHA: Added delay symbol table parsing for libc 
+ *                         and libpthread.
  *        Feb 09 2008 DHA: Added LLNS Copyright 
  *        May 22 2006 DHA: Added exception support for the machine layer
  *        Feb 06 2006 DHA: del support 
- *        Jan 11 2006 DHA: Created file.          
- */ 
+ *        Jan 11 2006 DHA: Created file.
+ */
 
 #ifndef SDBG_BASE_MACH_IMPL_HXX 
 #define SDBG_BASE_MACH_IMPL_HXX 1
@@ -481,12 +483,12 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_pid ( bool context_sensitive )
 	}
 
       if ( thrlist.find(key_to_thread_context) != thrlist.end() ) 
-	{    
+	{
 	  retpid = thrlist.find(key_to_thread_context)->second->thr2pid();
-	}    
+	}
     }
   else 
-    {    
+    {
       retpid = get_master_thread_pid();
     }
 
@@ -498,10 +500,9 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_pid ( bool context_sensitive )
     basic_init
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-bool process_base_t<SDBG_DEFAULT_TEMPLPARAM>::protected_init ( const std::string& mi, 
-							       const std::string& md, 
-							       const std::string& mt, 
-							       const std::string& mc)
+bool process_base_t<SDBG_DEFAULT_TEMPLPARAM>::protected_init 
+( const std::string& mi, const std::string& md,
+  const std::string& mt, const std::string& mc)
 {
   try
     {
@@ -513,7 +514,9 @@ bool process_base_t<SDBG_DEFAULT_TEMPLPARAM>::protected_init ( const std::string
 	  myimage->read_linkage_symbols();
 	}
       else
-	rc = false;      
+        {
+	  rc = false;
+        }
 
       if (mydynloader_image) 
 	{
@@ -521,23 +524,29 @@ bool process_base_t<SDBG_DEFAULT_TEMPLPARAM>::protected_init ( const std::string
 	  mydynloader_image->read_linkage_symbols();
 	}
       else
-	rc = false;
+        {
+	  rc = false;
+        }
 
       if (mythread_lib_image)	
 	{
 	  mythread_lib_image->init();
 	  mythread_lib_image->read_linkage_symbols();
 	}
-      else 
-	rc = false;
+      else
+        {
+	  rc = false;
+        }
 
       if (mylibc_image) 
 	{               
 	  mylibc_image->init();
 	  mylibc_image->read_linkage_symbols();
 	}
-      else    
-	rc = false;     
+      else
+        {
+	  rc = false;
+        } 
 
       return rc;
     }
@@ -561,11 +570,7 @@ bool process_base_t<SDBG_DEFAULT_TEMPLPARAM>::protected_init ( const std::string
 
       bool rc = true;
       string loader_loc;
-      string libpthread_loc;
-      string libc_loc;
-      bool is_threaded = false;
       bool found_interp = false;
-      bool found_runtime = false;
 
       if (myimage) 
 	{
@@ -573,35 +578,22 @@ bool process_base_t<SDBG_DEFAULT_TEMPLPARAM>::protected_init ( const std::string
 	  myimage->init();
 	  myimage->read_linkage_symbols();
 
-	  myimage->fetch_DSO_info ( loader_loc, 
-				    found_interp, 
-				    libpthread_loc,
-				    is_threaded,
-				    libc_loc,
-				    found_runtime );
+	  myimage->fetch_DSO_info ( loader_loc, found_interp );
 	}
       else
-	rc = false;      
+        {
+	  rc = false;
+        }
   
       if (found_interp && mydynloader_image) 
-	{    
+	{
 	  mydynloader_image->init(loader_loc);
 	  mydynloader_image->read_linkage_symbols();
-	}  
+	}
       else
-	rc = false;   
-
-      if (is_threaded && mythread_lib_image) 
-	{    
-	  mythread_lib_image->init(libpthread_loc);
-	  mythread_lib_image->read_linkage_symbols();
-	}
-
-      if (found_runtime && mylibc_image) 
-	{     
-	  mylibc_image->init(libc_loc);
-	  mylibc_image->read_linkage_symbols();
-	}
+        {
+	  rc = false;
+        }
 
       return rc;
     }
@@ -634,13 +626,13 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::make_context ( const int key )
       rc = true;
     }
   else 
-    {    
+    {
       e = func + 
 	"no thread with the key value found ";
       throw (machine_exception_t(e));
     }
 
-  return rc;    
+  return rc;
 }
 
 
@@ -662,7 +654,7 @@ bool process_base_t<SDBG_DEFAULT_TEMPLPARAM>::check_and_undo_context ( const int
   string e;
   string func = "[process_base_t::check_and_undo_context]";
   if (key_to_thread_context == key) 
-    {      
+    {
       key_to_thread_context = THREAD_KEY_INVALID;
       rc = true;
     }
@@ -672,7 +664,7 @@ bool process_base_t<SDBG_DEFAULT_TEMPLPARAM>::check_and_undo_context ( const int
 	"key_to_thread_context is different from the passed key";
       throw (machine_exception_t(e));
     }
-  return rc;    
+  return rc;
 }
 
 //! PROTECTED: process_base_t
@@ -691,29 +683,29 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_gprset
   
 
   if (context_sensitive) 
-    {    
+    {
       if (key_to_thread_context == THREAD_KEY_INVALID) 
 	{ 
 	  return NULL;
 	}
 
       if ( thrlist.find(key_to_thread_context) != thrlist.end() ) 
-	{    
+	{
 	  return (thrlist.find(key_to_thread_context)->second->get_gprset());
 	}
     }
   else 
-    {         
+    {
       for (tpos=thrlist.begin(); tpos!=thrlist.end(); tpos++) 
-	{	  
+	{
 	  if (tpos->second->get_master_thread()) 
-	    {     
+	    {
 	      return (tpos->second->get_gprset());
 	    }
-	}    
+	}
     }
-            
-  return NULL;  
+
+  return NULL;
 }
 
 
@@ -732,23 +724,23 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_fprset ( bool context_sensitive )
     tpos;
 
   if (context_sensitive) 
-    {    
+    {
       if (key_to_thread_context == THREAD_KEY_INVALID) 	
-	return NULL;	
+	return NULL;
 
       if ( thrlist.find(key_to_thread_context) != thrlist.end() )
 	return (thrlist.find(key_to_thread_context)->second->get_fprset());   
     }
   else 
-    {      
+    {
       for (tpos=thrlist.begin(); tpos!=thrlist.end(); tpos++) 
 	{
-	  if (tpos->second->get_master_thread()) 	    
-	    return (tpos->second->get_fprset());     
+	  if (tpos->second->get_master_thread())
+	    return (tpos->second->get_fprset());
 	}
     }
-            
-  return NULL;  
+
+  return NULL;
 }
 
 #endif // SDBG_BASE_MACH_IMPL_HXX

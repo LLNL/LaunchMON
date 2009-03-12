@@ -385,15 +385,14 @@ linux_x86_process_t::launcher_symbols_init()
   set_launch_proctable_size (LAUNCH_PROCTABLE_SIZE);
   set_launch_acquired_premain (LAUNCH_ACQUIRED_PREMAIN);
 
-  set_dynloader_iden(LOADER_IDEN);
   set_loader_breakpoint_sym(LOADER_BP_SYM);
   set_loader_r_debug_sym(LOADER_R_DEBUG);
   set_loader_start_sym(LOADER_START);
-  set_libc_iden(LIBC_IDEN);
+  //set_libc_iden(LIBC_IDEN);
   set_fork_sym(FORK_SYM);
   //set_fork_sym(VFORK_SYM);
 
-  set_libpthread_iden(LIBPTHREAD_IDEN);
+  //set_libpthread_iden(LIBPTHREAD_IDEN);
   set_thread_creation_sym (NPTL_CREATE_SYM);
   set_thread_death_sym (NPTL_DEATH_SYM);
   set_resource_handler_sym(RESOURCE_HANDLER_SYM);
@@ -827,20 +826,16 @@ linux_ppc_process_t::launcher_symbols_init()
   set_launch_acquired_premain (LAUNCH_ACQUIRED_PREMAIN);
   set_launch_exec_path (LAUNCH_EXEC_PATH);
   set_launch_server_args (LAUNCH_SERVER_ARGS);
-  set_dynloader_iden(LOADER_IDEN);
   set_loader_breakpoint_sym(LOADER_BP_SYM);
   set_loader_r_debug_sym(LOADER_R_DEBUG);
   set_loader_start_sym(LOADER_START);
-  set_libc_iden(LIBC_IDEN);
   set_fork_sym(FORK_SYM);
-
-  set_libpthread_iden(LIBPTHREAD_IDEN);
   set_thread_creation_sym (NPTL_CREATE_SYM);
   set_thread_death_sym (NPTL_DEATH_SYM);
   set_resource_handler_sym(RESOURCE_HANDLER_SYM);
 }
- 
- 
+
+
 //! PUBLIC: linux_ppc_process_t
 /*!
     basic_init

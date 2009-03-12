@@ -38,7 +38,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @WITH_GCRYPT_TRUE@am__append_1 = -I$(top_srcdir)/@GCRYPTLOC@ -I$(top_srcdir)/@GPGERRLOC@
-@WITH_CIOD_TRUE@am__append_2 = -I$(top_srcdir)/@CIODLOC@
+@WITH_CIOD_TRUE@am__append_2 = -I@ARCHHEADER@ -I$(top_srcdir)/@CIODLOC@
 bin_PROGRAMS = fe_jobsnap$(EXEEXT) be_jobsnap$(EXEEXT) \
 	LE_model_checker$(EXEEXT) fe_launch_smoketest$(EXEEXT) \
 	fe_launch_usrpayload_test$(EXEEXT) \
@@ -57,7 +57,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/x_ac_bootfabric.m4 \
 	$(top_srcdir)/config/x_ac_os_isa.m4 \
 	$(top_srcdir)/config/x_ac_rm.m4 \
 	$(top_srcdir)/config/x_ac_testnnodes.m4 \
-	$(top_srcdir)/config/x_ac_thread_db.m4 \
 	$(top_srcdir)/config/x_ac_tracing_cost.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -152,6 +151,8 @@ AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
 AR = @AR@
+ARCHHEADER = @ARCHHEADER@
+ARCHLIB = @ARCHLIB@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -188,6 +189,7 @@ LDFLAGS = @LDFLAGS@
 LIBBITSUFFIX = @LIBBITSUFFIX@
 LIBCIOD = @LIBCIOD@
 LIBCOMM = @LIBCOMM@
+LIBDL = @LIBDL@
 LIBELF = @LIBELF@
 LIBGCRYPT = @LIBGCRYPT@
 LIBGPGERR = @LIBGPGERR@
@@ -195,7 +197,6 @@ LIBOBJS = @LIBOBJS@
 LIBPTHREAD = @LIBPTHREAD@
 LIBRT = @LIBRT@
 LIBS = @LIBS@
-LIBTHR_DB = @LIBTHR_DB@
 LIBTOOL = @LIBTOOL@
 LMONAPILOC = @LMONAPILOC@
 LMONENABSLOC = @LMONENABSLOC@
@@ -255,6 +256,7 @@ build_cpu = @build_cpu@
 build_os = @build_os@
 build_vendor = @build_vendor@
 datadir = @datadir@
+envcmd = @envcmd@
 exec_prefix = @exec_prefix@
 host = @host@
 host_alias = @host_alias@
@@ -274,9 +276,11 @@ prefix = @prefix@
 program_transform_name = @program_transform_name@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+sshcmd = @sshcmd@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+tvcmd = @tvcmd@
 INCLUDES = -I$(top_srcdir)/launchmon/src -I$(top_srcdir)/@LMONAPILOC@ \
 	$(am__append_1) $(am__append_2)
 LE_model_checker_SOURCES = LE_model_checker.c

@@ -45,10 +45,6 @@
 #include "lmon_api/lmon_proctab.h"
 
 
-const int MAX_LIB_PATH    = 128;
-const int MAX_STRING_SIZE = PATH_MAX;
-
-
 //! tracing_method 
 /*!
     tracing method enum for fork and vfork event tracing

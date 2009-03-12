@@ -26,6 +26,17 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Mar 09 2009 DHA: Removed an equality check between the thread_db-provided 
+ *                         thread creation breakpoint address and the one that 
+ *                         the pthread library itself provides for the sake of simplicity.
+ *                         It turns out the one that thread_db provides gives 
+ *                         different addresses depending on the mode in which 
+ *                         the thread_db library is linked.
+ *                         o runtime linking --> address of the function itself
+ *                         o loadtime linking --> address of a global data variable
+ *                         that has the address of this function.
+ *        Mar 06 2009 DHA: Added indirect breakpoint support 
+ *                         DLL support for the thread debug library
  *        Sep 25 2008 DHA: Fixed a compatibility issue against thread_db 
  *                         in the 2.6.18 Linux kernel
  *        Feb 09 2008 DHA: Added LLNS Copyright
@@ -49,14 +60,22 @@
 
 #include "sdbg_linux_ttracer.hxx"
 
+////////////////////////////////////////////////////////////////////
+//
+// Static member definitions
+//
+//
 template <typename VA, typename WT, typename IT, typename GRS, typename FRS>
 std::string 
 linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::MODULENAME 
      = self_trace_t::thread_tracer_module_trace.module_name;
 
-
 template <typename VA, typename WT, typename IT, typename GRS, typename FRS>
 td_thr_events_t linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::thread_event_mask;
+
+template <typename VA, typename WT, typename IT, typename GRS, typename FRS>
+linux_thr_db linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::linux_thread_callback_t::td;
+
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -91,13 +110,14 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_init (
 #if THREAD_DEATH_EVENT_NEEDED
     breakpoint_base_t<VA, IT>* tdbp = NULL;  
 #endif  
-    struct ps_prochandle ph_p;   
-  
+    struct ps_prochandle ph_p;
+    char *cppath, *dirpath_libpthread; 
+
 
     {
       self_trace_t::trace ( LEVELCHK(level2), 
-			    MODULENAME,0, 
-			    "thread tracer initialization begins");
+        MODULENAME,0, 
+	"thread tracer initialization begins");
     }
 
 
@@ -106,62 +126,74 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_init (
 
     if ( (thrlib_im == NULL) || 
 	 (thrlib_im && 
-	  thrlib_im->get_image_base_address() == SYMTAB_UNINIT_ADDR)) {      
+	  thrlib_im->get_image_base_address() == SYMTAB_UNINIT_ADDR)) {
       e = func +
 	" Thread library image or its base addr has not been set.";
       throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);
     }
 
-    if ( ( te = td_init () ) != TD_OK ) {
+    cppath = strdup(thrlib_im->get_path().c_str());
+    dirpath_libpthread = dirname(cppath);
+
+    if (!linux_thread_callback_t::td.bind(string(dirpath_libpthread))) {
+      e = func +
+	" Fails to dlopen and bind thread debug library.";
+      throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);
+    }
+
+    if ( ( te = linux_thread_callback_t::td.dll_td_init () ) 
+         != TD_OK ) {
       e = func +
 	" td_init is not TD_OK.";
-      throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);          
+      throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);
     }
 
     ph_p.p = &p;
-    if ( ( te = td_ta_new (&ph_p, &ta_pp)) != TD_OK ) {
+    if ( ( te = linux_thread_callback_t::td.dll_td_ta_new (&ph_p, &ta_pp)) 
+	 != TD_OK ) {
       e = func +
 	" td_ta_new is not TD_OK.";
-      throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);             
+      throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);
     }
 
     td_event_emptyset ( &thread_event_mask );
     td_event_addset   ( &thread_event_mask, TD_CREATE );
 //    td_event_addset   ( &thread_event_mask, TD_DEATH );
-    td_ta_set_event   ( ta_pp, &thread_event_mask );
+    linux_thread_callback_t::td.dll_td_ta_set_event( ta_pp, 
+      &thread_event_mask );
 
-    if ( ( te = td_ta_thr_iter ( ta_pp, 			      
-       linux_thread_callback_t::ttracer_thread_iter_callback,
-				 (void*) (&p),
-				 TD_THR_ANY_STATE, 
-				 TD_THR_LOWEST_PRIORITY, 
-				 TD_SIGNO_MASK, 
-				 TD_THR_ANY_USER_FLAGS)) 
-                                                != TD_OK ) {
+    te = linux_thread_callback_t::td.dll_td_ta_thr_iter ( ta_pp,
+            linux_thread_callback_t::ttracer_thread_iter_callback,
+	    (void*) (&p),
+	    TD_THR_ANY_STATE, 
+	    TD_THR_LOWEST_PRIORITY, 
+	    TD_SIGNO_MASK, 
+	    TD_THR_ANY_USER_FLAGS);
+
+    if (te != TD_OK) {
       e = func +
 	" td_ta_thr_iter is not TD_OK.";
-      throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);         
-    } 
-    if ( ( te = td_ta_event_addr (ta_pp, 
-				  TD_CREATE, 
-				  &event_notify) ) 
-	                                != TD_OK ) {
+      throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);
+    }
+
+    te = linux_thread_callback_t::td.dll_td_ta_event_addr (ta_pp, 
+            TD_CREATE, &event_notify);
+
+    if ( te != TD_OK ) {
 	 e = func +
 	   " td_ta_event_addr TD_CREATE is not TD_OK.";	 
-	 throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);         
+	 throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);
     }
 
     if ( event_notify.type == NOTIFY_BPT ) {   
-      bp = new linux_breakpoint_t();      
+      bp = new linux_breakpoint_t();
       const symbol_base_t<VA>& thread_create_bp_sym = 
-	thrlib_im->get_a_symbol (p.get_thread_creation_sym());    
-      if ((VA)event_notify.u.bptaddr 
-	  != thread_create_bp_sym.get_relocated_address()) {   
-	e = func +
-	  " Thread create BP's addresses do not match.";	 
-	throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);         
-      }
-      bp->set_address_at ( (VA) event_notify.u.bptaddr );
+	thrlib_im->get_a_symbol (p.get_thread_creation_sym());
+
+      bp->set_address_at (thread_create_bp_sym.get_relocated_address());
+#if RM_BG_MPIRUN
+      bp->set_use_indirection();
+#endif
       bp->status = breakpoint_base_t<VA, IT>::set_but_not_inserted;
       p.set_thread_creation_hidden_bp(bp);
       pt->insert_breakpoint ( p, 
@@ -170,36 +202,32 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_init (
 
       {
 	self_trace_t::trace ( LEVELCHK(level2), 
-			      MODULENAME,0, 
-			      "thread creation bp inserted [0x%8x]",
-			      event_notify.u.bptaddr);
+	  MODULENAME,0, 
+	  "Thread creation bp inserted [0x%8x]",
+	  event_notify.u.bptaddr);
       }
 
     }
 
 #if THREAD_DEATH_EVENT_NEEDED
-    if ( ( te = td_ta_event_addr ( ta_pp, 
-				   TD_DEATH, 
-				   &event_notify) ) 
-                                          != TD_OK) {
+    te = linux_thread_callback_t::td.dll_td_ta_event_addr ( ta_pp,
+            TD_DEATH, &event_notify);
+
+    if (te != TD_OK) {
       e = func +
 	" td_ta_event_addr TD_DEATH is not TD_OK.";	 
-      throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);      
+      throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);
     }
 
     if ( event_notify.type == NOTIFY_BPT ) {   
-      tdbp = new linux_breakpoint_t();      
+      tdbp = new linux_breakpoint_t();
       const symbol_base_t<VA>& thread_death_bp_sym = 
 	thrlib_im->get_a_symbol (p.get_thread_death_sym());
-    
-      if ((VA)event_notify.u.bptaddr 
-	  != thread_death_bp_sym.get_relocated_address()) {
-	e = func +
-	  " Thread death BP's addresses do not match.";	 
-	throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);   
-      }
 
-      tdbp->set_address_at( (VA) event_notify.u.bptaddr );
+#if WITH_INDIRECT_BP
+      tdbp->set_use_indirection();
+#endif
+      tdbp->set_address_at(thread_create_bp_sym.get_relocated_address());
       tdbp->status = breakpoint_base_t<VA, IT>::set_but_not_inserted;
       p.set_thread_death_hidden_bp(tdbp);
       pt->insert_breakpoint ( p, 
@@ -211,13 +239,13 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_init (
   } 
   catch ( symtab_exception_t e ) {
     e.report();
-    abort();    
+    abort();
   }
   catch ( tracer_exception_t e ) {
     e.report();
     abort();
-  }   
-}  
+  }
+}
 
 
 //! PUBLIC: ttracer_attach
@@ -239,48 +267,54 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_attach (
     td_err_e te;
     td_thragent_t* new_ta;
     struct ps_prochandle ph_p;
-  
+
     ph_p.p = &p;
 
 
     {
       self_trace_t::trace ( LEVELCHK(level2), 
-			    MODULENAME,0, 
-			    "a thread newly created and ttracer_attach event handler invoked");
+	MODULENAME,0, 
+	"A thread newly created and ttracer_attach event handler invoked");
     }
 
+    te = linux_thread_callback_t::td.dll_td_ta_new (&ph_p, &new_ta);
+    if (te != TD_OK) {
+      e = func +
+	" td_ta_thr_iter is not TD_OK.";
+      throw thread_tracer_exception_t (e, SDBG_TTRACE_FAILED);
+    }
 
-    if ( ( te = td_ta_new (&ph_p, &new_ta)) != TD_OK) {
+    te = linux_thread_callback_t::td.dll_td_ta_get_nthreads (new_ta, &nthr);
+    if (te != TD_OK) {
       e = func +
 	" td_ta_thr_iter is not TD_OK.";
-      throw thread_tracer_exception_t (e, SDBG_TTRACE_FAILED);    
+      throw thread_tracer_exception_t (e, SDBG_TTRACE_FAILED);
     }
-    if ( ( te = td_ta_get_nthreads (new_ta, &nthr) ) != TD_OK) {
+
+    te = linux_thread_callback_t::td.dll_td_ta_thr_iter ( new_ta,
+            linux_thread_callback_t::ttracer_thread_iter_attach_callback,
+	    (void*) (&p),
+	    TD_THR_ANY_STATE,
+	    TD_THR_LOWEST_PRIORITY,
+	    TD_SIGNO_MASK,
+	    TD_THR_ANY_USER_FLAGS);
+
+    if ( te != TD_OK) {
       e = func +
 	" td_ta_thr_iter is not TD_OK.";
-      throw thread_tracer_exception_t (e, SDBG_TTRACE_FAILED);             
+      throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);
     }
-    if ( ( te = td_ta_thr_iter ( new_ta, 
-       linux_thread_callback_t::ttracer_thread_iter_attach_callback,
-				 (void*) (&p), 
-				 TD_THR_ANY_STATE, 
-				 TD_THR_LOWEST_PRIORITY, 
-				 TD_SIGNO_MASK, 
-				 TD_THR_ANY_USER_FLAGS)) != TD_OK) {
-      e = func +
-	" td_ta_thr_iter is not TD_OK.";
-      throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);           
-    }
+
     return SDBG_TTRACE_OK;
   }
   catch ( symtab_exception_t e ) {
     e.report();
-    abort();    
+    abort();
   }
   catch ( tracer_exception_t e ) {
     e.report();
     abort();
-  }     
+  }
 }
 
 #endif // SDBG_LINUX_TTRACER_IMPL_HXX 

@@ -26,7 +26,9 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
- *        Mar  21 2008 DHA: Created file.          
+ *        Mar 04 2009 DHA: Deprecated function definitions in favor of
+ *                         ones in debugger_interface.h 
+ *        Mar 21 2008 DHA: Created file.
  *
  */
 
@@ -48,13 +50,14 @@
 
 #include "debugger_interface.h"
 
+#if 0
 using namespace DebuggerInterface;
 
 static uint32_t seqnum = 0;
 
 
 bool 
-BGL_Debugger_Msg::writeOnFd (int fd, BGL_Debugger_Msg &msg)
+BG_Debugger_Msg::writeOnFd (int fd, BGL_Debugger_Msg &msg)
 {
   int rc;
 
@@ -81,7 +84,7 @@ BGL_Debugger_Msg::writeOnFd (int fd, BGL_Debugger_Msg &msg)
 
 
 bool 
-BGL_Debugger_Msg::readFromFd (int fd, BGL_Debugger_Msg &msg)
+BG_Debugger_Msg::readFromFd (int fd, BGL_Debugger_Msg &msg)
 {
    int rc;
 
@@ -103,3 +106,4 @@ BGL_Debugger_Msg::readFromFd (int fd, BGL_Debugger_Msg &msg)
    
    return true;
 }
+#endif

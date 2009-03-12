@@ -230,7 +230,7 @@ signal_handler_t<SDBG_DEFAULT_TEMPLPARAM>::sighandler ( int sig )
      self_trace_t::trace ( LEVELCHK(quiet), 
  	                   MODULENAME,
 			   0,
-			   "Aborting...");    
+			   "Aborting...");
   }
 
   abort();

@@ -26,6 +26,12 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Mar 06 2009 DHA: Folded in Mark O'Connor's patch that 
+ *                         allows use of dynamic symbol table 
+ *                         in the absence of reguar linkage symbol 
+ *                         table.
+ *                         Changed fetch_DSO_info such that it 
+ *                         only cares about the runtime linker SO.
  *        Feb 09 2008 DHA: Added LLNS Copyright
  *        Jan 09 2006 DHA: Linux X86/64 support
  *        Jul 03 2006 DHA: Added some self tracing support
@@ -36,7 +42,7 @@
  *                         table class. Note that LINUX only 
  *                         supports ELF as the file format and 
  *                         DWARF as the debug info format.
- *                   
+ *
  */ 
 
 #ifndef SDBG_LINUX_SYMTAB_IMPL_HXX
@@ -305,51 +311,51 @@ throw(symtab_exception_t)
 {
   using namespace std;
 
-  string e;  
+  string e;
   string func = "[elf_wrapper::init]";
   Elf_Kind kind;
   Elf *arf;
 
   if ( elf_version(EV_CURRENT) == EV_NONE ) 
-    {       
+    {
       e = func + " elf_version failed";
-      throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);       
+      throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);
     }
-  
+
   if ( ( fd = open (exec.c_str(), O_RDONLY)) == -1 ) 
-    {    
+    {
       e = func + " couldn't open executable " + exec;
-      throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);   
+      throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);
     }
-  
+
   if ( ( arf = elf_begin (fd, ELF_C_READ, NULL)) == NULL ) 
     {
       e = func + " elf_begin failed ";
-      throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);       
+      throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);
     }
 
-  if ( ( kind = elf_kind (arf)) != ELF_K_ELF )       
-    {  
+  if ( ( kind = elf_kind (arf)) != ELF_K_ELF )
+    {
       e = func + " elf_kind failed ";
-      throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);      
+      throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);
     }
 
-  if ( ( elf_handler = elf_begin (fd, ELF_C_READ, arf)) == NULL )  
+  if ( ( elf_handler = elf_begin (fd, ELF_C_READ, arf)) == NULL )
     {
       e = func + " elf_begin failed ";
-      throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);         
+      throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);
     }
-  
+
   return SDBG_SYMTAB_OK;
 }
 
 
 //!  PUBLIC: 
 /*!  elf_wrapper::init(std::string& lib)
-      
-    
+
+
 */
-symtab_error_e 
+symtab_error_e
 elf_wrapper::init ( std::string& lib )
 {
   exec = lib;
@@ -390,7 +396,7 @@ symtab_error_e elf_wrapper::finalize ()
 
 //!  PUBLIC: 
 /*!  linux_image_t<> constructors
-          
+
 */
 template <LINUX_IMAGE_TEMPLATELIST>
 linux_image_t<LINUX_IMAGE_TEMPLPARAM>::linux_image_t ()
@@ -430,30 +436,30 @@ linux_image_t<LINUX_IMAGE_TEMPLPARAM>::~linux_image_t ()
 template <LINUX_IMAGE_TEMPLATELIST>
 symtab_error_e linux_image_t<LINUX_IMAGE_TEMPLPARAM>::init()
 throw(symtab_exception_t)
-{  
+{
   using namespace std;
 
   elf_wrapper* elfw;
   string e;  
   string func = "[linux_image_t::init]";
-  
+
   if (get_base_image_name() == SYMTAB_UNINIT_STRING) 
-    {    
+    {
       e = func + 
 	" Attempt to call init before setting the base image name. ";
-      throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);    
+      throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);
     }
 
   elfw = new elf_wrapper(get_path());  
 
   if (elfw->init() != SDBG_SYMTAB_OK) 
-    {      
+    {
       e = func + " ELF library init failed.";
-      throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);        
+      throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);
     }
   set_native_exec_handler(elfw);
-  
-  return SDBG_SYMTAB_OK;    
+
+  return SDBG_SYMTAB_OK;
 }
 
 
@@ -479,10 +485,11 @@ throw(symtab_exception_t)
   Elf32_Sym *first_sym, *last_sym;
 #endif
   Elf_Data *elf_data = NULL;
-  Elf_Scn* symtab_sect, *sect;
-  sect = 0;
-  symtab_sect = 0;
-  Elf* elf_h = get_native_exec_handler()->get_elf_handler();
+  Elf_Scn *symtab_sect=0;
+  Elf_Scn *sect=0;
+  Elf_Scn *dynsym_sect=0;
+
+  Elf *elf_h = get_native_exec_handler()->get_elf_handler();
 
   {
     self_trace_t::trace ( LEVELCHK(level2), 
@@ -501,23 +508,33 @@ throw(symtab_exception_t)
 	{
 	  if ( shdr->sh_type == SHT_SYMTAB ) 
 	    {
-	      symtab_sect = sect;              
+	      symtab_sect = sect;
 	      break;
 	    }
+	  else if ( shdr->sh_type == SHT_DYNSYM )
+            {
+	      dynsym_sect = sect;
+            }
 	}
     }
 
-  if(symtab_sect == 0) 
+  if (symtab_sect == 0)
+    symtab_sect = dynsym_sect;
+
+  if (symtab_sect == 0) 
     {
-      e = func + " No symbol table section is found. ";
-      throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);    
+      e = func 
+          + " No symbol table section is found in "
+          + get_base_image_name()
+          + " ";
+      throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);
     }
 
   if ( ( ( elf_data = elf_getdata ( symtab_sect, elf_data )) == NULL) 
        || elf_data->d_size == 0 ) 
-    {        
+    {
       e = func + " ELF data are not valid.";
-      throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);       
+      throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);
     }
 
 #if BIT64 
@@ -533,29 +550,29 @@ throw(symtab_exception_t)
       char* symname = elf_strptr(elf_h, 
 				 shdr->sh_link, 
 				 (size_t) first_sym->st_name); 
-        
+
       if ( symname != 0 && (strcmp(symname, "") != 0) 
 	   && (first_sym->st_value 
 	       != 0)) 
-	{      
+	{
 	  const string ssym(symname);
 
 	  linkage_symbol_t<VA>* a_linksym 
-	         =  new linkage_symbol_t<VA>( ssym, 
-					      get_base_image_name(), 
-					      (const VA) first_sym->st_value,
-					      (const VA) SYMTAB_UNINIT_ADDR);
+	    =  new linkage_symbol_t<VA>( ssym,
+		     get_base_image_name(),
+		     (const VA) first_sym->st_value,
+		     (const VA) SYMTAB_UNINIT_ADDR);
 
 	  a_linksym->set_binding(decode_binding(first_sym->st_info));	  
 	  a_linksym->set_visibility(decode_visibility(first_sym->st_other));
 	  a_linksym->set_type(decode_type(first_sym->st_info));
           /* TODO: a tool says keystr is leaked, confirm if it really does */
-	  string* keystr = new string(symname);        
+	  string* keystr = new string(symname);
 
 	  get_linkage_symtab().insert ( make_pair( (*keystr), 
 						   (symbol_base_t<VA>*) a_linksym));
-	}                    
-      
+	}
+
       first_sym++;
     } 
   
@@ -570,12 +587,8 @@ throw(symtab_exception_t)
 
 template <LINUX_IMAGE_TEMPLATELIST>
 symtab_error_e 
-linux_image_t<LINUX_IMAGE_TEMPLPARAM>::fetch_DSO_info( std::string& where_is_interpreter,
-						       bool& found_interp, 
-						       std::string& where_is_pthread,
-						       bool& is_threaded,
-						       std::string& where_is_libc,
-						       bool& found_runtime)
+linux_image_t<LINUX_IMAGE_TEMPLPARAM>::fetch_DSO_info
+( std::string& where_is_interpreter, bool& found_interp )
   throw(symtab_exception_t)
 {
   using namespace std;
@@ -602,7 +615,7 @@ linux_image_t<LINUX_IMAGE_TEMPLPARAM>::fetch_DSO_info( std::string& where_is_int
 #endif
   int sz;
 
-  sect = 0;  
+  sect = 0;
   Elf* elf_h = get_native_exec_handler()->get_elf_handler();
  
   while ( (sect = elf_nextscn(elf_h, sect)) != NULL ) 
@@ -619,7 +632,7 @@ linux_image_t<LINUX_IMAGE_TEMPLPARAM>::fetch_DSO_info( std::string& where_is_int
 
 	      if ( ( ( elf_data = elf_getdata ( sect, elf_data )) == NULL) 
 		   || elf_data->d_size == 0 ) 
-		{        
+		{
 		  e = func + " ELF data are not valid.";
 		  throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);       
 		}
@@ -632,7 +645,7 @@ linux_image_t<LINUX_IMAGE_TEMPLPARAM>::fetch_DSO_info( std::string& where_is_int
 		  strtab =  (char*) elf_data->d_buf;
 		  strtab_size = elf_data->d_size;
 		} 
-	      else {	  	  
+	      else {
 		if ( strcmp(".shstrtab", 
 			    ((char*)elf_data->d_buf) + shdr->sh_name) == 0) 
 		  {	    
@@ -651,7 +664,7 @@ linux_image_t<LINUX_IMAGE_TEMPLPARAM>::fetch_DSO_info( std::string& where_is_int
     }
   
    while ( (sect = elf_nextscn(elf_h, sect)) != NULL ) 
-     {    
+     {
 #if BIT64 
        if ( (shdr = elf64_getshdr (sect)) == NULL )
          continue;
@@ -662,145 +675,84 @@ linux_image_t<LINUX_IMAGE_TEMPLPARAM>::fetch_DSO_info( std::string& where_is_int
 
        switch ( shdr->sh_type ) 
 	 {
-	     
-	 case SHT_DYNAMIC:
-	   elf_data = 0;
-	   if ( ( ( elf_data = elf_getdata ( sect, elf_data )) == NULL) 
-		|| elf_data->d_size == 0 ) 
-	     {        
-	       e = func + " ELF data are not valid.";
-	       throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);       
-	     }
-	   
-	   elf_data_dso = elf_data;
-#if BIT64 
-           first_dso = (Elf64_Dyn*)elf_data_dso->d_buf;
-#else
-           first_dso = (Elf32_Dyn*)elf_data_dso->d_buf;
-#endif
-                                                                                                            
-#if BIT64 
-           for (sz=0; sz < int(elf_data->d_size); sz += sizeof(Elf64_Dyn))
-#else
-           for (sz=0; sz < int(elf_data->d_size); sz += sizeof(Elf32_Dyn))
-#endif
-	     {
-	       if ( first_dso->d_tag == DT_NEEDED ) 
-		 {	     	  
-		   if (strncmp("libpthread.", strtab+first_dso->d_un.d_val, 
-			       strlen("libpthread.")) == 0 ) 
-		     {
-
-		       {
-			 self_trace_t::trace ( LEVELCHK(level2), 
-		           MODULENAME, 0, 
-		           "found libpthread in the dyn section [%s]",
-		           (char*) strtab+first_dso->d_un.d_val);    
-		       }
-
-
-		       is_threaded = true;
-		       where_is_pthread = STANDARD_LIBLOC;
-		       where_is_pthread += "/";
-		       where_is_pthread += (strtab+first_dso->d_un.d_val);
-		     }
-
-		   if (strncmp("libc.", strtab+first_dso->d_un.d_val, 
-			       strlen("libc.")) == 0 ) 
-		     {
-
-		       {
-			 self_trace_t::trace ( LEVELCHK(level2), 
-		           MODULENAME, 0, 
-			   "found libc in the dyn section [%s]",
-			   (char*) strtab+first_dso->d_un.d_val);    
-		       }
-
-		       found_runtime = true;
-		       where_is_libc = STANDARD_LIBLOC;
-		       where_is_libc += "/";
-		       where_is_libc += (strtab+first_dso->d_un.d_val);
-		     }
-
-		   first_dso++;
-		 }
-	     }  	 
-	   break;
-
 	 case SHT_PROGBITS:
-	   if ( strcmp(".interp", sh_strtab + shdr->sh_name) == 0 ) 
-	     {
-	       elf_data = 0;
-	       if ( ( ( elf_data = elf_getdata ( sect, elf_data )) == NULL) 
-		    || elf_data->d_size == 0 ) 
-		 {        
-		   e = func + " ELF data are not valid.";
-		   throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);       
-		 }
+           {
+	     if ( strcmp(".interp", sh_strtab + shdr->sh_name) == 0 ) 
+	       {
+	         elf_data = 0;
+	         if ( ( ( elf_data = elf_getdata ( sect, elf_data )) == NULL) 
+		      || elf_data->d_size == 0 ) 
+		   {
+		     e = func + " ELF data are not valid.";
+		     throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);       
+		   }
 
-	       interp_sect = elf_data;
-	       where_is_interpreter = (char*) interp_sect->d_buf;
-	       
-	       struct stat fchk_buf;	   
-	       
-	       if (lstat(where_is_interpreter.c_str(), &fchk_buf) != 0) 
-		 {
-		   e = func + " interpreter path ("
-		     + where_is_interpreter + ") is invalid.";
-		   throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);  
-		 }
-	     	  
-	       if (!S_ISLNK(fchk_buf.st_mode) && S_ISREG(fchk_buf.st_mode)) 		 
-		 found_interp = true;	     		
-	       else if (S_ISLNK(fchk_buf.st_mode)) 
-		 {	     
-		   char realpath[PATH_MAX];
-		   char tmpath[PATH_MAX];
-		   int cnt;
+	         interp_sect = elf_data;
+	         where_is_interpreter = (char*) interp_sect->d_buf;
 
-		   strcpy(tmpath, where_is_interpreter.c_str());    	     
+	         struct stat fchk_buf;	   
+
+	         if (lstat(where_is_interpreter.c_str(), &fchk_buf) != 0) 
+		   {
+		     e = func + " interpreter path ("
+		       + where_is_interpreter + ") is invalid.";
+		     throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);  
+		   }
+
+	         if (!S_ISLNK(fchk_buf.st_mode) && S_ISREG(fchk_buf.st_mode)) 		 
+		   found_interp = true;	     		
+	         else if (S_ISLNK(fchk_buf.st_mode)) 
+		   {	     
+		     char realpath[PATH_MAX];
+		     char tmpath[PATH_MAX];
+		     int cnt;
+
+		     strcpy(tmpath, where_is_interpreter.c_str());    	     
 		   
-		   while (S_ISLNK(fchk_buf.st_mode)) 
-		     {	     
-		       if ( (cnt = readlink(tmpath, realpath, PATH_MAX)) == -1 ) 
-			 {
-			   e = func + " readlink failed ";
-			   throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);  
-			 }
+		     while (S_ISLNK(fchk_buf.st_mode)) 
+		       {	     
+		         if ( (cnt = readlink(tmpath, realpath, PATH_MAX)) == -1 ) 
+			   {
+			     e = func + " readlink failed ";
+			     throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);  
+			   }
 		       
-		       realpath[cnt] = '\0';	       
-		       if (realpath[0] == '/') 
-			 strcpy(tmpath, realpath);
-		       else
-			 sprintf(tmpath, "%s/%s", dirname(tmpath), realpath); 
+		         realpath[cnt] = '\0';	       
+		         if (realpath[0] == '/') 
+			   strcpy(tmpath, realpath);
+		         else
+			   sprintf(tmpath, "%s/%s", dirname(tmpath), realpath); 
 
-		       if (lstat(tmpath, &fchk_buf) != 0) 
-			 {
-			   e = func + " interpreter path (" + tmpath 
-			     + ") is invalid.";
-			   throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);  
-			 }
+		         if (lstat(tmpath, &fchk_buf) != 0) 
+			   {
+			     e = func + " interpreter path (" + tmpath 
+			       + ") is invalid.";
+			     throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);  
+			   }
+		       } 
+		   
+		     if (S_ISREG(fchk_buf.st_mode)) {		     
+		       where_is_interpreter = tmpath;
+		       found_interp = true;
+
+		       {
+			   self_trace_t::trace ( LEVELCHK(level2), 
+		             MODULENAME, 0, 
+			     "interpreter found in .interp section [%s]",
+			     where_is_interpreter.c_str());
+		       }
 		     } 
 		   
-		   if (S_ISREG(fchk_buf.st_mode)) {		     
-		     where_is_interpreter = tmpath;
-		     found_interp = true;
-
-		     {
-			 self_trace_t::trace ( LEVELCHK(level2), 
-		           MODULENAME, 0, 
-			   "interpreter found in .interp section [%s]",
-			   where_is_interpreter.c_str());
-		     }
-		   } 
-		   
-		 } // else if (S_ISLNK(buf)) {
-	     } // if ( strcmp(".interp", 	    
-	   break;
-
+		   } // else if (S_ISLNK(buf)) {
+	       } // if ( strcmp(".interp", 	    
+	     break;
+	   }
 	 default:
-	   break;	   
-	 } // switch	   
+           //
+           // Expand cases when you need to do more with other ELF sections
+           //
+	   break;
+	 }
 
      } // while ( (sect = elf_nextscn(elf_h, sect)) != NULL ) {   
 

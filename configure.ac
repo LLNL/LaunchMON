@@ -28,18 +28,22 @@ dnl  Place, Suite 330, Boston, MA 02111-1307 USA
 dnl --------------------------------------------------------------------------------
 dnl 
 dnl   Update Log:
-dnl         Jun 06 2008 DHA: File created. 
+dnl         Mar 11 2009 DHA: Added check for env, ssh|rsh, and totalview
+dnl         Mar 06 2009 DHA: Deprecate X_AC_THREAD_DB,
+dnl                          Added dlfcn.h presence check
+dnl         Jun 06 2008 DHA: File created.
+dnl
 
 
 AC_PREREQ(2.59)
-AC_INIT(LaunchMON, 0.6.4, ahn1@llnl.gov)
+AC_INIT(LaunchMON, 0.7.0, ahn1@llnl.gov)
 AC_SUBST(LMON_CURRENT, 0)
 AC_SUBST(LMON_REVISION, 0)
 AC_SUBST(LMON_AGE, 0)
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_HEADER([config.h])
-AM_INIT_AUTOMAKE(launchmon, 0.6.4)
+AM_INIT_AUTOMAKE(launchmon, 0.7.0)
 AC_CANONICAL_HOST
 
 
@@ -94,11 +98,13 @@ else
   AC_MSG_RESULT([$ac_job_launcher_bits bit $ac_job_launcher_path])
 fi
 
+
 dnl -----------------------------------------------
 dnl Checks for NNODES and Ncores per node for test cases 
 dnl -----------------------------------------------
 X_AC_TESTNNODES
 X_AC_NCORE_SMP
+
 
 dnl -----------------------------------------------
 dnl Checks for programs
@@ -107,6 +113,12 @@ AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 AC_PROG_CC_C_O
+AC_PATH_PROGS(envcmd,env,[/bin/env], /usr/local/bin:/usr/bin:/bin)
+AC_PATH_PROGS(sshcmd,ssh rsh,[/usr/bin/ssh],/usr/local/bin:/usr/bin:/bin)
+AC_PATH_PROGS(tvcmd,totalview,[/usr/local/bin/totalview],/usr/local/bin:/usr/bin:/bin:/bgsys/tmp/totalview/release/bin)
+AC_DEFINE_UNQUOTED(ENVCMD,["$envcmd"],[env command found])
+AC_DEFINE_UNQUOTED(SSHCMD,["$sshcmd"],[ssh or its equivalent found])
+AC_DEFINE_UNQUOTED(TVCMD,["$tvcmd"],[totalview found])
 
 
 dnl -----------------------------------------------
@@ -115,7 +127,7 @@ dnl -----------------------------------------------
 AC_MSG_CHECKING(for libelf)
 AC_CHECK_LIB(elf,elf_begin,libelf_found=yes,libelf_found=no)
 if test "$libelf_found" = yes; then
-     AC_SUBST(LIBELF,-lelf)    
+     AC_SUBST(LIBELF,-lelf)
 else
      AC_MSG_ERROR([libelf is needed to build this package])
 fi
@@ -127,16 +139,26 @@ if test "$libpthread_found" = yes; then
 else
      AC_MSG_ERROR([libpthread is needed to build this package])
 fi
-     
+
 AC_MSG_CHECKING(for librt)
 AC_CHECK_LIB(rt,clock_gettime,librt_found=yes,librt_found=no)
-if test "$libpthread_found" = yes; then
+if test "$librt_found" = yes; then
      AC_SUBST(LIBRT,-lrt)
 else
      AC_MSG_ERROR([librt is needed to build this package])
 fi
 
-X_AC_THREAD_DB
+AC_MSG_CHECKING(for libdl)
+AC_CHECK_LIB(dl,dlopen,libdl_found=yes,libdl_found=no)
+if test "$libdl_found" = yes; then
+     AC_SUBST(LIBDL,-ldl)
+else
+     AC_MSG_ERROR([libdl is needed to build this package])
+fi
+
+dnl DHA: decrecate thread db checking in favor of runtime checking
+dnl X_AC_THREAD_DB
+dnl
 X_AC_MPICC
 
 
@@ -144,7 +166,7 @@ dnl -----------------------------------------------
 dnl Checks for header files.
 dnl -----------------------------------------------
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([sys/time.h unistd.h libelf.h libelf/libelf.h poll.h signal.h errno.h sys/user.h libgen.h assert.h link.h thread_db.h netdb.h arpa/inet.h sys/socket.h netinet/in.h limits.h sys/ptrace.h execinfo.h fcntl.h sys/procfs.h pthread.h sys/resource.h stdarg.h])
+AC_CHECK_HEADERS([sys/time.h unistd.h libelf.h libelf/libelf.h poll.h signal.h errno.h sys/user.h libgen.h assert.h link.h thread_db.h netdb.h arpa/inet.h sys/socket.h netinet/in.h limits.h sys/ptrace.h execinfo.h fcntl.h sys/procfs.h pthread.h sys/resource.h stdarg.h dlfcn.h])
 
 if test "$ac_cv_header_libelf_h" = "yes" ; then
      AC_DEFINE(LOCATION_OF_LIBELFHEADER, [<libelf.h>],

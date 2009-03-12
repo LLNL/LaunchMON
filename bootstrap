@@ -27,6 +27,7 @@
 #--------------------------------------------------------------------------------
 #
 #  Update Log:
+#        Mar 11 2008 DHA: Added rm -f tools/libgcrypt/Makefile
 #        Jun 06 2008 DHA: Created file.
 #
 
@@ -36,3 +37,4 @@ libtoolize --force --copy
 autoheader
 automake --foreign --add-missing --copy 
 autoconf
+rm -f tools/libgcrypt/Makefile

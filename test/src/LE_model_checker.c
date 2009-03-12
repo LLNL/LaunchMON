@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Mar 05 2008 DHA: Support for generic BlueGene systems
  *        Jun 12 2008 DHA: GNU build system support 
  *        Feb 09 2008 DHA: Added LLNS Copyright
  *        Dec 07 2007 DHA: Included more header files to shut up the 
@@ -73,7 +74,7 @@ volatile int MPIR_debug_gate      = 0;
 int MPIR_proctable_size           = 0;
 volatile int  MPIR_being_debugged = 0;
   
-/* BGL/MPIRUN specific variables */
+/* BG/MPIRUN specific variables */
 char MPIR_executable_path[EXECPATH_SIZE] = {0};
 char MPIR_server_arguments[SERVER_ARG_SIZE] = {0};
 

@@ -40,18 +40,16 @@
 
 if WITH_CIOD
 OPT_CIOD                     = -I$(top_srcdir)/@CIODLOC@ 
-LD_CIODFLAGS                 = -L$(top_srcdir)/tools/ciod
-LIBADD_CIODFLAGS             = @LIBCIOD@
 endif
 if WITH_GCRYPT
 OPT_GCRYPT                  = -I$(top_srcdir)/@GCRYPTLOC@ -I$(top_srcdir)/@GPGERRLOC@ 
 endif
 
-INCLUDES                     = -I.. -I../.. -I$(top_srcdir)/@COMMLOC@ $(OPT_CIOD) $(OPT_GCRYPT)
+INCLUDES                     = -I@ARCHHEADER@ $(OPT_CIOD) $(OPT_GCRYPT) -I.. -I../.. -I$(top_srcdir)/@COMMLOC@ 
 
 BITS                         = @LIBBITSUFFIX@
 
-lib_LTLIBRARIES              = libmonfeapi.la libmonbeapi.la
+lib_LTLIBRARIES              = libmonbeapi.la libmonfeapi.la
 
 libmonfeapi_la_SOURCES       = lmon_fe.cxx \
 			       lmon_lmonp_msg.cxx \
@@ -64,26 +62,23 @@ libmonfeapi_la_SOURCES       = lmon_fe.cxx \
                                ../../sdbg_opt.hxx \
 			       ../../lmon_api/lmon_say_msg.hxx	
 
-libmonfeapi_la_LDFLAGS       = -static \
-			       -L$(top_srcdir)/@COMMLOC@ \
+libmonfeapi_la_LDFLAGS       = -L$(top_srcdir)/@COMMLOC@ \
 			       -L$(top_srcdir)/@GCRYPTLOC@ \
 			       -L$(top_srcdir)/@GPGERRLOC@ \
 			       $(AM_LDFLAGS) \
 			       -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
 
-libmonfeapi_la_LIBADD        = @LIBPTHREAD@ @LIBCOMM@ @LIBGCRYPT@ @LIBGPGERR@ @LIBRT@ 
+libmonfeapi_la_LIBADD        = @LIBPTHREAD@ @LIBCOMM@ @LIBGCRYPT@ @LIBGPGERR@ @LIBRT@
 
 libmonbeapi_la_SOURCES       = lmon_be.cxx \
 			       lmon_be_comm.cxx \
 			       lmon_lmonp_msg.cxx \
 		               lmon_say_msg.cxx
 
-libmonbeapi_la_LDFLAGS       = -static \
-			       -L$(top_srcdir)/@COMMLOC@ \
+libmonbeapi_la_LDFLAGS       = -L$(top_srcdir)/@COMMLOC@ \
 			       -L$(top_srcdir)/@GCRYPTLOC@ \
-	                       -L$(top_srcdir)/@GPGERRLOC@ \
-				$(LD_CIODFLAGS) \
-			        $(AM_LDFLAGS) \
-				-version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@ 
+			       -L$(top_srcdir)/@GPGERRLOC@ \
+			       $(AM_LDFLAGS) \
+			       -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@ 
 
-libmonbeapi_la_LIBADD        = @LIBCOMM@ @LIBGCRYPT@ @LIBGPGERR@ $(LIBADD_CIODFLAGS)
+libmonbeapi_la_LIBADD        = @LIBCOMM@ @LIBGCRYPT@ @LIBGPGERR@ 

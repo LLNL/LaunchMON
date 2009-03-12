@@ -27,8 +27,13 @@
 #  Place, Suite 330, Boston, MA 02111-1307 USA
 # --------------------------------------------------------------------------------
 # 
+#  DEPRECATED DEPRECATED DEPRECATED DEPRECATED DEPRECATED DEPRECATED
+#
 #   Update Log:
-#         Jun 11 2008 DHA: File created. 
+#         Mar 06 2009 DHA: Deprecated (e.g., configure.ac does not call
+#                          X_AC_THREAD_DB) in favor of runtime configureation
+#                          checking
+#         Jun 11 2008 DHA: File created.
 #
 
 AC_DEFUN([X_AC_THREAD_DB], [  
@@ -44,7 +49,9 @@ AC_DEFUN([X_AC_THREAD_DB], [
       fi
     else 
       if test x"$ac_job_launcher_bits" = "x64"; then
-        ac_libthread_db_loc="/lib$ac_job_launcher_bits/tls/libthread_db.so.1" 
+        # DHA hack to support BGP
+        # ac_libthread_db_loc="/lib$ac_job_launcher_bits/tls/libthread_db.so.1" 
+        ac_libthread_db_loc="/lib$ac_job_launcher_bits/power6x/libthread_db.so.1" 
       else
         ac_libthread_db_loc="/lib/tls/libthread_db.so.1"
       fi

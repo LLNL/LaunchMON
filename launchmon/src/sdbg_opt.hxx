@@ -63,7 +63,7 @@ extern "C" {
 #else
 # error sys/stat.h is required
 #endif
-                                                                                                                      
+ 
 #if HAVE_ASSERT_H
 # include <assert.h>
 #else

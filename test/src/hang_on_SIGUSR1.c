@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Mar 04 2008 DHA: Added generic BlueGene support
  *        Jun 13 2008 DHA: Added GNU build system support. 
  *        Mar 21 2008 DHA: Beautified the code a bit.  
  *        Mar 18 2008 DHA: Added BlueGene support. (Fixing a File IO bug) 
@@ -35,7 +36,7 @@
 
 #include <lmon_api/common.h>
                                                                   
-#if RM_BGL_MPIRUN
+#if RM_BG_MPIRUN
 /* work around for a compiler problem on BlueGene/L */
 #undef SEEK_SET
 #undef SEEK_END

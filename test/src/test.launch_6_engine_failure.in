@@ -29,6 +29,7 @@
 #
 #
 #  Update Log:
+#        Mar 06 2009 DHA: Changed bglrm to bgrm
 #        Dec 14 2008 DHA: configurable NUMNODES
 #        Sep 26 2008 DHA: Created file.
 #
@@ -36,7 +37,7 @@
 RM_TYPE=@RMTP@
 NUMNODES=@NNODES@
 NOHUP=""
-if test "x$RM_TYPE" = "xbglrm" ; then
+if test "x$RM_TYPE" = "xbgrm" ; then
   NOHUP=nohup
   rm -f nohup.out
 fi

@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Mar 04 2008 DHA: Added generic BlueGene support
  *        Jun 12 2008 DHA: Added GNU build system support
  *        Feb 09 2008 DHA: Added LLNS Copyright.
  *        Aug 06 2007 DHA: Created file.
@@ -64,7 +65,7 @@
 
 #include <lmon_api/lmon_be.h>
 
-#if RM_BGL_MPIRUN
+#if RM_BG_MPIRUN
 # include "debugger_interface.h"
   using namespace DebuggerInterface;
 #endif
@@ -186,7 +187,7 @@ main( int argc, char* argv[] )
   int i, rank, size;
   lmon_rc_e lrc;
 
-#if RM_BGL_MPIRUN
+#if RM_BG_MPIRUN
   signum = 0;
 #else
   signum = SIGCONT;
@@ -314,24 +315,24 @@ main( int argc, char* argv[] )
         proctab[i].mpirank);
     }
 
-#if RM_BGL_MPIRUN
+#if RM_BG_MPIRUN
   /* the tool wants to send a signal other than the default */
   if (signum != 0)
     {
       for (i=0; i < proctab_size; i++)
         {
-          BGL_Debugger_Msg dbgmsg(KILL,proctab[i].pd.pid,0,0,0);
+          BG_Debugger_Msg dbgmsg(KILL,proctab[i].pd.pid,0,0,0);
           dbgmsg.dataArea.KILL.signal = SIGSTOP;
-          BGL_Debugger_Msg ackmsg;
-          BGL_Debugger_Msg ackmsg2;
+          BG_Debugger_Msg ackmsg;
+          BG_Debugger_Msg ackmsg2;
  
-          if ( !BGL_Debugger_Msg::writeOnFd (BGL_DEBUGGER_WRITE_PIPE, dbgmsg ))
+          if ( !BG_Debugger_Msg::writeOnFd (BG_DEBUGGER_WRITE_PIPE, dbgmsg ))
             {
               fprintf(stdout,
                 "[LMON BE(%d)] FAILED: KILL command.\n", rank);
                 return EXIT_FAILURE;
             }
-          if ( !BGL_Debugger_Msg::readFromFd (BGL_DEBUGGER_READ_PIPE, ackmsg ))
+          if ( !BG_Debugger_Msg::readFromFd (BG_DEBUGGER_READ_PIPE, ackmsg ))
             {
               fprintf(stdout,
                 "[LMON BE(%d)] FAILED: KILL_ACK command.\n", rank);
@@ -344,7 +345,7 @@ main( int argc, char* argv[] )
                     rank,ackmsg.header.messageType);
               return EXIT_FAILURE;
             }
-          if ( !BGL_Debugger_Msg::readFromFd (BGL_DEBUGGER_READ_PIPE, ackmsg2 ))
+          if ( !BG_Debugger_Msg::readFromFd (BG_DEBUGGER_READ_PIPE, ackmsg2 ))
             {
               fprintf(stdout,
                 "[LMON BE(%d)] FAILED: SIGNAL_ENCOUNTERED command.\n", rank);
@@ -362,18 +363,18 @@ main( int argc, char* argv[] )
 
       for (i=0; i < proctab_size; i++)
         {
-          BGL_Debugger_Msg dbgmsg(CONTINUE,proctab[i].pd.pid,0,0,0);
-          BGL_Debugger_Msg ackmsg;  
+          BG_Debugger_Msg dbgmsg(CONTINUE,proctab[i].pd.pid,0,0,0);
+          BG_Debugger_Msg ackmsg;  
           dbgmsg.dataArea.CONTINUE.signal = signum;
           dbgmsg.header.dataLength = sizeof(dbgmsg.dataArea.CONTINUE);
 
-          if ( !BGL_Debugger_Msg::writeOnFd (BGL_DEBUGGER_WRITE_PIPE, dbgmsg ))
+          if ( !BG_Debugger_Msg::writeOnFd (BG_DEBUGGER_WRITE_PIPE, dbgmsg ))
             {
               fprintf(stdout,  
                 "[LMON BE(%d)] FAILED: CONTINUE command.\n", rank);
                 return EXIT_FAILURE;
             }
-          if ( !BGL_Debugger_Msg::readFromFd (BGL_DEBUGGER_READ_PIPE, ackmsg ))  
+          if ( !BG_Debugger_Msg::readFromFd (BG_DEBUGGER_READ_PIPE, ackmsg ))  
             {
               fprintf(stdout,  
                 "[LMON BE(%d)] FAILED: CONTINUE_ACK command.\n", rank);

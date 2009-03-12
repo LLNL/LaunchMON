@@ -132,9 +132,9 @@ private:
   // in traversing USER area
   // Some registers are not simply writtable. 
   // Need a mask(writable_mask).
-  NATIVE_RS rs;               
-  int offset_in_user;        
-  WT* rs_ptr;                 
+  NATIVE_RS rs;
+  int offset_in_user;
+  WT* rs_ptr;
   unsigned int writable_mask; 
 };
 
@@ -315,9 +315,6 @@ public:
   define_gset(std::string,loader_r_debug_sym)
   define_gset(std::string,resource_handler_sym)
   define_gset(std::string,fork_sym)
-  define_gset(std::string,libc_iden)
-  define_gset(std::string,libpthread_iden)
-  define_gset(std::string,dynloader_iden)
   define_gset(int,key_to_thread_context)
   define_gset(int,rid)
   
@@ -350,10 +347,6 @@ private:
   opts_args_t* myopts;
   int rid;
 
-  std::string libc_iden;
-  std::string libpthread_iden;
-  std::string dynloader_iden;
-
   //
   // hidden breakpoints
   //
@@ -372,7 +365,7 @@ private:
   std::string launch_debug_gate;
   std::string launch_proctable;
   std::string launch_proctable_size;
-  std::string launch_acquired_premain;          
+  std::string launch_acquired_premain;
   std::string launch_exec_path;
   std::string launch_server_args;
   std::string thread_creation_sym;

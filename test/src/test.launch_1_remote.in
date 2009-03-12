@@ -33,6 +33,7 @@
 #  engine remotely on a node in which the job launcher process runs.
 #
 #  Update Log:
+#        Mar 06 2009 DHA: Changed bglrm to bgrm
 #        Dec 14 2008 DHA: configurable NUMNODES
 #        Jun 13 2008 DHA: Created file.
 #
@@ -40,8 +41,8 @@
 RM_TYPE=@RMTP@
 NUMNODES=@NNODES@
 NOHUP=""                                                                                                                                                                      
-if test "x$RM_TYPE" = "xbglrm" ; then
-  echo "[LMON FE] until mpirun -partition option is fixed this test is disabled on BGL"
+if test "x$RM_TYPE" = "xbgrm" ; then
+  echo "[LMON FE] until mpirun -partition option is fixed this test is disabled on BlueGene"
   exit 1
   NOHUP=nohup
   rm -f nohup.out

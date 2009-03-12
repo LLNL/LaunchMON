@@ -31,7 +31,7 @@
  *        Jul  18 2006 DHA: Initial Linux PPC (BG/L) port 
  *        Jul  14 2006 DHA: Initial Linux X86-64 port
  *        Feb  07 2006 DHA: Made it compilable with templated class objects
- *        Jan  10 2006 DHA: Created file.          
+ *        Jan  10 2006 DHA: Created file.
  */ 
 
 
@@ -125,7 +125,7 @@ ps_pdread ( struct ps_prochandle *ph,  psaddr_t addr,
     return PS_ERR;
   }
   
-  return PS_OK;    
+  return PS_OK;
 }
 
 
@@ -174,7 +174,7 @@ ps_lgetregs ( struct ps_prochandle* ph,
 
     return PS_ERR;
   }
-  
+
   // copy ph->p's GPR to reg
   if ( memcpy((T_GRS*) reg, 
 	 &(ph->p->get_gprset(use_cxt)->get_native_rs()), 
@@ -263,7 +263,7 @@ ps_get_thread_area ( const struct ps_prochandle *ph,
     a linux kernel patch added two new ptrace requests for 
     this architecture "PTRACE_GET_THREAD_AREA" and "
     "PTRACE_SET_THREAD_AREA"
-    
+
     Those macroes are not exported via standard /usr/include 
     header files. So are struct user_desc definition and 
     ifndef PTRACE_GET_THREA_AREA to be 25
@@ -278,11 +278,11 @@ ps_get_thread_area ( const struct ps_prochandle *ph,
     requests for i386, PTRACE_GET_THREAD_AREA and PTRACE_SET_THREAD_AREA.
     These let another process using ptrace do the equivalent of performing
     get_thread_area and set_thread_area system calls for another thread.
-    
+
     We are working on gdb support for the new threading code in the kernel
     using the new NPTL library, and use PTRACE_GET_THREAD_AREA for that.
     This patch has been working fine for that.
-    
+
     I added PTRACE_SET_THREAD_AREA just for completeness, so that you can
     change all the state via ptrace that you can read via ptrace as has
     previously been the case. It doesn't have an equivalent of set_thread_area
@@ -291,13 +291,13 @@ ps_get_thread_area ( const struct ps_prochandle *ph,
     Both requests use the ptrace `addr' argument for the entry number rather
     than the entry_number field in the struct. The `data' parameter gives the
     address of a struct user_desc as used by the set/get_thread_area syscalls.
-    
+
     The code is quite simple, and doesn't need any special synchronization
     because in the ptrace context the thread must be stopped already.
-    
+
     I chose the new request numbers arbitrarily from ones not used on i386.
     I have no opinion on what values should be used.
-    
+
     People I talked to preferred adding this interface over putting an array of
     struct user_desc in struct user as accessed by PTRACE_PEEKUSR/POKEUSR
     (which would be a bit unnatural since those calls access one word at a time).
@@ -312,9 +312,9 @@ ps_get_thread_area ( const struct ps_prochandle *ph,
     {    
       return PS_ERR;
     }
-  
+
   *addr = (psaddr_t) (tsd_desc.base_addr);
-    
+
 #elif X86_64_ARCHITECTURE
   /*
    * How to fetch thread-specific area for x86-64/linux
@@ -333,7 +333,7 @@ ps_get_thread_area ( const struct ps_prochandle *ph,
 
       and x86_64's ptrace has PTRACE_ARCH_PRCTL request field in its switch
       statement such that
-      
+
       -----
       " normal 64bit interface to access TLS data.
         Works just like arch_prctl, except that the arguments
@@ -345,7 +345,7 @@ ps_get_thread_area ( const struct ps_prochandle *ph,
 
 
       And do_arch_prctl is defined in x86_64/kernel/process.c 
-      
+
       -----
       ... prctl.h
       #define ARCH_SET_GS 0x1001
@@ -371,11 +371,11 @@ ps_get_thread_area ( const struct ps_prochandle *ph,
 
 	case ARCH_GET_GS: 
 
-      
+
       Assuming thread debug library is passing a valid x which is 
       one of above four
 
-    
+
       -----
       One last piece is found in /usr/include/sys/reg.h
       # define R15    0
@@ -461,7 +461,7 @@ ps_get_thread_area ( const struct ps_prochandle *ph,
 static std::string& get_basename( std::string path)
 {
   char tmp[PATH_MAX];
-  char* bn;
+  char *bn;
 
   sprintf(tmp, "%s", path.c_str());
   bn = basename(tmp);
@@ -498,7 +498,7 @@ ps_pglobal_lookup ( struct ps_prochandle *ph,
     if (asym.get_raw_address()!= SYMTAB_UNINIT_ADDR && 
 	asym.get_relocated_address()) {
 
-      (*sym_addr) = (psaddr_t) asym.get_relocated_address();      
+      (*sym_addr) = (psaddr_t) asym.get_relocated_address();
       error_code = (*sym_addr)? PS_OK : PS_ERR;
     }
     else {
@@ -512,7 +512,7 @@ ps_pglobal_lookup ( struct ps_prochandle *ph,
     if (asym.get_raw_address()!= SYMTAB_UNINIT_ADDR && 
 	asym.get_relocated_address()) {
 
-      (*sym_addr) = (psaddr_t) asym.get_relocated_address();      
+      (*sym_addr) = (psaddr_t) asym.get_relocated_address();
       error_code = (*sym_addr)? PS_OK : PS_ERR;
     }
     else {
@@ -526,7 +526,7 @@ ps_pglobal_lookup ( struct ps_prochandle *ph,
     if (asym.get_raw_address()!= SYMTAB_UNINIT_ADDR && 
 	asym.get_relocated_address()) {
 
-      (*sym_addr) = (psaddr_t) asym.get_relocated_address();      
+      (*sym_addr) = (psaddr_t) asym.get_relocated_address();
       error_code = (*sym_addr)? PS_OK : PS_ERR;
     }
     else {
@@ -546,7 +546,7 @@ ps_pstop ( const struct ps_prochandle *ph)
 {
   bool use_cxt = true;
 
-  if ( myprocess_tracer.tracer_stop(*(ph->p), use_cxt)                      
+  if ( myprocess_tracer.tracer_stop(*(ph->p), use_cxt)
                                     != SDBG_TRACE_OK ) {
 
     return PS_ERR;

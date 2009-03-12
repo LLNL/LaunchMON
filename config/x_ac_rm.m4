@@ -28,7 +28,25 @@
 # --------------------------------------------------------------------------------
 # 
 #   Update Log:
-#         Dec 11 2008 DHA: File created. 
+#         Mar 11 2009 DHA: Added ARCHHEADER, ARCHLIB in anticipation of 
+#                          ports on more RM variants.
+#         Mar 06 2009 DHA: Deprecated NPTL_UNDER_TLS: this isn't needed 
+#                          with the new runtime linking support of thread
+#                          debug library use.
+#                          Also deprecated GLUESYM support. It was added in 
+#                          support of PPC linking convention with glibc 2.3
+#                          where the linker greats a glue function symbol
+#                          (e.g., .foo for foo). But I found this isn't 
+#                          supported any more with newer glibc versions on 
+#                          that architecture. I seems the common denominator 
+#                          for properly finding the address to which a function
+#                          resolve to is to use a level of indirection 
+#                          on this arch.
+#         Mar 04 2009 DHA: Changed RM_BGL_MPIRUN to BGL_BG_MPIRUN
+#                          to genericize BlueGene support. Added
+#                          /bgsys/drivers/ppcfloor/bin to the 
+#                          search paths for the mpirun command.
+#         Dec 11 2008 DHA: File created.
 #
 
 AC_DEFUN([X_AC_RM], [
@@ -36,7 +54,7 @@ AC_DEFUN([X_AC_RM], [
   AC_MSG_CHECKING([resource manager type])
 
   AC_ARG_WITH([rm], 
-    AS_HELP_STRING(--with-rm@<:@=RMTYPE@:>@,specify a system Resource Manager @<:@slurm, bglrm@:>@ @<:@default=slurm@:>@),
+    AS_HELP_STRING(--with-rm@<:@=RMTYPE@:>@,specify a system Resource Manager @<:@slurm bgrm@:>@ @<:@default=slurm@:>@),
     [with_rm_name=$withval],
     [with_rm_name="check"]
   )
@@ -47,7 +65,7 @@ AC_DEFUN([X_AC_RM], [
     [with_launcher="check"]
   )
 
-  rm_default_dirs="/usr/bin /usr/local/bin /bgl/BlueLight/ppcfloor/bglsys/bin" 
+  rm_default_dirs="/usr/bin /usr/local/bin /bgl/BlueLight/ppcfloor/bglsys/bin /bgsys/drivers/ppcfloor/bin" 
   rm_found="no"
  
   #
@@ -80,14 +98,14 @@ AC_DEFUN([X_AC_RM], [
         fi
 
         if test ! -z "$rm_dir/srun" -a -f "$rm_dir/srun"; then     
-	  pth=`config/ap $rm_dir/srun`     
-          ac_job_launcher_path=$pth               
+	  pth=`config/ap $rm_dir/srun`
+          ac_job_launcher_path=$pth
           rm_found="yes"
           break
         fi
       done
     fi
-    
+
     #
     # This answers whether RM given and found
     #
@@ -107,13 +125,8 @@ AC_DEFUN([X_AC_RM], [
 	#
 	# 32bit srun process
 	#
-        ac_job_launcher_bits="32"
-	#
-        #TODO: I need another m4 to check where the tls libraries are picked up
-	#
-        AC_DEFINE(NPTL_UNDER_TLS, 1, [Define 1 if TLS libraries are installed under /lib/tls]) 
+        ac_job_launcher_bits="32" 
 	AC_SUBST(LNCHR_BIT_FLAGS, -m32)
-	AC_DEFINE(GLUESYM,[""], [Define an empty string for GLUESYM])
       elif test "$bits" = "64-bit"; then
 	#
 	# 64bit srun process
@@ -121,7 +134,6 @@ AC_DEFUN([X_AC_RM], [
         ac_job_launcher_bits="64"
 	AC_SUBST(LNCHR_BIT_FLAGS, -m64)
         AC_DEFINE(BIT64,1,[Define 1 for BIT64])
-	AC_DEFINE(GLUESYM,[""], [Define an empty string for GLUESYM])
         if test "x$ac_have_known_os" = "xyes"; then
           if test "$ac_target_os" = "linux" && test "$ac_target_isa" = "x86_64"; then
 	    AC_SUBST(LIBBITSUFFIX,64)
@@ -133,9 +145,9 @@ AC_DEFUN([X_AC_RM], [
       AC_MSG_RESULT($ac_job_launcher_bits)
     fi  
 
-  elif test "x$with_rm_name" = "xbglrm" ; then
+  elif test "x$with_rm_name" = "xbgrm" ; then
     #
-    # Configure for BGL/MPIRUN
+    # Configure for BG/MPIRUN
     #
     if test "x$with_launcher" != "xcheck" -a "x$with_launcher" != "xyes"; then
       #
@@ -171,33 +183,37 @@ AC_DEFUN([X_AC_RM], [
 
     if test "x$rm_found" = "xyes"; then  
  
-      AC_SUBST(CIODLOC,[tools/ciod])
+      AC_SUBST(CIODLOC, [tools/ciod])
       AC_SUBST(LIBCIOD, [-lciod_db])
 
       #
-      #TODO: I need another m4 to check where the tls libraries are picked up
-      #
-      AC_DEFINE(NPTL_UNDER_TLS, 1, [Define 1 if TLS libraries are installed under /lib/tls]) 
-      #
-      #TODO: in this case, CN-IO ratio
+      #In this case, CN-IO ratio
       #
       SMPFACTOR=8
       AC_SUBST(SMPFACTOR)
-      AC_DEFINE(RM_BGL_MPIRUN,1,[Define 1 for RM_BGL_MPIRUN])
-      AC_SUBST(RM_TYPE, bglrm) 
+      AC_DEFINE(RM_BG_MPIRUN,1,[Define 1 for RM_BG_MPIRUN])
+      AC_SUBST(RM_TYPE, bgrm) 
       AC_MSG_CHECKING([whether mpirun is 32 bit 64 bit]) 
       #check if job launcher is 32 bit or 64 bit.
       #TODO: the use of file | gawk isn't portable
       bits=`file $ac_job_launcher_path | gawk '{print @S|@3}'`
       if test $bits = "32-bit"; then
         ac_job_launcher_bits="32"
+        AC_SUBST(ARCHHEADER,"/bgsys/drivers/ppcfloor/arch/include")
+	AC_SUBST(ARCHLIB,"/bgsys/drivers/ppcfloor/lib")
+        if test -d "/bgsys/drivers/ppcfloor/arch/include" ; then
+          AC_DEFINE(BG_HEADER_EXISTS,1,[Define 1 if debugger interface related header files are available in the system])
+        fi
 	AC_SUBST(LNCHR_BIT_FLAGS, -m32)
-	AC_DEFINE(GLUESYM,[""], [Define dot for GLUESYM])
       elif test $bits = "64-bit"; then
         ac_job_launcher_bits="64"
+        AC_SUBST(ARCHHEADER,"/bgsys/drivers/ppcfloor/arch/include")
+	AC_SUBST(ARCHLIB,"/bgsys/drivers/ppcfloor/lib64")
+        if test -d "/bgsys/drivers/ppcfloor/arch/include" ; then
+          AC_DEFINE(BG_HEADER_EXISTS,1,[Define 1 if debugger interface related header files are available in the system])
+        fi
 	AC_SUBST(LNCHR_BIT_FLAGS, -m64)
         AC_DEFINE(BIT64,1,[Define 1 for BIT64])
-	AC_DEFINE(GLUESYM,["."], [Define dot for GLUESYM])
       else
         ac_job_launcher_bits="unknown"
       fi # test $bits = "32-bit"

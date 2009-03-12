@@ -27,6 +27,7 @@
  *						
  *
  *  Update Log:
+ *        Mar 11 2009 DHA: Added 2009 to copyright
  *        Mar 17 2008 DHA: Added PMGR Collective support.
  *        Feb 09 2008 DHA: Added LLNS Copyright.
  *        Dec 05 2007 DHA: Fixed some unitialized option field, which 
@@ -38,7 +39,7 @@
  *        Jul 03 2006 DHA: Added a logic to catch an invalid pid 
  *                         for attaching case.
  *        Jun 08 2006 DHA: Added attach-to-a-running-job support
- *        Jun 06 2006 DHA: File created      
+ *        Jun 06 2006 DHA: File created
  */ 
 
 #include <lmon_api/common.h>
@@ -50,7 +51,7 @@ const std::string software_name
 const std::string version 
    = PACKAGE_VERSION;
 const std::string copyright 
-   = "Copyright (C) 2008, Lawrence Livermore National Security, LLC.";
+   = "Copyright (C) 2008-2009, Lawrence Livermore National Security, LLC.";
 const std::string produced 
    = "Produced at Lawrence Livermore National Laboratory.";
 const std::string right 

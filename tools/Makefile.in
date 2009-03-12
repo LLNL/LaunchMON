@@ -46,7 +46,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/x_ac_bootfabric.m4 \
 	$(top_srcdir)/config/x_ac_os_isa.m4 \
 	$(top_srcdir)/config/x_ac_rm.m4 \
 	$(top_srcdir)/config/x_ac_testnnodes.m4 \
-	$(top_srcdir)/config/x_ac_thread_db.m4 \
 	$(top_srcdir)/config/x_ac_tracing_cost.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -71,6 +70,8 @@ AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
 AR = @AR@
+ARCHHEADER = @ARCHHEADER@
+ARCHLIB = @ARCHLIB@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -107,6 +108,7 @@ LDFLAGS = @LDFLAGS@
 LIBBITSUFFIX = @LIBBITSUFFIX@
 LIBCIOD = @LIBCIOD@
 LIBCOMM = @LIBCOMM@
+LIBDL = @LIBDL@
 LIBELF = @LIBELF@
 LIBGCRYPT = @LIBGCRYPT@
 LIBGPGERR = @LIBGPGERR@
@@ -114,7 +116,6 @@ LIBOBJS = @LIBOBJS@
 LIBPTHREAD = @LIBPTHREAD@
 LIBRT = @LIBRT@
 LIBS = @LIBS@
-LIBTHR_DB = @LIBTHR_DB@
 LIBTOOL = @LIBTOOL@
 LMONAPILOC = @LMONAPILOC@
 LMONENABSLOC = @LMONENABSLOC@
@@ -174,6 +175,7 @@ build_cpu = @build_cpu@
 build_os = @build_os@
 build_vendor = @build_vendor@
 datadir = @datadir@
+envcmd = @envcmd@
 exec_prefix = @exec_prefix@
 host = @host@
 host_alias = @host_alias@
@@ -193,9 +195,11 @@ prefix = @prefix@
 program_transform_name = @program_transform_name@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+sshcmd = @sshcmd@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+tvcmd = @tvcmd@
 @WITH_PMGR_COLLECTIVE_TRUE@OPT_PMGR_COLLECTIVE = pmgr_collective
 @WITH_CIOD_TRUE@OPT_CIOD = ciod
 @WITH_GCRYPT_TRUE@OPT_GCRYPT = libgpg-error
@@ -679,42 +683,47 @@ uninstall-info: uninstall-info-recursive
 
 all-local:
 	if test -f libgcrypt/Makefile; then \
-		cd libgcrypt && $(MAKE) $(AM_MAKEFILE) all; \
+                export GPG_ERROR_CONFIG=`$(top_srcdir)/config/ap $(top_srcdir)/tools/libgpg-error/src/gpg-error-config` \
+		&& cd libgcrypt && $(MAKE) $(AM_MAKEFILE) all; \
 	else \
 		export GPG_ERROR_CONFIG=`$(top_srcdir)/config/ap $(top_srcdir)/tools/libgpg-error/src/gpg-error-config` \
-		&& cd libgcrypt && ./configure --prefix=$(prefix) CFLAGS="$(CFLAGS)" && $(MAKE) $(AM_MAKEFILE) all; \
+		&& cd libgcrypt && ./configure --prefix=$(prefix) CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" && $(MAKE) $(AM_MAKEFILE) all; \
 	fi
 
 install-exec-local:
 	if test -f libgcrypt/Makefile; then \
-		cd libgcrypt && $(MAKE) $(AM_MAKEFILE) install-exec; \
+		export GPG_ERROR_CONFIG=`$(top_srcdir)/config/ap $(top_srcdir)/tools/libgpg-error/src/gpg-error-config` \
+		&& cd libgcrypt && $(MAKE) $(AM_MAKEFILE) install-exec; \
 	else \
 		export GPG_ERROR_CONFIG=`$(top_srcdir)/config/ap $(top_srcdir)/tools/libgpg-error/src/gpg-error-config` \
-		&& cd libgcrypt && ./configure --prefix=$(prefix) CFLAGS="$(CFLAGS)" && $(MAKE) $(AM_MAKEFILE) install-exec; \
+		&& cd libgcrypt && ./configure --prefix=$(prefix) CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" && $(MAKE) $(AM_MAKEFILE) install-exec; \
 	fi
 
 install-data-local:
 	if test -f libgcrypt/Makefile; then \
-		cd libgcrypt && $(MAKE) $(AM_MAKEFILE) install-data; \
+		export GPG_ERROR_CONFIG=`$(top_srcdir)/config/ap $(top_srcdir)/tools/libgpg-error/src/gpg-error-config` \
+		&& cd libgcrypt && $(MAKE) $(AM_MAKEFILE) install-data; \
 	else \
 		export GPG_ERROR_CONFIG=`$(top_srcdir)/config/ap $(top_srcdir)/tools/libgpg-error/src/gpg-error-config` \
-		&& cd libgcrypt && ./configure --prefix=$(prefix) CFLAGS="$(CFLAGS)" && $(MAKE) $(AM_MAKEFILE) install-data; \
+		&& cd libgcrypt && ./configure --prefix=$(prefix) CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" && $(MAKE) $(AM_MAKEFILE) install-data; \
 	fi
 
 clean-local:
 	if test -f libgcrypt/Makefile; then \
-		cd libgcrypt && $(MAKE) $(AM_MAKEFILE) clean; \
+		export GPG_ERROR_CONFIG=`$(top_srcdir)/config/ap $(top_srcdir)/tools/libgpg-error/src/gpg-error-config` \
+		&& cd libgcrypt && $(MAKE) $(AM_MAKEFILE) clean; \
 	else \
 		export GPG_ERROR_CONFIG=`$(top_srcdir)/config/ap $(top_srcdir)/tools/libgpg-error/src/gpg-error-config` \
-		&& cd libgcrypt && ./configure --prefix=$(prefix) CFLAGS="$(CFLAGS)" && $(MAKE) $(AM_MAKEFILE) clean; \
+		&& cd libgcrypt && ./configure --prefix=$(prefix) CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" && $(MAKE) $(AM_MAKEFILE) clean; \
         fi
 
 distclean-local:
 	if test -f libgcrypt/Makefile; then \
-		cd libgcrypt && $(MAKE) $(AM_MAKEFILE) distclean; \
+		export GPG_ERROR_CONFIG=`$(top_srcdir)/config/ap $(top_srcdir)/tools/libgpg-error/src/gpg-error-config` \
+		&& cd libgcrypt && $(MAKE) $(AM_MAKEFILE) distclean; \
 	else \
 		export GPG_ERROR_CONFIG=`$(top_srcdir)/config/ap $(top_srcdir)/tools/libgpg-error/src/gpg-error-config` \
-		&& cd libgcrypt && ./configure --prefix=$(prefix) CFLAGS="$(CFLAGS)" && $(MAKE) $(AM_MAKEFILE) distclean; \
+		&& cd libgcrypt && ./configure --prefix=$(prefix) CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" && $(MAKE) $(AM_MAKEFILE) distclean; \
         fi
 
 		export gpg_config_path=`$(top_srcdir)/config/ac ../libgpg-error/src/gpg-error-config`; 

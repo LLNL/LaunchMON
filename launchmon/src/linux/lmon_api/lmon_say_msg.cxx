@@ -107,7 +107,7 @@ LMON_say_msg ( const char* m, bool error_or_info, const char* output, ... )
   va_start(ap, output);
   vfprintf(stdout, log, ap);
   va_end(ap);
-}                                                                                                          
+}
 
 void
 LMON_TotalView_debug ()
@@ -116,12 +116,12 @@ LMON_TotalView_debug ()
   char exen[128];
   char lk[128];
   int len;  
-  sprintf(cmd, "%d", getpid()); 
-  sprintf(exen, "/proc/%d/exe", getpid());  
+  sprintf(cmd, "%d", getpid());
+  sprintf(exen, "/proc/%d/exe", getpid());
   len = readlink (exen, lk, 128);
   if (len >= 0 )
     lk[len]='\0';
-	    
+  	
   if (!fork())
     {
       std::cout << "FE DEBUG SUPPORT: invoking totalview" << std::endl;

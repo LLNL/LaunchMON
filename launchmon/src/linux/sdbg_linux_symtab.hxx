@@ -178,12 +178,7 @@ public:
     throw ( symtab_exception_t );
   virtual symtab_error_e read_linkage_symbols()
     throw ( symtab_exception_t );
-  virtual symtab_error_e fetch_DSO_info ( std::string& where_is_interpreter,
-					  bool& found_interp, 
-					  std::string& where_is_pthread,
-					  bool& is_threaded,
-					  std::string& where_is_libc,
-					  bool& found_runtime)
+  virtual symtab_error_e fetch_DSO_info (std::string&,bool&) 
     throw ( symtab_exception_t );
   // virtual symtab_error_e read_debug_symbols() = 0;
   //   throw ( symtab_exception_t ) = 0; 

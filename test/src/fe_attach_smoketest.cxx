@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Mar  10 2009 DHA: Increased the MAXPCOUNT to 147456
  *        Jun  12 2008 DHA: Added GNU build system support.  
  *        Mar  20 2008 DHA: Added BlueGene support.
  *        Mar  06 2008 DHA: Added calls-after-fail case.
@@ -47,7 +48,7 @@
 #include <lmon_api/lmon_proctab.h>
 #include <lmon_api/lmon_fe.h>
 
-#define MAXPCOUNT 8192
+#define MAXPCOUNT 147456
 
 int 
 main (int argc, char* argv[])
