@@ -41,4 +41,4 @@ libpmgr_collective_la_SOURCES = pmgr_collective_common.c \
 include_HEADERS               = pmgr_collective_client.h \
 			        pmgr_collective_common.h \
 			        pmgr_collective_mpirun.h
-libpmgr_collective_la_LDFLAGS = -static -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
+libpmgr_collective_la_LDFLAGS = -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
