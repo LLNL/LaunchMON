@@ -41,7 +41,7 @@
 #ifndef SDBG_BASE_LAUNCHMON_IMPL_HXX
 #define SDBG_BASE_LAUNCHMON_IMPL_HXX 1
 
-#include <lmon_api/common.h>
+#include <lmon_api/lmon_api_std.h>
 
 #if HAVE_POLL_H
 # include <poll.h>
@@ -397,7 +397,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::say_fetofe_msg (
   set_msg_header ( &msgheader,
   	           lmonp_fetofe,
 	           (int) msg_type,
-	           0,0,0,0,0,0 );
+	           0,0,0,0,0,0,0 );
   
   if ( (write_lmonp_long_msg ( get_FE_sockfd(), 
                                &msgheader, 
@@ -436,7 +436,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_proctab_msg (
       return LAUNCHMON_FAILED;
     }
   
-  map<string, unsigned int> execHostName;  
+  map<string, unsigned int> execHostName;
   vector<char *> orderedEHName;
   map<string, vector<MPIR_PROCDESC_EXT *> >::const_iterator pos;
   vector<MPIR_PROCDESC_EXT *>::const_iterator vpos;
@@ -486,15 +486,33 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_proctab_msg (
             + 4*sizeof(int)*pcount + offset;
   lmonp_t *sendbuf = (lmonp_t *) malloc ( msgsize );
   memset ( sendbuf, 0, msgsize );
-  set_msg_header ((lmonp_t*) sendbuf, 
+  if ( pcount < LMON_NTASKS_THRE) 
+    {
+      set_msg_header ((lmonp_t*) sendbuf, 
 		  lmonp_fetofe, 
 		  (int)t, 
 		  pcount, 
 		  0,
 		  num_unique_exec,
-		  num_unique_hn, 
+		  num_unique_hn,
+		  0,
 		  (4*sizeof(int)*pcount)+offset,
 		  0);
+    }
+  else
+    {
+      set_msg_header ((lmonp_t*) sendbuf, 
+		  lmonp_fetofe, 
+		  (int)t, 
+		  LMON_NTASKS_THRE, 
+		  0,
+		  num_unique_exec,
+		  num_unique_hn,
+		  pcount,
+		  (4*sizeof(int)*pcount)+offset,
+		  0);
+    }
+
   char *payload_cp_ptr = get_lmonpayload_begin (sendbuf);
 
   //

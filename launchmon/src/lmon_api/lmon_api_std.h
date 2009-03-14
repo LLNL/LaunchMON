@@ -52,6 +52,9 @@ BEGIN_C_DECLS
 #define LMON_KEY_LENGTH       16      /* 128 bits */
 #define LMON_MAX_USRPAYLOAD   4194304 /* 4 MB */
 #define LMON_MAX_NDAEMONS     8192
+#define LMON_NTASKS_THRE      32769   /* nTasks cutoff to switching over to long_num_tasks */
+//#define LMON_NTASKS_THRE      1025
+
 
 //! lmon_api_std.h
 /*!

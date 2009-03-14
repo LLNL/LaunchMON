@@ -8,9 +8,9 @@ LMON_fe_getProctable LMON_fe_getProctableSize LMON_fe_getResourceHandle \- Launc
 .B #include <lmon_fe.h>
 .PP
 .BI "lmon_rc_e LMON_fe_getProctable ( int " sessionHandle ","
-.BI "  MPIR_PROCDESC_EXT *" proctab ", int *" size ", int " maxlen " );"
+.BI "  MPIR_PROCDESC_EXT *" proctab ", unsigned int *" size ", unsigned int " maxlen " );"
 .PP
-.BI "lmon_rc_e LMON_fe_getProctableSize ( int " sessionHandle ", int *" size " );"
+.BI "lmon_rc_e LMON_fe_getProctableSize ( int " sessionHandle ", unsigned int *" size " );"
 .PP
 .BI "lmon_rc_e LMON_fe_getResourceHandle ( int " sessionHandle ","
 .BI "  char *" handle ", int *" size ", int " maxstring " );"

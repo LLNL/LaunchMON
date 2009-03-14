@@ -27,8 +27,9 @@
  *
  *
  *  Update Log:
+ *        Mar 13 2009 DHA: Added large nTasks support
  *        Feb 09 2008 DHA: Added LLNS Copyright 
- *        Dec 19 2006 DHA: Created file.          
+ *        Dec 19 2006 DHA: Created file.
  */
 
 #ifndef LMON_API_LMON_MSG_H
@@ -316,8 +317,8 @@ typedef struct _lmonp_t {
   union u0{
     lmonp_fe_to_fe_msg_e fetofe_type    : 13;
     lmonp_fe_to_be_msg_e fetobe_type    : 13;
-    lmonp_fe_to_mw_msg_e fetomw_type  : 13;    
-  } type;   
+    lmonp_fe_to_mw_msg_e fetomw_type    : 13;
+  } type;
 
   union u1{
     unsigned short security_key1        : 16; /* unused yet */
@@ -330,8 +331,9 @@ typedef struct _lmonp_t {
       unsigned short num_exec_name      : 16;
       unsigned short num_host_name      : 16;
     } exec_and_hn;
-  } sec_or_stringinfo;   
+  } sec_or_stringinfo;
 
+  unsigned int long_num_tasks           : 32; /* use for large nTasks */
   unsigned int lmon_payload_length      : 32;
   unsigned int usr_payload_length       : 32;
 
@@ -411,6 +413,7 @@ int set_msg_header (
 		 unsigned int security_key2,
 		 unsigned short num_exec_name,
 		 unsigned short num_host_name,
+		 unsigned int lntasks,
 		 unsigned int lmonlen, 
 		 unsigned int usrlen );
 

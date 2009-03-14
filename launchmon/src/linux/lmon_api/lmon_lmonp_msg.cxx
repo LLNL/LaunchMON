@@ -26,11 +26,12 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Mar 13 2009 DHA: Added large nTasks supporf
  *        Mar 05 2008 DHA: Added timedaccept support 
  *        Mar 05 2008 DHA: Rewrote lmon_write_raw and lmon_read_raw to enhance 
  *                         readibility.
  *        Feb 09 2008 DHA: Added LLNS Copyright
- *        Dec 19 2006 DHA: Created file.          
+ *        Dec 19 2006 DHA: Created file.
  */
 
 #include <lmon_api/lmon_api_std.h>
@@ -473,8 +474,8 @@ typedef struct _lmonp_t {
   union u{
     lmonp_fe_to_fe_msg_e fetofe_type    : 13;
     lmonp_fe_to_be_msg_e fetobe_type    : 13;
-    lmonp_fe_to_mw_msg_e fetomw_type  : 13;    
-  } type;   
+    lmonp_fe_to_mw_msg_e fetomw_type    : 13;
+  } type;
 
   union u1{
     unsigned short security_key1        : 16;
@@ -487,8 +488,9 @@ typedef struct _lmonp_t {
       unsigned short num_exec_name      : 16;
       unsigned short num_host_name      : 16;
     } exec_and_hn;
-  } sec_or_stringinfo;   
+  } sec_or_stringinfo;
 
+  usigned int long_num_tasks            : 32;
   unsigned int lmon_payload_length      : 32;
   unsigned int usr_payload_length       : 32;
 
@@ -505,6 +507,7 @@ set_msg_header (lmonp_t* msg,
 		unsigned int security_key2,
 		unsigned short num_exec_name,
 		unsigned short num_host_name,
+		unsigned int lntask,
 		unsigned int lmonlen, 
 		unsigned int usrlen )
 {
@@ -522,18 +525,18 @@ set_msg_header (lmonp_t* msg,
     case lmonp_fetobe:
       msg->type.fetobe_type = (lmonp_fe_to_be_msg_e) type;
       break;
-      
+
     case lmonp_fetomw:
       msg->type.fetomw_type = (lmonp_fe_to_mw_msg_e) type;
       break;
 
     default:
-      return -1;     
+      return -1;
     }
 
   msg->sec_or_jobsizeinfo.security_key1 = seckey_or_numtasks;
 
-  if (security_key2)    
+  if (security_key2)
     msg->sec_or_stringinfo.security_key2 = security_key2;
   else
     {
@@ -541,9 +544,10 @@ set_msg_header (lmonp_t* msg,
       msg->sec_or_stringinfo.exec_and_hn.num_host_name = num_host_name;
     }
 
+  msg->long_num_tasks = lntask;
   msg->lmon_payload_length = lmonlen;
   msg->usr_payload_length = usrlen;
-  
+
   return 0;
 }
 
@@ -583,20 +587,38 @@ get_usrpayload_begin ( lmonp_t *msg )
 char* 
 get_strtab_begin ( lmonp_t *msg ) 
 { 
-  char *ret = NULL;  
+  char *ret = NULL;
   if ( msg->msgclass == lmonp_fetobe )
   {
     if ( msg->type.fetobe_type == lmonp_febe_proctab )
     {
       ret = get_lmonpayload_begin ( msg ); 
       if (ret)
-        ret += msg->sec_or_jobsizeinfo.num_tasks*sizeof(int)*4;
+      {
+        if (msg->sec_or_jobsizeinfo.num_tasks < LMON_NTASKS_THRE)
+	{
+	  ret += msg->sec_or_jobsizeinfo.num_tasks*sizeof(int)*4;
+	}
+	else
+	{
+	  ret += msg->long_num_tasks*sizeof(int)*4;
+	}
+      }
     } 
     else if ( msg->type.fetobe_type == lmonp_befe_hostname )
     {
-      ret = get_lmonpayload_begin ( msg ); 
+      ret = get_lmonpayload_begin ( msg );
       if (ret)
-        ret += msg->sec_or_jobsizeinfo.num_tasks*sizeof(int);
+      {
+        if (msg->sec_or_jobsizeinfo.num_tasks < LMON_NTASKS_THRE)
+	{
+	  ret += msg->sec_or_jobsizeinfo.num_tasks*sizeof(int);
+	}
+	else
+	{
+	  ret += msg->long_num_tasks*sizeof(int);
+	}
+      } 
     }
   }
   else if ( msg->msgclass == lmonp_fetofe )
@@ -605,7 +627,16 @@ get_strtab_begin ( lmonp_t *msg )
     {
       ret = get_lmonpayload_begin ( msg );
       if (ret)
-        ret += msg->sec_or_jobsizeinfo.num_tasks*sizeof(int)*4;
+      {
+        if (msg->sec_or_jobsizeinfo.num_tasks < LMON_NTASKS_THRE)
+	{
+	  ret += msg->sec_or_jobsizeinfo.num_tasks*sizeof(int)*4;
+	}
+	else
+	{
+	  ret += msg->long_num_tasks*sizeof(int)*4;
+	}
+      }
     }
   }
  

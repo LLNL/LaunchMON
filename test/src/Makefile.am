@@ -29,6 +29,7 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        Mar 13 2009 DHA: Added the be_pcontrol_perftest test
 ##        Jun 12 2008 DHA: Created file.
 ##
 
@@ -53,6 +54,7 @@ bin_PROGRAMS                      = fe_jobsnap \
 				    fe_launch_usrpayload_test \
 			   	    fe_attach_smoketest \
 				    be_kicker \
+				    be_pcontrol_perftest \
 				    be_kicker_usrpayload_test \
 				    be_standalone_kicker \
 				    run_3mins \
@@ -83,6 +85,10 @@ fe_attach_smoketest_LDADD         = -lmonfeapi
 be_kicker_SOURCES                 = be_kicker.cxx util.c
 be_kicker_LDFLAGS    	          = -L$(top_srcdir)/@LMONAPILOC@ 
 be_kicker_LDADD                   = -lmonbeapi 
+
+be_pcontrol_perftest_SOURCES      = be_pcontrol_perftest.cxx util.c
+be_pcontrol_perftest_LDFLAGS      = -L$(top_srcdir)/@LMONAPILOC@
+be_pcontrol_perftest_LDADD        = -lmonbeapi
 
 be_kicker_usrpayload_test_SOURCES = be_kicker_usrpayload_test.cxx
 be_kicker_usrpayload_test_LDFLAGS = -L$(top_srcdir)/@LMONAPILOC@ 
@@ -118,6 +124,7 @@ bin_SCRIPTS                       = test.LE_model_checker_mainthread \
 				    test.attach_3_callsafterfail \
 				    test.attach_4_kill \
 				    test.attach_4_shutdownbe \
+				    test.attach_rpci_perf \
 				    test.jobsnap_1 \
 				    test.launch_6_engine_failure
 
@@ -141,6 +148,7 @@ EXTRA_DIST                        = test.LE_model_checker_mainthread.in \
                                     test.attach_3_callsafterfail.in \
                                     test.attach_4_kill.in \
                                     test.attach_4_shutdownbe.in \
+				    test.attach_rpci_perf.in \
                                     test.jobsnap_1.in \
 				    test.launch_6_engine_failure.in
 
@@ -212,6 +220,9 @@ test.attach_4_kill: test.attach_4_kill.in Makefile
 test.attach_4_shutdownbe: test.attach_4_shutdownbe.in Makefile
 	$(do_subst) < test.attach_4_shutdownbe.in > test.attach_4_shutdownbe
 	chmod +x test.attach_4_shutdownbe
+test.attach_rpci_perf: test.attach_rpci_perf.in Makefile
+	$(do_subst) < test.attach_rpci_perf.in > test.attach_rpci_perf
+	chmod +x test.attach_rpci_perf
 test.jobsnap_1: test.jobsnap_1.in Makefile
 	$(do_subst) < test.jobsnap_1.in > test.jobsnap_1
 	chmod +x test.jobsnap_1

@@ -166,15 +166,16 @@ int
 main (int argc, char* argv[])
 {
   using namespace std;
-
+  
   int aSession    = 0;
-  int psize       = 0;
-  int proctabsize = 0;
+  unsigned int psize       = 0;
+  unsigned int proctabsize = 0;
+  int jobidsize   = 0;
   int i           = 0;
-  MPIR_PROCDESC_EXT *proctab   = NULL;
-  char jobid[PATH_MAX]         = {0};
-  char **launcher_argv         = NULL;
-  char **daemon_opts           = NULL;
+  char jobid[PATH_MAX]        = {0};
+  char **launcher_argv        = NULL;
+  char **daemon_opts          = NULL;
+  MPIR_PROCDESC_EXT *proctab  = NULL;
 
   lmon_rc_e rc;
   string numprocs_opt;
@@ -340,7 +341,7 @@ main (int argc, char* argv[])
     }
 
   rc = LMON_fe_getResourceHandle ( aSession, jobid,
-                                 &psize, PATH_MAX);
+                                 &jobidsize, PATH_MAX);
   if ((rc != LMON_OK) && (rc != LMON_EDUNAV))
     {
       if ( rc != LMON_EDUNAV )

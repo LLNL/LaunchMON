@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Mar 13 2009 DHA: Added large nTasks supporf
  *        Sep 23 2008 DHA: Added verbosity support 
  *        Mar 20 2008 DHA: Added BlueGene/L support
  *        Feb 09 2008 DHA: Added LMON_be_getMyProctabSize support to better 
@@ -240,12 +241,13 @@ LMON_be_parse_raw_RPDTAB_msg ( )
   char *mpirent;
   char *strtab;
   int i;
+  unsigned int ntasks;
   
   if ( proctab_cache.size () != 0 )
     {
       LMON_say_msg (LMON_BE_MSG_PREFIX, false, 
         "don't need to call parse_raw_RPDTAB_msg more than once");
-      
+
       return LMON_EINVAL;
     }  
  
@@ -254,10 +256,10 @@ LMON_be_parse_raw_RPDTAB_msg ( )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
         "bedata.proctab_msg doesn't contain the lmon payload! ");
-      
+
       return LMON_EINVAL;
     }
-      
+
   strtab  = get_strtab_begin ( bedata.proctab_msg );
   if ( strtab  == NULL )
     {
@@ -267,15 +269,21 @@ LMON_be_parse_raw_RPDTAB_msg ( )
       return LMON_EINVAL;
     }
 
+    if (bedata.proctab_msg->sec_or_jobsizeinfo.num_tasks < LMON_NTASKS_THRE)
+      {
+        ntasks = bedata.proctab_msg->sec_or_jobsizeinfo.num_tasks;
+      }
+    else 
+      {
+        ntasks = bedata.proctab_msg->long_num_tasks;
+      }
+
 #if VERBOSE
     LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-      "entered the loop that populates RPDTAB, numtasks: %d", 
-       bedata.proctab_msg->sec_or_jobsizeinfo.num_tasks);
+      "entered the loop that populates RPDTAB, numtasks: %d", ntasks);
 #endif
 
-  for ( i=0 
-	  ; i < bedata.proctab_msg->sec_or_jobsizeinfo.num_tasks
-	  ; i++ )
+  for ( i=0; i < ntasks; i++ )
     {
       unsigned int *hn_ix_ptr = (unsigned int*) mpirent;
       unsigned int *exec_ix_ptr = (unsigned int*) (mpirent + sizeof (int));
@@ -287,11 +295,11 @@ LMON_be_parse_raw_RPDTAB_msg ( )
 
       MPIR_PROCDESC_EXT *anentry = (MPIR_PROCDESC_EXT *) 
 	malloc (sizeof (MPIR_PROCDESC_EXT) );
-	  
+
       if ( anentry == NULL )
 	{
 	  LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-		       "malloc returned null ");
+	    "malloc returned null ");
 
 	  return LMON_ENOMEM;
 	}
@@ -309,8 +317,8 @@ LMON_be_parse_raw_RPDTAB_msg ( )
 	}
       else
 	{
-	  proctab_cache[hntmpstr].push_back (anentry);	  
-	}      
+	  proctab_cache[hntmpstr].push_back (anentry);
+	}
     }
 
 #if VERBOSE
@@ -591,7 +599,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
 			 lmonp_febe_security_chk,
 			 0,                    /* security_key1 */
 			 (unsigned int)tmpSK,  /* security_key2 */
-			 0,0,0,0 );   
+			 0,0,0,0,0 );   
 
 	if ( ( write_lmonp_long_msg ( servsockfd, 
 				      &initmsg, 
@@ -900,7 +908,9 @@ LMON_be_handshake ( void *udata )
                 + bedata.width * sizeof(int)
                 + offset;
     sendbuf = (lmonp_t *) malloc ( sendbufsize );
-    set_msg_header ( 
+    if (bedata.width < LMON_NTASKS_THRE)
+      {
+        set_msg_header ( 
     		sendbuf,
     		lmonp_fetobe,
     		(int) lmonp_befe_hostname,
@@ -908,14 +918,30 @@ LMON_be_handshake ( void *udata )
     		0,
     		0,
     		bedata.width,
+		0,
     		offset+bedata.width*sizeof(int),
     		0 );
+      }
+    else 
+      {
+        set_msg_header ( 
+    		sendbuf,
+    		lmonp_fetobe,
+    		(int) lmonp_befe_hostname,
+    		LMON_NTASKS_THRE,
+    		0,
+    		0,
+    		bedata.width,
+		bedata.width,
+    		offset+bedata.width*sizeof(int),
+    		0 );
+      }
 
 #if VERBOSE
     LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
       "BE master: set a msg header of lmonp_befe_hostname type");
 #endif
-      
+
     //
     // packing hostname indices and string table into the message
     //
@@ -955,7 +981,7 @@ LMON_be_handshake ( void *udata )
     		servsockfd, 
     		sendbuf, 
     		sendbufsize );
-    free (sendbuf);      
+    free (sendbuf);
 
     //
     // receiving the PROCTAB stream from the front-end 
@@ -1272,7 +1298,7 @@ LMON_be_ready ( void *udata )
                     readymsg,
                     lmonp_fetobe,
                     (int) lmonp_befe_usrdata,
-                    0,0,0,0,0,
+                    0,0,0,0,0,0,
                     LMON_MAX_USRPAYLOAD);
                  
     	uoffset = get_usrpayload_begin ( readymsg );
@@ -1316,12 +1342,12 @@ extern "C"
 lmon_rc_e 
 LMON_be_getMyProctab (
 		 MPIR_PROCDESC_EXT *proctabbuf, 
-		 int *size, 
+		 int *size,
 		 int proctab_num_elem )
 {
   using namespace std;
 
-  int i;
+  unsigned int i;
   char hn[LMON_BE_HN_MAX];
   char hntmp[LMON_BE_HN_MAX];
   lmon_rc_e lrc;
@@ -1329,8 +1355,8 @@ LMON_be_getMyProctab (
   if ( bedata.proctab_msg == NULL )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-		   "bedata.proctab_msg is null!  ");
-      
+       "bedata.proctab_msg is null!  ");
+
       return LMON_EINVAL;
     }
 
@@ -1369,14 +1395,14 @@ LMON_be_getMyProctab (
   if ( gethostname(hn, LMON_BE_HN_MAX) < 0 )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-		   "gethostname failed ");
+	"gethostname failed ");
 
       return LMON_ESYS;
     }
 #endif
 
   string myhostname (hn);
-  (*size) = proctab_cache[myhostname].size ();
+  (*size) = (int) proctab_cache[myhostname].size ();
   map<string, vector<MPIR_PROCDESC_EXT* > >::const_iterator viter 
     = proctab_cache.find (myhostname);  
   
@@ -1411,7 +1437,7 @@ LMON_be_getMyProctabSize ( int *size )
   if ( bedata.proctab_msg == NULL )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-		   "bedata.proctab_msg is null!  ");
+	"bedata.proctab_msg is null!  ");
 
       return LMON_EINVAL;
     }
@@ -1457,7 +1483,7 @@ LMON_be_getMyProctabSize ( int *size )
 #endif
 
   string myhostname (hn);
-  (*size) = proctab_cache[myhostname].size ();
+  (*size) = (int) proctab_cache[myhostname].size ();
 
   return LMON_OK;  
 }
@@ -1628,7 +1654,7 @@ LMON_be_sendUsrData ( void* udata )
                     usrmsg,
                     lmonp_fetobe,
                     (int) lmonp_befe_usrdata,
-                    0,0,0,0,0,
+                    0,0,0,0,0,0,
                     LMON_MAX_USRPAYLOAD);
                  
     	uoffset = get_usrpayload_begin ( usrmsg );

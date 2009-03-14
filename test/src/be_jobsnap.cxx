@@ -456,7 +456,7 @@ main( int argc, char* argv[] )
       time(&t); 
       strftime ( fn, PATH_MAX, "./jobsnap.out.%B-%d-%H-%M-%S", localtime(&t)); 
 
-#if PERFSCALTEST
+#if MEASURE_TRACING_COST
       begin_timer ();
 #endif     
       if ( ( fout = fopen ( fn, "w")) == NULL )

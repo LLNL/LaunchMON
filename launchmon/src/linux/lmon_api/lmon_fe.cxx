@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Mar 13 2009 DHA: Added large nTasks supporf
  *        Mar 11 2009 DHA: Bug fix in the pthread_cond_timedwait
  *                         return code checking logic for launchmon engine 
  *                         connection.
@@ -772,7 +773,7 @@ LMON_fe_handleFeBeUsrData ( int sessionHandle,
 	          &empty_udata_msg,
 		  lmonp_fetobe, 
 		  lmonp_febe_usrdata, 
-		  0, 0, 0, 0, 0, 0 );
+		  0, 0, 0, 0, 0, 0, 0 );
 
       write_lmonp_long_msg ( 
 		  mydesc->commDesc[fe_be_conn].sessionAcceptSockFd,
@@ -794,7 +795,7 @@ LMON_fe_handleFeBeUsrData ( int sessionHandle,
 		      &empty_udata_msg,
 		      lmonp_fetobe, 
 		      lmonp_febe_usrdata, 
-		      0, 0, 0, 0, 0, 0 );
+		      0, 0, 0, 0, 0, 0, 0 );
 	  //
 	  // sending a short message
 	  //
@@ -819,7 +820,7 @@ LMON_fe_handleFeBeUsrData ( int sessionHandle,
 		      udata_msg,
 		      lmonp_fetobe, 
 		      lmonp_febe_usrdata, 
-		      0, 0, 0, 0, 0, 
+		      0, 0, 0, 0, 0, 0,
 		      LMON_MAX_USRPAYLOAD );
 
 	  udata = get_usrpayload_begin ( udata_msg );
@@ -886,7 +887,7 @@ LMON_fe_handleFeMwUsrData (int sessionHandle,
 	          &empty_udata_msg,
 		  lmonp_fetomw, 
 		  lmonp_femw_usrdata, 
-		  0, 0, 0, 0, 0, 0 );
+		  0, 0, 0, 0, 0, 0, 0 );
 
       write_lmonp_long_msg ( 
 		  mydesc->commDesc[fe_mw_conn].sessionAcceptSockFd,
@@ -908,7 +909,7 @@ LMON_fe_handleFeMwUsrData (int sessionHandle,
 		      &empty_udata_msg,
 		      lmonp_fetomw, 
 		      lmonp_femw_usrdata, 
-		      0, 0, 0, 0, 0, 0 );
+		      0, 0, 0, 0, 0, 0, 0 );
 
 	  //
 	  // sending a short message
@@ -936,7 +937,7 @@ LMON_fe_handleFeMwUsrData (int sessionHandle,
 		      udata_msg,
 		      lmonp_fetomw, 
 		      lmonp_femw_usrdata, 
-		      0, 0, 0, 0, 0, 
+		      0, 0, 0, 0, 0, 0,
 		      LMON_MAX_USRPAYLOAD );
 
 	  udata = get_usrpayload_begin ( udata_msg );
@@ -1597,14 +1598,14 @@ LMON_fe_beHandshakeSequence (
       set_msg_header ( &use_type_msg,
                       lmonp_fetobe,
                       lmonp_febe_launch,
-                      0, 0, 0, 0, 0, 0 );
+                      0, 0, 0, 0, 0, 0, 0 );
     }
   else
     {
       set_msg_header ( &use_type_msg,
                       lmonp_fetobe,
                       lmonp_febe_attach,
-                      0, 0, 0, 0, 0, 0 );
+                      0, 0, 0, 0, 0, 0, 0 );
     }
     
   write_lmonp_long_msg ( mydesc->commDesc[fe_be_conn].sessionAcceptSockFd,
@@ -3476,7 +3477,7 @@ extern "C"
 lmon_rc_e
 LMON_fe_getProctableSize (
                 int sessionHandle,
-                int* size )
+                unsigned int* size )
 {
   lmon_session_desc_t* mydesc;
 
@@ -3518,7 +3519,16 @@ LMON_fe_getProctableSize (
       return LMON_EDUNAV;
     }
 
-  (*size) = (int) ( mydesc->proctab_msg->sec_or_jobsizeinfo.num_tasks );
+  if (mydesc->proctab_msg->sec_or_jobsizeinfo.num_tasks < LMON_NTASKS_THRE)
+    {
+     (*size)
+        = (unsigned int) ( mydesc->proctab_msg->sec_or_jobsizeinfo.num_tasks );
+    }
+  else
+    {
+     (*size)
+        = (unsigned int) ( mydesc->proctab_msg->long_num_tasks );
+    }
   pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
 
   return LMON_OK;
@@ -3536,10 +3546,10 @@ lmon_rc_e
 LMON_fe_getProctable (
 		int sessionHandle, 
 		MPIR_PROCDESC_EXT* proctable, 
-		int* size, 
-		int maxlen )
+		unsigned int* size, 
+		unsigned int maxlen )
 {
-  int i;
+  unsigned int i;
   char* traverse;
   char* strtab_offset;
 
@@ -3598,8 +3608,18 @@ LMON_fe_getProctable (
     {
       return LMON_EDUNAV;
     }
-  (*size) = (int) ( mydesc->proctab_msg->sec_or_jobsizeinfo.num_tasks );
-  strtab_offset = get_strtab_begin ( mydesc->proctab_msg);
+  if (mydesc->proctab_msg->sec_or_jobsizeinfo.num_tasks < LMON_NTASKS_THRE)
+    {
+     (*size)
+        = (unsigned int) ( mydesc->proctab_msg->sec_or_jobsizeinfo.num_tasks);
+    }
+  else
+    {
+     (*size)
+        = (unsigned int) ( mydesc->proctab_msg->long_num_tasks);
+    }
+
+  strtab_offset = get_strtab_begin ( mydesc->proctab_msg );
 
   for ( i = 0; (i < ( *size )) && i < maxlen; i++ )
     {

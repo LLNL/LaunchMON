@@ -26,7 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
- *        Mar  10 2009 DHA: Increased the MAXPCOUNT to 147456
+ *        Mar  13 2009 DHA: Dynamic check for proctabsize 
  *        Jun  12 2008 DHA: Added GNU build system support.  
  *        Mar  20 2008 DHA: Added BlueGene support.
  *        Mar  06 2008 DHA: Added calls-after-fail case.
@@ -34,7 +34,7 @@
  *                          connection timeout capability.
  *        Feb  09 2008 DHA: Added LLNS Copyright.
  *        Aug  06 2006 DHA: Adjust this case for minor API changes  
- *        Dec  27 2006 DHA: Created file.          
+ *        Dec  27 2006 DHA: Created file.
  */
 
 #include <lmon_api/common.h>
@@ -48,18 +48,25 @@
 #include <lmon_api/lmon_proctab.h>
 #include <lmon_api/lmon_fe.h>
 
-#define MAXPCOUNT 147456
+#if MEASURE_TRACING_COST 
+extern "C" {
+  int begin_timer ();
+  int time_stamp ( const char* description );
+}
+#endif
 
 int 
 main (int argc, char* argv[])
 {
-  int i;
-  int spid;
-  int psize;
-  int aSession;
-  char jobid[PATH_MAX];  
-  char **daemon_opts = NULL;
-  MPIR_PROCDESC_EXT* proctab;
+  unsigned int i             = 0;
+  int spid                   = 0;
+  int jobidsize              = 0;
+  unsigned int psize         = 0;
+  unsigned int proctabsize    = 0;
+  int aSession               = 0;
+  char jobid[PATH_MAX]       = {0};
+  char **daemon_opts         = NULL;
+  MPIR_PROCDESC_EXT *proctab = NULL;
   lmon_rc_e rc;
 
   if ( argc < 3 )
@@ -76,7 +83,7 @@ main (int argc, char* argv[])
         "%s cannot be executed\n", argv[2] );
 
       fprintf ( stdout, "[LMON FE] FAILED\n" );
-      return EXIT_FAILURE;	      
+      return EXIT_FAILURE;
     }
 
   if ( argc > 3 )
@@ -104,6 +111,10 @@ main (int argc, char* argv[])
       fprintf( stdout, "[LMON FE] FAILED\n");
       return EXIT_FAILURE;
     }
+
+#if MEASURE_TRACING_COST
+  begin_timer ();
+#endif 
 
   if (getenv ("FEN_RM_DISTRIBUTED"))
     {
@@ -195,23 +206,58 @@ main (int argc, char* argv[])
             return EXIT_FAILURE;
         } // attachAndSpawn for local
     } 
+#if MEASURE_TRACING_COST
+  time_stamp ( "LMON_fe_attachAndSpawnDaemons perf" );
+#endif
+
+  if ( ( rc = LMON_fe_getProctableSize ( 
+                aSession, 
+                &proctabsize ))
+              !=  LMON_OK )
+    {
+       fprintf ( stdout, 
+         "[LMON FE] FAILED in LMON_fe_getProctableSize\n");
+       return EXIT_FAILURE;
+    }
+
+  if (proctabsize <= 0) 
+    {
+      fprintf ( stdout, 
+        "[LMON FE] FAILED, proctabsize is not equal to the given: %ud\n", 
+        proctabsize);
+      return EXIT_FAILURE;
+    }
 
   proctab = (MPIR_PROCDESC_EXT*) malloc (
-                MAXPCOUNT*sizeof(MPIR_PROCDESC_EXT)); 
+                proctabsize*sizeof (MPIR_PROCDESC_EXT) );
+  
+  if ( !proctab )
+    {
+       fprintf ( stdout, "[LMON FE] malloc returned null\n");
+       return EXIT_FAILURE;
+    }
 
   fprintf ( stdout,
     "[LMON FE] Please check the correctness of the following proctable\n");
+
+#if MEASURE_TRACING_COST
+  begin_timer ();
+#endif 
 
   if ( ( rc = LMON_fe_getProctable (
                 aSession, 
                 proctab,
                 &psize,
-                MAXPCOUNT )) 
+                proctabsize )) 
               !=  LMON_OK)
     {
        fprintf ( stdout, "[LMON FE] FAILED\n" );
        return EXIT_FAILURE;
     }
+
+#if MEASURE_TRACING_COST
+  time_stamp ( "LMON_fe_getProctable perf" );
+#endif
 
   for (i=0; i < psize; i++)
     {
@@ -225,7 +271,7 @@ main (int argc, char* argv[])
     }
 
   rc = LMON_fe_getResourceHandle ( aSession, jobid,
-                                 &psize, PATH_MAX);
+                                   &jobidsize, PATH_MAX);
   if ((rc != LMON_OK) && (rc != LMON_EDUNAV))
     {
       if ( rc != LMON_EDUNAV )

@@ -28,6 +28,9 @@
  *
  *
  *  Update Log:
+ *        Mar  13 2008 DHA: change parameter data type to unsigned integer in 
+ *                          LMON_fe_getProctableSize and LMON_fe_getProctable
+ *                          to support extreme proctable sizes.
  *        Jun  06 2008 DHA: Remove description comment; the man pages 
  *                          now contain most up-to-date info.   
  *        Feb  09 2008 DHA: Added LLNS Copyright 
@@ -114,12 +117,12 @@ lmon_rc_e LMON_fe_regStatusCB ( int (*func) (void *status) );
 lmon_rc_e LMON_fe_getProctable (
                 int sessionHandle, 
                 MPIR_PROCDESC_EXT* proctable, 
-                int* size, 
-                int maxlen);
+                unsigned int* size, 
+                unsigned int maxlen);
 
 lmon_rc_e LMON_fe_getProctableSize (
                 int sessionHandle,
-                int* size );
+                unsigned int* size );
 
 lmon_rc_e LMON_fe_getResourceHandle ( 
                 int sessionHandle, 
