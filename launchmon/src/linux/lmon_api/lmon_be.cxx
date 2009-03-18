@@ -26,8 +26,11 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
- *        Mar 13 2009 DHA: Added large nTasks supporf
- *        Sep 23 2008 DHA: Added verbosity support 
+ *        Mar 13 2009 DHA: Added large nTasks support
+ *        Mar 04 2009 DHA: Added BlueGene/P support.
+ *                         In particular, changed RM_BGL_MPIRUN to RM_BG_MPIRUN 
+ *                         to genericize BlueGene Support
+ *        Sep 23 2008 DHA: Added verbosity support
  *        Mar 20 2008 DHA: Added BlueGene/L support
  *        Feb 09 2008 DHA: Added LMON_be_getMyProctabSize support to better 
  *                         support STAT
@@ -75,7 +78,7 @@
 #else
 # error sys/socket.h is required
 #endif
-                                                                                                                   
+
 #if HAVE_ARPA_INET_H
 # include <arpa/inet.h>
 #else
@@ -91,12 +94,16 @@
 #include "lmon_api/lmon_say_msg.hxx"
 #include "lmon_be_internal.hxx"
 
-#if RM_BGL_MPIRUN
+#if RM_BG_MPIRUN
 //
 // CIOD debug interface is required so that 
 // launchmon back-end API can provide the client 
 // with a consistent MPI process state
 // before transferring control back to the client.
+//
+// DHA 3/4/3009, reviewed. 
+// Changed RM_BGL_MPIRUN to RM_BG_MPIRUN to genericize 
+// BlueGene Support
 //
 #include "debugger_interface.h"
 using namespace DebuggerInterface;
@@ -141,7 +148,7 @@ LMON_be_getWhereToConnect ( struct sockaddr_in *servaddr )
   if (servaddr == NULL)
     {
       LMON_say_msg (LMON_BE_MSG_PREFIX, true, 
-		    "servaddr is NULL");
+        "servaddr is NULL");
 
       return LMON_EBDARG;
     }
@@ -154,7 +161,7 @@ LMON_be_getWhereToConnect ( struct sockaddr_in *servaddr )
   if ( (portinfo = getenv (LMON_FE_PORT_ENVNAME)) == NULL )    
     {
       LMON_say_msg (LMON_BE_MSG_PREFIX, true, 
-		    "LMON_FE_PORT_ENVNAME envVar not found");
+        "LMON_FE_PORT_ENVNAME envVar not found");
 
       return LMON_EINVAL;    
     }
@@ -167,7 +174,7 @@ LMON_be_getWhereToConnect ( struct sockaddr_in *servaddr )
   if ( (ipinfo = getenv (LMON_FE_ADDR_ENVNAME)) == NULL )    
     {
       LMON_say_msg (LMON_BE_MSG_PREFIX, true, 
-		    "LMON_FE_ADDR_ENVNAME envVar not found");
+        "LMON_FE_ADDR_ENVNAME envVar not found");
 
       return LMON_EINVAL;
     }
@@ -182,7 +189,7 @@ LMON_be_getWhereToConnect ( struct sockaddr_in *servaddr )
                  &(servaddr->sin_addr)) < 0 )
     {
       LMON_say_msg (LMON_BE_MSG_PREFIX, true, 
-		    "inet_pton failed");
+        "inet_pton failed");
 
       return LMON_ESYS;
     }
@@ -205,7 +212,7 @@ LMON_be_getSharedKeyAndID ( char *shared_key, int *id )
   if ( shared_key == NULL )
     {
       LMON_say_msg (LMON_BE_MSG_PREFIX, true, 
-		    "one of the arguments is NULL" );
+        "one of the arguments is NULL" );
 
       return LMON_EBDARG;
     }
@@ -213,7 +220,7 @@ LMON_be_getSharedKeyAndID ( char *shared_key, int *id )
   if ( (sk = getenv (LMON_SHRD_SEC_ENVNAME)) == NULL )    
     {
       LMON_say_msg (LMON_BE_MSG_PREFIX, true, 
-		    "LMON_SHRD_SEC_ENVNAME envVar not found");
+        "LMON_SHRD_SEC_ENVNAME envVar not found");
 
       return LMON_EINVAL;    
     }
@@ -222,7 +229,7 @@ LMON_be_getSharedKeyAndID ( char *shared_key, int *id )
   if ( (char_id = getenv (LMON_SEC_CHK_ENVNAME)) == NULL )    
     {
       LMON_say_msg (LMON_BE_MSG_PREFIX, true, 
-		    "LMON_SEC_CHK_ENVNAME envVar not found");
+        "LMON_SEC_CHK_ENVNAME envVar not found");
 
       return LMON_EINVAL;    
     } 
@@ -273,7 +280,7 @@ LMON_be_parse_raw_RPDTAB_msg ( )
       {
         ntasks = bedata.proctab_msg->sec_or_jobsizeinfo.num_tasks;
       }
-    else 
+    else
       {
         ntasks = bedata.proctab_msg->long_num_tasks;
       }
@@ -282,6 +289,7 @@ LMON_be_parse_raw_RPDTAB_msg ( )
     LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
       "entered the loop that populates RPDTAB, numtasks: %d", ntasks);
 #endif
+
 
   for ( i=0; i < ntasks; i++ )
     {
@@ -295,11 +303,11 @@ LMON_be_parse_raw_RPDTAB_msg ( )
 
       MPIR_PROCDESC_EXT *anentry = (MPIR_PROCDESC_EXT *) 
 	malloc (sizeof (MPIR_PROCDESC_EXT) );
-
+	  
       if ( anentry == NULL )
 	{
 	  LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-	    "malloc returned null ");
+            "malloc returned null ");
 
 	  return LMON_ENOMEM;
 	}
@@ -317,8 +325,8 @@ LMON_be_parse_raw_RPDTAB_msg ( )
 	}
       else
 	{
-	  proctab_cache[hntmpstr].push_back (anentry);
-	}
+	  proctab_cache[hntmpstr].push_back (anentry);	  
+	}      
     }
 
 #if VERBOSE
@@ -354,7 +362,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
   if ( ver != LMON_return_ver() ) 
     {
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-         "LMON BE API version mismatch" );
+        "LMON BE API version mismatch" );
 
       return LMON_EINVAL;
     }
@@ -364,7 +372,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
   if ( LMON_be_internal_init ( argc, argv ) != LMON_OK )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true,
-         "LMON_be_mpibased_init failed");
+        "LMON_be_mpibased_init failed");
 
       return LMON_ESUBCOM;
     }
@@ -372,12 +380,17 @@ LMON_be_init ( int ver, int *argc, char ***argv )
   if ( LMON_be_getMyRank ( &(bedata.myrank) ) != LMON_OK )
     {
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-         "LMON BE getMyRank failed" );
+        "LMON BE getMyRank failed" );
 
       return LMON_ESUBCOM;
     }
 
-#if RM_BGL_MPIRUN && VERBOSE && USE_VERBOSE_LOGDIR
+#if RM_BG_MPIRUN && VERBOSE && USE_VERBOSE_LOGDIR
+  //
+  // DHA 3/4/3009, reviewed. Looks fine for BGP as well.
+  //
+  // Changed RM_BGL_MPIRUN to RM_BG_MPIRUN to genericize 
+  // BlueGene Support
 
   char debugfn[PATH_MAX];
   char local_hostname[PATH_MAX];
@@ -389,18 +402,18 @@ LMON_be_init ( int ver, int *argc, char ***argv )
       if ( errno != EEXIST )
         {
           LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-           "LMON BE fails to mkdir %s", debugfn );
+            "LMON BE fails to mkdir %s", debugfn );
 
           return LMON_EINVAL; 
         }
-  }
+    }
 
   snprintf(debugfn, PATH_MAX, "%s/stdout.%d.%s", 
 	VERBOSE_LOGDIR,bedata.myrank,local_hostname);
   if ( freopen (debugfn, "w", stdout) == NULL )
     {
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-         "LMON BE fails to reopen stdout: %s", debugfn );
+        "LMON BE fails to reopen stdout: %s", debugfn );
 
       return LMON_EINVAL; 
     }
@@ -410,16 +423,16 @@ LMON_be_init ( int ver, int *argc, char ***argv )
   if ( freopen (debugfn, "w", stderr) == NULL )
     {
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-         "LMON BE fails to reopen stderr: %s", debugfn );
+        "LMON BE fails to reopen stderr: %s", debugfn );
 
       return LMON_EINVAL;
     }
-#endif   
-  
+#endif
+
   if ( LMON_be_getSize ( &(bedata.width ) ) != LMON_OK )
     {
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-         "LMON BE getSize failed" );
+        "LMON BE getSize failed" );
 
       return LMON_ESUBCOM;
     }
@@ -460,7 +473,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
 
 #if VERBOSE
     LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-         "BE master: socket created" );
+      "BE master: socket created" );
 #endif
 	/*
 	 * Where does the master be connect to?
@@ -807,10 +820,16 @@ LMON_be_handshake ( void *udata )
   char hntmp[LMON_BE_HN_MAX];
   char *hngatherbuf = NULL;
 
-#if RM_BGL_MPIRUN
+#if RM_BG_MPIRUN
   //
   // BLUEGENE/L's RPDTAB contains raw IPs instead of hostnames.
   // 
+  // DHA 3/4/3009, reviewed. Looks fine for the DAWN configuration
+  // /etc/hosts shows that I/O network is detnoted as FENname-io
+  // following the same convention. 
+  //
+  // Changed RM_BGL_MPIRUN to RM_BG_MPIRUN to genericize BlueGene Support
+  //
   memset ( hn, 0, LMON_BE_HN_MAX );
   memset ( hntmp, 0, LMON_BE_HN_MAX );
 
@@ -818,7 +837,7 @@ LMON_be_handshake ( void *udata )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
       	"gethostname failed");
-      
+
       return LMON_ESYS;
     }
 
@@ -828,7 +847,7 @@ LMON_be_handshake ( void *udata )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
       	"inet_ntop failed");
-      
+
       return LMON_ESYS;
     }
 
@@ -836,16 +855,16 @@ LMON_be_handshake ( void *udata )
   LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
     "BES: inet_ntop converted host name representation from binary to text");
 # endif
-#else /* RM_BGL_MPIRUN */
+#else /* RM_BG_MPIRUN */
   memset ( hn, 0, LMON_BE_HN_MAX );
   if ( gethostname ( hn, LMON_BE_HN_MAX ) < 0 )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
       	"gethostname failed");
-      
+
       return LMON_ESYS;
     }
-#endif /* RM_BGL_MPIRUN */
+#endif /* RM_BG_MPIRUN */
 
   BEGIN_MASTER_ONLY
     hngatherbuf = (char *) malloc ( LMON_BE_HN_MAX*bedata.width );
@@ -855,7 +874,7 @@ LMON_be_handshake ( void *udata )
       	  "malloc returned zero");
 
 	return LMON_ENOMEM;
-      }    
+      }
 #if VERBOSE
 	LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
          "BE master: alloc buf of size %d x %d", 
@@ -870,13 +889,13 @@ LMON_be_handshake ( void *udata )
   if ( LMON_be_gather ( hn, LMON_BE_HN_MAX, hngatherbuf ) != LMON_OK )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-      	  "gather failed");
+        "gather failed");
 
       return LMON_ESUBCOM;
     }
 #if VERBOSE
 	LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-         "BES: host names are gathered");
+          "BES: host names are gathered");
 #endif
   BEGIN_MASTER_ONLY
 
@@ -884,7 +903,7 @@ LMON_be_handshake ( void *udata )
     lmonp_t *sendbuf;
     int sendbufsize;
     unsigned int offset = 0;
-    char *hntrav = NULL;      
+    char *hntrav = NULL;
     hntrav = hngatherbuf; // hntrav will traverse the gathered hostnames   
 
     for ( i=0; i < bedata.width ; ++i )
@@ -910,32 +929,33 @@ LMON_be_handshake ( void *udata )
     sendbuf = (lmonp_t *) malloc ( sendbufsize );
     if (bedata.width < LMON_NTASKS_THRE)
       {
-        set_msg_header ( 
-    		sendbuf,
-    		lmonp_fetobe,
-    		(int) lmonp_befe_hostname,
-    		(unsigned short) bedata.width,
-    		0,
-    		0,
-    		bedata.width,
-		0,
-    		offset+bedata.width*sizeof(int),
-    		0 );
+        set_msg_header (
+                sendbuf,
+                lmonp_fetobe,
+                (int) lmonp_befe_hostname,
+                (unsigned short) bedata.width,
+                0,
+                0,
+                bedata.width,
+                0,
+                offset+bedata.width*sizeof(int),
+                0 );
       }
-    else 
+    else
       {
-        set_msg_header ( 
-    		sendbuf,
-    		lmonp_fetobe,
-    		(int) lmonp_befe_hostname,
-    		LMON_NTASKS_THRE,
-    		0,
-    		0,
-    		bedata.width,
-		bedata.width,
-    		offset+bedata.width*sizeof(int),
-    		0 );
+        set_msg_header (
+                sendbuf,
+                lmonp_fetobe,
+                (int) lmonp_befe_hostname,
+                LMON_NTASKS_THRE,
+                0,
+                0,
+                bedata.width,
+                bedata.width,
+                offset+bedata.width*sizeof(int),
+                0 );
       }
+
 
 #if VERBOSE
     LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
@@ -981,7 +1001,7 @@ LMON_be_handshake ( void *udata )
     		servsockfd, 
     		sendbuf, 
     		sendbufsize );
-    free (sendbuf);
+    free (sendbuf);      
 
     //
     // receiving the PROCTAB stream from the front-end 
@@ -1117,7 +1137,7 @@ LMON_be_handshake ( void *udata )
 	LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
 	  "Malloc returned NULL"); 
 	return LMON_ENOMEM;
-      }    
+      }
   END_SLAVE_ONLY
 
   //
@@ -1149,7 +1169,7 @@ LMON_be_handshake ( void *udata )
   if ( LMON_be_getMyProctabSize(&proctab_size) != LMON_OK )
     {
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-              "My proctable size is unavailable");
+        "My proctable size is unavailable");
 
       return LMON_EDUNAV;
     }
@@ -1160,7 +1180,7 @@ LMON_be_handshake ( void *udata )
   if ( proctab == NULL )
     {
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-              "Out of memory");
+        "Out of memory");
 
       return LMON_ENOMEM;
     }
@@ -1169,12 +1189,12 @@ LMON_be_handshake ( void *udata )
          &proctab_size, proctab_size) != LMON_OK )
     {
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-              "My proctable is unavailable");
+        "My proctable is unavailable");
                                                                                                                                                           
       return LMON_EDUNAV;
     }
 
-#if RM_BGL_MPIRUN
+#if RM_BG_MPIRUN
   /*
    * In the case of BlueGene, we want to register ATTACH msgs here
    * so that the job will stop when loaded. This can minimize the
@@ -1184,34 +1204,40 @@ LMON_be_handshake ( void *udata )
    *
    */
 
+  // DHA 3/4/3009, reviewed. 
+  // Change the message type to BG_Debugger_Msg from BGL_Debugger_Msg.
+  // Changed RM_BGL_MPIRUN to RM_BG_MPIRUN to genericize 
+  // BlueGene Support
+  //
+
   for (i=0; i < proctab_size; i++)
     {
-      BGL_Debugger_Msg dbgmsg(ATTACH,proctab[i].pd.pid,0,0,0);
-      BGL_Debugger_Msg dbgmsg2(KILL,proctab[i].pd.pid,0,0,0);
-      BGL_Debugger_Msg ackmsg;
-      BGL_Debugger_Msg ackmsg2;
+      BG_Debugger_Msg dbgmsg(ATTACH,proctab[i].pd.pid,0,0,0);
+      BG_Debugger_Msg dbgmsg2(KILL,proctab[i].pd.pid,0,0,0);
+      BG_Debugger_Msg ackmsg;
+      BG_Debugger_Msg ackmsg2;
       dbgmsg.header.dataLength = sizeof(dbgmsg.dataArea.ATTACH);
       dbgmsg2.dataArea.KILL.signal = SIGSTOP;
       dbgmsg2.header.dataLength = sizeof(dbgmsg2.dataArea.KILL);
 
-      if ( !BGL_Debugger_Msg::writeOnFd (BGL_DEBUGGER_WRITE_PIPE, dbgmsg) )
+      if ( !BG_Debugger_Msg::writeOnFd (BG_DEBUGGER_WRITE_PIPE, dbgmsg) )
         {
           LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-              "ATTACH command failed.");
+            "ATTACH command failed.");
 
           return LMON_EINVAL;
         }
-      if ( !BGL_Debugger_Msg::readFromFd (BGL_DEBUGGER_READ_PIPE, ackmsg) )
+      if ( !BG_Debugger_Msg::readFromFd (BG_DEBUGGER_READ_PIPE, ackmsg) )
         {
           LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-              "ATTACH_ACK failed.");
+            "ATTACH_ACK failed.");
 
           return LMON_EINVAL;
         }
       if ( ackmsg.header.messageType != ATTACH_ACK)
         {
           LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-              "readFromFd received a wrong msg type: %d.",
+            "readFromFd received a wrong msg type: %d.",
               ackmsg.header.messageType);
 
           return LMON_EINVAL;
@@ -1219,7 +1245,7 @@ LMON_be_handshake ( void *udata )
       if ( ackmsg.header.nodeNumber != (unsigned int) proctab[i].pd.pid )
         {
           LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-              "ATTACH_ACK contains a wrong nodeNumber");
+            "ATTACH_ACK contains a wrong nodeNumber");
 
           return LMON_EINVAL;
         }
@@ -1229,9 +1255,9 @@ LMON_be_handshake ( void *udata )
     {
       for (i=0; i < proctab_size; i++)
         {
-          BGL_Debugger_Msg ackmsg;
+          BG_Debugger_Msg ackmsg;
 
-          if ( !BGL_Debugger_Msg::readFromFd (BGL_DEBUGGER_READ_PIPE, ackmsg) )
+          if ( !BG_Debugger_Msg::readFromFd (BG_DEBUGGER_READ_PIPE, ackmsg) )
             {
               LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
                 "SIGNAL_ENCOUNTERED");
@@ -1241,7 +1267,7 @@ LMON_be_handshake ( void *udata )
           if ( ackmsg.header.messageType != SIGNAL_ENCOUNTERED )
             {
               LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-                  "readFromFd received a wrong msg type: %d.",
+                "readFromFd received a wrong msg type: %d.",
                   ackmsg.header.messageType);
 
               return LMON_EINVAL;
@@ -1253,7 +1279,7 @@ LMON_be_handshake ( void *udata )
     LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
       "BES: primed the job for next operations"); 
 # endif
-#endif /* RM_BGL_MPIRUN */
+#endif /* RM_BG_MPIRUN */
 
   free (proctab);
 
@@ -1342,7 +1368,7 @@ extern "C"
 lmon_rc_e 
 LMON_be_getMyProctab (
 		 MPIR_PROCDESC_EXT *proctabbuf, 
-		 int *size,
+		 int *size, 
 		 int proctab_num_elem )
 {
   using namespace std;
@@ -1355,8 +1381,8 @@ LMON_be_getMyProctab (
   if ( bedata.proctab_msg == NULL )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-       "bedata.proctab_msg is null!  ");
-
+        "bedata.proctab_msg is null!  ");
+      
       return LMON_EINVAL;
     }
 
@@ -1367,10 +1393,16 @@ LMON_be_getMyProctab (
 	return lrc;
     }
 
-#if RM_BGL_MPIRUN
+#if RM_BG_MPIRUN
   /*
    * BLUEGENE's RPDTAB contains raw IPs instead of hostnames.
    */
+  //	
+  // DHA 3/4/3009, reviewed. 
+  //
+  // Changed RM_BGL_MPIRUN to RM_BG_MPIRUN to genericize 
+  // BlueGene Support
+  //
   memset ( hn, 0, LMON_BE_HN_MAX );
   memset ( hntmp, 0, LMON_BE_HN_MAX );
 
@@ -1395,7 +1427,7 @@ LMON_be_getMyProctab (
   if ( gethostname(hn, LMON_BE_HN_MAX) < 0 )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-	"gethostname failed ");
+        "gethostname failed ");
 
       return LMON_ESYS;
     }
@@ -1437,7 +1469,7 @@ LMON_be_getMyProctabSize ( int *size )
   if ( bedata.proctab_msg == NULL )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-	"bedata.proctab_msg is null!  ");
+        "bedata.proctab_msg is null!  ");
 
       return LMON_EINVAL;
     }
@@ -1448,7 +1480,7 @@ LMON_be_getMyProctabSize ( int *size )
       if ( lrc != LMON_OK ) 
 	return lrc;
     }
-#if RM_BGL_MPIRUN
+#if RM_BG_MPIRUN
   /*
    * BLUEGENE's RPDTAB contains raw IPs instead of hostnames.
    */
@@ -1476,7 +1508,7 @@ LMON_be_getMyProctabSize ( int *size )
   if ( gethostname(hn, LMON_BE_HN_MAX) < 0 )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-		   "gethostname failed ");
+	"gethostname failed ");
       
       return LMON_ESYS;
     }
@@ -1555,7 +1587,7 @@ LMON_be_recvUsrData ( void* udata )
     if ( read_lmonp_msgheader ( servsockfd, &recvmsg ) < 0 )
       {
 	LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-		     "read_lmonp return a neg value");
+	  "read_lmonp return a neg value");
 
 	return LMON_ESYS;
       }
@@ -1563,7 +1595,7 @@ LMON_be_recvUsrData ( void* udata )
     if ( recvmsg.type.fetobe_type != lmonp_febe_usrdata )
       {
 	LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-	     "the received message doesn't match with the expected type");
+          "the received message doesn't match with the expected type");
 
 	return LMON_EBDMSG;
       }
@@ -1575,7 +1607,7 @@ LMON_be_recvUsrData ( void* udata )
 	if ( usrpl == NULL)
 	  {
 	    LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-			 "Out of memory");
+	      "Out of memory");
 
 	    return LMON_ENOMEM;
 	  }
@@ -1593,7 +1625,7 @@ LMON_be_recvUsrData ( void* udata )
 	else
 	  {
 	    LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-		   "bedata.unpack has not been registered!  ");
+	      "bedata.unpack has not been registered!  ");
 
 	    lrc = LMON_ENCLLB;
 	  }
@@ -1645,7 +1677,7 @@ LMON_be_sendUsrData ( void* udata )
 	if ( usrmsg == NULL )
 	  {
 	    LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-			 "Out of memory");
+ 	      "Out of memory");
 
 	    return LMON_ENOMEM;
 	  }
@@ -1671,7 +1703,7 @@ LMON_be_sendUsrData ( void* udata )
 	if ( usrmsg == NULL )
 	  {
 	    LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-			 "Out of memory");
+	      "Out of memory");
 
 	    return LMON_ENOMEM;
 	  }
@@ -1691,12 +1723,12 @@ LMON_be_sendUsrData ( void* udata )
 	 < 0 )
       {
 	LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-			 "write_lmonp returned a neg value");
+          "write_lmonp returned a neg value");
 
 	return LMON_ESYS;
       }
     free (usrmsg);
-    
+
   END_MASTER_ONLY
 
   //
