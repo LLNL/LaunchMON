@@ -33,6 +33,8 @@
  *  
  *
  *  Update Log:
+ *        Mar  26 2008 DHA: Added the END_DEBUG message support
+ *                          for BlueGene with a debugger protocol version >= 3
  *        Mar  14 2008 DHA: Added PMGR Collective support. 
  *                          The changes are contained in the PMGR_BASED 
  *                          macro.
@@ -63,6 +65,12 @@
 #include "lmon_api/lmon_lmonp_msg.h"
 #include "lmon_api/lmon_say_msg.hxx"
 #include "lmon_be_internal.hxx"
+
+#if RM_BG_MPIRUN
+#include "debugger_interface.h"
+using namespace DebuggerInterface;
+#endif
+
 
 #if MPI_BASED
 #include <mpi.h>
@@ -403,6 +411,59 @@ lmon_rc_e
 LMON_be_internal_finalize ()
 {
   int rc;
+
+#if RM_BG_MPIRUN
+  BG_Debugger_Msg dbgmsg(VERSION_MSG,0,0,0,0);
+  BG_Debugger_Msg dbgmsg2(END_DEBUG,0,0,0,0);
+  BG_Debugger_Msg ackmsg;
+  BG_Debugger_Msg ackmsg2;
+  dbgmsg.header.dataLength = sizeof(dbgmsg.dataArea.VERSION_MSG);
+  dbgmsg2.header.dataLength = sizeof(dbgmsg2.dataArea.END_DEBUG);
+
+  if ( !BG_Debugger_Msg::writeOnFd (BG_DEBUGGER_WRITE_PIPE, dbgmsg) )
+    {
+      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+        "VERSION_MSG command failed.");
+
+      return LMON_EINVAL;
+    }
+  if ( !BG_Debugger_Msg::readFromFd (BG_DEBUGGER_READ_PIPE, ackmsg) )
+    {
+      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+        "VERSION_MSG_ACK failed.");
+
+      return LMON_EINVAL;
+    }
+  if ( ackmsg.header.messageType != VERSION_MSG_ACK )
+    {
+      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+        "readFromFd received a wrong msg type: %d.",
+        ackmsg.header.messageType);
+
+      return LMON_EINVAL;
+    }
+  else 
+    {
+      if ( ackmsg.dataArea.VERSION_MSG_ACK.protocolVersion >= 3)
+        {
+	  if ( !BG_Debugger_Msg::writeOnFd (BG_DEBUGGER_WRITE_PIPE, dbgmsg2) )
+            {
+      	      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+        	"END_DEBUG command failed.");
+
+      	      return LMON_EINVAL;
+    	    }
+  	  if ( !BG_Debugger_Msg::readFromFd (BG_DEBUGGER_READ_PIPE, ackmsg2) )
+    	    {
+      	      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+        	"VERSION_MSG_ACK failed.");
+
+ 	      return LMON_EINVAL;	
+ 	    }
+	  }
+      return LMON_EINVAL;
+    }
+#endif
 
 #if MPI_BASED
   if ( (rc = MPI_Finalize()) < 0 )
