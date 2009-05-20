@@ -29,7 +29,7 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
-##        Mar 13 2009 DHA: Added the be_pcontrol_perftest test
+##        May 29 2009 DHA: Added fe_regErrorCB.in test
 ##        Jun 12 2008 DHA: Created file.
 ##
 
@@ -54,7 +54,6 @@ bin_PROGRAMS                      = fe_jobsnap \
 				    fe_launch_usrpayload_test \
 			   	    fe_attach_smoketest \
 				    be_kicker \
-				    be_pcontrol_perftest \
 				    be_kicker_usrpayload_test \
 				    be_standalone_kicker \
 				    run_3mins \
@@ -85,10 +84,6 @@ fe_attach_smoketest_LDADD         = -lmonfeapi
 be_kicker_SOURCES                 = be_kicker.cxx util.c
 be_kicker_LDFLAGS    	          = -L$(top_srcdir)/@LMONAPILOC@ 
 be_kicker_LDADD                   = -lmonbeapi 
-
-be_pcontrol_perftest_SOURCES      = be_pcontrol_perftest.cxx util.c
-be_pcontrol_perftest_LDFLAGS      = -L$(top_srcdir)/@LMONAPILOC@
-be_pcontrol_perftest_LDADD        = -lmonbeapi
 
 be_kicker_usrpayload_test_SOURCES = be_kicker_usrpayload_test.cxx
 be_kicker_usrpayload_test_LDFLAGS = -L$(top_srcdir)/@LMONAPILOC@ 
@@ -124,9 +119,9 @@ bin_SCRIPTS                       = test.LE_model_checker_mainthread \
 				    test.attach_3_callsafterfail \
 				    test.attach_4_kill \
 				    test.attach_4_shutdownbe \
-				    test.attach_rpci_perf \
 				    test.jobsnap_1 \
-				    test.launch_6_engine_failure
+				    test.launch_6_engine_failure \
+				    test.fe_regErrorCB
 
 CLEANFILES                        = $(bin_SCRIPTS)
 EXTRA_DIST                        = test.LE_model_checker_mainthread.in \
@@ -148,9 +143,9 @@ EXTRA_DIST                        = test.LE_model_checker_mainthread.in \
                                     test.attach_3_callsafterfail.in \
                                     test.attach_4_kill.in \
                                     test.attach_4_shutdownbe.in \
-				    test.attach_rpci_perf.in \
                                     test.jobsnap_1.in \
-				    test.launch_6_engine_failure.in
+				    test.launch_6_engine_failure.in \
+				    test.fe_regErrorCB.in	
 
 
 do_subst = sed -e 's,@LMON@,$(prefix)/bin/launchmon$(EXEEXT),g' \
@@ -220,12 +215,12 @@ test.attach_4_kill: test.attach_4_kill.in Makefile
 test.attach_4_shutdownbe: test.attach_4_shutdownbe.in Makefile
 	$(do_subst) < test.attach_4_shutdownbe.in > test.attach_4_shutdownbe
 	chmod +x test.attach_4_shutdownbe
-test.attach_rpci_perf: test.attach_rpci_perf.in Makefile
-	$(do_subst) < test.attach_rpci_perf.in > test.attach_rpci_perf
-	chmod +x test.attach_rpci_perf
 test.jobsnap_1: test.jobsnap_1.in Makefile
 	$(do_subst) < test.jobsnap_1.in > test.jobsnap_1
 	chmod +x test.jobsnap_1
+test.fe_regErrorCB: test.fe_regErrorCB.in Makefile
+	$(do_subst) < test.fe_regErrorCB.in > test.fe_regErrorCB
+	chmod +x test.fe_regErrorCB
 
 run_3mins: run_3mins.c Makefile
 	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) -I$(top_srcdir)/launchmon/src $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -o $@ $<	
