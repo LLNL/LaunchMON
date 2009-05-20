@@ -27,6 +27,7 @@
  *	
  *
  *  Update Log:
+ *        May 20 2009 DHA: Change LMON_VERSION 
  *        Jun 06 2008 DHA: Change C++ compiler support style  
  *                         (GNU). 
  *        Feb 09 2008 DHA: Added LLNS Copyright 
@@ -42,7 +43,7 @@
 BEGIN_C_DECLS
 
 #undef  LMON_VERSION
-#define LMON_VERSION          90004 /* version 0.4 */
+#define LMON_VERSION          90007 /* version 0.7 */
 
 #define LMON_FE_ADDR_ENVNAME  "LMON_FE_WHERETOCONNECT_ADDR"
 #define LMON_FE_PORT_ENVNAME  "LMON_FE_WHERETOCONNECT_PORT"
