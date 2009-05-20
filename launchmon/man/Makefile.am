@@ -29,6 +29,7 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        May 20 2009 DHA: Added LMON_fe_regErrorCB.3
 ##        Jun 09 2008 DHA: Created file.
 ##
 
@@ -63,6 +64,7 @@ man_MANS = LMON_be_getMyProctabSize.3 \
 	   LMON_be_getMyProctab.3 \
 	   LMON_be_recvUsrData.3 \
 	   LMON_fe_detach.3 \
-	   LMON_fe_putToBeDaemonEnv.3
+	   LMON_fe_putToBeDaemonEnv.3 \
+	   LMON_fe_regErrorCB.3
 
 EXTRA_DIST = $(man_MANS)

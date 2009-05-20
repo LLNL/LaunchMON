@@ -15,7 +15,7 @@ LMON_be_regPackForBeToFe LMON_be_regUnpackForFeToBe LMON_be_recvUsrData LMON_be_
 .PP
 .BI "lmon_rc_e LMON_be_sendUsrData ( void * " udata " );"
 .PP
-.BI "lmon_rc_e LMON_fe_recvUsrData ( void * " udata " );"
+.BI "lmon_rc_e LMON_be_recvUsrData ( void * " udata " );"
 .PP
 .B cc ... -lmonbeapi
 
@@ -34,7 +34,8 @@ cannot exceed \fImsgbufmax.\fR The current default max is determined by
 the \fBLMON_MAX_USRPAYLOAD\fR macro defined in \fBlmon_api_std.h\fR, which is
 set to a relatively small value, but can be differently configured.
 The \fIpackBefe\fR function must return the size of the filled buffer
-via the \fImsgbuflen\fR argument.
+via the \fImsgbuflen\fR argument. In addition, any negative value 
+returned from the \fIpackBefe\fR function is considered to be an error condition.
 .PP
 \fBLMON_be_regUnpackForFeToBe()\fR allows the master back-end daemon to register
 an unpack (\fIunpackFebe\fR) function that de-serializes the tool data received from the front-end
@@ -46,6 +47,8 @@ function.
 \fIudatabuf\fR is the raw payload received from the front-end.
 \fIudatabuflen\fR is the length of that raw buffer, and
 \fIudata\fR is the pointer to which this buffer should be unpacked.
+Any negative value returned from the \fIunpackFebe\fR function 
+is considered to be an error condition.
 .PP
 \fBLMON_be_sendUsrData()\fR sends a message containing
 the tool data (\fIudata\fR) to the front-end.
@@ -82,6 +85,9 @@ The message contains no user payload.
 .TP
 .B LMON_ENCLLB
 No pack or unpack function is registered.
+.TP 
+.B LMON_ENEGCB
+The pack or unpack function returned a negative value.
 .TP
 .B LMON_ENOMEM
 Out of memory.
@@ -108,6 +114,7 @@ Dong H. Ahn <ahn1@llnl.gov>
 .BR LMON_fe_getProctable(3),
 .BR LMON_fe_getProctableSize(3),
 .BR LMON_fe_getResourceHandle(3),
+.BR LMON_fe_regErrorCB(3),
 .BR LMON_be_init(3),
 .BR LMON_be_finalize(3),
 .BR LMON_be_getMyRank(3),

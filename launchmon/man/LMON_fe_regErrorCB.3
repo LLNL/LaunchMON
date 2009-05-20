@@ -1,49 +1,44 @@
-.TH LaunchMON 3 "FEBRUARY 2008" LaunchMON "LaunchMON Front-End API"
+.TH LaunchMON 3 "MAY 2008" LaunchMON "LaunchMON Front-End API"
 
 .SH NAME
-LMON_fe_init \- LaunchMON front-end API: front-end initialization function. 
+LMON_fe_regErrorCB \- LaunchMON front-end API: registers an error message logging callback function. 
 
 .SH SYNOPSIS
+.nf
+.B #include <unistd.h>
 .B #include <lmon_fe.h>
+.B #include <stdarg.h>
 .PP
-.BI "lmon_rc_e LMON_fe_init ( int " ver " );"
 .PP
+.BI "lmon_rc_e LMON_fe_regErrorCB ( 
+.BI "  int (* " errCB " ) (const char * " format ", va_list " ap "));"
 .B cc ... -lmonfeapi
 
 .SH DESCRIPTION
-The \fBLMON_fe_init()\fR function initializes the LaunchMON 
-front-end. Specifically, it performs the resource setup 
-and sanity checks, including
-a version mismatch check between the front-end API library and the
-header file. The caller must pass \fBLMON_VERSION\fR, 
-a macro defined in the \fBlmon_fe.h\fR file, 
-to the \fIver\fR argument for proper version matching. 
+
+\fBLMON_fe_regErrorCB\fR registers the \fBerrCB\fR function which 
+LaunchMON calls back on an error and/or warning condition with 
+appropriate arguments. LaunchMON otherwise prints the message 
+to the controlling terminal. In case there are multiple callback
+functions registered with this API call, the latest one is used.   
 
 .SH RETURN VALUE
-The \fBLMON_fe_init()\fR function returns \fBLMON_OK\fR
-on success; otherwise, an LMON error code is returned 
-as described below.
+\fBLMON_OK\fR on success; otherwise, an LMON error code is returned as described below. 
 
 .SH ERRORS
 .TP
 .B LMON_OK
 Success.
 .TP
-.B LMON_EINVAL
-Version mismatch between the LaunchMON front-end API library and the header file.
-.TP
-.B LMON_EINIT
-Unable to initialize the resources.
-.TP
-.B LMON_ESYS
-Encountered a system error.
+.B LMON_EBDARG
+Invalid arguments.
 
 .SH AUTHOR
 Dong H. Ahn <ahn1@llnl.gov>
 
 .SH "SEE ALSO"
+.BR LMON_fe_init(3),
 .BR LMON_fe_createSession(3),
-.BR LMON_fe_attachAndSpawnDaemons(3),
 .BR LMON_fe_launchAndSpawnDaemons(3),
 .BR LMON_fe_kill(3),
 .BR LMON_fe_detach(3),
@@ -56,7 +51,6 @@ Dong H. Ahn <ahn1@llnl.gov>
 .BR LMON_fe_getProctable(3),
 .BR LMON_fe_getProctableSize(3),
 .BR LMON_fe_getResourceHandle(3),
-.BR LMON_fe_regErrorCB(3),
 .BR LMON_be_init(3),
 .BR LMON_be_finalize(3),
 .BR LMON_be_getMyRank(3),

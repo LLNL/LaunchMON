@@ -44,6 +44,8 @@ the \fBLMON_MAX_USRPAYLOAD\fR macro defined in \fBlmon_api_std.h\fR, which is
 set to a relatively small value, but can be differently configured. 
 The \fIpackFebe\fR function must return the size of the filled buffer 
 via \fImsgbuflen\fR 
+In addition, any negative value
+returned from the \fIpackFebe\fR function is considered to be an error condition.
 .PP
 \fBLMON_fe_regUnpackForBeToFe()\fR registers a per-session unpack function 
 that de-serializes the tool data received from the master back-end daemon. 
@@ -57,6 +59,8 @@ and de-serialize it into the \fIudata\fR argument.
 \fIudatabuf\fR is the raw payload received from the master back-end daemon.
 \fIudatabuflen\fR is the length of that raw buffer.
 And \fIudata\fR is the pointer to which this buffer should be unpacked. 
+Any negative value returned from the \fIunpackBefe\fR function
+is considered to be an error condition.
 .PP
 \fBLMON_fe_putToBeDaemonEnv()\fR adds \fIdmonEnv\fR to the environment variable
 list that gets propagated to all the backend daemons associated with \fIsessionHandle\fR. 
@@ -120,6 +124,7 @@ Dong H. Ahn <ahn1@llnl.gov>
 .BR LMON_fe_getProctable(3),
 .BR LMON_fe_getProctableSize(3),
 .BR LMON_fe_getResourceHandle(3),
+.BR LMON_fe_regErrorCB(3),
 .BR LMON_be_init(3),
 .BR LMON_be_finalize(3),
 .BR LMON_be_getMyRank(3),
