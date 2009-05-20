@@ -1,3 +1,17 @@
+2009-05-20 Dong H. Ahn <ahn1@llnl.gov>
+	* Added LMON_fe_regErrorCB support
+	* Added a fix for the "re-attach" defect on BGP. 
+	  This requires IBM efix27 or higher.
+	* Added a fix for user [recv|send]UsrData functions
+	  to return correct error codes. Added a new error code 
+	  (LMON_ENEGCB) to lmon_api_std.h to deal with a
+	  negative code returning from user-provided 
+	  pack/unpack callback routines.  
+	* Changed library version to -version-info 1:0:1 
+	  This is because new API calls have been added and 
+	  implementation has been enhanced.
+
+
 2009-03-11 Dong H. Ahn <ahn1@llnl.gov>
 	* Generalized the BlueGene support in support of BGP
 	  Configure's --with-rm option now takes "bgrm" instead of 
