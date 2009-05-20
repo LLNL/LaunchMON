@@ -191,7 +191,7 @@ launchmon_event_e launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::decipher_an_event (
         self_trace_t::trace ( LEVELCHK(level3), 
 	  MODULENAME, 0,
 	  "converting [pc=0x%x] of the stopped thread[tid=%d] into an debug event.",
-	  pc, p.get_key_to_thread_context());
+	  pc, p.get_cur_thread_ctx());
       }
 
       if ( p.get_never_trapped() ) 
@@ -687,6 +687,9 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
 
             if ( numbytes == -1)
               {
+                //
+                // We're stopping only the main thread at the moment  
+                //
 	        get_tracer()->tracer_stop(p, false);
 	        p.set_please_detach ( true );
 	        p.set_reason (FE_requested);
@@ -706,6 +709,9 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
 	    if ( ( msg.msgclass == lmonp_fetofe )
 	         &&  ( msg.type.fetofe_type == lmonp_detach ))
 	      {
+                //
+                // We're stopping only the main thread at the moment  
+                //
 	        get_tracer()->tracer_stop(p, false);
 	        p.set_please_detach ( true );
 	        p.set_reason (FE_requested);
@@ -713,6 +719,9 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
 	    else if ( ( msg.msgclass == lmonp_fetofe )
 	         && ( msg.type.fetofe_type == lmonp_kill ))
 	      {
+                //
+                // We're stopping only the main thread at the moment  
+                //
 	        get_tracer()->tracer_stop(p, false);
 	        p.set_please_kill ( true );
 	        p.set_reason (FE_requested);
@@ -722,17 +731,21 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
               {
                 //
                 // sending signals to the launcher we used to spawn BE daemons
-                //
+                // TODO This won't work on BlueGene! Please test.
                 int i;
-                for (i=0; i < 2; ++i) {
-                  kill ( toollauncherpid, SIGINT);
-                  usleep (GracePeriodBNSignals);
-                } 
+                for (i=0; i < 2; ++i) 
+                  {
+                    kill ( toollauncherpid, SIGINT);
+                    usleep (GracePeriodBNSignals);
+                  } 
 
+                //
+                // We're stopping only the main thread at the moment  
+                //
 	        get_tracer()->tracer_stop(p, false);
 	        p.set_please_detach ( true );
 	        p.set_reason (FE_requested);
-               }
+              }
          }	
       }  
       return LAUNCHMON_OK;

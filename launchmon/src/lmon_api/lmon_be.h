@@ -95,6 +95,8 @@ lmon_rc_e LMON_be_recvUsrData ( void* udata );
 
 lmon_rc_e LMON_be_sendUsrData ( void* udata );
 
+lmon_rc_e LMON_be_regErrorCB ( int (*errorCB) (const char *format, va_list ap) );
+
 END_C_DECLS
 
 #endif /* LMON_API_LMON_BE_H */

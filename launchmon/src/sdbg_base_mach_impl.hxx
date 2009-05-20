@@ -312,7 +312,7 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_master_thread_pid()
   
   for (tpos=thrlist.begin(); tpos!=thrlist.end(); tpos++) 
     {
-      if (tpos->second->get_master_thread())  
+      if (tpos->second->is_master_thread())  
 	return (tpos->second->get_master_pid());      
     }
 
@@ -475,16 +475,14 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_pid ( bool context_sensitive )
 
   if (context_sensitive) 
     {
-      if (key_to_thread_context == THREAD_KEY_INVALID) 
+      if (thread_ctx_stack.empty()) 
 	{
-	  // FIXME: gen_err caller wanted context sensitive
-	  // gprset, yet there is no context set at the moment
 	  retpid = THREAD_KEY_INVALID;
 	}
 
-      if ( thrlist.find(key_to_thread_context) != thrlist.end() ) 
+      if ( thrlist.find(thread_ctx_stack.top()) != thrlist.end() ) 
 	{
-	  retpid = thrlist.find(key_to_thread_context)->second->thr2pid();
+	  retpid = thrlist.find(thread_ctx_stack.top())->second->thr2pid();
 	}
     }
   else 
@@ -494,6 +492,21 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_pid ( bool context_sensitive )
 
   return retpid;
 }
+
+
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+int
+process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_cur_thread_ctx ()
+{
+  int rc = THREAD_KEY_INVALID;
+  if (!thread_ctx_stack.empty()) 
+    {
+      rc = thread_ctx_stack.top(); 
+    }
+
+  return rc;
+}
+
 
 //! PROTECTED: process_base_t
 /*!
@@ -622,7 +635,7 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::make_context ( const int key )
 
   if ( thrlist.find(key) != thrlist.end() ) 
     {
-      key_to_thread_context = key;
+      thread_ctx_stack.push(key);
       rc = true;
     }
   else 
@@ -646,22 +659,18 @@ bool process_base_t<SDBG_DEFAULT_TEMPLPARAM>::check_and_undo_context ( const int
 {
   using namespace std;
 
-  // 3/16 IMPORTANT FIX NEEDED: when thread gets exit event while thread list is being
-  // traversed, this argument "key" can contain garbage. requires a function 
-  // prototype change.
-
   bool rc = false;
   string e;
   string func = "[process_base_t::check_and_undo_context]";
-  if (key_to_thread_context == key) 
+  if (!thread_ctx_stack.empty() && (thread_ctx_stack.top() == key)) 
     {
-      key_to_thread_context = THREAD_KEY_INVALID;
+      thread_ctx_stack.pop();
       rc = true;
     }
   else 
     {
       e = func + 
-	"key_to_thread_context is different from the passed key";
+	"thread_ctx_stack.top() is different from the passed key";
       throw (machine_exception_t(e));
     }
   return rc;
@@ -674,31 +683,29 @@ bool process_base_t<SDBG_DEFAULT_TEMPLPARAM>::check_and_undo_context ( const int
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 register_set_base_t<GRS,VA,WT>* 
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_gprset
-(bool context_sensitive)
+  ( bool context_sensitive )
 {
   using namespace std;
   typename
-      map<int,thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*,ltstr>::const_iterator
+    map<int,thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*,ltstr>::const_iterator
       tpos;
-  
 
   if (context_sensitive) 
     {
-      if (key_to_thread_context == THREAD_KEY_INVALID) 
+      if (thread_ctx_stack.empty()) 
 	{ 
 	  return NULL;
 	}
-
-      if ( thrlist.find(key_to_thread_context) != thrlist.end() ) 
+      else if ( thrlist.find(thread_ctx_stack.top()) != thrlist.end() ) 
 	{
-	  return (thrlist.find(key_to_thread_context)->second->get_gprset());
+	  return (thrlist.find(thread_ctx_stack.top())->second->get_gprset());
 	}
     }
   else 
     {
       for (tpos=thrlist.begin(); tpos!=thrlist.end(); tpos++) 
 	{
-	  if (tpos->second->get_master_thread()) 
+	  if (tpos->second->is_master_thread()) 
 	    {
 	      return (tpos->second->get_gprset());
 	    }
@@ -725,17 +732,20 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_fprset ( bool context_sensitive )
 
   if (context_sensitive) 
     {
-      if (key_to_thread_context == THREAD_KEY_INVALID) 	
-	return NULL;
-
-      if ( thrlist.find(key_to_thread_context) != thrlist.end() )
-	return (thrlist.find(key_to_thread_context)->second->get_fprset());   
+      if ( thread_ctx_stack.empty() )
+        { 	
+	  return NULL;
+        }
+      else if ( thrlist.find(thread_ctx_stack.top()) != thrlist.end() )
+        {
+	  return (thrlist.find(thread_ctx_stack.top())->second->get_fprset());   
+        }
     }
   else 
     {
       for (tpos=thrlist.begin(); tpos!=thrlist.end(); tpos++) 
 	{
-	  if (tpos->second->get_master_thread())
+	  if (tpos->second->is_master_thread())
 	    return (tpos->second->get_fprset());
 	}
     }

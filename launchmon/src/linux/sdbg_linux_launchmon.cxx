@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        May 07 2009 DHA: Added a patch to fix the attach-detach-and-reattach failure
+ *                         on BlueGene. This requires IBM efix27.
  *        Mar 04 2009 DHA: Added BlueGene/P support. 
  *                         In particular, changed RM_BGL_MPIRUN to RM_BG_MPIRUN 
  *                         to genericize BlueGene Support.
@@ -1023,6 +1025,31 @@ linux_launchmon_t::handle_launch_bp_event (
 	    bdbgp = 0;
 	    say_fetofe_msg(lmonp_stop_at_launch_bp_abort);
 
+
+	    disable_all_BPs(p, use_cxt);
+ 
+            //
+            // continue all the slave threads in case there are stopped threads 
+            // If the thread is not stopped, continue will fail thus we don't 
+            // check the error code coming out of tracer_continue, here;
+            //
+            // Note: This should be safe unless the thread is stopped because of 
+            // a breakpoint. Chance that this race condition can occur is very 
+            // slim. However, if that ever happens more design changes will be
+            // required. 
+            //
+            for ( p.thr_iter = p.get_thrlist().begin();
+                    p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
+              {
+                if ( !(p.thr_iter->second->is_master_thread()) )
+                  {
+                    // operates on a slave thread
+                    p.make_context ( p.thr_iter->first );
+                    get_tracer()->tracer_continue ( p, true );
+                    p.check_and_undo_context ( p.thr_iter->first );
+                  }
+              }
+
 	    //
 	    // unsetting MPIR_debugging_debugged
 	    //
@@ -1031,7 +1058,13 @@ linux_launchmon_t::handle_launch_bp_event (
 	      &bdbgp, 
 	      sizeof(bdbgp),use_cxt );    
 
-	    disable_all_BPs(p, use_cxt);
+            const symbol_base_t<T_VA>& being_debugged
+              = main_im->get_a_symbol (p.get_launch_being_debug());
+            get_tracer()->tracer_write ( p,
+                                   being_debugged.get_relocated_address(),
+                                   &bdbg,
+                                   sizeof(bdbg),
+                                   use_cxt );
 
 	    get_tracer()->tracer_detach(p, use_cxt);
 
@@ -1097,24 +1130,47 @@ linux_launchmon_t::handle_detach_cmd_event
       T_VA debug_state_flag = T_UNINIT_HEX;
 
       //
-      // pull out all breakpoints	
+      // disable all the hidden breakpoints	
       //
       disable_all_BPs (p, false);      
 
       //
-      // unsetting MPIR_being_debugged.
+      // continue all the slave threads in case there are stopped threads 
+      // If the thread is not stopped, continue will fail thus we don't 
+      // check the error code coming out of tracer_continue, here;
       //
-      const symbol_base_t<T_VA>& debug_state 
-	= p.get_myimage()->get_a_symbol (p.get_launch_being_debug());
+      // Note: This should be safe unless the thread is stopped because of 
+      // a breakpoint. Chance that this race condition can occur is very 
+      // slim. However, if that ever happens more design changes will be
+      // required. 
+      //
+      for ( p.thr_iter = p.get_thrlist().begin(); 
+	      p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
+        {
+	  if ( !(p.thr_iter->second->is_master_thread()) ) 
+            {
+              // operates on a slave thread
+              p.make_context ( p.thr_iter->first );
+	      get_tracer()->tracer_continue ( p, true ); 
+              p.check_and_undo_context ( p.thr_iter->first );
+	    }
+	}
 
-      debug_state_flag = debug_state.get_relocated_address();  
-      get_tracer()->tracer_write ( p, 
-        debug_state_flag, 
-	&bdbg,
-	sizeof(bdbg), 
-        false );
-      get_tracer()->tracer_detach (p, false);
-      usleep (GracePeriodBNSignals);
+      //
+      // unsetting "MPIR_being_debugged."
+      //
+      const symbol_base_t<T_VA>& being_debugged
+        = p.get_myimage()->get_a_symbol (p.get_launch_being_debug());
+
+      get_tracer()->tracer_write ( p,
+                                   being_debugged.get_relocated_address(),
+                                   &bdbg,
+                                   sizeof(bdbg),
+                                   false );
+
+      get_tracer()->tracer_detach ( p, false );
+
+      usleep ( GracePeriodBNSignals );
 
       switch (p.get_reason())
         {
@@ -1146,7 +1202,7 @@ linux_launchmon_t::handle_detach_cmd_event
         }
 
       //
-      // this return code will cause the engine to exit.
+      // This return code will cause the engine to exit.
       // but it should leave its children RM_daemon process
       // in a running state.
       //
@@ -1191,6 +1247,28 @@ linux_launchmon_t::handle_kill_cmd_event
       //
       disable_all_BPs (p, false);
  
+      //
+      // continue all the slave threads in case there are stopped threads 
+      // If the thread is not stopped, continue will fail thus we don't 
+      // check the error code coming out of tracer_continue, here;
+      //
+      // Note: This should be safe unless the thread is stopped because of 
+      // a breakpoint. Chance that this race condition can occur is very 
+      // slim. However, if that ever happens more design changes will be
+      // required. 
+      //
+      for ( p.thr_iter = p.get_thrlist().begin();
+              p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
+        {
+          if ( !(p.thr_iter->second->is_master_thread()) )
+            {
+              // operates on a slave thread
+              p.make_context ( p.thr_iter->first );
+              get_tracer()->tracer_continue ( p, true );
+              p.check_and_undo_context ( p.thr_iter->first );
+            }
+        }
+
       //
       // unsetting MPIR_being_debugged.
       //
@@ -1387,7 +1465,7 @@ linux_launchmon_t::handle_trap_after_attach_event (
 	= main_im->get_a_symbol (p.get_launch_being_debug());
 
       debug_state_flag = debug_state.get_relocated_address();  
-      bdbg = 1;
+
       get_tracer()->tracer_write ( p, 
 				   debug_state_flag, 
 				   &bdbg,
@@ -1497,6 +1575,11 @@ linux_launchmon_t::handle_trap_after_attach_event (
 				 sizeof(bdbg),
 				 use_cxt );
 
+#if !RM_BG_MPIRUN
+      //
+      // Check if the SLURM system does not call MPIR_Breakpoint 
+      // on attach
+      //
       if ( bdbg == MPIR_DEBUG_SPAWNED ) 
 	{ 
 	  acquire_proctable ( p, use_cxt );
@@ -1512,6 +1595,7 @@ linux_launchmon_t::handle_trap_after_attach_event (
 	   */
 	  launch_tool_daemons(p);
 	}
+#endif
 
       get_tracer()->tracer_continue (p, use_cxt);
 
@@ -1972,10 +2056,10 @@ linux_launchmon_t::handle_exit_event (
           "thread exit event handler invoked.");
       }
 
-      if (p.get_key_to_thread_context() != p.get_master_thread_pid()) 
+      if (p.get_cur_thread_ctx () != p.get_master_thread_pid()) 
 	{
 
-	  p.get_thrlist().erase(p.get_key_to_thread_context());
+	  p.get_thrlist().erase(p.get_cur_thread_ctx());
 	  {
 	    self_trace_t::trace ( LEVELCHK(level2), 
 	      MODULENAME,0,
@@ -1992,8 +2076,6 @@ linux_launchmon_t::handle_exit_event (
 	      MODULENAME,0,
 	      "a main thread has exited.");
 	  }
-
-
 
 	  /*
 	   * LMON API SUPPORT: a message via a pipe to the watchdog thread

@@ -28,7 +28,9 @@
  *
  *
  *  Update Log:
- *        Mar  13 2008 DHA: change parameter data type to unsigned integer in 
+ *        May  19 2008 DHA: Added LMON_fe_regErrorCB ( int (*func) (char *msg))
+ *                          support.
+ *        Mar  13 2008 DHA: Changed parameter data type to unsigned integer in 
  *                          LMON_fe_getProctableSize and LMON_fe_getProctable
  *                          to support extreme proctable sizes.
  *        Jun  06 2008 DHA: Remove description comment; the man pages 
@@ -112,7 +114,9 @@ lmon_rc_e LMON_fe_shutdownDaemons ( int sessionHandle );
 
 lmon_rc_e LMON_fe_getStatus ( int sessionHandle, int *status );
 
-lmon_rc_e LMON_fe_regStatusCB ( int (*func) (void *status) );
+lmon_rc_e LMON_fe_regStatusCB ( int (*func) (int *status) );
+
+lmon_rc_e LMON_fe_regErrorCB ( int (*errorCB) (const char *format, va_list ap) );
 
 lmon_rc_e LMON_fe_getProctable (
                 int sessionHandle, 

@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        May 08 2008 DHA: Added comments for the "use_cxt" argument
  *        Feb 09 2008 DHA: Added LLNS Copyright
  *        Mar 31 2006 DHA: Added tracer_read_string.
  *        Mar 30 2006 DHA: Added exception handling support.
@@ -134,7 +135,16 @@ public:
 
   ////////////////////////////////////////////////////////////
   //
-  //  Interfaces
+  //  Abstract Interfaces:
+  //
+  //  "use_cxt" determines whether the process control operations
+  //  apply to the main thread of the target process (use_cxt=false)
+  //  or the active target thread context within that process, which 
+  //  the upper layer can set. This is to simplify the arguments
+  //  into the process control operations at the expense of having 
+  //  the upper layer to set the active target thread in case it 
+  //  wants to use a "context-sensitive" operation.  
+  //
   //
   virtual tracer_error_e tracer_setregs    
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt ) 
@@ -213,7 +223,7 @@ public:
       breakpoint_base_t<VA, IT>& bp, bool use_cxt ) 
     throw (tracer_exception_t)                                 =0;
 
-  virtual tracer_error_e convert_error_code(int err)  
+  virtual tracer_error_e convert_error_code ( int err )  
     throw (tracer_exception_t)                                 =0;
   
 };

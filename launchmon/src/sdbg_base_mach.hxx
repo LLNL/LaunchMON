@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        May 08 2008 DHA: Added an alias (is_master_thread) for get_master_thread
+ *                         because the latter isn't entirely intuitive.
  *        Mar 18 2008 DHA: Added BlueGene support.
  *        Feb 09 2008 DHA: Added LLNS Copyright.
  *        May 22 2006 DHA: Added exception class for the machine layer..
@@ -36,6 +38,7 @@
 #define SDBG_BASE_MACH_HXX 1
 
 #include <map>
+#include <stack>
 #include <string>
 #include "sdbg_std.hxx"
 #include "sdbg_opt.hxx"
@@ -215,6 +218,7 @@ public:
   define_gset(bool,master_thread)
   define_gset(pid_t,master_pid)  
 
+  int is_master_thread () { get_master_thread(); }
   register_set_base_t<GRS,VA,WT>* get_gprset();
   void set_gprset(register_set_base_t<GRS,VA,WT>* g);
   register_set_base_t<FRS,VA,WT>* get_fprset();
@@ -272,6 +276,7 @@ public:
   const pid_t get_master_thread_pid();
   const pid_t get_pid(bool context_sensitive);
   std::map<int, thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*, ltstr>& get_thrlist();
+  typename std::map<int, thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*, ltstr>::iterator thr_iter;
   
   image_base_t<VA,EXECHANDLER>* get_myimage ();
   image_base_t<VA,EXECHANDLER>* get_mydynloader_image ();
@@ -315,9 +320,10 @@ public:
   define_gset(std::string,loader_r_debug_sym)
   define_gset(std::string,resource_handler_sym)
   define_gset(std::string,fork_sym)
-  define_gset(int,key_to_thread_context)
+  //define_gset(int,key_to_thread_context)
   define_gset(int,rid)
-  
+  int get_cur_thread_ctx();  
+ 
 protected:
   bool protected_init ( const std::string& mi, 
 			const std::string& md, 
@@ -380,7 +386,7 @@ private:
   // of the same type. It will copy the pointers but not pointees.
   // It is tricky to implement polymorphism using STL containers.
   std::map<int, thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*, ltstr> thrlist;
-  int key_to_thread_context;
+  std::stack<int> thread_ctx_stack;
 };
 
 

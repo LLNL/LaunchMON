@@ -532,22 +532,18 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_continue (
 		 bool use_cxt ) throw (linux_tracer_exception_t)
 {
   using namespace std;
-  
   WT r;
-  string e;
-  string func = "[linux_ptracer_t::tracer_continue]";
+  tracer_error_e rc = SDBG_TRACE_OK; 
   pid_t tpid = p.get_pid(use_cxt); 
-
   errno = 0;
   
   if ( (r = Pptrace (PTRACE_CONT, tpid, 0, 0)) != 0 ) 
     {    
-      e = func + ERRMSG_PTRACE + strerror (errno);
-      throw linux_tracer_exception_t(e, convert_error_code (errno));    
+      rc = SDBG_TRACE_FAILED;
     }
-  
+
   return SDBG_TRACE_OK;
-  
+
 } // linux_ptracer_t::tracer_continue 
 
 
@@ -707,7 +703,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_detach (
   string e;
   string func = "[linux_ptracer_t::tracer_detach]";
   pid_t tpid = p.get_pid(use_cxt); 
-  
+
   if ( (r = Pptrace (PTRACE_DETACH, tpid, 0, 0)) != 0 ) 
     {    
       e = func + ERRMSG_PTRACE + strerror (errno);

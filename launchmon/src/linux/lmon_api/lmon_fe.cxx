@@ -26,6 +26,12 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        May 19 2009 DHA: Changed static int (*statusCB) (void *status) 
+ *                         to static int (*statusCB) (int *status):
+ *                         the argument type for the status callback function
+ *                         is now a pointer to an interger. 
+ *        May 19 2009 DHA: Added LMON_fe_regErrorCB ( int (*errorCB)(char *msg) )
+ *                         support. 
  *        Mar 13 2009 DHA: Added large nTasks supporf
  *        Mar 11 2009 DHA: Bug fix in the pthread_cond_timedwait
  *                         return code checking logic for launchmon engine 
@@ -212,6 +218,7 @@ const char *LMON_FE_MSG_PREFIX  = "<LMON FE API>";
 //
 //
 //
+
 
 typedef enum _mboolean_e {
   LMON_TRUE,
@@ -455,7 +462,7 @@ typedef struct _lmon_session_array_t {
 
 } lmon_session_array_t;
 
-static int (*statusCB) (void *status) = NULL;
+static int (*statusCB) (int *status) = NULL;
 
 //////////////////////////////////////////////////////////////////////////////////
 //
@@ -829,10 +836,11 @@ LMON_fe_handleFeBeUsrData ( int sessionHandle,
 	  // pack func must serialize febe_data into udata
 	  // serialized stream cannot be bigger than febe_data_len
 	  //
-	  mydesc->pack ( febe_data, 
-			 udata, 
-			 LMON_MAX_USRPAYLOAD, 
-			 &outlen );
+	  if ( mydesc->pack ( febe_data, udata, LMON_MAX_USRPAYLOAD, &outlen ) 
+               < 0 )
+            {  
+              return LMON_EINVAL;
+            }
 
           if ( outlen > LMON_MAX_USRPAYLOAD )
             return LMON_EINVAL;
@@ -1050,7 +1058,7 @@ LMON_fe_handleBeFeUsrData (int sessionHandle,
 	      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
 		"the registered unpack function returned a negative return code");
 
-              lrc = LMON_ECLLB;
+              lrc = LMON_ENEGCB;
             }
           else 
             {
@@ -3662,6 +3670,36 @@ LMON_fe_getProctable (
 }
 
 
+//! lmon_rc_e LMON_fe_regErrorCB
+/*!
+  registers a callback function that gets 
+  invoked whenever an error message should 
+  go out.   
+*/
+extern "C"
+lmon_rc_e
+LMON_fe_regErrorCB (int (*func) (const char *format, va_list ap))
+{
+  if ( func == NULL)
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "an argument is invalid" );
+
+      return LMON_EBDARG;
+    }
+
+  if ( errorCB !=  NULL )
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
+        "previously registered error callback func will be invalidated" );
+    }
+
+  errorCB = func;
+
+  return LMON_OK;
+}
+
+
 //! lmon_rc_e LMON_fe_getStatus
 /*!
   registers a callback function that gets 
@@ -3669,7 +3707,7 @@ LMON_fe_getProctable (
 */
 extern "C"
 lmon_rc_e
-LMON_fe_regStatusCB ( int (*func) (void *status))
+LMON_fe_regStatusCB (int (*func) (int *status))
 {
   if ( func == NULL)
     {

@@ -263,7 +263,7 @@ linux_x86_thread_t::thr2pid()
   // thr2pid is a misnomer, it should rather be thr2lwp. 
   //
 
-  if ( get_master_thread ())
+  if ( is_master_thread ())
     return get_master_pid ();
   else
     return get_thread_info().ti_lid;
@@ -701,7 +701,7 @@ linux_ppc_thread_t::thr2pid()
   // thr2pid is a misnomer, it should rather be thr2lwp. 
   //
 
-  if ( get_master_thread ())
+  if ( is_master_thread ())
     return get_master_pid ();
   else
     return get_thread_info().ti_lid;

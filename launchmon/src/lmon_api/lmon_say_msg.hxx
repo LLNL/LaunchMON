@@ -27,6 +27,7 @@
  *
  *
  *  Update Log:
+ *        May 19 2008 DHA: Added errorCB support
  *        Feb 09 2008 DHA: Added LLNS Copyright 
  *        Mar 13 2006 DHA: Added duplex pipe class a simple
  *                         wrapper class holding on UNIX fds,
@@ -36,6 +37,12 @@
 
 #ifndef LMON_API_LMON_SAY_MSG_HXX
 #define LMON_API_LMON_SAY_MSG_HXX 1
+
+#if HAVE_STDARG_H
+# include <cstdarg>
+#else
+# error stdarg.h is required
+#endif
 
 class pipe_t
 {
@@ -63,8 +70,8 @@ private:
   static const int uninitializedFileDescriptor;
 };
 
-
-void LMON_say_msg ( const char* m, bool error_or_info, const char* output, ... );
-void LMON_TotalView_debug ( );
+extern int (*errorCB) (const char *format, va_list ap);
+extern void LMON_say_msg ( const char* m, bool error_or_info, const char* output, ... );
+extern void LMON_TotalView_debug ( );
 
 #endif // LMON_API_LMON_SAY_MSG_HXX

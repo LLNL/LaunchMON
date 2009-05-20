@@ -60,6 +60,7 @@
 #include <lmon_api/lmon_say_msg.hxx>
 
 const int pipe_t::uninitializedFileDescriptor = -1;
+int (*errorCB) (const char *format, va_list ap) = NULL;
 
 pipe_t::pipe_t () 
   : readingFd (uninitializedFileDescriptor), 
@@ -94,18 +95,23 @@ LMON_say_msg ( const char* m, bool error_or_info, const char* output, ... )
 
   char timelog[PATH_MAX];
   char log[PATH_MAX];
-  const char* format = "%b %d %T";
-  //struct timeval tv;
+  const char *format = "%b %d %T";
   time_t t;            
   string ei_str = error_or_info ? "ERROR" : "INFO";
  
-  //gettimeofday (&tv, NULL);
   time(&t);
   strftime ( timelog, PATH_MAX, format, localtime(&t) );
   sprintf(log, "<%s> %s (%s): %s\n", timelog, m, ei_str.c_str(), output);
 
   va_start(ap, output);
-  vfprintf(stdout, log, ap);
+  if (errorCB)
+    {
+      errorCB (log, ap);
+    }
+  else
+    {
+      vfprintf(stdout, log, ap);
+    }
   va_end(ap);
 }
 

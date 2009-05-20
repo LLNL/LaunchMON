@@ -74,6 +74,7 @@ typedef enum _lmon_rc_e {
   LMON_ENOMEM, 
   LMON_ENCLLB,
   LMON_ECLLB,
+  LMON_ENEGCB,
   LMON_ENOPLD,
   LMON_EBDMSG,
   LMON_EDUNAV,

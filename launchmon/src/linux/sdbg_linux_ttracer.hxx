@@ -114,6 +114,7 @@ public:
           // those threads must have not been attached
           // 
 	  p->get_thrlist().insert ( make_pair ( threadpid, thrinfo ) );
+	  //std::cout << "position for " << threadpid << " is: " << pos << std::endl;;  
 	  if( threadpid != p->get_master_thread_pid()) 
 	    {
 

@@ -26,6 +26,9 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        May 19 2009 DHA: Added errorCB support (ID2787962).
+ *        May 06 2009 DHA: Bug fix for ID2787959: LMON_be_recvUsrData not returning
+ *                         a correct error code.
  *        Mar 13 2009 DHA: Added large nTasks support
  *        Mar 04 2009 DHA: Added BlueGene/P support.
  *                         In particular, changed RM_BGL_MPIRUN to RM_BG_MPIRUN 
@@ -131,6 +134,35 @@ static int
 LMON_return_ver ( )
 {
   return LMON_VERSION;
+}
+
+//! lmon_rc_e LMON_be_regErrorCB
+/*!
+  registers a callback function that gets 
+  invoked whenever an error message should 
+  go out.   
+*/
+extern "C"
+lmon_rc_e
+LMON_be_regErrorCB (int (*func) (const char *format, va_list ap))
+{
+  if ( func == NULL)
+    {
+      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+        "an argument is invalid" );
+
+      return LMON_EBDARG;
+    }
+
+  if ( errorCB !=  NULL )
+    {
+      LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+        "previously registered error callback func will be invalidated" );
+    }
+
+  errorCB = func;
+
+  return LMON_OK;
 }
 
 
@@ -1589,7 +1621,8 @@ LMON_be_recvUsrData ( void* udata )
 	LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
 	  "read_lmonp return a neg value");
 
-	return LMON_ESYS;
+	lrc = LMON_ESYS;
+        goto something_bad;
       }
 
     if ( recvmsg.type.fetobe_type != lmonp_febe_usrdata )
@@ -1597,7 +1630,8 @@ LMON_be_recvUsrData ( void* udata )
 	LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
           "the received message doesn't match with the expected type");
 
-	return LMON_EBDMSG;
+	lrc = LMON_EBDMSG;
+        goto something_bad; 
       }
 
     int usrpayloadlen = recvmsg.usr_payload_length;
@@ -1609,7 +1643,8 @@ LMON_be_recvUsrData ( void* udata )
 	    LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
 	      "Out of memory");
 
-	    return LMON_ENOMEM;
+	    lrc = LMON_ENOMEM;
+            goto something_bad;
 	  }
 
     	bytesread = read_lmonp_payloads (
@@ -1621,7 +1656,15 @@ LMON_be_recvUsrData ( void* udata )
     	// deserialized usr data
     	//
 	if ( bedata.unpack )	  
-	  bedata.unpack ( usrpl, recvmsg.usr_payload_length, udata );	  
+	  {
+	    if (bedata.unpack ( usrpl, recvmsg.usr_payload_length, udata ) < 0)	  
+              {
+	        LMON_say_msg(LMON_BE_MSG_PREFIX, true,
+                "a negative return code from bedata.unpack.");
+	   
+                lrc = LMON_ENEGCB;
+              }
+          }
 	else
 	  {
 	    LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
@@ -1639,6 +1682,7 @@ LMON_be_recvUsrData ( void* udata )
   END_MASTER_ONLY
 
 
+something_bad:
   //
   // duplicating the return code
   //
@@ -1647,7 +1691,7 @@ LMON_be_recvUsrData ( void* udata )
       LMON_say_msg(LMON_BE_MSG_PREFIX, true,
         "Broadcast failed");
 
-      return LMON_ESUBCOM;
+      lrc = LMON_ESUBCOM;
     }
 
     return lrc;
@@ -1679,7 +1723,8 @@ LMON_be_sendUsrData ( void* udata )
 	    LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
  	      "Out of memory");
 
-	    return LMON_ENOMEM;
+	    lrc = LMON_ENOMEM;
+            goto something_bad;
 	  }
 	
         set_msg_header ( 
@@ -1690,10 +1735,12 @@ LMON_be_sendUsrData ( void* udata )
                     LMON_MAX_USRPAYLOAD);
                  
     	uoffset = get_usrpayload_begin ( usrmsg );
-    	bedata.pack ( udata,  
-    		      uoffset, 
-    		      LMON_MAX_USRPAYLOAD, 
-    		      &upl_leng );
+        if ( bedata.pack ( udata, uoffset, LMON_MAX_USRPAYLOAD, &upl_leng ) < 0 )
+          {
+	    lrc = LMON_ENEGCB;
+	    goto something_bad;
+          }
+
     	assert ( upl_leng <= LMON_MAX_USRPAYLOAD );
         usrmsg->usr_payload_length = upl_leng;
       }
@@ -1705,7 +1752,8 @@ LMON_be_sendUsrData ( void* udata )
 	    LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
 	      "Out of memory");
 
-	    return LMON_ENOMEM;
+	    lrc = LMON_ENOMEM;
+            goto something_bad;
 	  }
     	usrmsg->usr_payload_length = 0;
 	lrc = LMON_ENCLLB;
@@ -1725,12 +1773,14 @@ LMON_be_sendUsrData ( void* udata )
 	LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
           "write_lmonp returned a neg value");
 
-	return LMON_ESYS;
+	lrc = LMON_ESYS;
+        goto something_bad;
       }
     free (usrmsg);
 
   END_MASTER_ONLY
 
+something_bad:
   //
   // duplicating the return code
   //
@@ -1739,7 +1789,7 @@ LMON_be_sendUsrData ( void* udata )
       LMON_say_msg(LMON_BE_MSG_PREFIX, true,
         "Broadcast failed");
 
-      return LMON_ESUBCOM;
+      lrc = LMON_ESUBCOM;
     }
 
   return lrc;
