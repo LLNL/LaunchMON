@@ -28,6 +28,9 @@ dnl  Place, Suite 330, Boston, MA 02111-1307 USA
 dnl --------------------------------------------------------------------------------
 dnl 
 dnl   Update Log:
+dnl         Mar 20 2009 DHA: Increase LMON_CURRENT by one as we've added 
+dnl                          a few more API calls. Similarly, increase
+dnl                          LMON_AGE as this still supports 0th interface. 
 dnl         Mar 11 2009 DHA: Added check for env, ssh|rsh, and totalview
 dnl         Mar 06 2009 DHA: Deprecate X_AC_THREAD_DB,
 dnl                          Added dlfcn.h presence check
@@ -37,9 +40,9 @@ dnl
 
 AC_PREREQ(2.59)
 AC_INIT(LaunchMON, 0.7.0, ahn1@llnl.gov)
-AC_SUBST(LMON_CURRENT, 0)
+AC_SUBST(LMON_CURRENT, 1)
 AC_SUBST(LMON_REVISION, 0)
-AC_SUBST(LMON_AGE, 0)
+AC_SUBST(LMON_AGE, 1)
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_HEADER([config.h])
