@@ -37,7 +37,6 @@ dnl                          Added dlfcn.h presence check
 dnl         Jun 06 2008 DHA: File created.
 dnl
 
-
 AC_PREREQ(2.59)
 AC_INIT(LaunchMON, 0.7.0, ahn1@llnl.gov)
 AC_SUBST(LMON_CURRENT, 1)
