@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        May  19 2009 DHA: Added LMON_ERROR_CB_TEST support.
  *        Mar  13 2009 DHA: Dynamic check for proctabsize 
  *        Jun  12 2008 DHA: Added GNU build system support.  
  *        Mar  20 2008 DHA: Added BlueGene support.
@@ -45,8 +46,16 @@
 # error unistd.h is required
 #endif
 
+#if HAVE_STDARG_H
+# include <cstdarg>
+#else
+# error stdarg.h is required
+#endif
+
 #include <lmon_api/lmon_proctab.h>
 #include <lmon_api/lmon_fe.h>
+
+#define ERROR_LOG_MAXSIZE 4096
 
 #if MEASURE_TRACING_COST 
 extern "C" {
@@ -55,6 +64,18 @@ extern "C" {
 }
 #endif
 
+int errFunc (const char *format, va_list ap)
+{
+  int rc;
+  char buf[ERROR_LOG_MAXSIZE];
+
+  fprintf(stdout, "errFunc is called\n");
+  rc = vsnprintf(buf, ERROR_LOG_MAXSIZE, format, ap); 
+  fprintf(stdout, "errFunc: %s\n", buf);
+
+  return rc;
+}
+
 int 
 main (int argc, char* argv[])
 {
@@ -62,7 +83,7 @@ main (int argc, char* argv[])
   int spid                   = 0;
   int jobidsize              = 0;
   unsigned int psize         = 0;
-  unsigned int proctabsize    = 0;
+  unsigned int proctabsize   = 0;
   int aSession               = 0;
   char jobid[PATH_MAX]       = {0};
   char **daemon_opts         = NULL;
@@ -98,6 +119,15 @@ main (int argc, char* argv[])
       return EXIT_FAILURE;
     }
   
+  if ( getenv ("LMON_ERROR_CB_TEST"))
+    {
+       if ( LMON_fe_regErrorCB(errFunc) != LMON_OK )
+         {
+            fprintf ( stdout, "[LMON FE] FAILED\n");
+            return EXIT_FAILURE;
+         } 
+    } 
+
   if ( ( rc = LMON_fe_createSession (&aSession)) 
               != LMON_OK)
     {
