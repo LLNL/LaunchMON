@@ -534,12 +534,15 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_continue (
   using namespace std;
   WT r;
   tracer_error_e rc = SDBG_TRACE_OK; 
+  string e;
+  string func = "[linux_ptracer_t::tracer_continue]";
   pid_t tpid = p.get_pid(use_cxt); 
   errno = 0;
   
   if ( (r = Pptrace (PTRACE_CONT, tpid, 0, 0)) != 0 ) 
     {    
-      rc = SDBG_TRACE_FAILED;
+      e = func + ERRMSG_PTRACE + strerror (errno);
+      throw linux_tracer_exception_t(e, convert_error_code (errno));
     }
 
   return SDBG_TRACE_OK;

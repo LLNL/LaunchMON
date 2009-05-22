@@ -1045,7 +1045,8 @@ linux_launchmon_t::handle_launch_bp_event (
                   {
                     // operates on a slave thread
                     p.make_context ( p.thr_iter->first );
-                    get_tracer()->tracer_continue ( p, true );
+                    get_tracer()->tracer_detach( p, true );
+		    usleep (GracePeriodBNSignals);
                     p.check_and_undo_context ( p.thr_iter->first );
                   }
               }
@@ -1151,7 +1152,8 @@ linux_launchmon_t::handle_detach_cmd_event
             {
               // operates on a slave thread
               p.make_context ( p.thr_iter->first );
-	      get_tracer()->tracer_continue ( p, true ); 
+              get_tracer()->tracer_detach ( p, true ); 
+	      usleep (GracePeriodBNSignals);
               p.check_and_undo_context ( p.thr_iter->first );
 	    }
 	}
@@ -1264,7 +1266,8 @@ linux_launchmon_t::handle_kill_cmd_event
             {
               // operates on a slave thread
               p.make_context ( p.thr_iter->first );
-              get_tracer()->tracer_continue ( p, true );
+              get_tracer()->tracer_detach( p, true );
+	      usleep (GracePeriodBNSignals);
               p.check_and_undo_context ( p.thr_iter->first );
             }
         }

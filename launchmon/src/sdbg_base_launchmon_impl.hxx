@@ -687,10 +687,17 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
 
             if ( numbytes == -1)
               {
-                //
-                // We're stopping only the main thread at the moment  
-                //
-	        get_tracer()->tracer_stop(p, false);
+      	        for ( p.thr_iter = p.get_thrlist().begin();
+                      p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
+                  {
+                    p.make_context ( p.thr_iter->first );
+		    get_tracer()->tracer_stop(p, true);
+		    //back to back SIGSTOP can be lost
+		    usleep (GracePeriodBNSignals);
+                    p.check_and_undo_context ( p.thr_iter->first );
+                  }
+
+	        //get_tracer()->tracer_stop(p, false);
 	        p.set_please_detach ( true );
 	        p.set_reason (FE_requested);
 
@@ -709,10 +716,17 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
 	    if ( ( msg.msgclass == lmonp_fetofe )
 	         &&  ( msg.type.fetofe_type == lmonp_detach ))
 	      {
-                //
-                // We're stopping only the main thread at the moment  
-                //
-	        get_tracer()->tracer_stop(p, false);
+                for ( p.thr_iter = p.get_thrlist().begin();
+                      p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
+                  {
+                    p.make_context ( p.thr_iter->first );
+                    get_tracer()->tracer_stop(p, true);
+		    //back to back SIGSTOP can be lost
+		    usleep (GracePeriodBNSignals);
+                    p.check_and_undo_context ( p.thr_iter->first );
+                  }
+
+	        //get_tracer()->tracer_stop(p, false);
 	        p.set_please_detach ( true );
 	        p.set_reason (FE_requested);
 	      }
@@ -731,7 +745,8 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
               {
                 //
                 // sending signals to the launcher we used to spawn BE daemons
-                // TODO This won't work on BlueGene! Please test.
+                // TODO: This may not work on BlueGene! Please test.
+		//
                 int i;
                 for (i=0; i < 2; ++i) 
                   {
@@ -739,10 +754,16 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
                     usleep (GracePeriodBNSignals);
                   } 
 
-                //
-                // We're stopping only the main thread at the moment  
-                //
-	        get_tracer()->tracer_stop(p, false);
+                for ( p.thr_iter = p.get_thrlist().begin();
+                      p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
+                  {
+                    p.make_context ( p.thr_iter->first );
+                    get_tracer()->tracer_stop(p, true);
+		    //back to back SIGSTOP can be lost
+		    usleep (GracePeriodBNSignals);
+                    p.check_and_undo_context ( p.thr_iter->first );
+                  }
+	        //get_tracer()->tracer_stop(p, false);
 	        p.set_please_detach ( true );
 	        p.set_reason (FE_requested);
               }
