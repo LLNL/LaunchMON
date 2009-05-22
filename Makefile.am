@@ -30,7 +30,7 @@
 ##  Update Log:
 ##        Sep 30 2008 DHA: Added README.ERROR_HANDLING and package.conf 
 ##                         to the distribution list
-##        Jun 06 2007 DHA: Copied from the old Makefile.
+##        Jun 06 2008 DHA: Copied from the old Makefile.
 ##        Mar 15 2008 DHA: Added PMGR Collective support
 ##        Mar 11 2008 DHA: Added Linux PowerPC support (BlueGene FEN)
 ##        Feb 09 2008 DHA: Added LLNS Copyright
