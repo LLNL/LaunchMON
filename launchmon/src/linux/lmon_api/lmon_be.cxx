@@ -1245,12 +1245,9 @@ LMON_be_handshake ( void *udata )
   for (i=0; i < proctab_size; i++)
     {
       BG_Debugger_Msg dbgmsg(ATTACH,proctab[i].pd.pid,0,0,0);
-      BG_Debugger_Msg dbgmsg2(KILL,proctab[i].pd.pid,0,0,0);
       BG_Debugger_Msg ackmsg;
       BG_Debugger_Msg ackmsg2;
       dbgmsg.header.dataLength = sizeof(dbgmsg.dataArea.ATTACH);
-      dbgmsg2.dataArea.KILL.signal = SIGSTOP;
-      dbgmsg2.header.dataLength = sizeof(dbgmsg2.dataArea.KILL);
 
       if ( !BG_Debugger_Msg::writeOnFd (BG_DEBUGGER_WRITE_PIPE, dbgmsg) )
         {
