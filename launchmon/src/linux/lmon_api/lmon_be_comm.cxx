@@ -446,6 +446,11 @@ LMON_be_internal_finalize ()
     {
       if ( ackmsg.dataArea.VERSION_MSG_ACK.protocolVersion >= 3)
         {
+# if VERBOSE
+          LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+            "BES: debugger protocol higher than or equal to 3.");
+# endif
+
 	  if ( !BG_Debugger_Msg::writeOnFd (BG_DEBUGGER_WRITE_PIPE, dbgmsg2) )
             {
       	      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
@@ -461,7 +466,13 @@ LMON_be_internal_finalize ()
  	      return LMON_EINVAL;	
  	    }
 	  }
-      return LMON_EINVAL;
+        else
+          {
+# if VERBOSE
+            LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+              "BES: debugger protocol lower than or equal to 3.");
+# endif
+          }
     }
 #endif
 
