@@ -46,7 +46,7 @@ if test "x$RM_TYPE" = "xbgrm" ; then
   rm -f nohup.out
 fi
 
-NUMTASKS=`expr $NUMNODES / 2 \* @SMP@`
+NUMTASKS=`expr $NUMNODES \* @SMP@ / 2`
                                                                                                                                                
 export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
                                                                                                                                                
