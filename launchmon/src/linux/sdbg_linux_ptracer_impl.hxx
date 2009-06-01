@@ -736,11 +736,11 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_attach (
   string func = "[linux_ptracer_t::tracer_attach]";
   pid_t who_to_attach_to = p.get_pid(use_cxt);
 
+
   if (newtid != -1) 
     {
       who_to_attach_to = newtid;
     }
-
   if ( (r = Pptrace (PTRACE_ATTACH, who_to_attach_to, 0, 0)) != 0 ) 
     {    
       e = func + ERRMSG_PTRACE + strerror (errno);

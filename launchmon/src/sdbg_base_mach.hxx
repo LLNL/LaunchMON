@@ -218,7 +218,7 @@ public:
   define_gset(bool,master_thread)
   define_gset(pid_t,master_pid)  
 
-  int is_master_thread () { get_master_thread(); }
+  bool is_master_thread () { return get_master_thread(); }
   register_set_base_t<GRS,VA,WT>* get_gprset();
   void set_gprset(register_set_base_t<GRS,VA,WT>* g);
   register_set_base_t<FRS,VA,WT>* get_fprset();

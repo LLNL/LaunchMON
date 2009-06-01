@@ -472,7 +472,6 @@ const pid_t
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_pid ( bool context_sensitive )
 {
   pid_t retpid = THREAD_KEY_INVALID;
-
   if (context_sensitive) 
     {
       if (thread_ctx_stack.empty()) 

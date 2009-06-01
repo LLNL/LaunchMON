@@ -828,7 +828,6 @@ linux_launchmon_t::launch_tool_daemons (
   // TODO: We may not want to release the mpirun process until the 
   // tool set up is done...
   //
-  // cout << "Launched without having to invoke an additional launcher process" << endl;
   //
   // DHA 3/4/2009, reviewed and looks fine for BGP
   // Changed RM_BGL_MPIRUN to RM_BG_MPIRUN to genericize BlueGene Support
@@ -1568,27 +1567,11 @@ linux_launchmon_t::handle_trap_after_attach_event (
       chk_pthread_libc_and_init(p);
       p.set_never_trapped(false); 
 
-      const symbol_base_t<T_VA>& debug_state_var 
-	= main_im->get_a_symbol (p.get_launch_debug_state());
-      debug_state_addr = debug_state_var.get_relocated_address();
-  
-      get_tracer()->tracer_read( p, 
-				 debug_state_addr,
-				 &bdbg,
-				 sizeof(bdbg),
-				 use_cxt );
-
 #if !RM_BG_MPIRUN
-      //
-      // Check if the SLURM system does not call MPIR_Breakpoint 
-      // on attach
-      //
-      if ( bdbg == MPIR_DEBUG_SPAWNED ) 
-	{ 
-	  acquire_proctable ( p, use_cxt );
-	  ship_proctab_msg ( lmonp_proctable_avail );
-	  ship_resourcehandle_msg ( lmonp_resourcehandle_avail, get_resid() );
-	  say_fetofe_msg ( lmonp_stop_at_first_attach );
+      acquire_proctable ( p, use_cxt );
+      ship_proctab_msg ( lmonp_proctable_avail );
+      ship_resourcehandle_msg ( lmonp_resourcehandle_avail, get_resid() );
+      say_fetofe_msg ( lmonp_stop_at_first_attach );
 	  
 	  /*
 	   *
@@ -1596,8 +1579,7 @@ linux_launchmon_t::handle_trap_after_attach_event (
 	   *
 	   *
 	   */
-	  launch_tool_daemons(p);
-	}
+      launch_tool_daemons(p);
 #endif
 
       get_tracer()->tracer_continue (p, use_cxt);

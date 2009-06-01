@@ -27,6 +27,7 @@
  *	
  *
  *  Update Log:
+ *        Jun 01 2009 DHA: Upped GracePeriodBNSignals by x10
  *        Feb 09 2008 DHA: Added LLNS Copyright 
  *        Mar 30 2006 DHA: Added exception handling support
  *        Mar 16 2006 DHA: Created file. 
@@ -60,6 +61,6 @@
 
 #define SDBG_DEFAULT_TEMPLPARAM VA,WT,IT,GRS,FRS,NT,EXECHANDLER
 
-const unsigned int GracePeriodBNSignals  = 10000;
+const unsigned int GracePeriodBNSignals  = 100000;
 const double DefaultWarmPeriods = 10.0;
 #endif // SDBG_STD_HXX

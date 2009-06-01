@@ -692,12 +692,12 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
                   {
                     p.make_context ( p.thr_iter->first );
 		    get_tracer()->tracer_stop(p, true);
-		    //back to back SIGSTOP can be lost
+		    // Back-to-back signals can be lost
+		    // Thus, Grace period below
 		    usleep (GracePeriodBNSignals);
                     p.check_and_undo_context ( p.thr_iter->first );
                   }
 
-	        //get_tracer()->tracer_stop(p, false);
 	        p.set_please_detach ( true );
 	        p.set_reason (FE_requested);
 
@@ -721,14 +721,15 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
                   {
                     p.make_context ( p.thr_iter->first );
                     get_tracer()->tracer_stop(p, true);
-		    //back to back SIGSTOP can be lost
+		    // Back-to-back signals can be lost
+		    // Thus, Grace period below
 		    usleep (GracePeriodBNSignals);
                     p.check_and_undo_context ( p.thr_iter->first );
                   }
 
-	        //get_tracer()->tracer_stop(p, false);
 	        p.set_please_detach ( true );
 	        p.set_reason (FE_requested);
+
 	      }
 	    else if ( ( msg.msgclass == lmonp_fetofe )
 	         && ( msg.type.fetofe_type == lmonp_kill ))
@@ -744,7 +745,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
                  && ( msg.type.fetofe_type == lmonp_shutdownbe ))
               {
                 //
-                // sending signals to the launcher we used to spawn BE daemons
+                // Sending signals to the launcher we used to spawn BE daemons
                 // TODO: This may not work on BlueGene! Please test.
 		//
                 int i;
@@ -759,13 +760,15 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
                   {
                     p.make_context ( p.thr_iter->first );
                     get_tracer()->tracer_stop(p, true);
-		    //back to back SIGSTOP can be lost
+		    // Back-to-back SIGSTOP can be lost
+		    // Thus, the grace period below 	
 		    usleep (GracePeriodBNSignals);
                     p.check_and_undo_context ( p.thr_iter->first );
                   }
-	        //get_tracer()->tracer_stop(p, false);
+
 	        p.set_please_detach ( true );
 	        p.set_reason (FE_requested);
+
               }
          }	
       }  
