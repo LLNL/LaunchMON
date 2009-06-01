@@ -18,7 +18,7 @@ B.  FE  API  extension to be able to communciate a session's status to the to-
     ol FEN.
 
        B.1. interrupt interface
-              lmon_rc_e LMON_fe_regStatusCB (int (*func) (void *status))
+	      lmon_rc_e LMON_fe_regStatusCB ( int (*func) (int *status) );
 
        The status is returned through "status"
 
