@@ -250,6 +250,7 @@ main( int argc, char* argv[] )
               return EXIT_FAILURE;
             }   
          }
+
 #else
   for(i=0; i < proctab_size; i++)
     {
@@ -259,7 +260,7 @@ main( int argc, char* argv[] )
       kill(proctab[i].pd.pid, signum);
     }
 #endif
- 
+
   if ( kill_detach_shutdown_test == 1)
     sleep (60);
 
@@ -269,7 +270,8 @@ main( int argc, char* argv[] )
   /* This should be used to determine PASS/FAIL criteria */
   if ( (( lrc = LMON_be_sendUsrData ( NULL )) == LMON_EBDARG)
        || ( lrc == LMON_EINVAL ) 
-       || ( lrc == LMON_ENOMEM )) 
+       || ( lrc == LMON_ENOMEM )
+       || ( lrc == LMON_ENEGCB )) 
      {
        fprintf(stdout, "[LMON BE(%d)] FAILED(%d): LMON_be_sendUsrData\n",
                rank, lrc );
