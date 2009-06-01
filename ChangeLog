@@ -1,12 +1,22 @@
+2009-06-01 Dong H. Ahn <ahn1@llnl.gov>
+	* Added a minor bug fix to detect the master thread ID correctly.
+	  (A bug introduced by one of changes made on 2009-05-20)
+	* Upped the grace period by x10 bewteen two consecutive signals
+	  to overcome unreliable UNIX signals. For some platforms,
+	  it turned out that sending SIGSTOPs to all the threads (lwp)
+	  of the target process did not cause all of them to stop
+	  with a short grace period...
+
+
 2009-05-20 Dong H. Ahn <ahn1@llnl.gov>
-	* Added LMON_fe_regErrorCB support
+	* Added LMON_fe_regErrorCB support (ID2787962)
 	* Added a fix for the "re-attach" defect on BlueGene/P. 
 	  The fix requires the IBM efix27 or higher.
 	* Added a fix for the back-end and front-end [recv|send]UsrData functions
 	  to return correct error codes. Added a new error code 
 	  (LMON_ENEGCB) to lmon_api_std.h to deal with a
 	  negative code returning from user-provided 
-	  pack/unpack callback routines.  
+	  pack/unpack callback routines. (ID2787959) 
 	* Changed the library version to -version-info 1:0:1.
 	  It is because this revision added new API calls and 
 	  bug fixes for existing API calls.
