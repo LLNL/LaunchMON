@@ -2026,28 +2026,28 @@ fe_getStatus ( lmon_session_desc_t* mydesc, int *status )
   if ( mydesc->spawned == LMON_TRUE )
     {
       localmask = 1;
-      localmask = localmask << 2; 
+      localmask = localmask << 1; 
       globalmask |= localmask;
     }
 
   if ( mydesc->mw_spawned == LMON_TRUE )
     {
       localmask = 1;
-      localmask = localmask << 3; 
+      localmask = localmask << 2; 
       globalmask |= localmask;
     }
 
   if ( mydesc->detached == LMON_TRUE )
     {
       localmask = 1;
-      localmask = localmask << 4; 
+      localmask = localmask << 3; 
       globalmask |= localmask;
     }
 
   if ( mydesc->killed == LMON_TRUE )
     {
       localmask = 1;
-      localmask = localmask << 5; 
+      localmask = localmask << 4; 
       globalmask |= localmask;
     }
 
@@ -2169,7 +2169,13 @@ LMON_fetofe_watchdog_thread ( void *arg )
 	  mydesc->spawned = LMON_TRUE;
           fe_getStatus (mydesc, &status); 
           if (mydesc->statusCB != NULL)
-            mydesc->statusCB(&status);
+            {
+              if (mydesc->statusCB(&status) != 0)
+                {
+	          LMON_say_msg ( LMON_FE_MSG_PREFIX, false, 
+                    "registered status call back returned non-zero... continue");
+                }
+            }
 #if VERBOSE 
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
 	     "RPDTAB message received...");
@@ -2210,7 +2216,13 @@ LMON_fetofe_watchdog_thread ( void *arg )
 	  mydesc->detached = LMON_TRUE;
           fe_getStatus (mydesc, &status); 
           if (mydesc->statusCB != NULL)
-            mydesc->statusCB(&status);
+            {
+              if (mydesc->statusCB(&status) != 0)
+                {
+	          LMON_say_msg ( LMON_FE_MSG_PREFIX, false, 
+                    "registered status call back returned non-zero... continue");
+                }
+            }
 #if VERBOSE 
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
 	     "detach cmd done...");
@@ -2228,7 +2240,13 @@ LMON_fetofe_watchdog_thread ( void *arg )
 	  mydesc->killed = LMON_TRUE;
           fe_getStatus (mydesc, &status); 
           if (mydesc->statusCB != NULL)
-            mydesc->statusCB(&status);
+            {
+              if (mydesc->statusCB(&status) != 0)
+                {
+	          LMON_say_msg ( LMON_FE_MSG_PREFIX, false, 
+                    "registered status call back returned non-zero... continue");
+                }
+            }
 #if VERBOSE 
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
 	     "kill cmd done...");
@@ -2243,7 +2261,13 @@ LMON_fetofe_watchdog_thread ( void *arg )
 	  mydesc->detached = LMON_TRUE;
           fe_getStatus (mydesc, &status); 
           if (mydesc->statusCB != NULL)
-            mydesc->statusCB(&status);
+            {
+              if (mydesc->statusCB(&status) != 0)
+                {
+	          LMON_say_msg ( LMON_FE_MSG_PREFIX, false, 
+                    "registered status call back returned non-zero... continue");
+                }
+            }
 #if VERBOSE 
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
 	     "the engine stopped tracing the job...");
@@ -2258,7 +2282,13 @@ LMON_fetofe_watchdog_thread ( void *arg )
 	  mydesc->detached = LMON_TRUE;
           fe_getStatus (mydesc, &status); 
           if (mydesc->statusCB != NULL)
-            mydesc->statusCB(&status);
+            {
+              if (mydesc->statusCB(&status) != 0)
+                {
+	          LMON_say_msg ( LMON_FE_MSG_PREFIX, false, 
+                    "registered status call back returned non-zero... continue");
+                }
+            }
 #if VERBOSE 
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
 	     "the daemons terminated...");
@@ -2278,7 +2308,13 @@ LMON_fetofe_watchdog_thread ( void *arg )
 	  mydesc->killed = LMON_TRUE;
           fe_getStatus (mydesc, &status); 
           if (mydesc->statusCB != NULL)
-            mydesc->statusCB(&status);
+            {
+              if (mydesc->statusCB(&status) != 0)
+                {
+	          LMON_say_msg ( LMON_FE_MSG_PREFIX, false, 
+                    "registered status call back returned non-zero... continue");
+                }
+            }
 #if VERBOSE 
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
 	     "the job terminated...");
@@ -3710,7 +3746,7 @@ LMON_fe_regErrorCB (int (*func) (const char *format, va_list ap))
 }
 
 
-//! lmon_rc_e LMON_fe_getStatus
+//! lmon_rc_e LMON_fe_regStatusCB
 /*!
   registers a callback function that gets 
   invoked whenever there is a status change.  
