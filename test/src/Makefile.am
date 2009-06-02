@@ -121,7 +121,9 @@ bin_SCRIPTS                       = test.LE_model_checker_mainthread \
 				    test.attach_4_shutdownbe \
 				    test.jobsnap_1 \
 				    test.launch_6_engine_failure \
-				    test.fe_regErrorCB
+				    test.fe_regErrorCB \
+				    test.fe_regStatusCB
+
 
 CLEANFILES                        = $(bin_SCRIPTS)
 EXTRA_DIST                        = test.LE_model_checker_mainthread.in \
@@ -146,6 +148,7 @@ EXTRA_DIST                        = test.LE_model_checker_mainthread.in \
                                     test.jobsnap_1.in \
 				    test.launch_6_engine_failure.in \
 				    test.fe_regErrorCB.in	
+				    test.fe_regStatusCB.in
 
 
 do_subst = sed -e 's,@LMON@,$(prefix)/bin/launchmon$(EXEEXT),g' \
@@ -221,6 +224,9 @@ test.jobsnap_1: test.jobsnap_1.in Makefile
 test.fe_regErrorCB: test.fe_regErrorCB.in Makefile
 	$(do_subst) < test.fe_regErrorCB.in > test.fe_regErrorCB
 	chmod +x test.fe_regErrorCB
+test.fe_regStatusCB: test.fe_regStatusCB.in Makefile
+	$(do_subst) < test.fe_regStatusCB.in > test.fe_regStatusCB
+	chmod +x test.fe_regStatusCB
 
 run_3mins: run_3mins.c Makefile
 	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) -I$(top_srcdir)/launchmon/src $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -o $@ $<	
