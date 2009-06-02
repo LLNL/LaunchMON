@@ -18,9 +18,9 @@ B.  FE  API  extension to be able to communciate a session's status to the to-
     ol FEN.
 
        B.1. interrupt interface
-	      lmon_rc_e LMON_fe_regStatusCB ( int (*func) (int *status) );
+	      lmon_rc_e LMON_fe_regStatusCB ( int sessionHandle, int (*func) (int *status) );
 
-       The status is returned through "status"
+       The status is returned through the "status" argument.
 
  C. When a client tool component (whether it is FE or  daemons)  fails, the 
     basic  semantics  of the LaunchMON cleanup procedure is to detach from th-
