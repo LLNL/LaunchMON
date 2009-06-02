@@ -28,6 +28,7 @@
  *
  *
  *  Update Log:
+ *        Jun  01 2009 DHA: Added macros to support status checking
  *        May  19 2008 DHA: Added LMON_fe_regErrorCB ( int (*func) (char *msg))
  *                          support.
  *        Mar  13 2008 DHA: Changed parameter data type to unsigned integer in 
@@ -61,6 +62,12 @@
 #include <unistd.h>
 #include <netdb.h>
 #include <lmon_api/lmon_api_std.h>
+
+#define WIFREGISTERED(status) (status & 0x00000001)? 1:0  
+#define WIFBESPAWNED(status) (status & 0x00000002)? 1:0
+#define WIFMWSPAWNED(status) (status & 0x00000004)? 1:0
+#define WIFDETACHED(status) (status & 0x00000008)? 1:0
+#define WIFKILLED(status) (status & 0x00000010)? 1:0
 
 BEGIN_C_DECLS
 
@@ -114,7 +121,7 @@ lmon_rc_e LMON_fe_shutdownDaemons ( int sessionHandle );
 
 lmon_rc_e LMON_fe_getStatus ( int sessionHandle, int *status );
 
-lmon_rc_e LMON_fe_regStatusCB ( int (*func) (int *status) );
+lmon_rc_e LMON_fe_regStatusCB (int sessionHandle, int (*func) (int *status));
 
 lmon_rc_e LMON_fe_regErrorCB ( int (*errorCB) (const char *format, va_list ap) );
 

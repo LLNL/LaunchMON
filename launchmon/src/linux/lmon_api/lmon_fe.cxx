@@ -26,13 +26,15 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Jun 01 2009 DHA: Changed LMON_fe_regStatusCB to be aware of 
+ *                         a target session.
  *        May 19 2009 DHA: Changed static int (*statusCB) (void *status) 
  *                         to static int (*statusCB) (int *status):
  *                         the argument type for the status callback function
  *                         is now a pointer to an interger. 
  *        May 19 2009 DHA: Added LMON_fe_regErrorCB ( int (*errorCB)(char *msg) )
  *                         support. 
- *        Mar 13 2009 DHA: Added large nTasks supporf
+ *        Mar 13 2009 DHA: Added large nTasks support
  *        Mar 11 2009 DHA: Bug fix in the pthread_cond_timedwait
  *                         return code checking logic for launchmon engine 
  *                         connection.
@@ -438,6 +440,11 @@ typedef struct _lmon_session_desc_t {
    */
   lmonp_t *hntab_msg;
 
+  /*
+   * status check callback for this function 
+   */ 
+  int (*statusCB) (int *status);
+
 } lmon_session_desc_t;
 
 
@@ -462,7 +469,6 @@ typedef struct _lmon_session_array_t {
 
 } lmon_session_array_t;
 
-static int (*statusCB) (int *status) = NULL;
 
 //////////////////////////////////////////////////////////////////////////////////
 //
@@ -683,6 +689,8 @@ LMON_init_sess ( lmon_session_desc_t* s )
   s->hntab_msg = NULL;
   s->resourceHandle = LMON_INIT;
 
+  s->statusCB = NULL;
+
   return 0;
 }
 
@@ -742,6 +750,8 @@ LMON_destroy_sess ( lmon_session_desc_t* s )
   free(s->hntab_msg);
   s->hntab_msg = NULL; 
   s->resourceHandle = LMON_INIT;
+
+  s->statusCB = NULL;
 
   return rc;
 }
@@ -2158,8 +2168,8 @@ LMON_fetofe_watchdog_thread ( void *arg )
 	    }
 	  mydesc->spawned = LMON_TRUE;
           fe_getStatus (mydesc, &status); 
-          if (statusCB != NULL)
-            statusCB(&status);
+          if (mydesc->statusCB != NULL)
+            mydesc->statusCB(&status);
 #if VERBOSE 
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
 	     "RPDTAB message received...");
@@ -2199,8 +2209,8 @@ LMON_fetofe_watchdog_thread ( void *arg )
 	  pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
 	  mydesc->detached = LMON_TRUE;
           fe_getStatus (mydesc, &status); 
-          if (statusCB != NULL)
-            statusCB(&status);
+          if (mydesc->statusCB != NULL)
+            mydesc->statusCB(&status);
 #if VERBOSE 
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
 	     "detach cmd done...");
@@ -2217,8 +2227,8 @@ LMON_fetofe_watchdog_thread ( void *arg )
 	  pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
 	  mydesc->killed = LMON_TRUE;
           fe_getStatus (mydesc, &status); 
-          if (statusCB != NULL)
-            statusCB(&status);
+          if (mydesc->statusCB != NULL)
+            mydesc->statusCB(&status);
 #if VERBOSE 
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
 	     "kill cmd done...");
@@ -2232,8 +2242,8 @@ LMON_fetofe_watchdog_thread ( void *arg )
 	  pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
 	  mydesc->detached = LMON_TRUE;
           fe_getStatus (mydesc, &status); 
-          if (statusCB != NULL)
-            statusCB(&status);
+          if (mydesc->statusCB != NULL)
+            mydesc->statusCB(&status);
 #if VERBOSE 
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
 	     "the engine stopped tracing the job...");
@@ -2247,8 +2257,8 @@ LMON_fetofe_watchdog_thread ( void *arg )
 	  pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
 	  mydesc->detached = LMON_TRUE;
           fe_getStatus (mydesc, &status); 
-          if (statusCB != NULL)
-            statusCB(&status);
+          if (mydesc->statusCB != NULL)
+            mydesc->statusCB(&status);
 #if VERBOSE 
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
 	     "the daemons terminated...");
@@ -2267,8 +2277,8 @@ LMON_fetofe_watchdog_thread ( void *arg )
 	  pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
 	  mydesc->killed = LMON_TRUE;
           fe_getStatus (mydesc, &status); 
-          if (statusCB != NULL)
-            statusCB(&status);
+          if (mydesc->statusCB != NULL)
+            mydesc->statusCB(&status);
 #if VERBOSE 
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
 	     "the job terminated...");
@@ -3707,8 +3717,21 @@ LMON_fe_regErrorCB (int (*func) (const char *format, va_list ap))
 */
 extern "C"
 lmon_rc_e
-LMON_fe_regStatusCB (int (*func) (int *status))
+LMON_fe_regStatusCB (int sessionHandle, int (*func) (int *status))
 {
+  lmon_session_desc_t *mydesc;
+
+  if ( (sessionHandle < 0)
+       || (sessionHandle > MAX_LMON_SESSION))
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+         "an argument is invalid" );
+
+      return LMON_EBDARG;
+    }
+
+  mydesc = &(sess.sessionDescArray[(sessionHandle)]);
+
   if ( func == NULL)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
@@ -3717,13 +3740,16 @@ LMON_fe_regStatusCB (int (*func) (int *status))
       return LMON_EBDARG;
     }
 
-  if ( statusCB !=  NULL ) 
+  pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
+
+  if ( mydesc->statusCB !=  NULL ) 
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
         "previously registered status cb func is invalidated" );
     }
 
-  statusCB = func;
+  mydesc->statusCB = func;
+  pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
 
   return LMON_OK; 
 }
