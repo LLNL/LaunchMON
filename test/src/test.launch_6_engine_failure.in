@@ -47,6 +47,7 @@ SIGNUM=18
 
 export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
 export LMON_ADDITIONAL_FE_STALL=1
+export LMON_ERROR_CB_TEST=1
 
 echo "This is a munual test that can be used to check "
 echo "the distributed state when a failure occurrs as "

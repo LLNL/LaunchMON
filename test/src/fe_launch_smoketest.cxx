@@ -66,6 +66,39 @@ extern "C" {
  */
 const char* mylauncher    = TARGET_JOB_LAUNCHER_PATH;
 
+int statusFunc ( int *status )
+{
+  int stcp = *status;
+  fprintf (stdout, "**** status callback routine is invoked:0x%x ****\n", stcp);
+  if (WIFREGISTERED(stcp))
+    fprintf(stdout, "* session registered\n");
+  else
+    fprintf(stdout, "* session not registered\n");
+
+  if (WIFBESPAWNED(stcp))
+    fprintf(stdout, "* BE daemons spawned\n");
+  else
+    fprintf(stdout, "* BE daemons have not spawned\n");
+
+  if (WIFMWSPAWNED(stcp))
+    fprintf(stdout, "* MW daemons spawned\n");
+  else
+    fprintf(stdout, "* MW daemons have not spawned\n");
+
+  if (WIFDETACHED(stcp))
+    fprintf(stdout, "* the job is detached\n");
+  else
+    fprintf(stdout, "* the job has not been detached\n");
+
+  if (WIFKILLED(stcp))
+    fprintf(stdout, "* the job is killed\n");
+  else
+    fprintf(stdout, "* the job has not been killed\n");
+
+  return 0;
+}
+
+
 int 
 main (int argc, char *argv[])
 {
@@ -171,6 +204,15 @@ main (int argc, char *argv[])
     {
       fprintf ( stdout, "[LMON FE] FAILED\n");
       return EXIT_FAILURE;
+    }
+
+  if ( getenv ("LMON_STATUS_CB_TEST"))
+    {
+       if ( LMON_fe_regStatusCB(aSession, statusFunc) != LMON_OK )
+         {
+            fprintf ( stdout, "[LMON FE] FAILED\n");
+            return EXIT_FAILURE;
+         }
     }
 
 #if MEASURE_TRACING_COST
