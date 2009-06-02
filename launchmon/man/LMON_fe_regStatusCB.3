@@ -23,22 +23,26 @@ back-end daemons are spawned; middleware daemons are spawned;
 the job is detached from the LaunchMON engine's control; 
 and the job is killed.  
 The following macros are provided to help the callback routine 
-decoding the \fIstatus\fR argument.
+decoding the \fIstatus\fR argument. 
+In case there are multiple callback functions registered 
+with this API call to a session, the latest one is used.
+LaunchMON considers a non-zero return value from 
+the \fIstatusCB\fR function as an error condition.
  
 .TP
-.BI WIFREGISTERED( status ) 
+.BI WIFREGISTERED( status_val ) 
 Evaluates to a non-zero value if the session is registered.
 .TP 
-.BI WIFBESPAWNED( status ) 
+.BI WIFBESPAWNED( status_val ) 
 Evaluates to a non-zero value if the back-end daemons have been spawned.
 .TP
-.BI WIFMWSPAWNED( status ) 
+.BI WIFMWSPAWNED( status_val ) 
 Evaluates to a non-zero value if the middleware daemons have been spawned.
 .TP
-.BI WIFDETACHED( status ) 
+.BI WIFDETACHED( status_val ) 
 Evaluates to a non-zero value if the job has been detached.
 .TP
-.BI IFKILLED( status ) 
+.BI IFKILLED( status_val ) 
 Evaluates to a non-zero value if the job has been killed.
 
 
