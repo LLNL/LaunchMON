@@ -1,0 +1,84 @@
+.TH LaunchMON 3 "MAY 2009" LaunchMON "LaunchMON Front-End API"
+
+.SH NAME
+LMON_fe_regStatusCB \- LaunchMON front-end API: registers a status notifying callback function. 
+
+.SH SYNOPSIS
+.nf
+.B #include <unistd.h>
+.B #include <lmon_fe.h>
+.PP
+.PP
+.BI "lmon_rc_e LMON_fe_regStatusCB ( 
+.BI "  int " sessionHandle, " int ( *"statusCB " ) (int *"status "));"
+.B cc ... -lmonfeapi
+
+.SH DESCRIPTION
+
+\fBLMON_fe_regStatusCB\fR registers the \fBstatusCB\fR function 
+for the session indicated by the \fBsessionHandle\fR argument.
+LaunchMON calls back the registered routine on 
+the following state changes: the given session is registered; back-end daemons are spawned;
+middleware daemons are spawned; the job is detached from the LaunchMON engine's
+contorl; and the job is killed.  
+Following macros are provided to help decoding the \fBstatus\fR argument
+within the callback routine.
+ 
+.P
+WIFREGISTERED(status) Evaluates to a non-zero value if the session is registered.
+.P 
+WIFBESPAWNED(status) Evaluates to a non-zero value if the back-end daemons have been spawned.
+.P
+WIFMWSPAWNED(status) Evaluates to a non-zero value if the middleware daemons have been spawned.
+.P
+WIFDETACHED(status) Evaluates to a non-zero value if the job has been detached.
+.P
+WIFKILLED(status) Evaluates to a non-zero value if the job has been killed.
+
+
+.SH RETURN VALUE
+\fBLMON_OK\fR on success; otherwise, an LMON error code is returned as described below. 
+
+.SH ERRORS
+.TP
+.B LMON_OK
+Success.
+.TP
+.B LMON_EBDARG
+Invalid arguments.
+
+.SH AUTHOR
+Dong H. Ahn <ahn1@llnl.gov>
+
+.SH "SEE ALSO"
+.BR LMON_fe_init(3),
+.BR LMON_fe_createSession(3),
+.BR LMON_fe_launchAndSpawnDaemons(3),
+.BR LMON_fe_kill(3),
+.BR LMON_fe_detach(3),
+.BR LMON_fe_shutdownDaemons(3),
+.BR LMON_fe_regUnpackForBeToFe(3),
+.BR LMON_fe_regPackForFeToBe(3),
+.BR LMON_fe_putToBeDaemonEnv(3),
+.BR LMON_fe_sendUsrDataBe(3),
+.BR LMON_fe_recvUsrDataBe(3),
+.BR LMON_fe_getProctable(3),
+.BR LMON_fe_getProctableSize(3),
+.BR LMON_fe_getResourceHandle(3),
+.BR LMON_be_init(3),
+.BR LMON_be_finalize(3),
+.BR LMON_be_getMyRank(3),
+.BR LMON_be_getSize(3),
+.BR LMON_be_amIMaster(3),
+.BR LMON_be_handshake(3),
+.BR LMON_be_ready(3),
+.BR LMON_be_barrier(3),
+.BR LMON_be_broadcast(3),
+.BR LMON_be_gather(3),
+.BR LMON_be_scatter(3),
+.BR LMON_be_regPackForBeToFe(3),
+.BR LMON_be_regUnpackForFeToBe(3),
+.BR LMON_be_recvUsrData(3),
+.BR LMON_be_sendUsrData(3),
+.BR LMON_be_getMyProctab(3),
+.BR LMON_be_getMyProctabSize(3)
