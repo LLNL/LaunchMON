@@ -204,7 +204,7 @@ man_MANS = LMON_be_getMyProctabSize.3 \
 	   LMON_fe_getProctableSize.3 \
 	   LMON_fe_regPackForFeToBe.3 \
 	   LMON_be_barrier.3 \
-	   LMON_be_getMySize.3 \
+	   LMON_be_getSize.3 \
 	   LMON_be_scatter.3 \
 	   LMON_fe_getResourceHandle.3 \
 	   LMON_fe_regUnpackForBeToFe.3 \

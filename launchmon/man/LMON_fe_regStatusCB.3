@@ -15,25 +15,31 @@ LMON_fe_regStatusCB \- LaunchMON front-end API: registers a status notifying cal
 
 .SH DESCRIPTION
 
-\fBLMON_fe_regStatusCB\fR registers the \fBstatusCB\fR function 
-for the session indicated by the \fBsessionHandle\fR argument.
+\fBLMON_fe_regStatusCB\fR registers the \fIstatusCB\fR function 
+for the session indicated by the \fIsessionHandle\fR argument.
 LaunchMON calls back the registered routine on 
-the following state changes: the given session is registered; back-end daemons are spawned;
-middleware daemons are spawned; the job is detached from the LaunchMON engine's
-contorl; and the job is killed.  
-Following macros are provided to help decoding the \fBstatus\fR argument
-within the callback routine.
+the following state changes: the given session is registered; 
+back-end daemons are spawned; middleware daemons are spawned; 
+the job is detached from the LaunchMON engine's control; 
+and the job is killed.  
+The following macros are provided to help the callback routine 
+decoding the \fIstatus\fR argument.
  
-.P
-WIFREGISTERED(status) Evaluates to a non-zero value if the session is registered.
-.P 
-WIFBESPAWNED(status) Evaluates to a non-zero value if the back-end daemons have been spawned.
-.P
-WIFMWSPAWNED(status) Evaluates to a non-zero value if the middleware daemons have been spawned.
-.P
-WIFDETACHED(status) Evaluates to a non-zero value if the job has been detached.
-.P
-WIFKILLED(status) Evaluates to a non-zero value if the job has been killed.
+.TP
+.BI WIFREGISTERED( status ) 
+Evaluates to a non-zero value if the session is registered.
+.TP 
+.BI WIFBESPAWNED( status ) 
+Evaluates to a non-zero value if the back-end daemons have been spawned.
+.TP
+.BI WIFMWSPAWNED( status ) 
+Evaluates to a non-zero value if the middleware daemons have been spawned.
+.TP
+.BI WIFDETACHED( status ) 
+Evaluates to a non-zero value if the job has been detached.
+.TP
+.BI IFKILLED( status ) 
+Evaluates to a non-zero value if the job has been killed.
 
 
 .SH RETURN VALUE
