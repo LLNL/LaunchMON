@@ -699,7 +699,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
                   }
 
 	        p.set_please_detach ( true );
-	        p.set_reason (FE_requested);
+	        p.set_reason (FE_disconnected);
 
                 return LAUNCHMON_OK;
               }
@@ -728,18 +728,25 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
                   }
 
 	        p.set_please_detach ( true );
-	        p.set_reason (FE_requested);
+	        p.set_reason (FE_requested_detach);
 
 	      }
 	    else if ( ( msg.msgclass == lmonp_fetofe )
 	         && ( msg.type.fetofe_type == lmonp_kill ))
 	      {
-                //
-                // We're stopping only the main thread at the moment  
-                //
-	        get_tracer()->tracer_stop(p, false);
+                for ( p.thr_iter = p.get_thrlist().begin();
+                      p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
+                  {
+                    p.make_context ( p.thr_iter->first );
+                    get_tracer()->tracer_stop(p, true);
+		    // Back-to-back signals can be lost
+		    // Thus, Grace period below
+		    usleep (GracePeriodBNSignals);
+                    p.check_and_undo_context ( p.thr_iter->first );
+                  }
+
 	        p.set_please_kill ( true );
-	        p.set_reason (FE_requested);
+	        p.set_reason (FE_requested_kill);
 	      }
             else if ( ( msg.msgclass == lmonp_fetofe )
                  && ( msg.type.fetofe_type == lmonp_shutdownbe ))
@@ -748,12 +755,6 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
                 // Sending signals to the launcher we used to spawn BE daemons
                 // TODO: This may not work on BlueGene! Please test.
 		//
-                int i;
-                for (i=0; i < 2; ++i) 
-                  {
-                    kill ( toollauncherpid, SIGINT);
-                    usleep (GracePeriodBNSignals);
-                  } 
 
                 for ( p.thr_iter = p.get_thrlist().begin();
                       p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
@@ -767,7 +768,11 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
                   }
 
 	        p.set_please_detach ( true );
-	        p.set_reason (FE_requested);
+		//
+		// The semantics is identical with FE_disconnected: detaching from the job
+		// and shutdown daemons
+		//
+	        p.set_reason (FE_requested_shutdown_dmon);
 
               }
          }	
@@ -799,7 +804,17 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_daemon_exit_event
 {
   try
     {
-      get_tracer()->tracer_stop (p, false);
+      for ( p.thr_iter = p.get_thrlist().begin();
+            p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
+        {
+          p.make_context ( p.thr_iter->first );
+          get_tracer()->tracer_stop(p, true);
+	  // Back-to-back SIGSTOP can be lost
+	  // Thus, the grace period below 	
+	  usleep (GracePeriodBNSignals);
+          p.check_and_undo_context ( p.thr_iter->first );
+        }
+
       p.set_please_detach (true);
       p.set_reason (RM_BE_daemon_exited);
       set_last_seen (gettimeofdayD ());

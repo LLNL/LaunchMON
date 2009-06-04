@@ -242,8 +242,11 @@ enum pcont_req_reason {
   RM_BE_daemon_exited = 0,
   RM_MW_daemon_exited,
   RM_JOB_exited,
-  FE_requested,  
+  FE_requested_detach,  
+  FE_requested_kill,
+  FE_requested_shutdown_dmon,	
   FE_disconnected,
+  ENGINE_dying_wsignal,
   reserved_for_rent
 };
 

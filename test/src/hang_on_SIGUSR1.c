@@ -35,6 +35,11 @@
  */
 
 #include <lmon_api/common.h>
+
+/*
+ * This program may interfere with MPI implementations that 
+ * use USR2 signal. 
+ */ 
                                                                   
 #if RM_BG_MPIRUN
 /* work around for a compiler problem on BlueGene/L */
@@ -103,12 +108,24 @@ main(int argc, char* argv[])
     fprintf(stdout, "[LMON APP] singal handler installed for signum=%d\n", SIGUSR1); 
  
   while(global_stall == 1 ) {
-    /* fprintf(stdout, "[LMON APP] stall for a sec"); */
+    if (rank == 0)
+      fprintf(stdout, "[LMON APP] stall for a sec\n"); 
     sleep(1);
   }
 
+  if (rank == 0)
+    fprintf(stdout, "The hang unlocked\n");
+
   pass_its_neighbor(rank, size, &buf);
-  sleep (30); // inserting a stall to emulate some computation latency
+  i=0;
+  while (i < 30) 
+    {
+      if (rank == 0)
+        fprintf(stdout, "computing...\n");
+      sleep (1); // inserting a stall to emulate some computation latency
+      i++;
+    }
+
   if (rank == 0) 
     fprintf(stdout, "[LMON APP] The program size is %d\n", size); 
 

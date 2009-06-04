@@ -1173,7 +1173,10 @@ linux_launchmon_t::handle_detach_cmd_event
 
       usleep ( GracePeriodBNSignals );
 
-      switch (p.get_reason())
+      std::string dt
+        = basename ( strdup (p.get_myopts()->get_my_opt()->debugtarget.c_str()));
+
+      switch ( p.get_reason() )
         {
         case RM_BE_daemon_exited:
           say_fetofe_msg ( lmonp_bedmon_exited );
@@ -1181,16 +1184,40 @@ linux_launchmon_t::handle_detach_cmd_event
         case RM_MW_daemon_exited:
           say_fetofe_msg ( lmonp_mwdmon_exited );
           break;
-        case FE_requested:
+        case FE_requested_detach:
+          say_fetofe_msg ( lmonp_detach_done );	
+          break;
+        case FE_requested_shutdown_dmon:
+          if ( dt == std::string("srun")
+               || dt == std::string("lt-srun"))
+            {
+              usleep (GracePeriodBNSignals);
+              kill ( get_toollauncherpid(), SIGINT);
+              usleep (GracePeriodBNSignals);
+              kill ( get_toollauncherpid(), SIGINT);
+              usleep (GracePeriodBNSignals);
+            }
           say_fetofe_msg ( lmonp_detach_done );	
           break;
         case FE_disconnected:
+
+	  usleep (GracePeriodFEDisconnection);
+          if ( dt == std::string("srun")
+               || dt == std::string("lt-srun"))
+            {
+              usleep (GracePeriodBNSignals);
+              kill ( get_toollauncherpid(), SIGINT);
+              usleep (GracePeriodBNSignals);
+              kill ( get_toollauncherpid(), SIGINT);
+              usleep (GracePeriodBNSignals);
+            }
           break;
         case reserved_for_rent:
+        case FE_requested_kill:
           {
 	    self_trace_t::trace ( LEVELCHK(level1), 
 			          MODULENAME,1,
-	    "Reason for the detach is unclear");
+	    "Reason for the detach is unclear (reserved_for_rent or FE_requested_kill)  ");
           }
           break;
         default:
@@ -1288,7 +1315,7 @@ linux_launchmon_t::handle_kill_cmd_event
 
       std::string dt
         = basename ( strdup (p.get_myopts()->get_my_opt()->debugtarget.c_str()));
-
+      std::cout << dt << std::endl;
       if ( dt == std::string("srun") 
               || dt == std::string("lt-srun"))
         {
@@ -1304,53 +1331,48 @@ linux_launchmon_t::handle_kill_cmd_event
 	  usleep (GracePeriodBNSignals);
          }
        else if ( dt == std::string ("mpirun32") 
-                    || dt == std::string ("mpirun64") )
+                    || dt == std::string ("mpirun64") 
+		    || dt == std::string("mpirun") )
          {
+	   //
+	   // NOTE: Coded for BlueGene, so make sure if the
+	   // following "kill support" works for mpiruns on other platforms.
+  	   // If not, conditionals will be needed below.
+	   //	
            usleep (GracePeriodBNSignals);
            kill ( p.get_pid(false), SIGINT);
 	   usleep (GracePeriodBNSignals);
-
-           //
-           // there is no mechanism available on BG/L, which allows 
-           // killing daemons from within the engine 
-           // (man page changes are needed). NOTE: Perhaps, this
-           // should be implemented via FE API stub for BG/L?
-           //
+	   std::cout << "SIGINT sent" << std::endl;
          }
 
       switch (p.get_reason())
         {
         case RM_BE_daemon_exited:
+	case RM_MW_daemon_exited:
+	case FE_disconnected:
+	case FE_requested_shutdown_dmon:
+	case FE_requested_detach:
           {
 	    self_trace_t::trace ( LEVELCHK(level1), 
 			          MODULENAME,1,
 	    "RM_BE_daemon_exited should not kill the job!");
           }
           break;
-        case RM_MW_daemon_exited:
-          {
-	    self_trace_t::trace ( LEVELCHK(level1), 
-			          MODULENAME,1,
-	    "RM_MW_daemon_exited should not kill the job!");
-          }
-          break;
-        case FE_requested:
+        case FE_requested_kill:
           say_fetofe_msg ( lmonp_kill_done );	
-          break;
-        case FE_disconnected:
           break;
         case reserved_for_rent:
           {
 	    self_trace_t::trace ( LEVELCHK(level1), 
 			          MODULENAME,1,
-	    "Reason for the kill is unclear");
+	    "Reason for the kill is unclear (reserved_for_rent!)");
           }
           break;
         default:
           {
 	    self_trace_t::trace ( LEVELCHK(level1), 
 			          MODULENAME,1,
-	    "Reason for the kill is unclear");
+	    "Reason for the kill is unclear (default!)");
           }
           break;
         }

@@ -709,8 +709,17 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_detach (
 
   if ( (r = Pptrace (PTRACE_DETACH, tpid, 0, 0)) != 0 ) 
     {    
+      {
+        self_trace_t::trace ( true,
+        MODULENAME, 0,
+        "detach returned non-zero for %d, continue...",
+        tpid);
+      }
+      errno = 0;
+#if 0
       e = func + ERRMSG_PTRACE + strerror (errno);
       throw linux_tracer_exception_t(e, convert_error_code (errno));
+#endif
     }
   
   return SDBG_TRACE_OK;

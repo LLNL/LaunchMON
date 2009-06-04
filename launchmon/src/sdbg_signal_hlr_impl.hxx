@@ -180,6 +180,10 @@ signal_handler_t<SDBG_DEFAULT_TEMPLPARAM>::sighandler ( int sig )
      
   process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p = *launcher_proc;
 
+#if 0
+  // DHA 6/03/2009 so far the failure handling due to an anomalous signal into
+  // the Engine has been the same, regardless of RMs. Genericize the following
+  // code until it breaks for a certain RM... 
   //
   // failure handling sequence is specific to 
   // RM implementations. Regardless, the engine must enforce
@@ -187,6 +191,7 @@ signal_handler_t<SDBG_DEFAULT_TEMPLPARAM>::sighandler ( int sig )
   //
   string dt 
     = basename ( strdup (p.get_myopts()->get_my_opt()->debugtarget.c_str()));
+#endif
 
   //
   // A. When LaunchMON engine fails, the basic cleanup semantics of LaunchMON
@@ -199,31 +204,39 @@ signal_handler_t<SDBG_DEFAULT_TEMPLPARAM>::sighandler ( int sig )
   //       to the FEN API stub, if it can.
   //
 
-  if ( dt == string ("srun") || dt == string ("lt-srun"))
+  //
+  // detach from the target RM_job (A.1.1).
+  //
+  for ( p.thr_iter = p.get_thrlist().begin();
+        p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
     {
-      //
-      // detach from the target srun (A.1.1).
-      //
-      tracer->tracer_stop (p, false);
-      p.set_please_detach ( true );
+      p.make_context ( p.thr_iter->first );
+      get_tracer()->tracer_stop(p, true);
+      // Back-to-back SIGSTOP can be lost
+      // Thus, the grace period below       
+      usleep (GracePeriodBNSignals);
+      p.check_and_undo_context ( p.thr_iter->first );
+    }
 
-      //
-      // poll_processes should return false as the detach handler
-      // will return LAUNCHMON_STOP_TRACE which is converted
-      // to the false return code. If not, there must have been
-      // more events queued up, and it's better to consume all
-      // before proceed. A.1.1 and A.1.2.
-      //
-      while ( evman->poll_processes ( *lmon ) != false );
+  p.set_please_detach ( true );
+  p.set_reason (ENGINE_dying_wsignal);
 
-      //
-      // sending the lmonp_stop_tracing message to FEN
-      // A.1.3.
-      //
-      if ( lmon->get_API_mode () )
-        {
-          lmon->say_fetofe_msg (lmonp_stop_tracing);
-        }
+  //
+  // poll_processes should return false as the detach handler
+  // will return LAUNCHMON_STOP_TRACE which is converted
+  // to the false return code. If not, there must have been
+  // more events queued up, and it's better to consume all
+  // before proceed. A.1.1 and A.1.2.
+  //
+  while ( evman->poll_processes ( *lmon ) != false );
+
+  //
+  // sending the lmonp_stop_tracing message to FEN
+  // A.1.3.
+  //
+  if ( lmon->get_API_mode () )
+    {
+      lmon->say_fetofe_msg (lmonp_stop_tracing);
     }
 
   {

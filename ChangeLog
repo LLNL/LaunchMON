@@ -1,3 +1,10 @@
+2009-06-03 Dong H. Ahn <ahn1@llnl.gov>
+	* Better enforcement of the error handling semantics. 
+	* Added test.attach_4_kill for BlueGene.
+	* Made ptrace errors in tracer_detach "a soft error" 
+	  instead of a hard error that throws an exception.
+
+
 2009-06-01 Dong H. Ahn <ahn1@llnl.gov>
 	* Added a minor bug fix to detect the master thread ID correctly.
 	  (A bug introduced by one of changes made on 2009-05-20)
