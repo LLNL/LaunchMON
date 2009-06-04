@@ -1027,6 +1027,23 @@ linux_launchmon_t::handle_launch_bp_event (
 
 	    disable_all_BPs(p, use_cxt);
  
+
+	    //
+	    // unsetting MPIR_debugging_debugged
+	    //
+	    get_tracer()->tracer_write ( p, 
+	      debug_state.get_relocated_address(),
+	      &bdbgp, 
+	      sizeof(bdbgp),use_cxt );    
+
+            const symbol_base_t<T_VA>& being_debugged
+              = main_im->get_a_symbol (p.get_launch_being_debug());
+            get_tracer()->tracer_write ( p,
+                                   being_debugged.get_relocated_address(),
+                                   &bdbg,
+                                   sizeof(bdbg),
+                                   use_cxt );
+
             //
             // continue all the slave threads in case there are stopped threads 
             // If the thread is not stopped, continue will fail thus we don't 
@@ -1049,24 +1066,7 @@ linux_launchmon_t::handle_launch_bp_event (
                     p.check_and_undo_context ( p.thr_iter->first );
                   }
               }
-
-	    //
-	    // unsetting MPIR_debugging_debugged
-	    //
-	    get_tracer()->tracer_write ( p, 
-	      debug_state.get_relocated_address(),
-	      &bdbgp, 
-	      sizeof(bdbgp),use_cxt );    
-
-            const symbol_base_t<T_VA>& being_debugged
-              = main_im->get_a_symbol (p.get_launch_being_debug());
-            get_tracer()->tracer_write ( p,
-                                   being_debugged.get_relocated_address(),
-                                   &bdbg,
-                                   sizeof(bdbg),
-                                   use_cxt );
-
-	    get_tracer()->tracer_detach(p, use_cxt);
+	    //get_tracer()->tracer_detach(p, use_cxt);
 
             //
 	    // this return code will cause the engine to exit.
