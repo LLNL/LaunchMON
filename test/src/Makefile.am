@@ -147,7 +147,7 @@ EXTRA_DIST                        = test.LE_model_checker_mainthread.in \
                                     test.attach_4_shutdownbe.in \
                                     test.jobsnap_1.in \
 				    test.launch_6_engine_failure.in \
-				    test.fe_regErrorCB.in	
+				    test.fe_regErrorCB.in \
 				    test.fe_regStatusCB.in
 
 

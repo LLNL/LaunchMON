@@ -360,7 +360,8 @@ EXTRA_DIST = test.LE_model_checker_mainthread.in \
                                     test.attach_4_shutdownbe.in \
                                     test.jobsnap_1.in \
 				    test.launch_6_engine_failure.in \
-				    test.fe_regErrorCB.in	
+				    test.fe_regErrorCB.in \
+				    test.fe_regStatusCB.in
 
 do_subst = sed -e 's,@LMON@,$(prefix)/bin/launchmon$(EXEEXT),g' \
                -e 's,@TJLPATH@,$(TARGET_JOB_LAUNCHER_PATH),g' \
@@ -734,7 +735,6 @@ uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
 	tags uninstall uninstall-am uninstall-binPROGRAMS \
 	uninstall-binSCRIPTS uninstall-info-am
 
-				    test.fe_regStatusCB.in
 
 test.LE_model_checker_mainthread: test.LE_model_checker_mainthread.in Makefile
 	$(do_subst) < test.LE_model_checker_mainthread.in > test.LE_model_checker_mainthread
