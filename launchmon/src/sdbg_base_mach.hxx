@@ -242,6 +242,7 @@ enum pcont_req_reason {
   RM_BE_daemon_exited = 0,
   RM_MW_daemon_exited,
   RM_JOB_exited,
+  RM_JOB_mpir_aborting,
   FE_requested_detach,  
   FE_requested_kill,
   FE_requested_shutdown_dmon,	

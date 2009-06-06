@@ -1044,36 +1044,19 @@ linux_launchmon_t::handle_launch_bp_event (
                                    sizeof(bdbg),
                                    use_cxt );
 
-            //
-            // continue all the slave threads in case there are stopped threads 
-            // If the thread is not stopped, continue will fail thus we don't 
-            // check the error code coming out of tracer_continue, here;
-            //
-            // Note: This should be safe unless the thread is stopped because of 
-            // a breakpoint. Chance that this race condition can occur is very 
-            // slim. However, if that ever happens more design changes will be
-            // required. 
-            //
-            for ( p.thr_iter = p.get_thrlist().begin();
-                    p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
-              {
-                if ( !(p.thr_iter->second->is_master_thread()) )
-                  {
-                    // operates on a slave thread
-                    p.make_context ( p.thr_iter->first );
-                    get_tracer()->tracer_detach( p, true );
-		    usleep (GracePeriodBNSignals);
-                    p.check_and_undo_context ( p.thr_iter->first );
-                  }
-              }
-	    //get_tracer()->tracer_detach(p, use_cxt);
+             for ( p.thr_iter = p.get_thrlist().begin();
+                   p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
+               {
+                 p.make_context ( p.thr_iter->first );
+                 get_tracer()->tracer_stop(p, true);
+                 // Back-to-back signals can be lost
+                 // Thus, Grace period below
+                 usleep (GracePeriodBNSignals);
+                 p.check_and_undo_context ( p.thr_iter->first );
+               }
 
-            //
-	    // this return code will cause the engine to exit.
-	    // but it should leave its children RM_daemon process
-	    // in a running state.
-	    //
-	    lrc = LAUNCHMON_MPIR_DEBUG_ABORT; 
+            p.set_please_detach ( true );
+            p.set_reason ( RM_JOB_mpir_aborting );
 
 	    {
 	      self_trace_t::trace ( LEVELCHK(level2),
@@ -1184,6 +1167,9 @@ linux_launchmon_t::handle_detach_cmd_event
         case RM_MW_daemon_exited:
           say_fetofe_msg ( lmonp_mwdmon_exited );
           break;
+	case RM_JOB_mpir_aborting: 
+	  say_fetofe_msg ( lmonp_stop_at_launch_bp_abort );
+	  break;
         case FE_requested_detach:
           say_fetofe_msg ( lmonp_detach_done );	
           break;
