@@ -1044,19 +1044,14 @@ linux_launchmon_t::handle_launch_bp_event (
                                    sizeof(bdbg),
                                    use_cxt );
 
-             for ( p.thr_iter = p.get_thrlist().begin();
-                   p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
-               {
-                 p.make_context ( p.thr_iter->first );
-                 get_tracer()->tracer_stop(p, true);
-                 // Back-to-back signals can be lost
-                 // Thus, Grace period below
-                 usleep (GracePeriodBNSignals);
-                 p.check_and_undo_context ( p.thr_iter->first );
-               }
+	     get_tracer()->tracer_detach (p, false);
 
-            p.set_please_detach ( true );
-            p.set_reason ( RM_JOB_mpir_aborting );
+ 	   //
+ 	   // this return code will cause the engine to exit.
+ 	   // but it should leave its children RM_daemon process
+ 	   // in a running state.
+ 	   //
+ 	   lrc = LAUNCHMON_MPIR_DEBUG_ABORT;
 
 	    {
 	      self_trace_t::trace ( LEVELCHK(level2),
