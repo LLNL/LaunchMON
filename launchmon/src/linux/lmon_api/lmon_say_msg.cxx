@@ -111,6 +111,7 @@ LMON_say_msg ( const char* m, bool error_or_info, const char* output, ... )
   else
     {
       vfprintf(stdout, log, ap);
+      fflush(stdout);	
     }
   va_end(ap);
 }
