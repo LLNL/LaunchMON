@@ -210,7 +210,7 @@ const int   LMON_INIT           = -1;
 const int   DFLT_FE_ENGINE_TOUT = 120;
 const int   DFLT_FE_BE_TOUT     = 120;
 const int   DFLT_FE_MW_TOUT     = 120;
-const int   MAX_TIMEOUT         = 1000;
+const int   MAX_TIMEOUT         = 6000;
 const char *LMON_FE_MSG_PREFIX  = "<LMON FE API>";
 
 
