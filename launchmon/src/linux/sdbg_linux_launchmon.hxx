@@ -32,13 +32,18 @@
  *        Jun 08 2006 DHA: Added attach-to-a-running job support.
  *                         handle_attach_event method
  *        Mar 30 2006 DHA: Added exception handling support
- *        Jan 12 2006 DHA: Created file.          
+ *        Jan 12 2006 DHA: Created file.
  */ 
 
 #ifndef SDBG_LINUX_LAUNCHMON_HXX
 #define SDBG_LINUX_LAUNCHMON_HXX 1
 
-#include <vector>
+#if HAVE_VECTOR
+# include <vector>
+#else
+# error vector is required
+#endif
+
 #include "sdbg_base_launchmon.hxx"
 #include "sdbg_linux_std.hxx"
 #include "sdbg_linux_mach.hxx"
@@ -150,7 +155,7 @@ private:
   //  Private Methods:
   //
   //
-  bool disable_all_BPs ( 
+  bool disable_all_BPs (
                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p, bool );
 
   bool enable_all_BPs ( 
@@ -164,6 +169,8 @@ private:
   
   bool launch_tool_daemons ( 
                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p );
+
+  launchmon_rc_e init_API (opts_args_t *);
 
   bool LEVELCHK(self_trace_verbosity level) 
        { return (self_trace_t::launchmon_module_trace.verbosity_level >= level); }
