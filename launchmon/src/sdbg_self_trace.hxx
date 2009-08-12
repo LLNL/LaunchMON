@@ -35,7 +35,11 @@
 #ifndef SDBG_SELF_TRACE_HXX
 #define SDBG_SELF_TRACE_HXX 1
 
-#include <string>
+#if HAVE_STRING
+# include <string>
+#else
+# error string is required
+#endif
 
 enum self_trace_verbosity {
   quiet = 0,
