@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Aug 07 2009 DHA: Added p.set_lwp_state tracking to decipher_an_event
+ *                         method.
  *        Feb 09 2008 DHA: Added LLNS Copyright 
  *        Jul 24 2007 DHA: moved and embellished ship_proctab_msg
  *                         and ship_resourcehandle_msg here
@@ -61,7 +63,7 @@
 //
 // PUBLIC INTERFACES (class launchmon_base_t<>)
 //
-//
+////////////////////////////////////////////////////////////////////
 
 //!
 /*!  launchmon_base_t<> constructor
@@ -124,7 +126,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::~launchmon_base_t ()
     delete tracer; 
   
   if (ttracer)
-    delete ttracer;      
+    delete ttracer;
 
   proctable_copy.clear();
 }
@@ -132,11 +134,12 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::~launchmon_base_t ()
 
 //!
 /*!  launchmon_base_t<> accessors
-      
-    
+
+ 
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-void launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_tracer ( 
+void 
+launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_tracer ( 
                 tracer_base_t<SDBG_DEFAULT_TEMPLPARAM>* t ) 
 {
   tracer = t;  
@@ -152,7 +155,8 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_tracer ()
 
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-void launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_ttracer ( 
+void 
+launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_ttracer ( 
                 thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM>* t )
 {
   ttracer = t;
@@ -167,13 +171,14 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_ttracer()
 }
 
 
-//! launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::decipher_an_event 
+//! decipher_an_event:
 /*!
     deciphers an event of debug_event_t and returns a 
     corresponding launchmon_event_e code.
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-launchmon_event_e launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::decipher_an_event ( 
+launchmon_event_e 
+launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::decipher_an_event ( 
                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, debug_event_t& event)
 {
 
@@ -182,8 +187,20 @@ launchmon_event_e launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::decipher_an_event (
 
   switch ( event.get_ev () ) {
 
+  //
+  // all debug events that come from waitpid have to
+  // go through this switch statement.
+  //
+
   case EV_STOPPED:
     {
+      //
+      // set the FSM state of the focus thread to STOPPED
+      // when a race condition occurs, it will simply print
+      // out a warning message. But that kind of race condition
+      // will be very very low
+      //
+      p.set_lwp_state (LMON_RM_STOPPED, use_context);
       tracer->tracer_getregs ( p, use_context );
       VA pc = p.get_gprset(use_context)->get_pc();
 
@@ -194,31 +211,43 @@ launchmon_event_e launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::decipher_an_event (
 	  pc, p.get_cur_thread_ctx());
       }
 
-      if ( p.get_never_trapped() ) 
+      if ( p.get_never_trapped() )
         {
 	  return_ev = (p.get_myopts()->get_my_opt()->attach )
 	    ? LM_STOP_AT_FIRST_ATTACH
-	    : LM_STOP_AT_FIRST_EXEC;    
+	    : LM_STOP_AT_FIRST_EXEC;
         }
       else if ( p.get_please_detach() 
 	&& ( p.get_pid(true) == p.get_pid(false)))
 	{
+          //
+          // This method gives priority to the detach request, thereby
+          // eliminate race conditions that can occur: process/thread are
+          // stopped because of an other debug event such as BP event while
+          // detach request was also made
+          //
 	  return_ev = LM_STOP_FOR_DETACH;
 	}
       else if ( p.get_please_kill ()
 	&& ( p.get_pid(true) == p.get_pid(false)))
 	{
+          //
+          // This method gives priority to the kill request, thereby
+          // eliminate race conditions that can occur: process/thread are
+          // stopped because of an other debug event such as BP event while
+          // kill request was also made
+          //
 	  return_ev = LM_STOP_FOR_KILL;
 	}
       else if ( p.get_launch_hidden_bp() 
 	&& ( p.get_launch_hidden_bp()->is_pc_part_of_bp_op(pc)))
 	{
-	  return_ev = LM_STOP_AT_LAUNCH_BP;   
+	  return_ev = LM_STOP_AT_LAUNCH_BP;
 	}
       else if ( p.get_loader_hidden_bp() &&
 	( p.get_loader_hidden_bp()->is_pc_part_of_bp_op(pc)))
 	{
-	  return_ev = LM_STOP_AT_LOADER_BP;   
+	  return_ev = LM_STOP_AT_LOADER_BP;
 	}
       else if ( p.get_thread_creation_hidden_bp() && 
 	( p.get_thread_creation_hidden_bp()->is_pc_part_of_bp_op(pc)))
@@ -228,27 +257,35 @@ launchmon_event_e launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::decipher_an_event (
       else if ( p.get_thread_death_hidden_bp() && 
 	( p.get_thread_death_hidden_bp()->is_pc_part_of_bp_op(pc)))
 	{
-	  return_ev = LM_STOP_AT_THREAD_DEATH;   
+	  return_ev = LM_STOP_AT_THREAD_DEATH;
 	}
       else if ( p.get_fork_hidden_bp() &&
 	( p.get_fork_hidden_bp()->is_pc_part_of_bp_op(pc)))
 	{
-	  return_ev = LM_STOP_AT_FORK_BP;         
+	  return_ev = LM_STOP_AT_FORK_BP;
 	}
       else if ( event.get_signum () != SIGTRAP )
         {
           return_ev = LM_RELAY_SIGNAL;
         }
       else  
-	return_ev = LM_STOP_NOT_INTERESTED;    
-    }   
+	return_ev = LM_STOP_NOT_INTERESTED;
+    }
     break;
-    
-  case EV_EXITED:    
+
+  case EV_EXITED:
+    //
+    // set the FSM state of the focus thread to EXITED
+    //
+    p.set_lwp_state (LMON_RM_EXITED, use_context);
     return_ev = LM_EXITED;
     break;
 
   case EV_TERMINATED:
+    //
+    // set the FSM state of the focus thread to EXITED
+    //
+    p.set_lwp_state (LMON_RM_EXITED, use_context);
     return_ev = LM_EXITED;
     break; 
 
@@ -261,10 +298,9 @@ launchmon_event_e launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::decipher_an_event (
 }
 
 
-//!
-/*!  launchmon_base_t<> invoke_handler
-      
-     dispatches a corresponding event handler.
+//! invoke_handler:
+/*! launchmon_base_t<> invoke_handler
+    dispatches a corresponding event handler.
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 launchmon_rc_e
@@ -275,14 +311,14 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::invoke_handler (
   launchmon_rc_e rc = LAUNCHMON_FAILED;
 
   switch ( ev ) {
-    
+
   //
   // handles a first-exec-trap event.
   // 
   case LM_STOP_AT_FIRST_EXEC:
     rc = handle_trap_after_exec_event (p);
     break;
-    
+
   //
   // handles an attach-trap event.
   //
@@ -306,14 +342,14 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::invoke_handler (
 
   //
   // handles a launch-breakpoint event.
-  //    
+  //
   case LM_STOP_AT_LAUNCH_BP:
     rc = handle_launch_bp_event (p);
     break;
-    
+
   //
   // handles a loader-breakpoint event.
-  //    
+  //
   case LM_STOP_AT_LOADER_BP:
     rc = handle_loader_bp_event (p);
     break;
@@ -341,48 +377,48 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::invoke_handler (
 
   //
   // handles a signal-relay event.
-  //  
+  //
   case LM_RELAY_SIGNAL:
     rc = handle_relay_signal_event (p, data );
     break;
-    
+
   //
   // handles an unknown stop event.
-  //  
+  //
   case LM_STOP_NOT_INTERESTED:
     rc = handle_not_interested_event (p);
     break;
-    
+
   //
   // handles a termination event, 
   // including a thread termination.
-  //  
+  //
   case LM_TERMINATED:
     rc = handle_term_event (p);
     break;
-    
+
   //
   // handles an exit event.
   //
   case LM_EXITED:
     rc = handle_exit_event (p);
     break;
-    
+
   //
   // Oh well...
   //
-  default:    
+  default:
     break;
   }
-  
+
   return rc;
 }
 
 
-//!
-/*!  launchmon_base_t<> write_lmonp_fetofe_msg
-      
-     dispatches a corresponding event handler.
+//! say_fetofe_msg:
+/*! launchmon_base_t<>::say_fetofe_msg
+
+    dispatches a corresponding event handler.
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 launchmon_rc_e
@@ -470,7 +506,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_proctab_msg (
 	      orderedEHName.push_back ((*vpos)->pd.host_name);
 	      num_unique_hn++;
 	      offset += ( strlen ( (*vpos)->pd.host_name ) + 1 );
-	    }	  
+	    }
 	}
     }
 
@@ -575,12 +611,12 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_proctab_msg (
 }
 
 
-//! launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_resourcehandle_msg
+//! ship_resourcehandle_msg
 /*!
-  sends an lmonp_t packet with { msgclass=lmonp_fetofe, 
-  type.fetofe_type=lmonp_febe_proctab,
-  lmon_payload_length=size of the proctable }
-  to the FE API stub.  
+    sends an lmonp_t packet with { msgclass=lmonp_fetofe, 
+    type.fetofe_type=lmonp_febe_proctab,
+    lmon_payload_length=size of the proctable }
+    to the FE API stub.  
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 launchmon_rc_e 
@@ -602,7 +638,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_resourcehandle_msg (
     {    
       self_trace_t::trace ( LEVELCHK(level3), 
 	     MODULENAME, 0, 
-	     "standalone launchmon does not ship resource handle via LMONP messages");  
+	     "standalone launchmon does not ship resource handle via LMONP messages");
       return LAUNCHMON_FAILED;
     }
 
@@ -634,7 +670,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_resourcehandle_msg (
 }
 
 
-//! launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_resourcehandle_msg
+//! handle_incoming_socket_event
 /*!
   handles an lmonp_t packet received from the FE API stub. 
 */
@@ -659,6 +695,10 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
 	  return LAUNCHMON_OK;
 	}
 
+      //
+      // poll should return positive ret code only when one or more messages 
+      // reported onto this file descriptor.
+      // 
       fds[0].fd = get_FE_sockfd();
       fds[0].events = POLLIN;
       //fds[0].events = POLLRDBAND;
@@ -685,115 +725,179 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
 	    init_msg_header (&msg);
 	    numbytes = read_lmonp_msgheader ( get_FE_sockfd(), &msg);
 
+            //
+	    // First handle socket disconnection and oddly formed message
+	    //
             if ( numbytes == -1)
               {
+		//
+		// A.C.1. If the tool FE fails, the engine first detects the socket 
+                // disconnection, at which point it tries to kill  the  RM_daemon  
+		// process and detaches  from  the  RM_job  process.  However, 
+	        // if for some reason the engine also gets into trouble, the engine 
+	        // would perform  A.1  instead; obviously  in  this  case,  the failing 
+		// launchmon engine will keep the RM_daemon process running, and 
+                // won't be able to do A.1.3.
+		//
       	        for ( p.thr_iter = p.get_thrlist().begin();
                       p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
                   {
                     p.make_context ( p.thr_iter->first );
-		    get_tracer()->tracer_stop(p, true);
-		    // Back-to-back signals can be lost
-		    // Thus, Grace period below
-		    usleep (GracePeriodBNSignals);
+		    if (p.get_lwp_state (true) == LMON_RM_RUNNING)
+                      {
+	                //
+		        // A corner case is when both FE and the RM process are gone
+  		        //
+		        get_tracer()->tracer_stop(p, true);
+		        // Back-to-back signals can be lost
+		        // Thus, Grace period below
+		        usleep (GracePeriodBNSignals);
+                      }
                     p.check_and_undo_context ( p.thr_iter->first );
                   }
 
-	        p.set_please_detach ( true );
-	        p.set_reason (FE_disconnected);
-
-                return LAUNCHMON_OK;
-              }
-	    else if ( numbytes != sizeof (msg) )
+	          p.set_please_detach ( true );
+	          p.set_reason (FE_disconnected);
+                  //
+                  // By returning LAUNCHMON_OK, process status handler will 
+                  // take care of the datach event 
+                  //
+                  goto ret_ok;
+              } // if ( numbytes == -1)
+	    else if ( (numbytes != sizeof (msg))
+		      || ((numbytes == sizeof (msg))
+		          && (msg.msgclass != lmonp_fetofe)) )
 	      {
 	        self_trace_t::trace ( LEVELCHK(level1), 
 	          MODULENAME, 1, 
-		  "read_lmonp_msgheader failed");  
+		  "read_lmonp_msgheader pulled out a ill-formed message");  
 
 	        // FAILED is a misnomer in this case
-	        return LAUNCHMON_FAILED; 
-	      }  
-
-	    if ( ( msg.msgclass == lmonp_fetofe )
-	         &&  ( msg.type.fetofe_type == lmonp_detach ))
-	      {
-                for ( p.thr_iter = p.get_thrlist().begin();
-                      p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
-                  {
-                    p.make_context ( p.thr_iter->first );
-                    get_tracer()->tracer_stop(p, true);
-		    // Back-to-back signals can be lost
-		    // Thus, Grace period below
-		    usleep (GracePeriodBNSignals);
-                    p.check_and_undo_context ( p.thr_iter->first );
-                  }
-
-	        p.set_please_detach ( true );
-	        p.set_reason (FE_requested_detach);
-
+	        goto ret_fail;
 	      }
-	    else if ( ( msg.msgclass == lmonp_fetofe )
-	         && ( msg.type.fetofe_type == lmonp_kill ))
-	      {
-                for ( p.thr_iter = p.get_thrlist().begin();
-                      p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
-                  {
-                    p.make_context ( p.thr_iter->first );
-                    get_tracer()->tracer_stop(p, true);
-		    // Back-to-back signals can be lost
-		    // Thus, Grace period below
-		    usleep (GracePeriodBNSignals);
-                    p.check_and_undo_context ( p.thr_iter->first );
-                  }
 
-	        p.set_please_kill ( true );
-	        p.set_reason (FE_requested_kill);
-	      }
-            else if ( ( msg.msgclass == lmonp_fetofe )
-                 && ( msg.type.fetofe_type == lmonp_shutdownbe ))
+ 	    //
+	    // OK, FE socket is connected and we received a legit message 
+	    //
+	    //
+	    switch (msg.type.fetofe_type)
               {
-                //
-                // Sending signals to the launcher we used to spawn BE daemons
-                // TODO: This may not work on BlueGene! Please test.
-		//
+	      case lmonp_detach:
+                {
+                  for ( p.thr_iter = p.get_thrlist().begin();
+                        p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
+                    {
+                      p.make_context ( p.thr_iter->first );
+		      if (p.get_lwp_state (true) == LMON_RM_RUNNING)
+                        {
+                          //
+	                  // even with this lwp state checking if tracer_stop
+		          // throws an exception, we should return a failure.
+                          get_tracer()->tracer_stop(p, true);
+                          // Back-to-back signals can be lost
+                          // Thus, Grace period below
+                          usleep (GracePeriodBNSignals);
+                        } 
+                      p.check_and_undo_context ( p.thr_iter->first );
+                    }
 
-                for ( p.thr_iter = p.get_thrlist().begin();
-                      p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
-                  {
-                    p.make_context ( p.thr_iter->first );
-                    get_tracer()->tracer_stop(p, true);
-		    // Back-to-back SIGSTOP can be lost
-		    // Thus, the grace period below 	
-		    usleep (GracePeriodBNSignals);
-                    p.check_and_undo_context ( p.thr_iter->first );
-                  }
+                    p.set_please_detach ( true );
+                    p.set_reason (FE_requested_detach);
+                    break;
+		}
+	      case lmonp_kill:
+	        {
+                  for ( p.thr_iter = p.get_thrlist().begin();
+                        p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
+                    {
+                      p.make_context ( p.thr_iter->first );
+		      if (p.get_lwp_state (true) == LMON_RM_RUNNING)
+                        {
+                          //
+	                  // even with this lwp state checking if tracer_stop
+		          // throws an exception, we should return a failure.
+                          get_tracer()->tracer_stop(p, true);
+                          // Back-to-back signals can be lost
+                          // Thus, Grace period below
+                          usleep (GracePeriodBNSignals);
+                        }
+                      p.check_and_undo_context ( p.thr_iter->first );
+                    }
 
-	        p.set_please_detach ( true );
-		//
-		// The semantics is identical with FE_disconnected: detaching from the job
-		// and shutdown daemons
-		//
-	        p.set_reason (FE_requested_shutdown_dmon);
+                  p.set_please_kill ( true );
+                  p.set_reason (FE_requested_kill);
+                  break;
+                }  
+              case lmonp_shutdownbe:
+                {
+                  for ( p.thr_iter = p.get_thrlist().begin();
+                        p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
+                    {
+                      p.make_context ( p.thr_iter->first );
+                      if (p.get_lwp_state (true) == LMON_RM_RUNNING)
+                        {
+                          //
+                          // even with this lwp state checking if tracer_stop
+                          // throws an exception, we should return a failure.
+                          get_tracer()->tracer_stop(p, true);
+                          // Back-to-back signals can be lost
+                          // Thus, Grace period below
+                          usleep (GracePeriodBNSignals);
+                        }
+                      p.check_and_undo_context ( p.thr_iter->first );
+                    }
 
-              }
-         }	
-      }  
+                  p.set_please_detach ( true );
+                  p.set_reason (FE_requested_shutdown_dmon);
+                  break;
+		}
+             default:
+	       {
+                  self_trace_t::trace ( LEVELCHK(level1),
+                    MODULENAME, 1,
+                    "read_lmonp_msgheader pulled out a ill-formed message");
+
+		 goto ret_fail; 
+	       }
+            } // switch	
+          }
+        } // if (pollret 
+
+ret_ok:
       return LAUNCHMON_OK;
+ret_fail:
+      return LAUNCHMON_FAILED;	
     }
   catch ( symtab_exception_t e ) 
     {
       e.report();
+      //
+      // when a symtab exception is thrown, we catch and report it  
+      // and return the failed code. So the caller must handle 
+      // this code.
+      //
       return LAUNCHMON_FAILED;
     }
   catch ( tracer_exception_t e ) 
     {
       e.report();
+      //
+      // when a symtab exception is thrown, we catch and report it  
+      // and return the failed code. So the caller must handle 
+      // this code.
+      //
       return LAUNCHMON_FAILED;
     }
   catch ( machine_exception_t e )
     {
       e.report();
+      //
+      // when a symtab exception is thrown, we catch and report it  
+      // and return the failed code. So the caller must handle 
+      // this code.
+      //
       return LAUNCHMON_FAILED;
-    }     
+    }
 }
 
 
@@ -808,31 +912,55 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_daemon_exit_event
             p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
         {
           p.make_context ( p.thr_iter->first );
-          get_tracer()->tracer_stop(p, true);
-	  // Back-to-back SIGSTOP can be lost
-	  // Thus, the grace period below 	
-	  usleep (GracePeriodBNSignals);
+          if (p.get_lwp_state (true) == LMON_RM_RUNNING)
+            {
+              //
+              // even with this lwp state checking if tracer_stop
+              // throws an exception, we should return a failure.
+              get_tracer()->tracer_stop(p, true);
+
+	      // Back-to-back SIGSTOP can be lost
+	      // Thus, the grace period below 	
+	      usleep (GracePeriodBNSignals);
+            }
           p.check_and_undo_context ( p.thr_iter->first );
         }
 
       p.set_please_detach (true);
       p.set_reason (RM_BE_daemon_exited);
+
       set_last_seen (gettimeofdayD ());
+
       return LAUNCHMON_OK;
     }
   catch ( symtab_exception_t e )
     {
       e.report();
+      //
+      // when a symtab exception is thrown, we catch and report it  
+      // and return the failed code. So the caller must handle 
+      // this code.
+      //
       return LAUNCHMON_FAILED;
     }
   catch ( tracer_exception_t e )
     {
       e.report();
+      //
+      // when a symtab exception is thrown, we catch and report it  
+      // and return the failed code. So the caller must handle 
+      // this code.
+      //
       return LAUNCHMON_FAILED;
     }
   catch ( machine_exception_t e )
     {
       e.report();
+      //
+      // when a symtab exception is thrown, we catch and report it  
+      // and return the failed code. So the caller must handle 
+      // this code.
+      //
       return LAUNCHMON_FAILED;
     }
 }
