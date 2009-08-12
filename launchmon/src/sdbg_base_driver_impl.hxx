@@ -51,17 +51,19 @@
 //
 // PUBLIC INTERFACES (class driver_base_t<>)
 //
-//
+////////////////////////////////////////////////////////////////////
 
 //!
 /*!  driver_base_t<> constructors
-      
-    
+
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH> 
 driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::driver_base_t()
   : evman(NULL), lmon(NULL)
 {
+  //
+  // sets the module name for debugging support
+  //
   MODULENAME = self_trace_t::driver_module_trace.module_name;
 }
 
@@ -71,6 +73,7 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::driver_base_t
 (const driver_base_t& d) : evman(NULL), lmon(NULL)
 {
   // this copy construct doesn't copy evman and lmon
+  MODULENAME = d.MODULENAME;
 }
 
 
@@ -92,14 +95,14 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::~driver_base_t()
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH> 
 event_manager_t<SDBG_DEFAULT_TEMPLPARAM>* 
-driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_evman()         
+driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_evman()
 { 
   return evman; 
 }
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH> 
 launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>* 
-driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_lmon()         
+driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_lmon()
 { 
   return lmon;  
 }
@@ -121,14 +124,13 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_lmon
 }
 
 
-//!
-/*!  driver_base_t<> drive_engine
-      
-    
+//! drive_engine:
+/*! driver_base_t<> drive_engine
+    Method that performs the core of event driving
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH> 
 driver_error_e 
-driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive_engine(opts_args_t* opt)
+driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive_engine(opts_args_t *opt)
 {
   try 
     {
@@ -137,35 +139,46 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive_engine(opts_args_t* opt)
       pid_t pid;
 
       if ( !evman || !lmon ) 	   
-	return SDBG_DRIVER_FAILED;
+        return SDBG_DRIVER_FAILED;
   
       //
-      // launchmon initialization
+      // launchmon engine initialization
+      // this includes connecting to the FE client.
       //
       lmon->init( opt ); 
 
       if ( !opt->get_my_opt()->attach ) 
-	{       
-	  /*
-	   *
-	   * This is the launch case
-	   *
-	   */
+	{
+	  //
+	  //  
+	  //  launch case (I need to create a new process and get that pid) 
+	  // 
+	  //
 	  if ( (pid = fork()) == 0 ) 
 	    { 
+              //
+              // I'm a new RM launcher process and thus the child!
+              // 
 	      lmon->get_tracer()->tracer_trace_me(); 
-	      
+
+              //
+	      // Thus, I'm executing the debugtarget which should
+              // be the name of RM launcher.
+              //
 	      execv ( opt->get_my_opt()->debugtarget.c_str(), 
 		      opt->get_my_opt()->remaining );
+              //                                           //
+              //           ** SINK **                      //
+              //                                           //
 	    }
 	}
       else 	
 	{
-	  /*
-	   *
-	   * This is the attach case
-	   *
-	   */
+	  //
+	  // 
+	  //  attach case (all I need to know is the given target pid)
+	  // 
+	  //
 	  pid = opt->get_my_opt()->launcher_pid;   
 	}
 
@@ -181,17 +194,16 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive_engine(opts_args_t* opt)
 	  
 
       //
-      // create a main process object
+      // create a main process object using create_process(int, string) 
       //
-      process_base_t<SDBG_DEFAULT_TEMPLPARAM>* launcher_proc 
-	    = create_process ( pid, 
-			       string ( opt->get_my_opt()->debugtarget) );
-      
+      process_base_t<SDBG_DEFAULT_TEMPLPARAM> *launcher_proc 
+        = create_process ( pid, string ( opt->get_my_opt()->debugtarget) );
+
       //
-      // process object carries "opt" around for future ref.
+      // process object carries "opt" around for future reference.
       //
       launcher_proc->set_myopts(opt); 
-      
+
       //
       // install signal handlers (This is required to beef up the 
       // interactions between this and the parallel launcher proc
@@ -208,13 +220,14 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive_engine(opts_args_t* opt)
       //
       if ( opt->get_my_opt()->attach )
 	lmon->handle_attach_event ( (*launcher_proc) );
-    
+
+      evman->register_process ( launcher_proc );
+
       //
       // event manager begin monitoring events coming from launcher_proc
+      // and the channel connecting to the FE client.
       //
-      evman->register_process ( launcher_proc );
-      
-      while ( evman->multiplex_events ( (*launcher_proc), (*lmon) ) )	     
+      while ( evman->multiplex_events ( (*launcher_proc), (*lmon) ) )
 	{
 
 	  //                                              //
@@ -222,9 +235,8 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive_engine(opts_args_t* opt)
 	  //                                              //
 	  //      +                               +       // 
 	  //        -----------------------------         //
-    
 	}
-  
+
       return SDBG_DRIVER_OK;
     }
   catch ( symtab_exception_t e ) 
@@ -241,38 +253,39 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive_engine(opts_args_t* opt)
     {
       e.report();
       return SDBG_DRIVER_FAILED;
-    }   
+    }
 }
 
 
-//!
-/*!  driver_base_t<> drive
-     The entry point of this method is the standalone case    
+//! drive:
+/*! driver_base_t<> drive
+    The entry point of this method is the standalone case    
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH> 
 driver_error_e 
-driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive ( int argc, char** argv )
+driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive ( int argc, char **argv )
 {
  
-  opts_args_t* opt = new opts_args_t();
+  opts_args_t *opt = new opts_args_t();
 
+  //
   // processing the commandline options and arguments
   //
   opt->process_args(&argc, &argv);
+
   return (drive_engine(opt));     
 }
 
 
-//!
-/*!  driver_base_t<> drive
-     The entry point of this method is LMON FE APIs case     
+//! drive:
+/*! driver_base_t<> drive
+    The entry point of this method is LMON FE APIs case     
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH> 
 driver_error_e 
-driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive ( opts_args_t* opt )
-{     
-  return (drive_engine(opt)); 
+driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive ( opts_args_t *opt )
+{
+  return (drive_engine(opt));
 }
-
 
 #endif // SDBG_BASE_DRIVER_IMPL_HXX
