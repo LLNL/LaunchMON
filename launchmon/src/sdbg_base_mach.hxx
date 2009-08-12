@@ -31,15 +31,30 @@
  *        Mar 18 2008 DHA: Added BlueGene support.
  *        Feb 09 2008 DHA: Added LLNS Copyright.
  *        May 22 2006 DHA: Added exception class for the machine layer..
- *        Jan 11 2006 DHA: Created file.          
+ *        Jan 11 2006 DHA: Created file.
  */ 
 
 #ifndef SDBG_BASE_MACH_HXX
 #define SDBG_BASE_MACH_HXX 1
 
-#include <map>
-#include <stack>
-#include <string>
+#if HAVE_MAP
+# include <map>
+#else
+# error map is required
+#endif
+
+#if HAVE_STACK
+# include <stack>
+#else
+# error stack is required
+#endif
+
+#if HAVE_STRING
+# include <string>
+#else
+# error string is required
+#endif
+
 #include "sdbg_std.hxx"
 #include "sdbg_opt.hxx"
 #include "sdbg_base_bp.hxx"
@@ -112,7 +127,7 @@ public:
   // accessors 
   //
   int get_offset_in_user ( ) const           { return offset_in_user; }
-  WT* get_rs_ptr ()                          { return rs_ptr; }
+  WT * get_rs_ptr ()                         { return rs_ptr; }
   NATIVE_RS& get_native_rs()                 { return rs; }  
   virtual VA get_pc ()                       { return 0; }
   virtual VA get_ret_addr()                  { return 0; }
@@ -137,7 +152,7 @@ private:
   // Need a mask(writable_mask).
   NATIVE_RS rs;
   int offset_in_user;
-  WT* rs_ptr;
+  WT *rs_ptr;
   unsigned int writable_mask; 
 };
 
@@ -169,7 +184,7 @@ public:
   debug_event_e get_ev()                   { return ev; }
   int get_signum()                         { return u.signum; }
   int get_exitcode()                       { return u.exitcode; }
-  
+
 private:
   debug_event_e ev;
   union {
@@ -183,15 +198,33 @@ private:
 //
 //
 
+//! enum lwp_state_t
+/*!
+    Simple runtime state enumerator to model 
+    process states of a lightweight process. 
+    This should be mainly used by the tracer layer
+    to determine legitimacy of a tracing operation.
+    This should be used with a caveat that there is
+    a window of time the actual state of a lwp 
+    and the modeled state is different: betwen the time
+    the lwp changed its actual state and  
+    that event gets notified via the waitpid call
+    within the poll process method.
+*/
+enum lwp_state_e {
+  LMON_RM_CREATED,
+  LMON_RM_RUNNING,
+  LMON_RM_STOPPED,
+  LMON_RM_EXITED
+};
+
+
 //! class thread_base_t
 /*!
     thread_base_t is the base thread class. Since each
     thread has its own register set, it contains 
     gprset for General Purpose Register set and
     fprset for Floating Point Register set.
-
-    
-
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 class thread_base_t 
@@ -212,11 +245,15 @@ public:
   // override this only when the generic sniff_debug_event isn't enough
   //virtual bool sniff_debug_event ( debug_event_t& );
 
+  bool check_transition(lwp_state_e s);
+
+  //
   // accessors
   // 
   NT& get_thread_info();
   define_gset(bool,master_thread)
-  define_gset(pid_t,master_pid)  
+  define_gset(pid_t,master_pid)
+  define_gset(lwp_state_e,state)
 
   bool is_master_thread () { return get_master_thread(); }
   register_set_base_t<GRS,VA,WT>* get_gprset();
@@ -229,6 +266,7 @@ private:
   bool master_thread; // indicator for the master thread
   pid_t master_pid;   // process id of the containing proc
   NT thread_info;     // parameterized thread info
+  lwp_state_e state;
   register_set_base_t<GRS,VA,WT>* gprset; 
   register_set_base_t<FRS,VA,WT>* fprset; 
 };
@@ -253,7 +291,8 @@ enum pcont_req_reason {
 
 //! class process_base_t
 /*!
-    process_base_t is the base process class. 
+    process_base_t is the base process class that models 
+    the target RM process. 
  
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
@@ -261,53 +300,59 @@ class process_base_t
 {
 
 public:
- 
+  // 
   // constructors and destructor
   //
-  process_base_t  ();
-  process_base_t  
-    ( const std::string &mi, const std::string &md,  
-      const std::string &mt, const std::string& mc );
+  process_base_t ();
+  process_base_t (const std::string &mi,
+		  const std::string &md,
+      		  const std::string &mt,
+		  const std::string &mc );
   virtual ~process_base_t (); 
-   
-  bool make_context(const int key) throw(machine_exception_t);
-  bool check_and_undo_context(const int key) throw(machine_exception_t);
+
+  bool make_context (const int key);
+  lwp_state_e get_lwp_state (bool use_cxt);
+  bool set_lwp_state (lwp_state_e s, bool use_cxt); 
+  bool check_and_undo_context (const int key);
   register_set_base_t<GRS,VA,WT>* get_gprset(bool context_sensitive);
   register_set_base_t<FRS,VA,WT>* get_fprset(bool context_sensitive);
 
+  //
   // accessors
   //
-  const pid_t get_master_thread_pid();
-  const pid_t get_pid(bool context_sensitive);
-  std::map<int, thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*, ltstr>& get_thrlist();
-  typename std::map<int, thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*, ltstr>::iterator thr_iter;
-  
-  image_base_t<VA,EXECHANDLER>* get_myimage ();
-  image_base_t<VA,EXECHANDLER>* get_mydynloader_image ();
-  image_base_t<VA,EXECHANDLER>* get_mythread_lib_image ();
-  image_base_t<VA,EXECHANDLER>* get_mylibc_image();
-  breakpoint_base_t<VA,IT>* get_launch_hidden_bp ();
-  breakpoint_base_t<VA,IT>* get_loader_hidden_bp ();
-  breakpoint_base_t<VA,IT>* get_thread_creation_hidden_bp ();
-  breakpoint_base_t<VA,IT>* get_thread_death_hidden_bp ();
-  breakpoint_base_t<VA,IT>* get_fork_hidden_bp ();
-  opts_args_t* get_myopts() { return myopts; }
+  const pid_t get_master_thread_pid ();
+  const pid_t get_pid (bool context_sensitive);
+  std::map<int, thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*, ltstr>& 
+    get_thrlist ();
+  typename std::map<int, thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*, ltstr>::iterator 
+    thr_iter;
 
-  void set_myimage (image_base_t<VA,EXECHANDLER>* i);
-  void set_mydynloader_image (image_base_t<VA,EXECHANDLER>* i);
-  void set_mythread_lib_image (image_base_t<VA,EXECHANDLER>* i);
-  void set_mylibc_image (image_base_t<VA,EXECHANDLER>* i);
-  void set_launch_hidden_bp(breakpoint_base_t<VA,IT>* b);
-  void set_loader_hidden_bp(breakpoint_base_t<VA,IT>* b);
-  void set_thread_creation_hidden_bp(breakpoint_base_t<VA,IT>* b);
-  void set_thread_death_hidden_bp(breakpoint_base_t<VA,IT>* b); 
-  void set_fork_hidden_bp(breakpoint_base_t<VA,IT>* b);
-  void set_myopts(opts_args_t* o) { myopts = o; }
+  image_base_t<VA,EXECHANDLER> * get_myimage ();
+  image_base_t<VA,EXECHANDLER> * get_mydynloader_image ();
+  image_base_t<VA,EXECHANDLER> * get_mythread_lib_image ();
+  image_base_t<VA,EXECHANDLER> * get_mylibc_image();
+  breakpoint_base_t<VA,IT> * get_launch_hidden_bp ();
+  breakpoint_base_t<VA,IT> * get_loader_hidden_bp ();
+  breakpoint_base_t<VA,IT> * get_thread_creation_hidden_bp ();
+  breakpoint_base_t<VA,IT> * get_thread_death_hidden_bp ();
+  breakpoint_base_t<VA,IT> * get_fork_hidden_bp ();
+  opts_args_t * get_myopts() { return myopts; }
+
+  void set_myimage (image_base_t<VA,EXECHANDLER> *i);
+  void set_mydynloader_image (image_base_t<VA,EXECHANDLER> *i);
+  void set_mythread_lib_image (image_base_t<VA,EXECHANDLER> *i);
+  void set_mylibc_image (image_base_t<VA,EXECHANDLER> *i);
+  void set_launch_hidden_bp(breakpoint_base_t<VA,IT> *b);
+  void set_loader_hidden_bp(breakpoint_base_t<VA,IT> *b);
+  void set_thread_creation_hidden_bp(breakpoint_base_t<VA,IT> *b);
+  void set_thread_death_hidden_bp(breakpoint_base_t<VA,IT> *b); 
+  void set_fork_hidden_bp(breakpoint_base_t<VA,IT> *b);
+  void set_myopts(opts_args_t *o) { myopts = o; }
 
   define_gset(bool,never_trapped)
   define_gset(bool, please_detach)
   define_gset(bool, please_kill)
-  define_gset(enum pcont_req_reason, reason)
+  define_gset(pcont_req_reason, reason)
   define_gset(std::string,launch_breakpoint_sym)
   define_gset(std::string,launch_being_debug)
   define_gset(std::string,launch_debug_state)
@@ -329,10 +374,10 @@ public:
   int get_cur_thread_ctx();  
  
 protected:
-  bool protected_init ( const std::string& mi, 
-			const std::string& md, 
-			const std::string& mt,
-		        const std::string& mc );
+  bool protected_init ( const std::string &mi,
+			const std::string &md,
+			const std::string &mt,
+		        const std::string &mc );
 
   bool protected_init ( const std::string& mi );
 
@@ -347,24 +392,25 @@ private:
   // anyone wants to kill?
   bool please_kill;
 
-  enum pcont_req_reason reason;
+  pcont_req_reason reason;
 
-  image_base_t<VA,EXECHANDLER>* myimage;                 
-  image_base_t<VA,EXECHANDLER>* mydynloader_image;
-  image_base_t<VA,EXECHANDLER>* mythread_lib_image;
-  image_base_t<VA,EXECHANDLER>* mylibc_image;
+  image_base_t<VA,EXECHANDLER> *myimage;
+  image_base_t<VA,EXECHANDLER> *mydynloader_image;
+  image_base_t<VA,EXECHANDLER> *mythread_lib_image;
+  image_base_t<VA,EXECHANDLER> *mylibc_image;
 
-  opts_args_t* myopts;
+  opts_args_t *myopts;
+
   int rid;
 
   //
   // hidden breakpoints
   //
-  breakpoint_base_t<VA,IT>* launch_hidden_bp;
-  breakpoint_base_t<VA,IT>* loader_hidden_bp;
-  breakpoint_base_t<VA,IT>* thread_creation_hidden_bp;
-  breakpoint_base_t<VA,IT>* thread_death_hidden_bp;
-  breakpoint_base_t<VA,IT>* fork_hidden_bp; 
+  breakpoint_base_t<VA,IT> *launch_hidden_bp;
+  breakpoint_base_t<VA,IT> *loader_hidden_bp;
+  breakpoint_base_t<VA,IT> *thread_creation_hidden_bp;
+  breakpoint_base_t<VA,IT> *thread_death_hidden_bp;
+  breakpoint_base_t<VA,IT> *fork_hidden_bp; 
 
   //
   // launcher/debugger ABI symbols  
@@ -393,5 +439,5 @@ private:
   std::stack<int> thread_ctx_stack;
 };
 
-
 #endif // SDBG_BASE_MACH_HXX
+
