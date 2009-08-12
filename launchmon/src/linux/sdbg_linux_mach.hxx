@@ -30,7 +30,7 @@
  *        Mar  11 2008 DHA: Linux PowerPC support 
  *        Feb  09 2008 DHA: Added LLNS Copyright
  *        Jan  09 2007 DHA: Linux X86-64 support 
- *        Jan  11 2006 DHA: Created file.          
+ *        Jan  11 2006 DHA: Created file.
  */ 
 
 #ifndef SDBG_LINUX_MACH_HXX
@@ -41,7 +41,11 @@ extern "C" {
 #include <thread_db.h>
 }
 
+#if HAVE_STRING
 #include <string>
+#else
+# error string is required
+#endif
 
 #include "sdbg_std.hxx"
 #include "sdbg_base_mach.hxx"
@@ -52,9 +56,9 @@ extern "C" {
 
 #if X86_ARCHITECTURE || X86_64_ARCHITECTURE
 
-//! class linux_x86_gpr_set_t 
+//! linux_x86_gpr_set_t: 
 /*!
-    The class represents linux x86 general purpose register set. 
+    The class represents linux x86 and x86-64 general purpose register set. 
 
     The offset in the USER area is calculated as following. 
 
@@ -106,7 +110,7 @@ extern "C" {
     };
 
     === X86-64 (64 bit) ===
-                                                                                                             
+
     struct user
     {
     struct user_regs_struct     regs;
@@ -160,7 +164,7 @@ extern "C" {
     unsigned long gs;
     };
 
-    
+
  */
 
 class linux_x86_gpr_set_t 
@@ -186,7 +190,7 @@ private:
   std::string MODULENAME;
 };
 
-//! class linux_x86_frs_set_t
+//! linux_x86_frs_set_t:
 /*!
     The class represents linux x86 floating point register set.
   
@@ -219,7 +223,7 @@ private:
     offset = sizeof(struct user_regs_struct)+sizeof(int);    
 
     === X86-64 (64 bit) ===
-                                                                                                              
+
     struct user
     {
     struct user_regs_struct     regs;
@@ -238,10 +242,10 @@ private:
     char                        u_comm [32];
     unsigned long int           u_debugreg [8];
     };
-                                                                                                              
+
     General purpose register set resides in the zero offset.
     General purpose register set appears
-                                                                                                              
+
     struct user_regs_struct
     {
     unsigned long r15;
@@ -293,10 +297,10 @@ private:
 };
 
 
-//!
+//! class linux_x86_thread_t:
 /*!
-  linux_x86_thread_t is linux x86 implementation of thread_base_t
-  class. The constructor sets register model. 
+    linux_x86_thread_t is linux x86 and x86-64 implementation of thread_base_t
+    class. The constructor sets register model. 
 */
 class linux_x86_thread_t 
   : public thread_base_t<SDBG_LINUX_DFLT_INSTANTIATION> 
@@ -322,9 +326,9 @@ private:
 };
 
 
-//!
+//! linux_x86_process_t:
 /*!
-  linux_x86_process_t is linux x86 implementation of process_base_t
+  linux_x86_process_t is linux x86 and x86-64 implementation of process_base_t
   class. The constructor sets register model. 
 */
 class linux_x86_process_t 
@@ -377,7 +381,7 @@ struct ps_prochandle {
 
 #elif PPC_ARCHITECTURE
 
-//! class linux_ppc_gpr_set_t
+//! linux_ppc_gpr_set_t:
 /*!
     The class represents linux ppc general purpose register set.
  
@@ -459,12 +463,12 @@ private:
 //! class linux_ppc_frs_set_t
 /*!
     The class represents linux ppc general purpose register set.
-                                                                                              
+
     The offset in the USER area is calculated as following.
     (This is defined in sys/user.h)
-                                                                                              
+
     === ppc (32 bit process) ===
-                                                                                              
+
     struct user {
         struct pt_regs  regs;
         size_t          u_tsize;
@@ -478,11 +482,11 @@ private:
         unsigned long   magic;
         char            u_comm[32];
     };
-                                                                                              
+
     Thus, general purpose register set (regs) resides
     at the zero offset. General purpose register set
     (struct pt_regs: defined in ppc-asm/ptrace.h) is
-                                                                                              
+
     struct pt_regs {
         unsigned long gpr[32];
         unsigned long nip;
@@ -498,15 +502,15 @@ private:
         unsigned long dsisr;
         unsigned long result;
     };
-                                                                                              
+
   The offset used by ptrace is also defined for this architecture
   in ppc-asm/ptrace.h
-                                                                                              
+
   GPR0  = RT_R0
   GPR1  = RT_R1
   ...
   GPR31 = RT_R31)
-                                                                                              
+
   Also, the header file defins PT_FPR0 = 48 with a caveat that
   Each FP reg occupies 2 slots in this space. PT_FPR31 (PT_FPR0 + 2*31)
   and PT_FPSCR (PT_FPR0 + 2*32 + 1)
@@ -530,17 +534,17 @@ private:
 };
  
  
-//!
+//! linux_ppc_thread_t:
 /*!
-  linux_ppc_thread_t is linux ppc implementation of thread_base_t
-  class. The constructor sets the register model.
+    linux_ppc_thread_t is the linux ppc implementation of thread_base_t
+    class. The constructor sets the register model.
 */
 class linux_ppc_thread_t
   : public thread_base_t<SDBG_LINUX_DFLT_INSTANTIATION>
 {
  
 public:
-   
+
   // constructors and destructor
   //
   linux_ppc_thread_t();
@@ -549,7 +553,7 @@ public:
   // virtual method to convert thread id to lwp 
   // which the kernel understand.
   virtual pid_t thr2pid();
-    
+
 
 private:
   bool LEVELCHK(self_trace_verbosity level)
@@ -607,7 +611,7 @@ private:
 // data structure needed by proc service layer
 //
 struct ps_prochandle {
-  process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>* p;
+  process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> *p;
 };
 
 #endif // ARCHITECTURES
