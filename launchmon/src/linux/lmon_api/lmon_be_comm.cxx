@@ -52,10 +52,30 @@
 #error This source file requires a LINUX OS
 #endif
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
+#if HAVE_STDIO_H
+# include <cstdio>
+#else
+# error stdio.h is required
+#endif
+
+#if HAVE_STDLIB_H
+# include <cstdlib>
+#else
+# error stdlib.h is required
+#endif
+
+#if HAVE_STRING_H
+# include <string.h>
+#else
+# error string.h is required
+#endif
+
+#if HAVE_IOSTREAM
+# include <iostream>
+#else
+# error iostream is required
+#endif
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
