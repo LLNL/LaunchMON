@@ -211,10 +211,13 @@ signal_handler_t<SDBG_DEFAULT_TEMPLPARAM>::sighandler ( int sig )
         p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
     {
       p.make_context ( p.thr_iter->first );
-      get_tracer()->tracer_stop(p, true);
-      // Back-to-back SIGSTOP can be lost
-      // Thus, the grace period below       
-      usleep (GracePeriodBNSignals);
+      if (p.get_lwp_state (true) == LMON_RM_RUNNING)
+        {
+          get_tracer()->tracer_stop(p, true);
+          // Back-to-back SIGSTOP can be lost
+          // Thus, the grace period below
+          usleep (GracePeriodBNSignals);
+        }
       p.check_and_undo_context ( p.thr_iter->first );
     }
 
