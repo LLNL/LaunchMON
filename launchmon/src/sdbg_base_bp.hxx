@@ -51,7 +51,7 @@
 #ifndef SDBG_BASE_BP_HXX
 #define SDBG_BASE_BP_HXX 1
 
-//! FILE: breakpoint_base_t
+//! breakpoint_base_t:
 /*!
     The platform-independent breakpoint class. A platform
     specific layer should provide this with a virtual 
@@ -59,7 +59,8 @@
 
     A noteworthy feature is that this class attemps to blend
     the original instruction with the provided trap instruction
-    to implement a breakpoint instruction. 
+    to implement a breakpoint instruction. In addition, it supports
+    indirect call.
 */
 template <class VA, class IT>
 class breakpoint_base_t
@@ -67,7 +68,7 @@ class breakpoint_base_t
 
 public:
 
-  enum bp_status_e { 
+  enum bp_status_e {
     uninit,
     set_but_not_inserted,
     enabled, 
@@ -76,7 +77,7 @@ public:
 
   bp_status_e status;
   
-  breakpoint_base_t ()                     { 
+  breakpoint_base_t ()                     {
 					     status = uninit; 
 					   }
 
@@ -116,14 +117,51 @@ public:
 
 private:
 
+  //! use_indirect:
+  /*!
+      This is to support indirect calls. 
+      E.g., call *foo as opposed to call foo. 
+  */
   bool use_indirection;
+
+  //! address_at:
+  /*!
+      Target code address
+  */
   VA address_at;
+
+  //! address_at:
+  /*!
+      Target indirect code address 
+  */
   VA indirect_address_at;
+
+  //! address_at:
+  /*!
+      return address; this is needed in case the next 
+      instruction address is the next instructon of the 
+      caller function 
+  */
   VA return_addr;
+
+  //! trap_instruction:
+  /*!
+      Break point trap instruction to use, which differs by
+      platforms 
+  */
   IT trap_instruction;
+
+  //! orig_instruction:
+  /*!
+      Original insruction at the target code address
+  */
   IT orig_instruction;
+
+  //! blend_mask:
+  /*!
+      This instructs how to blend trap inst with orig inst
+  */
   IT blend_mask;
-  
 };
 
 #endif // SDBG_BASE_BP_HXX
