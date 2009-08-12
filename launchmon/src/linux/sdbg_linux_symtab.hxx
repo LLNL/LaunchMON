@@ -33,7 +33,7 @@
  *                         implementation from base symbol table
  *                         class. Linux only supports ELF file 
  *                         format and DWARF debug info format.
- *                   
+ *
  */ 
 
 #ifndef SDBG_LINUX_SYMTAB_HXX
@@ -154,7 +154,7 @@ public:
   // constructors & destructor
   //
   linux_image_t ();
-  linux_image_t ( const std::string& lib );
+  linux_image_t ( const std::string &lib );
   linux_image_t ( const image_base_t<VA,elf_wrapper>& im );
   virtual ~linux_image_t ();
 
