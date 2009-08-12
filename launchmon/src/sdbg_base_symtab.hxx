@@ -36,9 +36,24 @@
 #ifndef SDBG_BASE_SYMTAB_HXX
 #define SDBG_BASE_SYMTAB_HXX 1
 
-#include <iostream>
-#include <string>
-#include <map>
+#if HAVE_IOSTREAM
+# include <iostream>
+#else
+# error iostream is required
+#endif
+
+#if HAVE_STRING
+# include <string>
+#else
+# error string is required
+#endif 
+
+#if HAVE_MAP
+# include <map>
+#else
+# error map is required
+#endif
+
 #include "sdbg_std.hxx"
 #include "sdbg_self_trace.hxx"
 #include "sdbg_base_exception.hxx"
