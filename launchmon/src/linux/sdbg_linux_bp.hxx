@@ -40,11 +40,11 @@
 #include "sdbg_linux_mach.hxx"
 
 #if BIT64
-#if X86_64_ARCHITECTURE
-const int NUM_BYTE_INCR_AFTER_SINGLESTEP = 8;
-#else
-const int NUM_BYTE_INCR_AFTER_SINGLESTEP = 4;
-#endif
+# if X86_64_ARCHITECTURE
+  const int NUM_BYTE_INCR_AFTER_SINGLESTEP = 8;
+# else
+  const int NUM_BYTE_INCR_AFTER_SINGLESTEP = 4;
+# endif //X86_64_ARCHITECTURE
 #else
 const int NUM_BYTE_INCR_AFTER_SINGLESTEP = 4;
 #endif
@@ -55,10 +55,10 @@ const int NUM_BYTE_INCR_AFTER_TRAP       = 1;
 const int NUM_BYTE_INCR_AFTER_TRAP       = 0;
 #endif
 
-//!
+//! linux_breakpoint_t:
 /*!
-  linux_breakpoint_t is linux implementation of breakpoint_base_t
-  class. 
+    linux_breakpoint_t is linux implementation of breakpoint_base_t
+    class.
 */
 class linux_breakpoint_t : public breakpoint_base_t<T_VA, T_IT>
 {
@@ -98,8 +98,8 @@ public:
 	  ? get_indirect_address_at()
 	  : get_address_at();
 
-      if ( (pc == get_where_pc_would_be()) 
-	   || ((pc > get_where_pc_would_be()) 
+      if ( (pc == get_where_pc_would_be())
+	   || ((pc > get_where_pc_would_be())
 	      && (pc <= taddr+NUM_BYTE_INCR_AFTER_SINGLESTEP)))
 	{
 	  rval = true;
