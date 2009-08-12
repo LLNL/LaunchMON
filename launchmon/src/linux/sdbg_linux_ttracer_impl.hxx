@@ -134,17 +134,17 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_init (
 
     cppath = strdup(thrlib_im->get_path().c_str());
     dirpath_libpthread = dirname(cppath);
-   
-    //
-    // NOTE: on linux free cppath should be safe
-    //
-    free(cppath);
 
     if (!linux_thread_callback_t::td.bind(string(dirpath_libpthread))) {
       e = func +
 	" Fails to dlopen and bind thread debug library.";
       throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);
     }
+
+    //
+    // NOTE: on linux free cppath should be safe
+    //
+    free(cppath);
 
     if ( ( te = linux_thread_callback_t::td.dll_td_init () ) 
          != TD_OK ) {
