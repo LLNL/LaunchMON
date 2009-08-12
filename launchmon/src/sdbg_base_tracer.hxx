@@ -37,7 +37,12 @@
 #ifndef SDBG_BASE_TRACER_HXX
 #define SDBG_BASE_TRACER_HXX
 
-#include <iostream>
+#if HAVE_IOSTREAM
+# include <iostream>
+#else
+# error iostream is required
+#endif
+
 #include "sdbg_base_mach.hxx"
 #include "sdbg_base_bp.hxx"
 #include "sdbg_base_exception.hxx"
@@ -65,6 +70,7 @@ enum tracer_error_e {
   SDBG_TRACE_EPERM_ERR,
   SDBG_TRACE_EFAULT_ERR,
   SDBG_TRACE_EBUSY_ERR,
+  SDBG_TRACE_UNIMPLEMENTED,
   SDBG_TRACE_FAILED
 };
 
@@ -115,12 +121,12 @@ public:
     Its sub-calsses must implement those methods.
 
     Template parameters:
-    VA: Virtual_address type or class
-    WT: Word type or class
+    VA:  Virtual_address type or class
+    WT:  Word type or class
     IT:  Instruction class
     RTS: Native general register set struct
     FTS: Native FP register set struct
-    NT: Native thread info type
+    NT:  Native thread info type
 */
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH> 
@@ -129,7 +135,7 @@ class tracer_base_t
 
 public:
   tracer_base_t() { }
-  tracer_base_t(const tracer_base_t<SDBG_DEFAULT_TEMPLPARAM>& p) { }
+  tracer_base_t(const tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> &p) { }
   virtual ~tracer_base_t() {}
 
 
@@ -147,85 +153,85 @@ public:
   //
   //
   virtual tracer_error_e tracer_setregs    
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt ) 
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt ) 
     throw (tracer_exception_t)                                 =0;
 
   virtual tracer_error_e tracer_getregs    
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt ) 
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt ) 
     throw (tracer_exception_t)                                 =0;
 
   virtual tracer_error_e tracer_setfpregs  
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt )
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
     throw (tracer_exception_t)                                 =0;
 
   virtual tracer_error_e tracer_getfpregs  
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt )
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
     throw (tracer_exception_t)                                 =0;
 
-  virtual tracer_error_e tracer_read       
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
+  virtual tracer_error_e tracer_read
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
       VA addr, void* buf, int size, bool use_cxt )
     throw (tracer_exception_t)                                 =0;
 
   virtual tracer_error_e tracer_read_string
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
       VA addr, void* buf, int size, bool use_cxt )
     throw (tracer_exception_t)                                 =0; 
 
   virtual tracer_error_e tracer_write      
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
       VA addr, const void* buf, int size, bool use_cxt) 
     throw (tracer_exception_t)                                 =0;
 
   virtual tracer_error_e tracer_continue   
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt )
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
     throw (tracer_exception_t)                                 =0;
 
   virtual tracer_error_e tracer_deliver_signal
-  ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, int sig, bool use_cxt )
+  ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, int sig, bool use_cxt )
     throw (tracer_exception_t)                                 =0;
 
   virtual tracer_error_e tracer_stop
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt )
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
     throw (tracer_exception_t)                                 =0;
 
-  virtual tracer_error_e tracer_kill       
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt )
+  virtual tracer_error_e tracer_kill
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
     throw (tracer_exception_t)                                 =0;
 
   virtual tracer_error_e tracer_singlestep 
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt )
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
     throw (tracer_exception_t)                                 =0;
 
-  virtual tracer_error_e tracer_syscall    
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt )
+  virtual tracer_error_e tracer_syscall
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
     throw (tracer_exception_t)                                 =0;
 
-  virtual tracer_error_e tracer_detach     
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt )
+  virtual tracer_error_e tracer_detach
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
     throw (tracer_exception_t)                                 =0;
 
-  virtual tracer_error_e tracer_attach     
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
-      bool use_cxt, pid_t newtid )                           
+  virtual tracer_error_e tracer_attach
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
+      bool use_cxt, pid_t newtid )
     throw (tracer_exception_t)                                 =0;
 
-  virtual tracer_error_e tracer_trace_me   ()                 
+  virtual tracer_error_e tracer_trace_me   ()
     throw (tracer_exception_t)                                 =0;
 
   virtual tracer_error_e insert_breakpoint 
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
-      breakpoint_base_t<VA, IT>& bp, bool use_cxt )        
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
+      breakpoint_base_t<VA, IT>& bp, bool use_cxt )
     throw (tracer_exception_t)                                 =0;
 
   virtual tracer_error_e pullout_breakpoint 
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
       breakpoint_base_t<VA, IT>& bp, bool use_cxt ) 
     throw (tracer_exception_t)                                 =0;
 
-  virtual tracer_error_e convert_error_code ( int err )  
+  virtual tracer_error_e convert_error_code ( int err )
     throw (tracer_exception_t)                                 =0;
-  
+
 };
 
 #endif //SDBG_BASE_TRACER_HXX
