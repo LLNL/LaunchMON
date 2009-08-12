@@ -163,15 +163,15 @@ static double endTS;
 //
 //
 
-//!  PRIVATE: 
+//!  File scope  get_va_from_procfs
 /*!  get_va_from_procfs
-  
+
      returns the starting virtual memory address of the given
      shared library using /proc file system. It returns T_UNINIT_HEX
-     when fails to find "dynname."
-    
+     when fails to find "dynname." This is a hack; I need to get
+     the base link address of the dynamic linker from AUX vector.
 */
-static 
+static
 T_VA 
 get_va_from_procfs ( pid_t pid, const std::string& dynname )
 { 
@@ -236,9 +236,102 @@ get_va_from_procfs ( pid_t pid, const std::string& dynname )
 
 ////////////////////////////////////////////////////////////////////
 //
+// PRIVATE METHODS (class linux_launchmon_t<>)
+//
+////////////////////////////////////////////////////////////////////
+
+launchmon_rc_e
+linux_launchmon_t::init_API(opts_args_t *opt)
+{ 
+  char *tokenize = NULL;
+  char *FEip = NULL;
+  char *FEport = NULL;
+  int clientsockfd;
+  struct sockaddr_in servaddr;
+
+  if (!opt->get_my_opt()->remote) 
+    {
+      //
+      // if this isn't API mode, apparently you don't have to 
+      // do anything.
+      //
+      return LAUNCHMON_OK;
+    }
+
+  //
+  // parsing ip:port info
+  //
+  tokenize = strdup(opt->get_my_opt()->remote_info.c_str());
+  FEip = strtok ( tokenize, ":" );
+  FEport = strtok ( NULL, ":" );
+
+  servaddr.sin_family = AF_INET;
+  servaddr.sin_port = htons((uint16_t) atoi(FEport));
+
+  //
+  // converting the text IP (or hostname) to binary
+  //
+  if ( inet_pton(AF_INET, (const char*) FEip, &(servaddr.sin_addr)) < 0 )
+    {
+      self_trace_t::trace ( LEVELCHK(level1),
+        MODULENAME,1,
+        "inet_pton failed in the engine init handler.");
+      return LAUNCHMON_FAILED;
+    }
+
+  if ( ( clientsockfd = socket ( AF_INET, SOCK_STREAM, 0 )) < 0 )
+    {
+      self_trace_t::trace ( LEVELCHK(level1),
+        MODULENAME,1,
+        "socket failed in the engine init handler.");
+        return LAUNCHMON_FAILED;
+    }
+
+  int optval = 1;
+  int optlen = sizeof(optval);
+  if( setsockopt(clientsockfd, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) < 0 )
+    {
+      self_trace_t::trace ( LEVELCHK(level1),
+        MODULENAME,1,
+        "setting socket keepalive failed.");
+      return LAUNCHMON_FAILED;
+    }
+
+  if ( ( connect ( clientsockfd, 
+	 	   (struct sockaddr *)&servaddr,
+                   sizeof(servaddr) )) < 0 )
+    {
+      self_trace_t::trace ( LEVELCHK(level1),
+        MODULENAME,1,
+        "connect failed in PLST init handler.");
+      return LAUNCHMON_FAILED;
+    }
+
+  //
+  // registering the FD for FE-client and engine connection
+  //
+  set_FE_sockfd ( clientsockfd );
+
+  //
+  // setting API mode flag
+  //
+  set_API_mode ( true );
+
+  {
+    self_trace_t::trace ( LEVELCHK(level2),
+      MODULENAME,0,
+      "linux_launchmon_t initialized.");
+  }
+
+  return LAUNCHMON_OK;
+}
+
+
+////////////////////////////////////////////////////////////////////
+//
 // PUBLIC INTERFACES (class linux_launchmon_t<>)
 //
-//
+///////////////////////////////////////////////////////////////////
 
 //!  PUBLIC: 
 /*! linux_launchmon_t<> constructors & destructor
@@ -253,120 +346,68 @@ linux_launchmon_t::linux_launchmon_t ()
 }
 
 
+//!  PUBLIC: 
+/*! linux_launchmon_t<> constructors & destructor
+
+
+*/
 linux_launchmon_t::linux_launchmon_t ( const linux_launchmon_t& l )
 {
   /* any more initialization here */
   self_trace_t::trace ( LEVELCHK(level1), 
      MODULENAME, 1, 
-    "launchmon object shouldn't be copied, exiting.");    
+    "launchmon object shouldn't be copied, exiting.");
 }
 
 
+//!  PUBLIC: 
+/*! linux_launchmon_t<> constructors & destructor
+
+
+*/
 linux_launchmon_t::~linux_launchmon_t ()
 {
-  
+  /* nothing to delete in this layer */ 
 }
 
 
 //! PUBLIC: init
 /*!
-    registers platform specific tracers 
-    into the lower layer.
+    Method that registers platform specific process/thread tracers 
+    into the platform indepdent layer. It also initializes the FE-engine
+    connection for API mode.
 */
 launchmon_rc_e 
-linux_launchmon_t::init ( opts_args_t* opt ) 
+linux_launchmon_t::init ( opts_args_t *opt )
 {
   using namespace std;
 
-  set_tracer  ( new linux_ptracer_t<SDBG_LINUX_DFLT_INSTANTIATION>() );
+  launchmon_rc_e lrc;
 
-  set_ttracer ( new linux_thread_tracer_t<T_VA,
-		                          T_WT,
-	                                  T_IT,
-			                  T_GRS,
-	                                  T_FRS>() );
+  //
+  // registering a linux process tracer
+  //
+  set_tracer(new linux_ptracer_t<SDBG_LINUX_DFLT_INSTANTIATION>());
 
+  //
+  // registering a linux thread tracer
+  //
+  set_ttracer (new linux_thread_tracer_t<T_VA,T_WT,T_IT,T_GRS,T_FRS>());
 
-  if ( opt->get_my_opt()->remote )
-    {
-      // 
-      // API mode: we must prime the engine 
-      // for socket communication with the FE API stub.
-      // 
+  lrc = init_API(opt);
 
-      char *tokenize;
-      char *FEip;
-      char *FEport;
-      int clientsockfd;
-      struct sockaddr_in servaddr;
+  set_last_seen (gettimeofdayD()); 
 
-      tokenize = strdup(opt->get_my_opt()->remote_info.c_str());
-      FEip = strtok ( tokenize, ":" );
-      FEport = strtok ( NULL, ":" );
-
-      servaddr.sin_family = AF_INET;
-      servaddr.sin_port = htons((uint16_t) atoi(FEport));
-
-      //
-      // converting the text IP (or hostname) to binary
-      //
-      if ( inet_pton(AF_INET, (const char*) FEip, &(servaddr.sin_addr)) < 0 )
-        {
-          self_trace_t::trace ( LEVELCHK(level1), 
-	    MODULENAME,1, 
-	    "inet_pton failed in PLST init handler.");
-          return LAUNCHMON_FAILED;
-        }
-
-      if ( ( clientsockfd = socket ( AF_INET, SOCK_STREAM, 0 )) < 0 )
-        {
-          self_trace_t::trace ( LEVELCHK(level1), 
-	    MODULENAME,1, 
-	    "socket failed in the engine init handler.");
-          return LAUNCHMON_FAILED;
-        }
-
-      int optval = 1;
-      int optlen = sizeof(optval);
-      if( setsockopt(clientsockfd, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) < 0 ) 
-        {
-          self_trace_t::trace ( LEVELCHK(level1), 
-	    MODULENAME,1, 
-	    "setting socket keepalive failed.");
-          return LAUNCHMON_FAILED;
-        }
-
-      if ( ( connect ( clientsockfd,
-                  ( struct sockaddr* ) &servaddr,
-                  sizeof(servaddr) )) < 0 )
-       {
-         self_trace_t::trace ( LEVELCHK(level1), 
-	   MODULENAME,1, 
-	   "connect failed in PLST init handler.");
-         return LAUNCHMON_FAILED;
-       }
-
-       set_FE_sockfd ( clientsockfd );
-       set_API_mode ( true );
-    }
-
-  {
-    self_trace_t::trace ( LEVELCHK(level2), 
-      MODULENAME,0, 
-      "linux_launchmon_t initialized.");
-  }
-
-  set_last_seen (gettimeofdayD ()); 
-  return LAUNCHMON_OK;
+  return lrc;
 }
 
 
 //! PUBLIC: handle_attach_event 
 /*!
-    handles an attach event. 
+    handles an attach event.
 */
 launchmon_rc_e 
-linux_launchmon_t::handle_attach_event 
+linux_launchmon_t::handle_attach_event
 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p )
 {
   try 
@@ -403,8 +444,8 @@ linux_launchmon_t::handle_attach_event
 */
 launchmon_rc_e 
 linux_launchmon_t::handle_bp_prologue ( 
-                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p,
-		 breakpoint_base_t<T_VA,T_IT>* bp)
+                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p,
+		 breakpoint_base_t<T_VA,T_IT> *bp)
 {
   try 
     {
@@ -480,8 +521,8 @@ linux_launchmon_t::handle_bp_prologue (
 */
 launchmon_rc_e 
 linux_launchmon_t::is_bp_prologue_done ( 
-                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p,
-		 breakpoint_base_t<T_VA,T_IT>* bp )
+                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p,
+		 breakpoint_base_t<T_VA,T_IT> *bp )
 {
   try 
     {
@@ -496,7 +537,7 @@ linux_launchmon_t::is_bp_prologue_done (
       if ( bp->status == breakpoint_base_t<T_VA,T_IT>::disabled ) 
 	{
 	  get_tracer()->insert_breakpoint ( p, *bp, use_cxt);
-     
+
 	  {
 	    self_trace_t::trace ( LEVELCHK(level3), 
 	      MODULENAME,0,
@@ -534,7 +575,7 @@ linux_launchmon_t::is_bp_prologue_done (
 
 */
 bool 
-linux_launchmon_t::acquire_proctable ( 
+linux_launchmon_t::acquire_proctable (
                  process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p, 
 		 bool use_cxt )
 {
@@ -542,7 +583,7 @@ linux_launchmon_t::acquire_proctable (
     {
       using namespace std;
 
-      char resource_id[MAX_STRING_SIZE];         
+      char resource_id[MAX_STRING_SIZE];
       image_base_t<T_VA,elf_wrapper>* main_im;
 
       T_VA proctable_loc;
@@ -581,12 +622,12 @@ linux_launchmon_t::acquire_proctable (
 	    = (MPIR_PROCDESC *) malloc (sizeof (MPIR_PROCDESC) * get_pcount());   
       const symbol_base_t<T_VA>& debug_pt 
 	    = main_im->get_a_symbol ( p.get_launch_proctable() );
-      T_VA proctable_addr = debug_pt.get_relocated_address();          
+      T_VA proctable_addr = debug_pt.get_relocated_address();
       get_tracer()->tracer_read ( p, 
 				  proctable_addr, 
 				  &proctable_loc,
 				  sizeof(proctable_loc), 
-				  use_cxt );    
+				  use_cxt );
       get_tracer()->tracer_read ( p, 
 				  proctable_loc,
 				  launcher_proctable,
@@ -707,7 +748,7 @@ linux_launchmon_t::acquire_proctable (
     {
       e.report ();
       return LAUNCHMON_FAILED;
-    }     
+    }
 }
 
 
@@ -880,8 +921,6 @@ linux_launchmon_t::launch_tool_daemons (
 		get_resid(),
 		sharedsecret,
 		randomID);
-
-
 #else
 	  sprintf ( expanded_string, 
 		p.get_myopts()->get_my_opt()->launchstring.c_str(), 
@@ -967,7 +1006,7 @@ linux_launchmon_t::handle_launch_bp_event (
       //
       // looking up MPIR_debug_state
       //
-      const symbol_base_t<T_VA>& debug_state_var 
+      const symbol_base_t<T_VA> &debug_state_var 
 	    = main_im->get_a_symbol (p.get_launch_debug_state());
       debug_state_addr = debug_state_var.get_relocated_address(); 
       get_tracer()->tracer_read ( p, 
@@ -975,7 +1014,7 @@ linux_launchmon_t::handle_launch_bp_event (
 				  &bdbg,
 				  sizeof(bdbg),
 				  use_cxt );
-      const symbol_base_t<T_VA>& debug_state
+      const symbol_base_t<T_VA> &debug_state
             = main_im->get_a_symbol (p.get_launch_being_debug());
 
 #if MEASURE_TRACING_COST
@@ -1094,12 +1133,12 @@ linux_launchmon_t::handle_launch_bp_event (
 
 //! PUBLIC: handle_detach_cmd_event 
 /*!
-    handles "detach-command" event. It is an event initiated by 
-    the FE client, as opposed to an event generated from 
-    the RM launcher process. 
+    handles "detach-command" event. In order to get to this event 
+    handler, all the threads in the RM process should have been
+    stopped. Thus, we're checking LMON_RM_STOPPED status. 
 */
 launchmon_rc_e 
-linux_launchmon_t::handle_detach_cmd_event 
+linux_launchmon_t::handle_detach_cmd_event
                  ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p )
 {
   try
@@ -1113,14 +1152,7 @@ linux_launchmon_t::handle_detach_cmd_event
       disable_all_BPs (p, false);      
 
       //
-      // continue all the slave threads in case there are stopped threads 
-      // If the thread is not stopped, continue will fail thus we don't 
-      // check the error code coming out of tracer_continue, here;
-      //
-      // Note: This should be safe unless the thread is stopped because of 
-      // a breakpoint. Chance that this race condition can occur is very 
-      // slim. However, if that ever happens more design changes will be
-      // required. 
+      // detach from all slave threads.
       //
       for ( p.thr_iter = p.get_thrlist().begin(); 
 	      p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
@@ -1129,8 +1161,11 @@ linux_launchmon_t::handle_detach_cmd_event
             {
               // operates on a slave thread
               p.make_context ( p.thr_iter->first );
-              get_tracer()->tracer_detach ( p, true ); 
-	      usleep (GracePeriodBNSignals);
+              if (p.get_lwp_state (true) == LMON_RM_STOPPED)
+                {
+                  get_tracer()->tracer_detach ( p, true ); 
+	          usleep (GracePeriodBNSignals);
+                }
               p.check_and_undo_context ( p.thr_iter->first );
 	    }
 	}
@@ -1147,6 +1182,9 @@ linux_launchmon_t::handle_detach_cmd_event
                                    sizeof(bdbg),
                                    false );
 
+      //
+      // detach from all the main thread
+      //
       get_tracer()->tracer_detach ( p, false );
 
       usleep ( GracePeriodBNSignals );
@@ -1156,6 +1194,9 @@ linux_launchmon_t::handle_detach_cmd_event
 
       switch ( p.get_reason() )
         {
+        //
+        // say the job-done to the FE, if I can
+        //
         case RM_BE_daemon_exited:
           say_fetofe_msg ( lmonp_bedmon_exited );
           break;
@@ -1169,6 +1210,9 @@ linux_launchmon_t::handle_detach_cmd_event
           say_fetofe_msg ( lmonp_detach_done );	
           break;
         case FE_requested_shutdown_dmon:
+          //
+          // Please hide this "srun" specific code
+          //
           if ( dt == std::string("srun")
                || dt == std::string("lt-srun"))
             {
@@ -1183,6 +1227,9 @@ linux_launchmon_t::handle_detach_cmd_event
         case FE_disconnected:
 
 	  usleep (GracePeriodFEDisconnection);
+          //
+          // Please hide this "srun" specific code
+          //
           if ( dt == std::string("srun")
                || dt == std::string("lt-srun"))
             {
@@ -1257,14 +1304,7 @@ linux_launchmon_t::handle_kill_cmd_event
       disable_all_BPs (p, false);
  
       //
-      // continue all the slave threads in case there are stopped threads 
-      // If the thread is not stopped, continue will fail thus we don't 
-      // check the error code coming out of tracer_continue, here;
-      //
-      // Note: This should be safe unless the thread is stopped because of 
-      // a breakpoint. Chance that this race condition can occur is very 
-      // slim. However, if that ever happens more design changes will be
-      // required. 
+      // detach from all the slave threads.
       //
       for ( p.thr_iter = p.get_thrlist().begin();
               p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
@@ -1273,8 +1313,11 @@ linux_launchmon_t::handle_kill_cmd_event
             {
               // operates on a slave thread
               p.make_context ( p.thr_iter->first );
-              get_tracer()->tracer_detach( p, true );
-	      usleep (GracePeriodBNSignals);
+              if (p.get_lwp_state (true) == LMON_RM_STOPPED)
+                {
+                  get_tracer()->tracer_detach( p, true );
+	          usleep (GracePeriodBNSignals);
+		}
               p.check_and_undo_context ( p.thr_iter->first );
             }
         }
@@ -1292,11 +1335,18 @@ linux_launchmon_t::handle_kill_cmd_event
         sizeof(bdbg),
         false );
 
+      //
+      // detach from all the main thread
+      //
       get_tracer()->tracer_detach (p, false);
 
       std::string dt
         = basename ( strdup (p.get_myopts()->get_my_opt()->debugtarget.c_str()));
-      std::cout << dt << std::endl;
+      //std::cout << dt << std::endl;
+
+      //
+      // Please hide this "srun" specific code
+      //
       if ( dt == std::string("srun") 
               || dt == std::string("lt-srun"))
         {
@@ -1315,6 +1365,9 @@ linux_launchmon_t::handle_kill_cmd_event
                     || dt == std::string ("mpirun64") 
 		    || dt == std::string("mpirun") )
          {
+           //
+           // Please hide this "mpirun" specific code
+           //
 	   //
 	   // NOTE: Coded for BlueGene, so make sure if the
 	   // following "kill support" works for mpiruns on other platforms.
@@ -1328,6 +1381,9 @@ linux_launchmon_t::handle_kill_cmd_event
 
       switch (p.get_reason())
         {
+        //
+        // say the job-done to the FE, if I can
+        //
         case RM_BE_daemon_exited:
 	case RM_MW_daemon_exited:
 	case FE_disconnected:
