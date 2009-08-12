@@ -177,8 +177,7 @@ public:
     throw (linux_tracer_exception_t);  
 
   virtual tracer_error_e tracer_stop
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
-    throw (linux_tracer_exception_t);   
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt );
 
   virtual tracer_error_e tracer_kill    
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
@@ -193,8 +192,7 @@ public:
     throw (linux_tracer_exception_t);    
 
   virtual tracer_error_e tracer_detach  
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
-    throw (linux_tracer_exception_t);   
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt );
 
   virtual tracer_error_e tracer_attach  
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt, pid_t newtid )

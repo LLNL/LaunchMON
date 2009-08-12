@@ -1062,37 +1062,64 @@ linux_launchmon_t::handle_launch_bp_event (
              *   the MPIR_being_debugged, to disinsert all breakpoints, and to 
 	     *   actually issue a detach command to the RM process.
 	     */
-	    bdbgp = 0;
-	    say_fetofe_msg(lmonp_stop_at_launch_bp_abort);
+            int bdbg = 0;
+            T_VA debug_state_flag = T_UNINIT_HEX;
 
+            //
+            // disable all the hidden breakpoints     
+            //
+            disable_all_BPs (p, false);
 
-	    disable_all_BPs(p, use_cxt);
- 
+            //
+            // detach from all slave threads.
+            //
+            for ( p.thr_iter = p.get_thrlist().begin();
+                    p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
+              {
+                if ( !(p.thr_iter->second->is_master_thread()) )
+                  {
+                    // operates on a slave thread
+                    p.make_context ( p.thr_iter->first );
+                    // calls detach twice in case there are
+                    // multiple stop event queued up into waitpid
+                    get_tracer()->tracer_detach ( p, true );
+                    usleep (GracePeriodBNSignals);
+                    get_tracer()->tracer_detach ( p, true );
+                    usleep (GracePeriodBNSignals);
+                    p.check_and_undo_context ( p.thr_iter->first );
+                  }
+              }
 
-	    //
-	    // unsetting MPIR_debugging_debugged
-	    //
-	    get_tracer()->tracer_write ( p, 
-	      debug_state.get_relocated_address(),
-	      &bdbgp, 
-	      sizeof(bdbgp),use_cxt );    
-
+            //
+            // unsetting "MPIR_being_debugged."
+            //
             const symbol_base_t<T_VA>& being_debugged
-              = main_im->get_a_symbol (p.get_launch_being_debug());
+              = p.get_myimage()->get_a_symbol (p.get_launch_being_debug());
+
             get_tracer()->tracer_write ( p,
-                                   being_debugged.get_relocated_address(),
-                                   &bdbg,
-                                   sizeof(bdbg),
-                                   use_cxt );
+                                  being_debugged.get_relocated_address(),
+                                  &bdbg,
+                                  sizeof(bdbg),
+                                  false );
 
-	     get_tracer()->tracer_detach (p, false);
+            //
+            // detach from the main thread
+            //
+            // calls detach twice in case there are
+            // multiple stop event queued up into waitpid
+            get_tracer()->tracer_detach ( p, false );
+            usleep ( GracePeriodBNSignals );
+            get_tracer()->tracer_detach ( p, false );
+            usleep ( GracePeriodBNSignals );
 
- 	   //
- 	   // this return code will cause the engine to exit.
- 	   // but it should leave its children RM_daemon process
- 	   // in a running state.
- 	   //
- 	   lrc = LAUNCHMON_MPIR_DEBUG_ABORT;
+            say_fetofe_msg(lmonp_stop_at_launch_bp_abort);
+
+ 	    //
+ 	    // this return code will cause the engine to exit.
+ 	    // but it should leave its children RM_daemon process
+ 	    // in a running state.
+ 	    //
+ 	    lrc = LAUNCHMON_MPIR_DEBUG_ABORT;
 
 	    {
 	      self_trace_t::trace ( LEVELCHK(level2),
@@ -1135,9 +1162,7 @@ linux_launchmon_t::handle_launch_bp_event (
 
 //! PUBLIC: handle_detach_cmd_event 
 /*!
-    handles "detach-command" event. In order to get to this event 
-    handler, all the threads in the RM process should have been
-    stopped. Thus, we're checking LMON_RM_STOPPED status. 
+    handles "detach-command" event.  
 */
 launchmon_rc_e 
 linux_launchmon_t::handle_detach_cmd_event
@@ -1163,11 +1188,12 @@ linux_launchmon_t::handle_detach_cmd_event
             {
               // operates on a slave thread
               p.make_context ( p.thr_iter->first );
-              if (p.get_lwp_state (true) == LMON_RM_STOPPED)
-                {
-                  get_tracer()->tracer_detach ( p, true ); 
-	          usleep (GracePeriodBNSignals);
-                }
+              // calls detach twice in case there are
+              // multiple stop event queued up into waitpid
+              get_tracer()->tracer_detach ( p, true ); 
+	      usleep (GracePeriodBNSignals);
+              get_tracer()->tracer_detach ( p, true ); 
+	      usleep (GracePeriodBNSignals);
               p.check_and_undo_context ( p.thr_iter->first );
 	    }
 	}
@@ -1185,15 +1211,17 @@ linux_launchmon_t::handle_detach_cmd_event
                                    false );
 
       //
-      // detach from all the main thread
+      // detach from the main thread
       //
+      // calls detach twice in case there are
+      // multiple stop event queued up into waitpid
       get_tracer()->tracer_detach ( p, false );
-
+      usleep ( GracePeriodBNSignals );
+      get_tracer()->tracer_detach ( p, false );
       usleep ( GracePeriodBNSignals );
 
       char *bnbuf = strdup(p.get_myopts()->get_my_opt()->debugtarget.c_str());
-      std::string dt
-        = basename(bnbuf);
+      std::string dt = basename(bnbuf);
 
       switch ( p.get_reason() )
         {

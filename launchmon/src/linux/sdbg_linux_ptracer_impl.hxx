@@ -620,7 +620,7 @@ template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e  
 linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_stop (
                  process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
-		 bool use_cxt) throw (linux_tracer_exception_t)
+		 bool use_cxt) 
 {
   using namespace std;
   
@@ -633,11 +633,9 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_stop (
   // Trying tkill instead of kill, to send a signal to a thread more
   // reliably
   //
-  //  if ( (r = kill (tpid, SIGSTOP)) != 0 )
-    if ( (r = syscall(__NR_tkill, tpid, SIGSTOP)) != 0)
+  if ( (r = syscall(__NR_tkill, tpid, SIGSTOP)) != 0)
     {
-      e = func + ERRMSG_KILL + strerror (errno);
-      throw linux_tracer_exception_t(e, convert_error_code (errno));     
+      return SDBG_TRACE_FAILED;
     }
 
   //
@@ -758,7 +756,7 @@ template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e 
 linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_detach ( 
                  process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
-		 bool use_cxt ) throw (linux_tracer_exception_t)
+		 bool use_cxt ) 
 {
   using namespace std;
   
@@ -776,10 +774,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_detach (
         tpid);
       }
       errno = 0;
-#if 0
-      e = func + ERRMSG_PTRACE + strerror (errno);
-      throw linux_tracer_exception_t(e, convert_error_code (errno));
-#endif
+      return SDBG_TRACE_FAILED;
     }
   
   //
