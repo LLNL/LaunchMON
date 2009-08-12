@@ -48,8 +48,18 @@ extern "C" {
 #endif
 }
 
-#include <string>
-#include <iostream>
+#if HAVE_IOSTREAM
+# include <iostream>
+#else
+# error iostream is required
+#endif
+
+#if HAVE_STRING
+# include <string>
+#else
+# error string is required
+#endif
+
 #include "sdbg_base_symtab.hxx"
 
 
