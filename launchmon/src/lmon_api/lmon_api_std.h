@@ -32,7 +32,7 @@
  *                         (GNU). 
  *        Feb 09 2008 DHA: Added LLNS Copyright 
  *        Aug 15 2006 DHA: More error code Populated
- *        Dec 20 2006 DHA: Created file.          
+ *        Dec 20 2006 DHA: Created file.
  */
 
 #ifndef LMON_API_LMON_API_STD_H
@@ -62,8 +62,7 @@ BEGIN_C_DECLS
     this file defines standard data structure necessary to 
     implement LMON BE, MID and FE.
 */
-
-typedef enum _lmon_rc_e {  
+typedef enum _lmon_rc_e {
   LMON_OK = 0,
   LMON_EINVAL,
   LMON_EBDARG,
