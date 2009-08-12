@@ -26,6 +26,9 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Aug  07 2009 DHA: Added more comments; added exception throwing 
+ *                          into linux_<arch>_process_t constructors that
+ *                          calls basic_init.
  *        Mar  11 2008 DHA: Added self-tracing support 
  *        Mar  11 2008 DHA: PowerPC support 
  *        Feb  09 2008 DHA: Added LLNS Copyright
@@ -243,7 +246,7 @@ linux_x86_thread_t::linux_x86_thread_t()
 
 linux_x86_thread_t::~linux_x86_thread_t() 
 {
-  
+
 }
 
 //! PUBLIC: linux_x86_thread_t
@@ -264,9 +267,9 @@ linux_x86_thread_t::thr2pid()
   //
 
   if ( is_master_thread ())
-    return get_master_pid ();
+    return (pid_t) get_master_pid ();
   else
-    return get_thread_info().ti_lid;
+    return (pid_t) get_thread_info().ti_lid;
 }
 
 
@@ -327,27 +330,53 @@ linux_x86_process_t::linux_x86_process_t (
 
 //! PUBLIC: linux_x86_process_t
 /*!
-    A constructor.
+    A constructor: this is the currently recommended constructor
 */
 linux_x86_process_t::linux_x86_process_t ( 
-                 const pid_t& pid, const std::string& mi )
+                 const pid_t &pid, const std::string &mi )
    : MODULENAME (self_trace_t::machine_module_trace.module_name)
 {
   using namespace std;
 
+  //
   // Once pid is in place, we assume that at least 
   // the main thread already has come into existence
-  linux_x86_thread_t* master_thread = new linux_x86_thread_t();
+  // with the LMON_RM_CREATED state.
+  //
+
+  //
+  // default lwp state is LMON_RM_CREATED
+  //
+  linux_x86_thread_t *master_thread 
+    = new linux_x86_thread_t();
+
+  //
+  // indicating this represents the main thread 
+  //
   master_thread->set_master_thread(true);
+
+  //
+  // pid is lwp pid 
+  //
   master_thread->set_master_pid(pid);
+
+  //
+  // update the thread list
+  //
   get_thrlist().insert(make_pair((int)pid, master_thread));
-  basic_init(mi);
+
+  //
+  // now is the time to initialize my image!
+  //
+  if (!basic_init(mi)) {
+    throw (machine_exception_t("fail to initialize a process"));
+  }
 }
 
 
 //! PUBLIC: linux_x86_process_t
 /*!
-    A constructor.
+    A constructor. This will be deprecated soon
 */
 linux_x86_process_t::linux_x86_process_t ( 
                  const pid_t& pid, 
@@ -377,6 +406,9 @@ linux_x86_process_t::linux_x86_process_t (
 void 
 linux_x86_process_t::launcher_symbols_init()
 {  
+  //
+  // symbols relevant to daemon launching
+  //
   set_launch_breakpoint_sym (LAUNCH_BREAKPOINT);
   set_launch_being_debug (LAUNCH_BEING_DEBUG);
   set_launch_debug_state (LAUNCH_DEBUG_STATE);
@@ -401,11 +433,15 @@ linux_x86_process_t::launcher_symbols_init()
 
 //! PUBLIC: linux_x86_process_t
 /*!
-    basic_init
+    Method that initializes static matters including 
+    parsing of symbol tables within target images. mi is the
+    name of main executable that has all information regarding
+    other dependent DSO information. To remain lightweight,
+    we only parse out images that matter to the daemon launching 
+    interface. 
 */
 bool 
-linux_x86_process_t::basic_init ( 
-                 const std::string& mi )
+linux_x86_process_t::basic_init (const std::string &mi)
 {
   struct stat pathchk;
   
@@ -421,9 +457,28 @@ linux_x86_process_t::basic_init (
       return false;
     }  
  
+  //
+  // image object representing the main RM launcher 
+  // details are filled in proctected_init down in the base layer
+  //
   set_myimage (new linux_image_t<T_VA>(mi));
+
+  //
+  // image object representing the dynamic linker 
+  // details are filled in proctected_init down in the base layer 
+  //
   set_mydynloader_image (new linux_image_t<T_VA>());
+
+  //
+  // image object representing the POSIX thread library 
+  // details are filled in proctected_init down in the base layer 
+  //
   set_mythread_lib_image (new linux_image_t<T_VA>());
+
+  //
+  // image object representing the LIBC library 
+  // details are filled in proctected_init down in the base layer 
+  //
   set_mylibc_image (new linux_image_t<T_VA>());
 
   if (!protected_init(mi)) 
@@ -443,7 +498,12 @@ linux_x86_process_t::basic_init (
 
 //! PUBLIC: linux_x86_process_t
 /*!
-    basic_init
+    Method that initializes static matters including 
+    parsing of symbol tables within target images. mi is the
+    name of main executable that has all information regarding
+    other dependent DSO information. To remain lightweight,
+    we only parse out images that matter to the daemon launching 
+    interface. 
 */
 bool 
 linux_x86_process_t::basic_init ( 
@@ -474,6 +534,7 @@ linux_x86_process_t::basic_init (
 
       return false;
     }
+
   if ( stat( mt.c_str(), &pathchk ) != 0 ) 
     {
 
@@ -483,6 +544,7 @@ linux_x86_process_t::basic_init (
 
       return false;
     }
+
   if ( stat( mc.c_str(), &pathchk ) != 0 ) 
     {
 
@@ -493,9 +555,28 @@ linux_x86_process_t::basic_init (
       return false;
     }
   
+  //
+  // image object representing the main RM launcher 
+  // details are filled in proctected_init down in the base layer
+  //
   set_myimage(new linux_image_t<T_VA>(mi));
+
+  //
+  // image object representing the dynamic linker 
+  // details are filled in proctected_init down in the base layer 
+  //
   set_mydynloader_image(new linux_image_t<T_VA>(md));
+
+  //
+  // image object representing the POSIX thread library 
+  // details are filled in proctected_init down in the base layer 
+  //
   set_mythread_lib_image(new linux_image_t<T_VA>(mt));
+
+  //
+  // image object representing the LIBC library 
+  // details are filled in proctected_init down in the base layer 
+  //
   set_mylibc_image( new linux_image_t<T_VA>(mc));
 
   if (!protected_init(mi, md, mt, mc)) 
@@ -681,7 +762,7 @@ linux_ppc_thread_t::linux_ppc_thread_t()
  
 linux_ppc_thread_t::~linux_ppc_thread_t()
 {
-   
+
 }
  
 //! PUBLIC: linux_ppc_thread_t
@@ -702,9 +783,9 @@ linux_ppc_thread_t::thr2pid()
   //
 
   if ( is_master_thread ())
-    return get_master_pid ();
+    return (pid_t) get_master_pid ();
   else
-    return get_thread_info().ti_lid;
+    return (pid_t) get_thread_info().ti_lid;
 }
  
  
@@ -749,9 +830,25 @@ linux_ppc_process_t::linux_ppc_process_t (
 {
   using namespace std;
 
-  linux_ppc_thread_t* master_thread = new linux_ppc_thread_t ();
+  //
+  // default lwp state is LMON_RM_CREATED
+  //
+  linux_ppc_thread_t* master_thread 
+    = new linux_ppc_thread_t ();
+
+  //
+  // indicating this represents the main thread 
+  //
   master_thread->set_master_thread (true);
+
+  //
+  // pid is lwp pid 
+  //
   master_thread->set_master_pid (pid);
+
+  //
+  // update the thread list
+  //
   get_thrlist().insert (make_pair((int)pid, master_thread));
 
   //
@@ -763,7 +860,7 @@ linux_ppc_process_t::linux_ppc_process_t (
  
 //! PUBLIC: linux_ppc_process_t
 /*!
-    A constructor.
+    A constructor: this is the currently recommended constructor
 */
 linux_ppc_process_t::linux_ppc_process_t (
                  const pid_t& pid, const std::string& mi )
@@ -775,11 +872,34 @@ linux_ppc_process_t::linux_ppc_process_t (
   // Once pid is in place, at least the main thread has already 
   // come into existence
   //
-  linux_ppc_thread_t* master_thread = new linux_ppc_thread_t();
+
+  //
+  // default lwp state is LMON_RM_CREATED
+  //
+  linux_ppc_thread_t *master_thread 
+    = new linux_ppc_thread_t();
+
+  //
+  // indicating this represents the main thread 
+  //
   master_thread->set_master_thread (true);
+
+  //
+  // pid is lwp pid 
+  //
   master_thread->set_master_pid (pid);
+
+  //
+  // update the thread list
+  //
   get_thrlist().insert (make_pair((int)pid, master_thread));
-  basic_init (mi);
+
+  //
+  // now is the time to initialize my image!
+  //
+  if (!basic_init(mi)) {
+    throw (machine_exception_t("fail to initialize a process"));
+  }
 } // linux_ppc_process_t
  
  
@@ -801,12 +921,21 @@ linux_ppc_process_t::linux_ppc_process_t (
   // Once pid is in place, at least the main thread has already 
   // come into existence
   //
-  linux_ppc_thread_t* master_thread = new linux_ppc_thread_t();
+  linux_ppc_thread_t *master_thread 
+    = new linux_ppc_thread_t();
+
   master_thread->set_master_thread (true);
+
   master_thread->set_master_pid (pid);
  
   get_thrlist().insert (make_pair((int)pid, master_thread));
-  basic_init (mi, md, mt, mc);
+
+  //
+  // now is the time to initialize my image!
+  //
+  if (!basic_init(mi)) {
+    throw (machine_exception_t("fail to initialize a process"));
+  }
 } // linux_ppc_process_t
  
  
@@ -817,6 +946,9 @@ linux_ppc_process_t::linux_ppc_process_t (
 void
 linux_ppc_process_t::launcher_symbols_init()
 {
+  //
+  // symbols relevant to daemon launching
+  //
   set_launch_breakpoint_sym (LAUNCH_BREAKPOINT);
   set_launch_being_debug (LAUNCH_BEING_DEBUG);
   set_launch_debug_state (LAUNCH_DEBUG_STATE);
