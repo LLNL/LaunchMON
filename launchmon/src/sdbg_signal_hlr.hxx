@@ -79,10 +79,10 @@ private:
        { return (self_trace_t::sighandler_module_trace.verbosity_level >= level); }
  
   static std::vector<int> monitoring_signals;  
-  static tracer_base_t<SDBG_DEFAULT_TEMPLPARAM>* tracer;
-  static process_base_t<SDBG_DEFAULT_TEMPLPARAM>* launcher_proc;
-  static event_manager_t<SDBG_DEFAULT_TEMPLPARAM>* evman;
-  static launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>* lmon;
+  static tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *tracer;
+  static process_base_t<SDBG_DEFAULT_TEMPLPARAM> *launcher_proc;
+  static event_manager_t<SDBG_DEFAULT_TEMPLPARAM> *evman;
+  static launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> *lmon;
 
   //
   // For self tracing
