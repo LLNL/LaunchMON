@@ -50,6 +50,13 @@
 #endif
 
 extern "C" {
+
+#if HAVE_SYSCALL_H
+# include <syscall.h>
+#else
+# error unistd.h is required
+#endif
+
 #if HAVE_UNISTD_H
 # include <unistd.h>
 #else
@@ -92,19 +99,27 @@ extern "C" {
 
 //! PUBLIC: linux_ptracer_t()
 /*!
-    constructor
+    linux_ptracer_t constructor
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::linux_ptracer_t()
   : MODULENAME (self_trace_t::tracer_module_trace.module_name)
 {
-  
+
 }
 
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::linux_ptracer_t
+(const linux_ptracer_t &pt)
+{
+  MODULENAME = pt.MODULENAME;
+}
 
 //! PUBLIC: tracer_setregs
 /*!
-    It sets general register set contained in the process_base_t object.
+    Methods that sets the general register set 
+    contained in the process_base_t object. This method
+    can throw an exception of linux_tracer_exception_t type.
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e 
@@ -115,19 +130,20 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setregs (
   using namespace std;
 
   WT r;
-  int i, num_regs;
+  unsigned int i;
+  unsigned int num_regs;
   VA offset;
   string e;
   string func = "[linux_ptracer_t::tracer_setregs]";
-  register_set_base_t<GRS,VA,WT>* regset = p.get_gprset(use_cxt);
+  register_set_base_t<GRS,VA,WT> *regset = p.get_gprset(use_cxt);
   pid_t tpid = p.get_pid(use_cxt); 
 
   if (!regset) 
-    {   
+    {
       e = func + 
 	" No register set is found with the thread ";
       throw linux_tracer_exception_t(e,SDBG_TRACE_FAILED);
-    }   
+    }
 
   regset->set_ptr_to_regset();
   num_regs = regset->size_in_word();
@@ -137,14 +153,18 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setregs (
     {
       if ( ((1 << i) & regset->get_writable_mask()) == 0 ) 
 	{
+          //
+          // We only write into what we are allowed to write into.
+          //
 	  regset->inc_ptr_by_word();
 	  offset += sizeof(WT); 
-	  continue;  
+	  continue; 
 	}
 
-      r = Pptrace (PTRACE_POKEUSER,tpid,
-		   (void*) offset, 
-		   (void*) *(regset->get_rs_ptr()));
+      r = Pptrace(PTRACE_POKEUSER,
+	          tpid,
+		  (void *) offset,
+		  (void *) *(regset->get_rs_ptr()));
 
     if (errno) 
       {
@@ -161,9 +181,11 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setregs (
 } // tracer_error_e linux_ptracer_t::tracer_setregs
 
 
-//! PUBLIC: tracer_setregs
+//! PUBLIC: tracer_getregs
 /*!
-    It returns general register set contained in the process_base_t object.
+    It returns the general register set through 
+    the process_base_t object. This method can throw 
+    an exception of linux_tracer_exception_t type.
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e 
@@ -174,19 +196,20 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getregs (
   using namespace std;
 
   WT r;
-  int i, num_regs;
+  unsigned int i;
+  unsigned int num_regs;
   VA offset;
   string e;
   string func = "[linux_ptracer_t::tracer_getregs]";
-  register_set_base_t<GRS,VA,WT>* regset = p.get_gprset(use_cxt);
+  register_set_base_t<GRS,VA,WT> *regset = p.get_gprset(use_cxt);
   pid_t tpid = p.get_pid(use_cxt); 
 
   if (!regset)
-    {   
+    {
       e = func + 
 	" No register set is found with the thread ";
       throw linux_tracer_exception_t(e,SDBG_TRACE_FAILED);
-    }   
+    }
   
   regset->set_ptr_to_regset();
   num_regs = regset->size_in_word();
@@ -201,12 +224,12 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getregs (
 	{
 	  e = func + ERRMSG_PTRACE + strerror ( errno );
 	  throw linux_tracer_exception_t(e,convert_error_code (errno));
-	}   
+	}
  
       regset->write_word_to_ptr (r);
       regset->inc_ptr_by_word();
-      offset += sizeof(WT);    
-      
+      offset += sizeof(WT);
+
   } // for ( i=0; i < num_regs; i++ )
 
   return SDBG_TRACE_OK;  
@@ -250,7 +273,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getfpregs (
     {
 
       r = Pptrace (PTRACE_PEEKUSER, tpid , (void*) offset, NULL);
-    
+
       if (errno) 
 	{
 	  e = func + ERRMSG_PTRACE + strerror (errno);
@@ -270,7 +293,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getfpregs (
 //! PUBLIC: tracer_setregs
 /*!
     It sets floating point register set contained in 
-    the process_base_t object.
+    the process_base_t object. Currently, not implemented.
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e 
@@ -316,15 +339,15 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setfpregs (
   }
 #endif
 
-  return SDBG_TRACE_OK;
+  return SDBG_TRACE_UNIMPLEMENTED;
 
 } // tracer_error_e linux_ptracer_t::tracer_setfpregs
 
 
 //! PUBLIC: tracer_read
 /*!
-  It reads from the target process, starting from vaddr. It fills 
-  buf upto whatever the size in buf argument tells to do.
+    It reads from the target process, starting from vaddr. It fills 
+    buf upto whatever the size in buf argument tells to do.
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e 
@@ -381,14 +404,14 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read (
 
 //! PUBLIC: tracer_read_string
 /*!
-  It reads char[] based string from the target process, starting from addr. 
-  It fills buf upto whatever the size in buf argument tells to do. If the
-  size is smaller than the strlen, the resulting string can be
-  truncated
+    It reads char[] based string from the target process, starting from addr. 
+    It fills buf upto whatever the size in buf argument tells to do. If the
+    size is smaller than the strlen, the resulting string can be
+    truncated
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e 
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read_string ( 
+linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read_string (
                  process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
 		 VA addr, 
 		 void* buf, 
@@ -460,7 +483,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read_string (
 
 //! PUBLIC: tracer_write
 /*!
-
+    Method that write into a thread or a process
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e 
@@ -470,7 +493,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_write (
 		 const void* buf, 
 		 int size, 
 		 bool use_cxt ) throw (linux_tracer_exception_t)	
-{    
+{
   using namespace std;
 
   WT r;
@@ -523,7 +546,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_write (
 
 //! PUBLIC: tracer_continue
 /*!
-
+    Method that continues a thread or a process
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e  
@@ -545,6 +568,11 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_continue (
       throw linux_tracer_exception_t(e, convert_error_code (errno));
     }
 
+  //
+  // We now mark the state of the target thread as LMON_RM_RUNNING 
+  //
+  p.set_lwp_state(LMON_RM_RUNNING, use_cxt);
+
   return SDBG_TRACE_OK;
 
 } // linux_ptracer_t::tracer_continue 
@@ -552,7 +580,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_continue (
 
 //! PUBLIC: tracer_deliver_signal
 /*!
-
+    Method that continues a thread or a process with a signal
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e 
@@ -574,7 +602,12 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_deliver_signal (
       e = func + ERRMSG_PTRACE + strerror (errno);
       throw linux_tracer_exception_t(e, convert_error_code (errno));    
     }
-  
+
+  //
+  // We now mark the state of the target thread as LMON_RM_RUNNING 
+  //
+  p.set_lwp_state(LMON_RM_RUNNING, use_cxt);
+
   return SDBG_TRACE_OK; 
 }
 
@@ -585,8 +618,8 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_deliver_signal (
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e  
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_stop ( 
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
+linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_stop (
+                 process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
 		 bool use_cxt) throw (linux_tracer_exception_t)
 {
   using namespace std;
@@ -596,14 +629,23 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_stop (
   string func = "[linux_ptracer_t::tracer_stop]";
   pid_t tpid = p.get_pid(use_cxt); 
 
-  if ( (r = kill (tpid, SIGSTOP)) != 0 ) 
-    {    
+  //
+  // Trying tkill instead of kill, to send a signal to a thread more
+  // reliably
+  //
+  //  if ( (r = kill (tpid, SIGSTOP)) != 0 )
+    if ( (r = syscall(__NR_tkill, tpid, SIGSTOP)) != 0)
+    {
       e = func + ERRMSG_KILL + strerror (errno);
       throw linux_tracer_exception_t(e, convert_error_code (errno));     
     }
-  
+
+  //
+  // We must not set "stop" state here because it will be marked
+  // when the wait call gets the status update. 
+  //
   return SDBG_TRACE_OK;
-  
+
 } // linux_ptracer_t::tracer_stop
 
 
@@ -625,11 +667,15 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_kill (
   pid_t tpid = p.get_pid(use_cxt); 
 
   if ( (r = Pptrace (PTRACE_KILL, tpid, 0, 0)) != 0 ) 
-    {    
+    {
       e = func + ERRMSG_PTRACE + strerror (errno);
       throw linux_tracer_exception_t(e, convert_error_code (errno));    
     }
-  
+
+  //
+  // We must not set "kill" state here because it will be marked
+  // when the wait call gets the status update. 
+  //
   return SDBG_TRACE_OK;
 }
 
@@ -657,6 +703,13 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_singlestep (
       throw linux_tracer_exception_t(e, convert_error_code (errno));        
     }
   
+  //
+  // We now mark the state of the target thread as LMON_RM_RUNNING 
+  // This will be a short state as another stop state will be recorded 
+  // as part of singlestep operation via waitpid.
+  //
+  p.set_lwp_state(LMON_RM_RUNNING, use_cxt);
+
   return SDBG_TRACE_OK;
   
 } // linux_ptracer_t::tracer_syscall
@@ -685,6 +738,13 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_syscall (
       throw linux_tracer_exception_t(e, convert_error_code (errno));    
     }
   
+  //
+  // We now mark the state of the target thread as LMON_RM_RUNNING 
+  // This can be a short state as another stop state will be recorded 
+  // as part of singlestep operation via waitpid.
+  //
+  p.set_lwp_state(LMON_RM_RUNNING, use_cxt);
+
   return SDBG_TRACE_OK;
   
 } // linux_ptracer_t::tracer_singlestep
@@ -722,6 +782,11 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_detach (
 #endif
     }
   
+  //
+  // We now mark the state of the target thread as LMON_RM_RUNNING 
+  //
+  p.set_lwp_state(LMON_RM_RUNNING, use_cxt);
+
   return SDBG_TRACE_OK;
   
 } // linux_ptracer_t::tracer_detach
@@ -752,10 +817,24 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_attach (
     }
   if ( (r = Pptrace (PTRACE_ATTACH, who_to_attach_to, 0, 0)) != 0 ) 
     {    
+      {
+        self_trace_t::trace ( true,
+        MODULENAME, 0,
+        "attach returned non-zero for %d, continue...",
+        who_to_attach_to);
+      }
+      errno = 0;
+#if 0
       e = func + ERRMSG_PTRACE + strerror (errno);
       throw linux_tracer_exception_t(e, convert_error_code (errno));
+#endif
     }
   
+
+  //
+  // We must not set "stop" state here because it will be marked
+  // when the wait call gets the status update. 
+  //
   return SDBG_TRACE_OK;
   
 } // linux_ptracer_t::tracer_attach
