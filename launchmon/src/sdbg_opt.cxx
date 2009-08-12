@@ -416,7 +416,8 @@ opts_args_t::construct_launch_string ()
       my_opt->debugtarget = tar;
     }
   
-  dt = basename(strdup(my_opt->debugtarget.c_str()));
+  char *bnbuf = strdup(my_opt->debugtarget.c_str()); 
+  dt = basename(bnbuf);
   if ( dt == string("srun") || dt == string("lt-srun")) 
     {
       my_opt->launchstring 
@@ -489,6 +490,11 @@ opts_args_t::construct_launch_string ()
       
       rc = false;    
     }
+
+  //
+  // NOTE: are there any platforms that free on bnbuf is dangerous?
+  //
+  free (bnbuf);
 
   return rc;
 }
