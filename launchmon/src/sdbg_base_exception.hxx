@@ -35,7 +35,12 @@
 #ifndef SDBG_BASE_EXCEPTION_HXX
 #define SDBG_BASE_EXCEPTION_HXX 1
 
-#include <string>
+#if HAVE_STRING
+# include <string>
+#else
+# error string is required
+#endif
+
 #include "sdbg_self_trace.hxx"
 
 class exception_base_t
