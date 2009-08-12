@@ -33,8 +33,18 @@
  */ 
 
 #include <lmon_api/common.h>
-#include <iostream>
-#include <cstdarg>
+
+#if HAVE_IOSTREAM
+# include <iostream>
+#else
+# error iostream is required
+#endif
+
+#if HAVE_STDARG_H
+# include <cstdarg>
+#else
+# errro stdarg.h is required
+#endif
 
 #if TIME_WITH_SYS_TIME 
 # include <ctime>
