@@ -74,12 +74,12 @@ public:
   event_manager_t (const event_manager_t &e);
   ~event_manager_t ();
   
-  bool multiplex_events ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& proc,
-		          launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>& lm );
-  bool poll_processes ( launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>& lm );
-  bool poll_FE_socket ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& proc,
-		        launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>& lm );
-  bool register_process ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>* proc );
+  bool multiplex_events ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &proc,
+		          launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> &lm );
+  bool poll_processes ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& proc,
+		          launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> &lm );
+  bool poll_FE_socket ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &proc,
+		        launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> &lm );
 
 private:
 
@@ -87,8 +87,6 @@ private:
        { return (self_trace_t::event_module_trace.verbosity_level >= level); }
 
  
-  process_base_t<SDBG_DEFAULT_TEMPLPARAM> *launcher_proc;
-
   //
   // WARNING: do not attempt to copy proclist to another list
   // of the same type. It will copy the pointers, not pointees.
