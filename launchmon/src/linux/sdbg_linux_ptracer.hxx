@@ -129,7 +129,7 @@ class linux_ptracer_t : public tracer_base_t<SDBG_DEFAULT_TEMPLPARAM>
 
 public:
   linux_ptracer_t();
-  linux_ptracer_t(const linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>& p) {}
+  linux_ptracer_t(const linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM> &p);
   virtual ~linux_ptracer_t() {}
 
  
@@ -138,80 +138,80 @@ public:
   //  Interfaces
   //
   virtual tracer_error_e tracer_setregs    
-  ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt )
+  ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
     throw (linux_tracer_exception_t);    
 
   virtual tracer_error_e tracer_getregs   
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt )
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
     throw (linux_tracer_exception_t);   
 
   virtual tracer_error_e tracer_setfpregs 
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt )
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
     throw (linux_tracer_exception_t);      
 
   virtual tracer_error_e tracer_getfpregs 
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt )
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
     throw (linux_tracer_exception_t);   
 
   virtual tracer_error_e tracer_read       
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, 
       VA addr, void* buf, int size, bool use_cxt )
     throw (linux_tracer_exception_t);   
 
   virtual tracer_error_e tracer_read_string
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
       VA addr, void* buf, int size, bool use_cxt )
     throw (linux_tracer_exception_t);
 
   virtual tracer_error_e tracer_write      
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
       VA addr, const void* buf, int size, bool use_cxt )	
     throw (linux_tracer_exception_t);   
 
   virtual tracer_error_e tracer_continue   
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt )
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
     throw (linux_tracer_exception_t);   
 
   virtual tracer_error_e tracer_deliver_signal
-  ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, int sig, bool use_cxt )
+  ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, int sig, bool use_cxt )
     throw (linux_tracer_exception_t);  
 
   virtual tracer_error_e tracer_stop
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt )
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
     throw (linux_tracer_exception_t);   
 
   virtual tracer_error_e tracer_kill    
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt )
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
     throw (linux_tracer_exception_t);   
 
   virtual tracer_error_e tracer_singlestep 
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt )
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
     throw (linux_tracer_exception_t);   
 
   virtual tracer_error_e tracer_syscall  
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt )
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
     throw (linux_tracer_exception_t);    
 
   virtual tracer_error_e tracer_detach  
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt )
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
     throw (linux_tracer_exception_t);   
 
   virtual tracer_error_e tracer_attach  
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt, pid_t newtid )
-    throw (linux_tracer_exception_t);      
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt, pid_t newtid )
+    throw (linux_tracer_exception_t);
 
   virtual tracer_error_e tracer_trace_me   ()
     throw (linux_tracer_exception_t);   
 
   virtual tracer_error_e insert_breakpoint 
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
       breakpoint_base_t<VA, IT>& bp, bool use_cxt )
-    throw (linux_tracer_exception_t);   
+    throw (linux_tracer_exception_t);
 
   virtual tracer_error_e pullout_breakpoint 
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, 
       breakpoint_base_t<VA, IT>& bp, bool use_cxt )
-    throw (linux_tracer_exception_t);   
+    throw (linux_tracer_exception_t);
 
   virtual tracer_error_e convert_error_code(int err)
     throw (linux_tracer_exception_t);   
