@@ -39,7 +39,7 @@
  *                         thread id into a local variable before
  *                         the beginning of thread list traversing. 
  *        Jul 04 2006 DHA: Added self tracing support
- *        Feb 02 2006 DHA: Created file.          
+ *        Feb 02 2006 DHA: Created file.
  */ 
 
 #ifndef SDBG_EVENT_MANAGER_IMPL_HXX
@@ -51,7 +51,8 @@ extern "C" {
 #else
 # error sys/types.h is required
 #endif
-                                                                                                                      
+
+
 #if HAVE_SYS_WAIT_H
 # include <sys/wait.h>
 #else
@@ -59,8 +60,18 @@ extern "C" {
 #endif
 }
 
-#include <map>
-#include <vector>
+#if HAVE_MAP
+# include <map>
+#else
+# error map is required
+#endif
+
+#if HAVE_VECTOR
+# include <vector>
+#else
+# error vector is required
+#endif
+
 #include "sdbg_base_mach.hxx"
 #include "sdbg_base_mach_impl.hxx"
 #include "sdbg_event_manager.hxx"
@@ -70,7 +81,7 @@ extern "C" {
 //
 // PUBLIC INTERFACES: monitor_proc_thread_t
 //
-//
+///////////////////////////////////////////////////////////////////
 
 //! PUBLIC: monitor_proc_thread_t constructors
 /*!
@@ -78,6 +89,14 @@ extern "C" {
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 monitor_proc_thread_t<SDBG_DEFAULT_TEMPLPARAM>::monitor_proc_thread_t()
+{
+
+}
+
+
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+monitor_proc_thread_t<SDBG_DEFAULT_TEMPLPARAM>::monitor_proc_thread_t
+(const monitor_proc_thread_t &m)
 {
 
 }
@@ -107,14 +126,14 @@ monitor_proc_thread_t<SDBG_DEFAULT_TEMPLPARAM>::wait_for_all (
 
   rpid =  waitpid (-1, &status, WNOHANG | WUNTRACED);
 
-  if (rpid <= 0)            
+  if (rpid <= 0)
     rpid = waitpid (-1, &status, WNOHANG | WUNTRACED | __WCLONE ); 
-  
+
   p = rpid;
  
   if ( rpid <= 0 )
     {
-      rc.set_ev(EV_NOCHILD);   
+      rc.set_ev(EV_NOCHILD);
       return false;
     }
 
@@ -136,8 +155,8 @@ monitor_proc_thread_t<SDBG_DEFAULT_TEMPLPARAM>::wait_for_all (
       rc.set_signum (WSTOPSIG(status));
       return true;
     }
-  else          
-    return false;   
+  else
+    return false;
 }
 
 
@@ -145,7 +164,7 @@ monitor_proc_thread_t<SDBG_DEFAULT_TEMPLPARAM>::wait_for_all (
 //
 // PUBLIC INTERFACES: event_manager_t
 //
-//
+///////////////////////////////////////////////////////////////////
 
 //! PUBLIC: constructors
 /*!
@@ -155,59 +174,35 @@ template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::event_manager_t () 
 {
   ev_monitor = new monitor_proc_thread_t<SDBG_DEFAULT_TEMPLPARAM>(); 
-  MODULENAME = self_trace_t::event_module_trace.module_name;
 }
 
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::event_manager_t 
+(const event_manager_t &e) 
+{
+  ev_monitor = e.ev_monitor;
+  MODULENAME = e.MODULENAME;
+}
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::~event_manager_t ()
 {
-  proclist.clear();
+
 }
 
 
 //! PUBLIC: register_process 
 /*!
-                                                             
 
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 bool 
 event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::register_process ( 
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>* proc )
+                 process_base_t<SDBG_DEFAULT_TEMPLPARAM> *proc )
 {
   if (proc) 
     {
-      proclist.push_back(proc);
-      tmp_launcher_proc = proc;
-    }
-
-  return true;
-}
-
-//! PUBLIC: delete_process
-/*!
-                                                       
-*/
-template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-bool 
-event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::delete_process ( 
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>* proc )
-{
-  if (proc && proclist) 
-    {
-      proclist.remove(proc);
-      // WARNING: pointee that proc pointer was pointing 
-      // can be leaked after this. 
-    }
-  else 
-    {
-       {
-	 self_trace_t::trace ( LEVELCHK(level1), 
-	    MODULENAME,
-	    1,
-           "there has been no process registered");		
-       }
+      launcher_proc = proc;
     }
 
   return true;
@@ -234,16 +229,10 @@ event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::poll_processes (
      map<int, thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*, ltstr>::const_iterator 
        lpos;
 
-  //
-  // NOTE: Ultimately, what you'd want to be able to do is 
-  // to pull each proc from the proclist. But because launchmon only
-  // deals with a single process for now, I don't need to use the proclist
-  // yet.
-  //
-  proc = tmp_launcher_proc;     
+  proc = launcher_proc;     
 
   if ( proc ) 
-    {    
+    {
       if ( ev_monitor->wait_for_all ( rpid, event ) ) 
 	{ 
 	  //
@@ -331,26 +320,31 @@ event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::poll_processes (
 		  break;
 		}
 	    }
-	}  
+	}
     }
 
   return ( ( rc==LAUNCHMON_OK ) ? true : false );
 }
 
 
-//! PUBLIC: poll_pipes
+//! PUBLIC: poll_FE_socket
 /*!
 
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-bool event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::poll_FE_socket ( 
+bool 
+event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::poll_FE_socket ( 
 		 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& proc,
 		 launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>& lm )
 {
-  if ( lm.handle_incoming_socket_event ( proc ) == LAUNCHMON_OK )
-    return true;
+  bool rc = true;
 
-  return false;
+  if ( lm.handle_incoming_socket_event ( proc ) != LAUNCHMON_OK )
+    {
+      rc = false;
+    }
+
+  return rc;
 }
 
 
@@ -363,8 +357,20 @@ bool
 event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::multiplex_events (
 	         process_base_t<SDBG_DEFAULT_TEMPLPARAM>& proc,
                  launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>& lm ) 
-{ 
-  poll_FE_socket ( proc, lm );  
-  return ( poll_processes ( lm ) ); 
+{
+  bool rc = true;
+
+  rc = poll_FE_socket ( proc, lm );
+  if (rc)
+    {
+      //
+      // We only poll when poll_FE_socket returns the true code.
+      // poll_FE_socket always returns true for standalone launchmon mode 
+      //
+      rc = poll_processes ( lm );
+    }
+
+  return (rc);
 }
 #endif // SDBG_EVENT_MANAGER_IMPL_HXX
+
