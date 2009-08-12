@@ -221,13 +221,11 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive_engine(opts_args_t *opt)
       if ( opt->get_my_opt()->attach )
 	lmon->handle_attach_event ( (*launcher_proc) );
 
-      evman->register_process ( launcher_proc );
-
       //
       // event manager begin monitoring events coming from launcher_proc
       // and the channel connecting to the FE client.
       //
-      while ( evman->multiplex_events ( (*launcher_proc), (*lmon) ) )
+      while ( evman->multiplex_events ( *launcher_proc, *lmon) )
 	{
 
 	  //                                              //
@@ -236,6 +234,9 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive_engine(opts_args_t *opt)
 	  //      +                               +       // 
 	  //        -----------------------------         //
 	}
+
+      delete launcher_proc;
+      delete lmon;
 
       return SDBG_DRIVER_OK;
     }
