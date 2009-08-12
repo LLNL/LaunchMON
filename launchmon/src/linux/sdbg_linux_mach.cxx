@@ -236,11 +236,8 @@ linux_x86_fpr_set_t::linux_x86_fpr_set_t()
 linux_x86_thread_t::linux_x86_thread_t() 
    : MODULENAME (self_trace_t::machine_module_trace.module_name)
 {
-  linux_x86_gpr_set_t* gpr = new linux_x86_gpr_set_t();
-  linux_x86_fpr_set_t* fpr = new linux_x86_fpr_set_t();
-
-  set_gprset(gpr);
-  set_fprset(fpr);  
+  set_gprset(new linux_x86_gpr_set_t());
+  set_fprset(new linux_x86_fpr_set_t());
 }
 
 
