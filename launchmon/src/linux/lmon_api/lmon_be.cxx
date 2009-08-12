@@ -47,7 +47,7 @@
  *                         collective call types
  *        Dec 29 2006 DHA: Moved comm. dependent routines into 
  *                         lmon_be_comm.cxx
- *        Dec 20 2006 DHA: File created          
+ *        Dec 20 2006 DHA: File created
  */
 
 #include <lmon_api/lmon_api_std.h>
@@ -56,13 +56,47 @@
 #error This source file requires a LINUX OS
 #endif
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <signal.h>
-#include <iostream>
-#include <map>
-#include <vector>
+#if HAVE_STDIO_H
+# include <cstdio>
+#else
+# error stdio.h is required
+#endif
+
+#if HAVE_STDLIB_H
+# include <cstdlib>
+#else
+# error stdlib.h is required
+#endif
+
+#if HAVE_STRING_H
+# include <string.h>
+#else
+# error string.h is required
+#endif
+
+#if HAVE_IOSTREAM
+# include <iostream>
+#else
+# error iostream is required
+#endif
+
+#if HAVE_SIGNAL_H
+# include <signal.h>
+#else
+# error signal.h is required
+#endif
+
+#if HAVE_MAP
+# include <map>
+#else
+# error map is required
+#endif
+
+#if HAVE_VECTOR
+# include <vector>
+#else
+# error vector is required
+#endif
 
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>
@@ -89,7 +123,12 @@
 #endif
 
 #include "gcrypt.h"
-#include <assert.h>
+
+#if HAVE_ASSERT_H
+# include <assert.h>
+#else
+# error assert.h is required
+#endif
 
 #include "lmon_api/lmon_proctab.h"
 #include "lmon_api/lmon_be.h"
