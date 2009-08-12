@@ -113,11 +113,35 @@
 #error This source file requires a LINUX OS
 #endif
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <ctime>
-#include <map>
+#if HAVE_STDIO_H
+# include <cstdio>
+#else
+# error stdio.h is required
+#endif
+
+#if TIME_WITH_SYS_TIME 
+# include <ctime>
+#else
+# error time.h is required
+#endif
+
+#if HAVE_MAP
+# include <map>
+#else
+# error map.h is required
+#endif
+
+#if HAVE_STDLIB_H
+# include <cstdlib>
+#else
+# error stdlib.h is required
+#endif
+
+#if HAVE_STRING_H
+# include <string.h>
+#else
+# error string.h is required
+#endif
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -2272,6 +2296,8 @@ LMON_fetofe_watchdog_thread ( void *arg )
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
 	     "the engine stopped tracing the job...");
 #endif
+	  // this can unlock the main thread that's possible waiting on a cond var 
+          pthread_cond_signal(&(mydesc->watchdogThr.condVar));
 	  pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
           goto watchdog_done;
           break;
@@ -2293,6 +2319,8 @@ LMON_fetofe_watchdog_thread ( void *arg )
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
 	     "the daemons terminated...");
 #endif
+	  // this can unlock the main thread that's possible waiting on a cond var 
+          pthread_cond_signal(&(mydesc->watchdogThr.condVar));
 	  pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
           goto watchdog_done;
           break;
