@@ -52,7 +52,12 @@ extern "C" {
 #endif
 }
 
-#include <string>
+#if HAVE_STRING
+# include <string>
+#else
+# error string is required
+#endif
+
 #include "sdbg_linux_std.hxx"
 #include "sdbg_self_trace.hxx"
 
