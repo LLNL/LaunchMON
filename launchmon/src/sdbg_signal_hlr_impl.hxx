@@ -231,7 +231,7 @@ signal_handler_t<SDBG_DEFAULT_TEMPLPARAM>::sighandler ( int sig )
   // more events queued up, and it's better to consume all
   // before proceed. A.1.1 and A.1.2.
   //
-  while ( evman->poll_processes ( *lmon ) != false );
+  while ( evman->poll_processes ( p, *lmon ) != false );
 
   //
   // sending the lmonp_stop_tracing message to FEN
