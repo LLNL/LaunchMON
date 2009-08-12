@@ -30,13 +30,18 @@
  *        Feb 09 2008 DHA: Added LLNS Copyright
  *        Jun 06 2006 DHA: Added DOXYGEN comments on the file scope 
  *                         and the class (driver_base_t) 
- *        Jan 08 2006 DHA: Created file.          
+ *        Jan 08 2006 DHA: Created file.
  */ 
 
 #ifndef SDBG_BASE_DRIVER_HXX
 #define SDBG_BASE_DRIVER_HXX 1
 
-#include <string>
+#if HAVE_STRING
+# include <string>
+#else
+# error string is required
+#endif
+
 #include "sdbg_std.hxx"
 #include "sdbg_base_mach.hxx"
 #include "sdbg_event_manager.hxx"
@@ -96,14 +101,14 @@ public:
 
   virtual process_base_t<SDBG_DEFAULT_TEMPLPARAM>* 
                  create_process ( pid_t pid, 
-				  const std::string& mi, 
-				  const std::string& md, 
-				  const std::string& mt,
-				  const std::string& mc ) = 0;
+				  const std::string &mi,
+				  const std::string &md,
+				  const std::string &mt,
+				  const std::string &mc ) = 0;
 
   virtual process_base_t<SDBG_DEFAULT_TEMPLPARAM>* 
                  create_process ( pid_t pid, 
-				  const std::string& mi ) = 0;
+				  const std::string &mi ) = 0;
 
   
 private:
@@ -111,12 +116,21 @@ private:
   bool LEVELCHK(self_trace_verbosity level) 
        { return (self_trace_t::driver_module_trace.verbosity_level >= level); }
 
-
+  //
+  // event manage object
+  //
   event_manager_t<SDBG_DEFAULT_TEMPLPARAM>* evman;
+
+  //
+  // launchmon object
+  //
   launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>* lmon;
 
-  int pipe_fd[2];
-  
+  //
+  // TODO: do we still need this?
+  //
+  //int pipe_fd[2];
+
   /*
    * For self tracing
    */
