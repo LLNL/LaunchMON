@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Aug  10 2008 DHA: Now returns EXIT_FAILURE
  *        Mar  11 2008 DHA: Added Linux PPC support
  *        Feb  09 2008 DHA: Added LLNS Copyright
  *        Jan  09 2007 DHA: Linux X86/64 support
@@ -44,36 +45,45 @@
 #include "linux/sdbg_linux_mach.hxx"
 #include "linux/sdbg_linux_driver.hxx"
 #include "linux/sdbg_linux_driver_impl.hxx"
-                                             
+
 
 int main(int argc, char* argv[])
-{  
+{
   try 
   {
 
 #if X86_ARCHITECTURE || X86_64_ARCHITECTURE || PPC_ARCHITECTURE
-    /*
-     * driver instantiation for linux x86 platform.
-     *
-     */
+    //
+    // driver instantiation for the linux platform.
+    //
+    //
     linux_driver_t<T_VA,T_WT,T_IT,T_GRS,T_FRS> driver;
-#endif  
-  
+#endif
+
     return ( driver.driver_main(argc, argv));
   }
   catch ( symtab_exception_t e ) 
     {
       e.report();
-      return -1;
+      //
+      // return EXIT_FAILURE
+      //
+      return EXIT_FAILURE;
     }
   catch ( thread_tracer_exception_t e )
     {
       e.report();
+      //
+      // return EXIT_FAILURE
+      //
       return -1;
     }
   catch ( tracer_exception_t e ) 
     {
       e.report();
+      //
+      // return EXIT_FAILURE
+      //
       return -1;
     }
 }
