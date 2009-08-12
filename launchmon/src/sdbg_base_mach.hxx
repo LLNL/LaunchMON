@@ -256,9 +256,9 @@ public:
   define_gset(lwp_state_e,state)
 
   bool is_master_thread () { return get_master_thread(); }
-  register_set_base_t<GRS,VA,WT>* get_gprset();
+  register_set_base_t<GRS,VA,WT> * get_gprset();
   void set_gprset(register_set_base_t<GRS,VA,WT>* g);
-  register_set_base_t<FRS,VA,WT>* get_fprset();
+  register_set_base_t<FRS,VA,WT> * get_fprset();
   void set_fprset(register_set_base_t<FRS,VA,WT>* f);
 
 private:
@@ -267,8 +267,8 @@ private:
   pid_t master_pid;   // process id of the containing proc
   NT thread_info;     // parameterized thread info
   lwp_state_e state;
-  register_set_base_t<GRS,VA,WT>* gprset; 
-  register_set_base_t<FRS,VA,WT>* fprset; 
+  register_set_base_t<GRS,VA,WT> *gprset; 
+  register_set_base_t<FRS,VA,WT> *fprset; 
 };
 
 
