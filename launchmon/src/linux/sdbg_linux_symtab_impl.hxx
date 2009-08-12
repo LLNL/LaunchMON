@@ -54,9 +54,23 @@
 #error This source file requires a LINUX OS
 #endif
 
-#include <vector>
-#include <string>
-#include <iostream>
+#if HAVE_VECTOR
+# include <vector>
+#else
+# error vector is required
+#endif 
+
+#if HAVE_STRING
+# include <string>
+#else
+# error string is required
+#endif
+
+#if HAVE_IOSTREAM
+# include <iostream>
+#else
+#error iostream is required
+#endif 
 
 extern "C" {
 #if HAVE_LIBGEN_H
@@ -231,7 +245,7 @@ linkage_symbol_t<LINUX_SYMTAB_TEMPLPARAM>::get_binding () const
 
 template <LINUX_SYMTAB_TEMPLATELIST>
 const std::string
-linkage_symbol_t<LINUX_SYMTAB_TEMPLPARAM>::get_visibility () const   
+linkage_symbol_t<LINUX_SYMTAB_TEMPLPARAM>::get_visibility () const
 { 
   return visibility; 
 }
