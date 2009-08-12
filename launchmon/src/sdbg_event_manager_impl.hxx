@@ -187,25 +187,8 @@ event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::event_manager_t
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::~event_manager_t ()
 {
-
-}
-
-
-//! PUBLIC: register_process 
-/*!
-
-*/
-template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-bool 
-event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::register_process ( 
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM> *proc )
-{
-  if (proc) 
-    {
-      launcher_proc = proc;
-    }
-
-  return true;
+  if (ev_monitor)
+    delete ev_monitor;
 }
 
 
@@ -216,11 +199,11 @@ event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::register_process (
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 bool 
 event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::poll_processes (
+		 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
                  launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>& lm ) 
 {
   using namespace std;
 
-  process_base_t<SDBG_DEFAULT_TEMPLPARAM>* proc;
   debug_event_t event;
   pid_t rpid; 
   launchmon_rc_e rc = LAUNCHMON_OK;  
@@ -229,9 +212,6 @@ event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::poll_processes (
      map<int, thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*, ltstr>::const_iterator 
        lpos;
 
-  proc = launcher_proc;     
-
-  if ( proc ) 
     {
       if ( ev_monitor->wait_for_all ( rpid, event ) ) 
 	{ 
@@ -261,12 +241,12 @@ event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::poll_processes (
                   // this means that back-end daemons have exited
                   // Enforcing C.2 error handling semantics.
                   //
-                  rc = lm.handle_daemon_exit_event ((*proc));
+                  rc = lm.handle_daemon_exit_event (p);
                 }
             }
  
 	  map<int, thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*, ltstr>& tl 
-	    = proc->get_thrlist();
+	    = p.get_thrlist();
 
 	  for (lpos=tl.begin(); lpos!=tl.end(); lpos++) 
 	    {	
@@ -299,23 +279,23 @@ event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::poll_processes (
 		  // setting the context telling the launchmon subsystem
 		  // that what thread it has to operate on
 		  //
-		  proc->make_context(thread_id);
+		  p.make_context(thread_id);
 		  
 		  //
 		  // converting a raw event to launchmon event by looking
 		  // at process context such as PC
 		  //
-		  ev = lm.decipher_an_event((*proc), event);
+		  ev = lm.decipher_an_event(p, event);
 		  
 		  //
 		  // invoking a handler accordingly
 		  //
-		  rc = lm.invoke_handler ( *proc, ev, event.get_signum ());
+		  rc = lm.invoke_handler ( p, ev, event.get_signum ());
 		  
 		  //
 		  // sanity check and undo the effect of "make_context"
 		  //
-		  proc->check_and_undo_context(thread_id);
+		  p.check_and_undo_context(thread_id);
 
 		  break;
 		}
@@ -367,7 +347,7 @@ event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::multiplex_events (
       // We only poll when poll_FE_socket returns the true code.
       // poll_FE_socket always returns true for standalone launchmon mode 
       //
-      rc = poll_processes ( lm );
+      rc = poll_processes ( proc, lm );
     }
 
   return (rc);
