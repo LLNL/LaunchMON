@@ -41,9 +41,24 @@
 #ifndef SDBG_LINUX_TTRACER_HXX
 #define SDBG_LINUX_TTRACER_HXX 1
 
-#include <string>
-#include <iostream>
-#include <map>
+#if HAVE_STRING
+# include <string>
+#else
+# error string is required
+#endif
+
+#if HAVE_IOSTREAM
+# include <iostream>
+#else
+# error iostream is required
+#endif
+
+#if HAVE_MAP
+# include <map>
+#else
+# error map is required
+#endif
+
 #include "sdbg_base_ttracer.hxx"
 #include "sdbg_self_trace.hxx"
 #include "sdbg_linux_mach.hxx"
@@ -95,7 +110,7 @@ public:
       if ( (te = td.dll_td_thr_get_info(tt, &(thrinfo->get_thread_info()))) != TD_OK )
         return SDBG_TTRACE_FAILED;
 
-      threadpid = thrinfo->thr2pid(); 
+      threadpid = (int) thrinfo->thr2pid(); 
 
       {
 	self_trace_t::trace ( LEVELCHK(level2), 
@@ -112,7 +127,7 @@ public:
 	{
           // if the process doesn't contain tid of the given thread,
           // those threads must have not been attached
-          // 
+          //   
 	  p->get_thrlist().insert ( make_pair ( threadpid, thrinfo ) );
 	  if( threadpid != p->get_master_thread_pid()) 
 	    {
@@ -123,17 +138,11 @@ public:
 	}
       else 
 	{
-          // if the process contains the tid, we just want to 
-          // refresh its info
-          //
-	  te = td.dll_td_thr_get_info (tt, 
-			               &(p->get_thrlist().find (
-			               (int)thrinfo->thr2pid())->second->get_thread_info()));
 
-	  delete thrinfo;	 
+	  //delete thrinfo;	 
  
-	  if (te != TD_OK)  
-	    return SDBG_TTRACE_FAILED;
+	  //if (te != TD_OK)  
+	    //return SDBG_TTRACE_FAILED;
 	}
 
       return SDBG_TTRACE_OK;
@@ -163,7 +172,7 @@ public:
 	return SDBG_TTRACE_FAILED;
 
       threadpid = thrinfo->thr2pid();
-
+      //cout << "thread lwpid" << threadpid << endl;
       {
         self_trace_t::trace ( LEVELCHK(level2),
           MODULENAME,0,
@@ -189,17 +198,11 @@ public:
         }
       else
         {
-          // if the process contains the tid, we just want to
-          // refresh its info
-          //
-          te = td.dll_td_thr_get_info (tt,
-                                       &(p->get_thrlist().find (
-                                      (int)thrinfo->thr2pid())->second->get_thread_info()));
+          // does thrinfo has a pointer to point to data belonging to thread_db?
+          //delete thrinfo;
 
-          delete thrinfo;
-
-          if (te != TD_OK)
-            return SDBG_TTRACE_FAILED;
+          //if (te != TD_OK)
+            //return SDBG_TTRACE_FAILED;
         }
 
       return SDBG_TTRACE_OK;      
