@@ -27,13 +27,18 @@
  *
  *  Update Log:
  *        Feb 09 2008 DHA: Added LLNS Copyright
- *        Jul 05  2006 DHA: File created      
+ *        Jul 05  2006 DHA: File created
  */ 
 
 #ifndef SDBG_SIGNAL_HLR_HXX
 #define SDBG_SIGNAL_HLR_HXX 1
 
-#include <vector>
+#if HAVE_VECTOR
+# include <vector>
+#else
+# error vector is required
+#endif
+
 #include "sdbg_std.hxx"
 #include "sdbg_base_tracer.hxx"
 #include "sdbg_base_mach.hxx"
