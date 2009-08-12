@@ -34,7 +34,12 @@
 #ifndef SDBG_LINUX_DRIVER_HXX
 #define SDBG_LINUX_DRIVER_HXX 1
 
-#include <string>
+#if HAVE_STRING
+# include <string>
+#else
+# error string is required
+#endif
+
 #include "sdbg_base_driver.hxx"
 #include "sdbg_linux_mach.hxx"
 
@@ -50,7 +55,7 @@
 /*!
     
 */
-template <LINUX_DRIVER_TEMPLATELIST> 
+template <LINUX_DRIVER_TEMPLATELIST>
 class linux_driver_t 
   : public driver_base_t<LINUX_DRIVER_TEMPLPARAM,td_thrinfo_t,elf_wrapper> 
 {
@@ -67,13 +72,7 @@ public:
   //
   // "main" for the whole project 
   //
-  int driver_main (int argc, char* argv[]);
-  
-  //
-  // The fork version of main for FE runtime
-  //
-  //
-  //int driver_forkmain ( opts_args_t* opt, int* ifd, int* ofd );
+  int driver_main (int argc, char *argv[]);
 
   virtual process_base_t<LINUX_DRIVER_TEMPLPARAM,td_thrinfo_t,elf_wrapper>* 
       create_process (pid_t pid, 
@@ -83,8 +82,7 @@ public:
 		      const std::string& mc);
   
   virtual process_base_t<LINUX_DRIVER_TEMPLPARAM,td_thrinfo_t,elf_wrapper>* 
-      create_process ( pid_t pid, const std::string& mi);
-  
+      create_process ( pid_t pid, const std::string &mi);
 };
 
 #endif // SDBG_LINUX_DRIVER_HXX
