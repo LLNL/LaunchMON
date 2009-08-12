@@ -36,7 +36,11 @@
 #error This source file requires a LINUX OS
 #endif
 
-#include <iostream>
+#if HAVE_IOSTREAM
+# include <iostream>
+#else
+# error iostream is required
+#endif
 
 #if HAVE_STDARG_H
 # include <cstdarg>
