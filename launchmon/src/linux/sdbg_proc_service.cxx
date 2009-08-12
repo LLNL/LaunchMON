@@ -503,17 +503,17 @@ ps_get_thread_area ( const struct ps_prochandle *ph,
 }
 
 
-static std::string 
-&get_basename( std::string path)
+static 
+bool 
+equal_base(std::string const & path, std::string const & refpath)
 {
   char tmp[PATH_MAX];
   char *bn;
 
-  sprintf(tmp, "%s", path.c_str());
+  sprintf(tmp, "%s", refpath.c_str());
   bn = basename(tmp);
-  std::string* rstr = new std::string(bn);
 
-  return *rstr;
+  return (path == std::string(bn));
 } 
 
 
@@ -537,12 +537,15 @@ ps_pglobal_lookup ( struct ps_prochandle *ph,
   string myimage_path(ph->p->get_myimage()->get_path());
   string loader_path(ph->p->get_mydynloader_image()->get_path());
   
+  if (!object_name)
+    return PS_ERR;
+
   //
   // TODO: This if/else should be modified once process_base_t class 
   // gets to retain std::map obj and maintain each and every library 
   // that the target process brings into its process-address space.
   //
-  if ( object_name && (objpath == get_basename(pthread_path))) {
+  if ( equal_base(objpath, pthread_path) ) {
 
     const symbol_base_t<T_VA>& asym 
       = ph->p->get_mythread_lib_image()->get_a_symbol(sym);
@@ -556,7 +559,7 @@ ps_pglobal_lookup ( struct ps_prochandle *ph,
       error_code = PS_NOSYM;
     }
   }
-  else if ( objpath == get_basename(myimage_path)) {
+  else if ( equal_base(objpath, myimage_path) ) {
 
     const symbol_base_t<T_VA>& asym 
       =  ph->p->get_myimage()->get_a_symbol(sym);
@@ -570,7 +573,7 @@ ps_pglobal_lookup ( struct ps_prochandle *ph,
       error_code = PS_NOSYM;
     }
   }
-  else if ( objpath == get_basename(loader_path)) {
+  else if ( equal_base(objpath, loader_path)) {
 
     const symbol_base_t<T_VA>& asym 
       =  ph->p->get_mydynloader_image()->get_a_symbol(sym);
