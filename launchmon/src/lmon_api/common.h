@@ -27,8 +27,9 @@
  *
  *
  *  Update Log:
+ *              Aug 10 2009 DHA: Added HAVE_STDIO_H and HAVE_SYS_TYPES_H check
  *              Jun 06 2008 DHA: File created. Mostly from the autobook.
- *           
+ *
  */
 
 #ifndef LMON_API_COMMON_H
@@ -36,7 +37,7 @@
 
 #ifdef __cplusplus
 # define BEGIN_C_DECLS       extern "C" {
-# define END_C_DECLS         } 
+# define END_C_DECLS         }
 #else /* !__cplusplus */
 # define BEGIN_C_DECLS
 # define END_C_DECLS
@@ -46,8 +47,17 @@
 # include <config.h>
 #endif
 
+#if HAVE_STDIO_H
 #include <stdio.h>
+#else
+# error stdio.h is required
+#endif 
+
+#if HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#else
+# error sys/types.h is required
+#endif
 
 #if STDC_HEADERS
 # include <stdlib.h>
