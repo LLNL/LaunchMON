@@ -134,6 +134,11 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_init (
 
     cppath = strdup(thrlib_im->get_path().c_str());
     dirpath_libpthread = dirname(cppath);
+   
+    //
+    // NOTE: on linux free cppath should be safe
+    //
+    free(cppath);
 
     if (!linux_thread_callback_t::td.bind(string(dirpath_libpthread))) {
       e = func +
