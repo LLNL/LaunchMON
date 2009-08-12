@@ -323,6 +323,11 @@ public:
   std::map<std::string, std::vector<MPIR_PROCDESC_EXT*> >& get_proctable_copy() 
                 { return proctable_copy; }
 
+protected:
+  bool request_detach(process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
+                      pcont_req_reason reason);
+  bool request_kill(process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
+                      pcont_req_reason reason);
 
 private:
 

@@ -59,6 +59,76 @@
 
 #include "sdbg_base_launchmon.hxx"
 
+
+////////////////////////////////////////////////////////////////////
+//
+// PROTECTED METHODS (class launchmon_base_t<>)
+//
+////////////////////////////////////////////////////////////////////
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+bool
+launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::request_detach
+(process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, pcont_req_reason reason)
+{
+  if (p.get_please_detach() || p.get_please_kill())
+    {
+      //
+      // either request has already been registered
+      //
+      return false;
+    }
+ 
+  for ( p.thr_iter = p.get_thrlist().begin();
+        p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
+    {
+      int status;
+      pid_t thrId;
+      p.make_context ( p.thr_iter->first );
+      get_tracer()->tracer_stop(p, true);
+      // Back-to-back signals can be lost
+      // Thus, Grace period below
+      usleep (GracePeriodBNSignals);
+      p.check_and_undo_context ( p.thr_iter->first );
+    }
+
+  p.set_please_detach ( true );
+  p.set_reason (reason);
+
+  return true;
+}
+
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+bool
+launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::request_kill
+(process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, pcont_req_reason reason)
+{
+  if (p.get_please_detach() || p.get_please_kill())
+    {
+      //
+      // either request has already been registered
+      //
+      return false;
+    }
+
+  for ( p.thr_iter = p.get_thrlist().begin();
+        p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
+    {
+      int status;
+      pid_t thrId;
+      p.make_context ( p.thr_iter->first );
+      get_tracer()->tracer_stop(p, true);
+      // Back-to-back signals can be lost
+      // Thus, Grace period below
+      usleep (GracePeriodBNSignals);
+      p.check_and_undo_context ( p.thr_iter->first );
+    }
+
+  p.set_please_kill ( true );
+  p.set_reason (reason);
+
+  return true;
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // PUBLIC INTERFACES (class launchmon_base_t<>)
@@ -739,30 +809,8 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
 		// launchmon engine will keep the RM_daemon process running, and 
                 // won't be able to do A.1.3.
 		//
-      	        for ( p.thr_iter = p.get_thrlist().begin();
-                      p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
-                  {
-                    p.make_context ( p.thr_iter->first );
-		    if (p.get_lwp_state (true) == LMON_RM_RUNNING)
-                      {
-	                //
-		        // A corner case is when both FE and the RM process are gone
-  		        //
-		        get_tracer()->tracer_stop(p, true);
-		        // Back-to-back signals can be lost
-		        // Thus, Grace period below
-		        usleep (GracePeriodBNSignals);
-                      }
-                    p.check_and_undo_context ( p.thr_iter->first );
-                  }
-
-	          p.set_please_detach ( true );
-	          p.set_reason (FE_disconnected);
-                  //
-                  // By returning LAUNCHMON_OK, process status handler will 
-                  // take care of the datach event 
-                  //
-                  goto ret_ok;
+                request_detach(p, FE_disconnected);
+                goto ret_ok;
               } // if ( numbytes == -1)
 	    else if ( (numbytes != sizeof (msg))
 		      || ((numbytes == sizeof (msg))
@@ -784,71 +832,17 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
               {
 	      case lmonp_detach:
                 {
-                  for ( p.thr_iter = p.get_thrlist().begin();
-                        p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
-                    {
-                      p.make_context ( p.thr_iter->first );
-		      if (p.get_lwp_state (true) == LMON_RM_RUNNING)
-                        {
-                          //
-	                  // even with this lwp state checking if tracer_stop
-		          // throws an exception, we should return a failure.
-                          get_tracer()->tracer_stop(p, true);
-                          // Back-to-back signals can be lost
-                          // Thus, Grace period below
-                          usleep (GracePeriodBNSignals);
-                        } 
-                      p.check_and_undo_context ( p.thr_iter->first );
-                    }
-
-                    p.set_please_detach ( true );
-                    p.set_reason (FE_requested_detach);
-                    break;
+                  request_detach(p, FE_requested_detach);
+                  break;
 		}
 	      case lmonp_kill:
 	        {
-                  for ( p.thr_iter = p.get_thrlist().begin();
-                        p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
-                    {
-                      p.make_context ( p.thr_iter->first );
-		      if (p.get_lwp_state (true) == LMON_RM_RUNNING)
-                        {
-                          //
-	                  // even with this lwp state checking if tracer_stop
-		          // throws an exception, we should return a failure.
-                          get_tracer()->tracer_stop(p, true);
-                          // Back-to-back signals can be lost
-                          // Thus, Grace period below
-                          usleep (GracePeriodBNSignals);
-                        }
-                      p.check_and_undo_context ( p.thr_iter->first );
-                    }
-
-                  p.set_please_kill ( true );
-                  p.set_reason (FE_requested_kill);
+                  request_kill(p, FE_requested_kill); 
                   break;
                 }  
               case lmonp_shutdownbe:
                 {
-                  for ( p.thr_iter = p.get_thrlist().begin();
-                        p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
-                    {
-                      p.make_context ( p.thr_iter->first );
-                      if (p.get_lwp_state (true) == LMON_RM_RUNNING)
-                        {
-                          //
-                          // even with this lwp state checking if tracer_stop
-                          // throws an exception, we should return a failure.
-                          get_tracer()->tracer_stop(p, true);
-                          // Back-to-back signals can be lost
-                          // Thus, Grace period below
-                          usleep (GracePeriodBNSignals);
-                        }
-                      p.check_and_undo_context ( p.thr_iter->first );
-                    }
-
-                  p.set_please_detach ( true );
-                  p.set_reason (FE_requested_shutdown_dmon);
+                  request_kill(p, FE_requested_shutdown_dmon);
                   break;
 		}
              default:
@@ -908,29 +902,8 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_daemon_exit_event
 {
   try
     {
-      for ( p.thr_iter = p.get_thrlist().begin();
-            p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
-        {
-          p.make_context ( p.thr_iter->first );
-          if (p.get_lwp_state (true) == LMON_RM_RUNNING)
-            {
-              //
-              // even with this lwp state checking if tracer_stop
-              // throws an exception, we should return a failure.
-              get_tracer()->tracer_stop(p, true);
-
-	      // Back-to-back SIGSTOP can be lost
-	      // Thus, the grace period below 	
-	      usleep (GracePeriodBNSignals);
-            }
-          p.check_and_undo_context ( p.thr_iter->first );
-        }
-
-      p.set_please_detach (true);
-      p.set_reason (RM_BE_daemon_exited);
-
+      request_detach(p, RM_BE_daemon_exited);
       set_last_seen (gettimeofdayD ());
-
       return LAUNCHMON_OK;
     }
   catch ( symtab_exception_t e )
