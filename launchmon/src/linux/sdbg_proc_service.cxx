@@ -111,8 +111,14 @@ struct user_desc
 
 linux_ptracer_t<SDBG_LINUX_DFLT_INSTANTIATION> myprocess_tracer;
 
+
+//! PUBLIC: ps_pdread
+/*!
+    a routine to read from the given process, which 
+    the thread debug library uses.
+*/
 extern "C" ps_err_e 
-ps_pdread ( struct ps_prochandle *ph,  psaddr_t addr,  
+ps_pdread ( struct ps_prochandle *ph,  psaddr_t addr,
 	    void *buf,  size_t size )
 {
   bool use_cxt = true; 
@@ -129,6 +135,11 @@ ps_pdread ( struct ps_prochandle *ph,  psaddr_t addr,
 }
 
 
+//! PUBLIC: ps_pdwrite
+/*!
+    a routine to write into the given process, which 
+    the thread debug library uses.
+*/
 extern "C" ps_err_e 
 ps_pdwrite ( struct ps_prochandle *ph,  psaddr_t addr, 
 	     const void *buf, size_t size )
@@ -147,6 +158,11 @@ ps_pdwrite ( struct ps_prochandle *ph,  psaddr_t addr,
 }
 
 
+//! PUBLIC: ps_ptread
+/*!
+    a routine to read from the given thread, which 
+    the thread debug library uses. (Identical to process read)
+*/
 extern "C" ps_err_e 
 ps_ptread ( struct ps_prochandle *ph,  psaddr_t addr,  
 	    void *buf,  size_t size )
@@ -155,6 +171,11 @@ ps_ptread ( struct ps_prochandle *ph,  psaddr_t addr,
 }
 
 
+//! PUBLIC: ps_ptwrite
+/*!
+    a routine to read from the given thread, which 
+    the thread debug library uses. (Identical to process write)
+*/
 extern "C" ps_err_e 
 ps_ptwrite ( struct ps_prochandle *ph,  psaddr_t addr, 
 	     const void *buf, size_t size )
@@ -163,6 +184,11 @@ ps_ptwrite ( struct ps_prochandle *ph,  psaddr_t addr,
 }
 
 
+//! PUBLIC: ps_lgetregs
+/*!
+    a routine to read registers from the given thread, which 
+    the thread debug library uses.
+*/
 extern "C" ps_err_e 
 ps_lgetregs ( struct ps_prochandle* ph, 
 	      lwpid_t id, prgregset_t reg)
@@ -180,32 +206,40 @@ ps_lgetregs ( struct ps_prochandle* ph,
 	 &(ph->p->get_gprset(use_cxt)->get_native_rs()), 
 	 sizeof(T_GRS)) != NULL ) {
 
-  //FIXME: gen_error
+    return PS_ERR;
   }
 
   return PS_OK;
 }
   
 
+//! PUBLIC: ps_lsetregs
+/*!
+    a routine to set registers for the given thread, which 
+    the thread debug library uses.
+*/
 extern "C" ps_err_e 
 ps_lsetregs (struct ps_prochandle* ph, 
 	     lwpid_t id, const prgregset_t reg)
 {
   bool use_cxt = true;
 
-  //
-  // FIXME: set reg into ph->p
-  //
+
   if ( myprocess_tracer.tracer_setregs (*(ph->p), use_cxt) 
                                        != SDBG_TRACE_OK ) {
 
     return PS_ERR;
   }
-  printf("Please implement ps_lsetregs\n");
+  //printf("Please implement ps_lsetregs\n");
   return PS_OK;
 }
 
 
+//! PUBLIC: ps_lgetfpregs
+/*!
+    a routine to get FP registers for the given thread, which 
+    the thread debug library uses.
+*/
 extern "C" ps_err_e 
 ps_lgetfpregs ( struct ps_prochandle* ph, lwpid_t id, 
 		prfpregset_t* reg )
@@ -222,6 +256,11 @@ ps_lgetfpregs ( struct ps_prochandle* ph, lwpid_t id,
 }
 
 
+//! PUBLIC: ps_lsetfpregs
+/*!
+    a routine to set FP registers for the given thread, which 
+    the thread debug library uses.
+*/
 extern "C" ps_err_e 
 ps_lsetfpregs ( struct ps_prochandle* ph, lwpid_t id, 
 		const prfpregset_t* reg)
@@ -229,9 +268,6 @@ ps_lsetfpregs ( struct ps_prochandle* ph, lwpid_t id,
 {
   bool use_cxt = true;
 
-  //
-  // FIXME: set regs into ph->p
-  //
   if ( myprocess_tracer.tracer_setfpregs (*(ph->p), use_cxt) 
                       != SDBG_TRACE_OK ) {
     return PS_ERR;
@@ -241,12 +277,22 @@ ps_lsetfpregs ( struct ps_prochandle* ph, lwpid_t id,
 }
 
 
+//! PUBLIC: ps_getpid
+/*!
+    a routine to get the pid of the main process, which
+    the thread debug library uses.
+*/
 extern "C" pid_t ps_getpid ( struct ps_prochandle *ph )
 {
   return (ph->p->get_master_thread_pid());
 }
 
 
+//! PUBLIC: ps_get_thread_area
+/*!
+    a routine to get the thread specific area, which
+    the thread debug library uses.
+*/
 extern "C" ps_err_e 
 ps_get_thread_area ( const struct ps_prochandle *ph,
 		     lwpid_t lpid, int x, psaddr_t *addr)
@@ -309,7 +355,7 @@ ps_get_thread_area ( const struct ps_prochandle *ph,
 				    (T_VA)x, 
 				    (T_WT*)&tsd_desc ) 
                                         != SDBG_TRACE_OK ) 
-    {    
+    {
       return PS_ERR;
     }
 
@@ -452,13 +498,13 @@ ps_get_thread_area ( const struct ps_prochandle *ph,
    */  
 
 #endif
-  
+
   return PS_OK;
-    
 }
 
 
-static std::string& get_basename( std::string path)
+static std::string 
+&get_basename( std::string path)
 {
   char tmp[PATH_MAX];
   char *bn;
@@ -471,6 +517,11 @@ static std::string& get_basename( std::string path)
 } 
 
 
+//! PUBLIC: ps_pglobal_lookup
+/*!
+    a routine to fetch a global symbol, which the thread db
+    library uses
+*/
 extern "C" ps_err_e 
 ps_pglobal_lookup ( struct ps_prochandle *ph, 
 			     const char *object_name, 
@@ -536,15 +587,20 @@ ps_pglobal_lookup ( struct ps_prochandle *ph,
   else {
     error_code = PS_ERR;
   }
-    
+
   return error_code;
 }
 
 
+//! PUBLIC: ps_pstop
+/*!
+    a routine to stop the given process, which the thread db
+    library uses
+*/
 extern "C" ps_err_e 
 ps_pstop ( const struct ps_prochandle *ph)
 {
-  bool use_cxt = true;
+  bool use_cxt = false;
 
   if ( myprocess_tracer.tracer_stop(*(ph->p), use_cxt)
                                     != SDBG_TRACE_OK ) {
@@ -556,12 +612,17 @@ ps_pstop ( const struct ps_prochandle *ph)
 }
 
 
+//! PUBLIC: ps_pcontinue
+/*!
+    a routine to continue the given process, which the thread db
+    library uses
+*/
 extern "C" ps_err_e 
 ps_pcontinue ( const struct ps_prochandle *ph )
 {
-  bool use_cxt = true;
+  bool use_cxt = false;
 
-  if ( myprocess_tracer.tracer_continue(*(ph->p), use_cxt)  
+  if ( myprocess_tracer.tracer_continue(*(ph->p), use_cxt)
                                       != SDBG_TRACE_OK ) {
     return PS_ERR;
   }
@@ -570,18 +631,46 @@ ps_pcontinue ( const struct ps_prochandle *ph )
 }
 
 
+//! PUBLIC: ps_lstop
+/*!
+    a routine to stop the given thread, which the thread db
+    library uses
+*/
 extern "C" ps_err_e 
 ps_lstop ( const struct ps_prochandle *ph, lwpid_t lp)
 {
-  // FIXME: Not implemented yet
-  return PS_ERR;
+  bool use_cxt = true;
+
+  ph->p->make_context ( (const int) lp );
+  if (myprocess_tracer.tracer_stop(*(ph->p), use_cxt)
+	                          != SDBG_TRACE_OK) {
+    ph->p->check_and_undo_context( (const int) lp );
+    return PS_ERR;
+  }
+  ph->p->check_and_undo_context( (const int) lp );
+
+  return PS_OK;
 }
 
 
+//! PUBLIC: ps_lcontinue
+/*!
+    a routine to continue the given thread, which the thread db
+    library uses
+*/
 extern "C" ps_err_e 
 ps_lcontinue (const struct ps_prochandle *ph, lwpid_t lp)
 {
-  // FIXME: Not implemented yet
-  return PS_ERR;
+  bool use_cxt = true;
+
+  ph->p->make_context ( (const int) lp );
+  if (myprocess_tracer.tracer_continue(*(ph->p), use_cxt)
+	                          != SDBG_TRACE_OK) {
+    ph->p->check_and_undo_context( (const int) lp );
+    return PS_ERR;
+  }
+  ph->p->check_and_undo_context( (const int) lp );
+
+  return PS_OK;
 }
 
