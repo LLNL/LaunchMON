@@ -139,7 +139,7 @@ public:
       else 
 	{
 
-	  //delete thrinfo;	 
+	  delete thrinfo;	 
  
 	  //if (te != TD_OK)  
 	    //return SDBG_TTRACE_FAILED;
@@ -157,13 +157,13 @@ public:
       int threadpid;
  
 #if X86_ARCHITECTURE || X86_64_ARCHITECTURE
-      thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>* thrinfo 
+      thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper> *thrinfo 
 	= new linux_x86_thread_t();
 #elif PPC_ARCHITECTURE
-      thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>* thrinfo 
+      thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper> *thrinfo 
 	= new linux_ppc_thread_t();
 #endif   
-      process_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>* p 
+      process_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper> *p 
 	     = (process_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>*) proc;
 
       if ( (te = td.dll_td_thr_event_enable(tt, 1)) != TD_OK ) 
@@ -199,7 +199,7 @@ public:
       else
         {
           // does thrinfo has a pointer to point to data belonging to thread_db?
-          //delete thrinfo;
+          delete thrinfo;
 
           //if (te != TD_OK)
             //return SDBG_TTRACE_FAILED;
