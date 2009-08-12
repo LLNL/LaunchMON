@@ -279,6 +279,8 @@ linux_launchmon_t::init_API(opts_args_t *opt)
       return LAUNCHMON_FAILED;
     }
 
+  free(tokenize);
+
   if ( ( clientsockfd = socket ( AF_INET, SOCK_STREAM, 0 )) < 0 )
     {
       self_trace_t::trace ( LEVELCHK(level1),
@@ -1189,8 +1191,9 @@ linux_launchmon_t::handle_detach_cmd_event
 
       usleep ( GracePeriodBNSignals );
 
+      char *bnbuf = strdup(p.get_myopts()->get_my_opt()->debugtarget.c_str());
       std::string dt
-        = basename ( strdup (p.get_myopts()->get_my_opt()->debugtarget.c_str()));
+        = basename(bnbuf);
 
       switch ( p.get_reason() )
         {
@@ -1256,6 +1259,8 @@ linux_launchmon_t::handle_detach_cmd_event
           }
           break;
         }
+
+      free(bnbuf);
 
       //
       // This return code will cause the engine to exit.
@@ -2747,6 +2752,9 @@ linux_launchmon_t::chk_pthread_libc_and_init (
 		  (*p.get_fork_hidden_bp()),
 		  use_cxt );
               }
+
+            free(cplname1);
+            free(cplname2);
 	  }
 
 	where_to_read =  (T_VA) a_map.l_next;
