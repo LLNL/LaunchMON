@@ -1036,6 +1036,11 @@ linux_launchmon_t::handle_launch_bp_event (
 	     *   Subsequently, we want to launch the specified tool 
              *   daemons before let go of the RM process.
 	     */
+	    {
+	      self_trace_t::trace ( LEVELCHK(level2), 
+		MODULENAME,0,
+	        "launch-breakpoint hit event handler completing with MPIR_DEBUG_SPAWNED");
+	    }
 	    acquire_proctable ( p, use_cxt );
 	    ship_proctab_msg ( lmonp_proctable_avail );
 	    ship_resourcehandle_msg ( lmonp_resourcehandle_avail, get_resid() );
@@ -1045,11 +1050,6 @@ linux_launchmon_t::handle_launch_bp_event (
 
 	    get_tracer()->tracer_continue (p, use_cxt);
 
-	    {
-	      self_trace_t::trace ( LEVELCHK(level2), 
-		MODULENAME,0,
-	        "launch-breakpoint hit event handler completing with MPIR_DEBUG_SPAWNED");
-	    }
 
 	    break;
           }
@@ -1065,30 +1065,16 @@ linux_launchmon_t::handle_launch_bp_event (
             int bdbg = 0;
             T_VA debug_state_flag = T_UNINIT_HEX;
 
+	    {
+	      self_trace_t::trace ( LEVELCHK(level2), 
+		MODULENAME,0,
+	        "launch-breakpoint hit event handler completing with MPIR_DEBUG_ABORTING");
+            }
             //
-            // disable all the hidden breakpoints     
-            //
-            disable_all_BPs (p, false);
-
-            //
-            // detach from all slave threads.
-            //
-            for ( p.thr_iter = p.get_thrlist().begin();
-                    p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
-              {
-                if ( !(p.thr_iter->second->is_master_thread()) )
-                  {
-                    // operates on a slave thread
-                    p.make_context ( p.thr_iter->first );
-                    get_tracer()->tracer_detach ( p, true );
-                    p.check_and_undo_context ( p.thr_iter->first );
-                  }
-              }
-
-            self_trace_t::trace ( true,
-              MODULENAME,
-              0,
-              "detached from all threads of the RM process...");
+            // disable all the hidden breakpoints. Since we don't     
+            // know if the context is slave or main thread, we have to 
+            // pass true 
+            disable_all_BPs (p, true);
 
             //
             // unsetting "MPIR_being_debugged."
@@ -1100,12 +1086,38 @@ linux_launchmon_t::handle_launch_bp_event (
                                   being_debugged.get_relocated_address(),
                                   &bdbg,
                                   sizeof(bdbg),
-                                  false );
+                                  true );
+            //
+            // detach from all slave threads.
+            //
+            for ( p.thr_iter = p.get_thrlist().begin();
+                    p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
+              {
+                if ( !(p.thr_iter->second->is_master_thread()) )
+                  {
+                    // operates on a slave thread
+                    p.make_context ( p.thr_iter->first );
+                    if (get_tracer()->status(p, true) == SDBG_TRACE_STOPPED)
+                      {
+                        get_tracer()->tracer_detach ( p, true );
+                      }
+                    p.check_and_undo_context ( p.thr_iter->first );
+                  }
+              }
+
+            self_trace_t::trace ( true,
+              MODULENAME,
+              0,
+              "detached from all threads of the RM process...");
+
 
             //
             // detach from the main thread
             //
-            get_tracer()->tracer_detach ( p, false );
+            if (get_tracer()->status(p, false) == SDBG_TRACE_STOPPED)
+              {
+                get_tracer()->tracer_detach ( p, false );
+              }
 
             self_trace_t::trace ( true,
               MODULENAME,
