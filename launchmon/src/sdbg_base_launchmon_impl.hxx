@@ -914,7 +914,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
                     MODULENAME,
                     0,
                     "front-end requested deamon shutdown...");
-                  request_kill(p, FE_requested_shutdown_dmon);
+                  request_detach(p, FE_requested_shutdown_dmon);
                   break;
 		}
              default:
