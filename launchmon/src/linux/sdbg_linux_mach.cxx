@@ -749,11 +749,8 @@ linux_ppc_fpr_set_t::linux_ppc_fpr_set_t()
 linux_ppc_thread_t::linux_ppc_thread_t()
    : MODULENAME (self_trace_t::machine_module_trace.module_name)
 {
-  linux_ppc_gpr_set_t* gpr = new linux_ppc_gpr_set_t();
-  linux_ppc_fpr_set_t* fpr = new linux_ppc_fpr_set_t();
- 
-  set_gprset (gpr);
-  set_fprset (fpr);
+  set_gprset (new linux_ppc_gpr_set_t());
+  set_fprset (new linux_ppc_fpr_set_t());
 }
  
  

@@ -46,6 +46,7 @@
 #ifndef LINUX_CODE_REQUIRED
 #error This source file requires a LINUX OS
 #endif
+ 
 
 #include "sdbg_proc_service.hxx"
 #include "sdbg_linux_std.hxx"
@@ -202,12 +203,7 @@ ps_lgetregs ( struct ps_prochandle* ph,
   }
 
   // copy ph->p's GPR to reg
-  if ( memcpy((T_GRS*) reg, 
-	 &(ph->p->get_gprset(use_cxt)->get_native_rs()), 
-	 sizeof(T_GRS)) != NULL ) {
-
-    return PS_ERR;
-  }
+  memcpy((T_GRS*) reg, &(ph->p->get_gprset(use_cxt)->get_native_rs()), sizeof(T_GRS)); 
 
   return PS_OK;
 }
@@ -223,7 +219,6 @@ ps_lsetregs (struct ps_prochandle* ph,
 	     lwpid_t id, const prgregset_t reg)
 {
   bool use_cxt = true;
-
 
   if ( myprocess_tracer.tracer_setregs (*(ph->p), use_cxt) 
                                        != SDBG_TRACE_OK ) {
@@ -516,6 +511,17 @@ equal_base(std::string const & path, std::string const & refpath)
   return (path == std::string(bn));
 } 
 
+static std::string& get_basename( std::string path)
+{ 
+  char tmp[PATH_MAX];
+  char *bn; 
+ 
+  sprintf(tmp, "%s", path.c_str());
+  bn = basename(tmp); 
+  std::string* rstr = new std::string(bn);
+ 
+  return *rstr;
+} 
 
 //! PUBLIC: ps_pglobal_lookup
 /*!
@@ -528,7 +534,6 @@ ps_pglobal_lookup ( struct ps_prochandle *ph,
 			     const char *sym_name, psaddr_t *sym_addr )
 {
   using namespace std;
-
   ps_err_e error_code;
 
   string objpath(object_name);
@@ -604,7 +609,6 @@ extern "C" ps_err_e
 ps_pstop ( const struct ps_prochandle *ph)
 {
   bool use_cxt = false;
-
   if ( myprocess_tracer.tracer_stop(*(ph->p), use_cxt)
                                     != SDBG_TRACE_OK ) {
 
@@ -624,7 +628,6 @@ extern "C" ps_err_e
 ps_pcontinue ( const struct ps_prochandle *ph )
 {
   bool use_cxt = false;
-
   if ( myprocess_tracer.tracer_continue(*(ph->p), use_cxt)
                                       != SDBG_TRACE_OK ) {
     return PS_ERR;
