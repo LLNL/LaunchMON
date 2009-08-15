@@ -91,7 +91,6 @@ extern "C" {
     event occurs.
 */
 
-
 inline double gettimeofdayD ()
 {
   struct timeval ts;
@@ -104,20 +103,18 @@ inline double gettimeofdayD ()
   return rt;
 }
 
-
 //! enumerator launchmon_rc_e 
 /*!
-    Defines a set of launchmon's return codes.
+    Defines a set of launchmon engine handler's return codes.
 */
 enum launchmon_rc_e {
-  LAUNCHMON_OK     = 0,
+  LAUNCHMON_OK = 0,
   LAUNCHMON_BP_PROLOGUE,
   LAUNCHMON_STOP_TRACE,
   LAUNCHMON_FAILED,
   LAUNCHMON_MPIR_DEBUG_ABORT,
   LAUNCHMON_MAINPROG_EXITED
 };
-
 
 //! enumerator launchmon_event_e
 /*!
@@ -141,7 +138,6 @@ enum launchmon_event_e {
   LM_INVALID
 };
 
-
 //! class launchmon_base_t
 /*!
     Abstract class that declares launchmon API as well as
@@ -154,32 +150,7 @@ public:
 
   launchmon_base_t ();
 
-  launchmon_base_t ( 
-                const launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>& l );
-
-  virtual 
-  ~launchmon_base_t();
-
-  void set_tracer ( 
-                tracer_base_t<SDBG_DEFAULT_TEMPLPARAM>* t );
-  void set_ttracer ( 
-                thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM>* t );
-  tracer_base_t<SDBG_DEFAULT_TEMPLPARAM>* get_tracer ();    
-  thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM>* get_ttracer ();
-
-  virtual 
-  launchmon_rc_e invoke_handler ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
-		launchmon_event_e e,
-		int data );
-
-  virtual 
-  launchmon_event_e decipher_an_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
-		debug_event_t& e );
-
-  launchmon_rc_e say_fetofe_msg ( lmonp_fe_to_fe_msg_e msg_type );
-
+  virtual ~launchmon_base_t();
 
   ////////////////////////////////////////////////////////////
   //
@@ -187,113 +158,139 @@ public:
   //
 
   //
+  // Accessors
+  //
+  //
+  void set_tracer ( tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *t );
+  void set_ttracer ( thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *t );
+  tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> * get_tracer ();    
+  thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> * get_ttracer ();
+  define_gset (int, resid)
+  define_gset (int, pcount)
+  define_gset (int, toollauncherpid)
+  define_gset (int, FE_sockfd)
+  define_gset (bool, API_mode)
+  define_gset (double, last_seen)
+  define_gset (double, warm_period)
+  std::map<std::string, std::vector<MPIR_PROCDESC_EXT *> > & 
+    get_proctable_copy() { return proctable_copy; }
+
+  //
+  // Method that invokes a corresponding handler based on e
+  //
+  //
+  virtual launchmon_rc_e invoke_handler ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, 
+		const launchmon_event_e e,
+		const int data );
+
+  //
+  // Method that translates a low-level event e to launchmon_event_e
+  //
+  //
+  virtual launchmon_event_e decipher_an_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, 
+		const debug_event_t &e );
+
+  //
+  // Method that send an event msg to the Front-end runtime
+  //
+  //
+  launchmon_rc_e say_fetofe_msg ( lmonp_fe_to_fe_msg_e msg_type );
+
+  //
   // init must be implemented by a derived class, filling all platform
   // specific initialization procedures. 
   //
-  virtual 
-  launchmon_rc_e init ( opts_args_t* opt )                   =0;
+  virtual launchmon_rc_e init ( opts_args_t *opt )           =0;
  
   //
   // defines a set of actions for attaching to a running job 
-  virtual 
-  launchmon_rc_e handle_attach_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
+  virtual launchmon_rc_e handle_attach_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
   //
   // defines a set of actions when the launch breakpoint 
   // (e.g. MPIR_Breakpoint) is hit
-  virtual 
-  launchmon_rc_e handle_launch_bp_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
+  virtual launchmon_rc_e handle_launch_bp_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
 
 
   //
   // defines a set of actions when the detach command is
   // issued
-  virtual 
-  launchmon_rc_e handle_detach_cmd_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
+  virtual launchmon_rc_e handle_detach_cmd_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
 
   //
   // defines a set of actions when the detach command is
   // issued
-  virtual 
-  launchmon_rc_e handle_kill_cmd_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
+  virtual launchmon_rc_e handle_kill_cmd_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
 
   //
   // defines a set of actions when the target process gets 
   // initially fork'ed/exec'ed
-  virtual 
-  launchmon_rc_e handle_trap_after_exec_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
+  virtual launchmon_rc_e handle_trap_after_exec_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
 
   //
   // defines a set of actions when the target process gets 
   // initially attached
-  virtual 
-  launchmon_rc_e handle_trap_after_attach_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
+  virtual launchmon_rc_e handle_trap_after_attach_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
 
   //
   // defines a set of actions when the target process 
   // loads/unloads a shared library
-  virtual 
-  launchmon_rc_e handle_loader_bp_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
+  virtual launchmon_rc_e handle_loader_bp_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
 
   //
   // defines a set of actions when the target process exits 
-  virtual 
-  launchmon_rc_e handle_exit_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
+  virtual launchmon_rc_e handle_exit_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
 
   //
   // defines a set of actions when the target process gets 
   // somehow terminated
-  virtual 
-  launchmon_rc_e handle_term_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
+  virtual launchmon_rc_e handle_term_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
 
   //
   // defines a set of actions when a new thread creation event
   // is notified. 
-  virtual 
-  launchmon_rc_e handle_thrcreate_bp_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
+  virtual launchmon_rc_e handle_thrcreate_bp_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
 
   //
   // defines a set of actions when a thread death event
   // is notified.
-  virtual 
-  launchmon_rc_e handle_thrdeath_bp_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
+  virtual launchmon_rc_e handle_thrdeath_bp_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
 
   //
   // defines a set of actions when a new process is forked 
   // from the target process.
-  virtual 
-  launchmon_rc_e handle_fork_bp_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
+  virtual launchmon_rc_e handle_fork_bp_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
 
   //
   // all unwonted stop events.
   //
-  virtual 
-  launchmon_rc_e handle_not_interested_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
+  virtual launchmon_rc_e handle_not_interested_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
 
   //
   // all relay-signal events.
   //
-  virtual 
-  launchmon_rc_e handle_relay_signal_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, int sig ) =0;
+  virtual launchmon_rc_e handle_relay_signal_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, 
+                int sig )                                    =0;
 
   //
   // ships the RPDTAB to the FE API client
   //
-  launchmon_rc_e ship_proctab_msg ( 
-                lmonp_fe_to_fe_msg_e );
+  launchmon_rc_e ship_proctab_msg ( lmonp_fe_to_fe_msg_e );
 
   //
   // ships the resource handle to the FE API client
@@ -305,34 +302,33 @@ public:
   // handle a message received from the FE API client
   //
   launchmon_rc_e handle_incoming_socket_event (
-		process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p );
+		process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p );
 
   //
   // defines a set of actions when the back-end daemons exited
   //
   launchmon_rc_e handle_daemon_exit_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p );
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p );
 
-  define_gset (int, resid)
-  define_gset (int, pcount)
-  define_gset (int, toollauncherpid)
-  define_gset (int, FE_sockfd)
-  define_gset (bool, API_mode)
-  define_gset (double, last_seen)
-  define_gset (double, warm_period)
-  std::map<std::string, std::vector<MPIR_PROCDESC_EXT*> >& get_proctable_copy() 
-                { return proctable_copy; }
 
-protected:
-  bool request_detach(process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
-                      pcont_req_reason reason);
-  bool request_kill(process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
-                      pcont_req_reason reason);
+  //
+  // Utility method that handles a detach/kill request command
+  //
+  bool request_detach(process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, 
+                pcont_req_reason reason);
+  bool request_kill(process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, 
+                pcont_req_reason reason);
 
 private:
 
-  bool LEVELCHK(self_trace_verbosity level) 
-       { return (self_trace_t::launchmon_module_trace.verbosity_level >= level); }
+  bool LEVELCHK(self_trace_verbosity level) { 
+                return (self_trace_t::launchmon_module_trace.verbosity_level >= level); 
+                }
+
+  launchmon_base_t (const launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> &l);
+
+  launchmon_base_t & operator=(
+                const launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> &rhs);
 
   //
   // process tracer
@@ -380,3 +376,4 @@ private:
 };
 
 #endif // __SDBG_BASE_LAUNCHMON_HXX
+

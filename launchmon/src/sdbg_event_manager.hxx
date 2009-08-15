@@ -72,7 +72,7 @@ public:
   
   event_manager_t ();
   event_manager_t (const event_manager_t &e);
-  ~event_manager_t ();
+  virtual ~event_manager_t ();
   
   bool multiplex_events ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &proc,
 		          launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> &lm );

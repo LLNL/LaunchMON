@@ -81,7 +81,7 @@ public:
 					     status = uninit; 
 					   }
 
-  breakpoint_base_t ( const breakpoint_base_t<VA, IT>& b )
+  breakpoint_base_t ( const breakpoint_base_t<VA, IT> &b )
                                            {
 					     address_at = b.address_at;
 					     indirect_address_at = b.indirect_address_at;
@@ -95,25 +95,27 @@ public:
 
   virtual ~breakpoint_base_t ()            { }
 
-  bool get_use_indirection()               { return use_indirection; }
-  VA& get_address_at()                     { return address_at; }
-  VA& get_indirect_address_at()            { return indirect_address_at; }
-  VA& get_return_addr()                    { return return_addr; }
-  IT& get_trap_instruction ()              { return trap_instruction; }
-  IT& get_orig_instruction ()              { return orig_instruction; }
-  IT& get_blend_mask ()                    { return blend_mask; }
+  bool get_use_indirection() const         { return use_indirection; }
+  VA const & get_address_at() const        { return address_at; }
+  VA const & get_indirect_address_at() const 
+                                           { return indirect_address_at; }
+  VA const & get_return_addr() const       { return return_addr; }
+  IT const & get_trap_instruction () const { return trap_instruction; }
+  IT const & get_orig_instruction () const { return orig_instruction; }
+  IT const & get_blend_mask () const       { return blend_mask; }
 
-  virtual VA& get_where_pc_would_be()      { return address_at; }
+  virtual VA const & get_where_pc_would_be() 
+                                           { return address_at; }
   virtual bool is_pc_part_of_bp_op(VA pc)  { return ((pc==address_at)?true: false); }
 
   void set_use_indirection ()              { use_indirection = true; }
   void unset_use_indirection ()            { use_indirection = false; }
-  void set_address_at ( const VA& addr )   { address_at = addr; }
-  void set_indirect_address_at(const VA& addr) { indirect_address_at = addr; }
-  void set_return_addr (const VA& raddr)   { return_addr = raddr; }
-  void set_trap_instruction ( const IT& i ){ trap_instruction = i; }
-  void set_orig_instruction ( const IT& i ){ orig_instruction = i; }
-  void set_blend_mask ( const IT& i)       { blend_mask = i; }
+  void set_address_at ( const VA &addr )   { address_at = addr; }
+  void set_indirect_address_at(const VA &addr) { indirect_address_at = addr; }
+  void set_return_addr (const VA &raddr)    { return_addr = raddr; }
+  void set_trap_instruction ( const IT &i ) { trap_instruction = i; }
+  void set_orig_instruction ( const IT &i ) { orig_instruction = i; }
+  void set_blend_mask ( const IT &i)        { blend_mask = i; }
 
 private:
 

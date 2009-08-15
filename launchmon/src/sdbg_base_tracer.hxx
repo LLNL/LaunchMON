@@ -71,6 +71,8 @@ enum tracer_error_e {
   SDBG_TRACE_EFAULT_ERR,
   SDBG_TRACE_EBUSY_ERR,
   SDBG_TRACE_UNIMPLEMENTED,
+  SDBG_TRACE_STOPPED,
+  SDBG_TRACE_RUNNING,
   SDBG_TRACE_FAILED
 };
 
@@ -192,7 +194,7 @@ public:
     throw (tracer_exception_t)                                 =0;
 
   virtual tracer_error_e tracer_stop
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt ) =0;
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt)=0;
 
   virtual tracer_error_e tracer_kill
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt )
@@ -207,12 +209,15 @@ public:
     throw (tracer_exception_t)                                 =0;
 
   virtual tracer_error_e tracer_detach
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt ) = 0;
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt)=0;
 
   virtual tracer_error_e tracer_attach
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
       bool use_cxt, pid_t newtid )
     throw (tracer_exception_t)                                 =0;
+ 
+  virtual tracer_error_e status
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt)=0;
 
   virtual tracer_error_e tracer_trace_me   ()
     throw (tracer_exception_t)                                 =0;

@@ -127,7 +127,7 @@ register_set_base_t<NATIVE_RS,VA,WT>::register_set_base_t
 
 template <typename NATIVE_RS,typename VA,typename WT>
 register_set_base_t<NATIVE_RS,VA,WT>::register_set_base_t
-(const register_set_base_t<NATIVE_RS,VA,WT>& r)
+(const register_set_base_t<NATIVE_RS,VA,WT> &r)
 {
   memcpy(&rs, &(r.rs), sizeof(NATIVE_RS));
   offset_in_user = r.offset_in_user;  
@@ -143,6 +143,20 @@ register_set_base_t<NATIVE_RS,VA,WT>::~register_set_base_t ()
 }  
 
 
+template <typename NATIVE_RS,typename VA,typename WT>
+register_set_base_t<NATIVE_RS,VA,WT> & 
+register_set_base_t<NATIVE_RS,VA,WT>::operator=
+(const register_set_base_t<NATIVE_RS,VA,WT> &rhs)
+{
+  memcpy(&rs, &(rhs.rs), sizeof(NATIVE_RS));
+  offset_in_user = rhs.offset_in_user;
+  rs_ptr = &rs + (rhs.rs_ptr - &(rhs.rs));
+  writable_mask = rhs.writable_mask;
+
+  return *this;
+}
+
+
 //! PUBLIC:  size_in_word
 /*!
    
@@ -153,6 +167,46 @@ unsigned int register_set_base_t<NATIVE_RS,VA,WT>::size_in_word()
   return (sizeof(NATIVE_RS)/sizeof(WT));
 }
 
+
+////////////////////////////////////////////////////////////////////
+//
+// PRIVATE METHODS (class thread_base_t
+//
+///////////////////////////////////////////////////////////////////
+
+//! PRIVATE
+/*!
+    
+*/
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::thread_base_t(const thread_base_t &t)
+{
+  master_thread = t.master_thread;
+  master_pid = t.master_pid;
+  state = t.state;
+  //
+  // Don't copy GPR/FPR set 
+  //
+  gprset = NULL;
+  fprset = NULL;
+}
+
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+thread_base_t<SDBG_DEFAULT_TEMPLPARAM> &
+thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::operator=
+(const thread_base_t &rhs)
+{
+  master_thread = rhs.master_thread;
+  master_pid = rhs.master_pid;
+  state = rhs.state;
+  //
+  // Don't copy GPR/FPR set 
+  //
+  gprset = NULL;
+  fprset = NULL;
+
+  return *this;
+}
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -298,13 +352,33 @@ thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::check_transition(lwp_state_e s)
   return rc;
 }
 
+////////////////////////////////////////////////////////////////////
+//
+// PRIVATE METHODS (class process_base_t)
+//
+///////////////////////////////////////////////////////////////////
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+process_base_t<SDBG_DEFAULT_TEMPLPARAM>::process_base_t 
+(const process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p) 
+{
+  //making this private so that process object cannot be copied
+}
+
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+process_base_t<SDBG_DEFAULT_TEMPLPARAM> &
+process_base_t<SDBG_DEFAULT_TEMPLPARAM>::operator=
+(const process_base_t<SDBG_DEFAULT_TEMPLPARAM> &rhs) 
+{
+  //making this private so that process object cannot be copied
+  return *this;
+}
+
 
 ////////////////////////////////////////////////////////////////////
 //
 // PUBLIC INTERFACES (class process_base_t)
 //
 ///////////////////////////////////////////////////////////////////
-
 
 //! PUBLIC: process_base_t
 /*!
@@ -330,7 +404,6 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::process_base_t ()
   /* more init ? */
 }
 
-
 //! PUBLIC: process_base_t
 /*!
     Default constructor with path info
@@ -342,7 +415,6 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::process_base_t
 {
   protected_init( mi, md, mt, mc );
 }
-
 
 //! PUBLIC: ~process_base_t
 /*!
@@ -387,7 +459,6 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::~process_base_t ()
     }
 }
 
-
 //! PUBLIC: process_base_t
 /*!
     accessors
@@ -398,7 +469,6 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_thrlist()
 {
   return thrlist;
 }
-
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 const pid_t 
@@ -421,14 +491,12 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_master_thread_pid()
   return -1;
 }
 
-
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 image_base_t<VA,EXECHANDLER>* 
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_myimage ()
 {
   return myimage;
 }
-
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 image_base_t<VA,EXECHANDLER>* 
@@ -437,14 +505,12 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_mydynloader_image ()
   return mydynloader_image;
 }
 
-
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 image_base_t<VA,EXECHANDLER>* 
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_mythread_lib_image ()
 {
   return mythread_lib_image;
 }
-
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 image_base_t<VA,EXECHANDLER>*
@@ -453,14 +519,12 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_mylibc_image ()
   return mylibc_image;
 }
 
-
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 breakpoint_base_t<VA,IT>* 
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_launch_hidden_bp ()
 {
   return launch_hidden_bp;
 }
-
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 breakpoint_base_t<VA,IT>*
@@ -469,14 +533,12 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_fork_hidden_bp ()
   return fork_hidden_bp;
 }
 
-
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 breakpoint_base_t<VA,IT>* 
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_loader_hidden_bp ()
 {
   return loader_hidden_bp;
 }
-
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 breakpoint_base_t<VA,IT>* 
@@ -485,7 +547,6 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_thread_creation_hidden_bp ()
   return thread_creation_hidden_bp;
 }
 
-
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 breakpoint_base_t<VA,IT>* 
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_thread_death_hidden_bp ()
@@ -493,14 +554,12 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_thread_death_hidden_bp ()
   return thread_death_hidden_bp;
 }
 
-
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_myimage 
 (image_base_t<VA,EXECHANDLER>* i)
 {
   myimage = i;
 }
-
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_mydynloader_image 
@@ -530,14 +589,12 @@ void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_launch_hidden_bp
   launch_hidden_bp = b;
 }
 
-
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
   void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_loader_hidden_bp
 (breakpoint_base_t<VA,IT>* b)
 {
   loader_hidden_bp = b;
 }
-
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_thread_creation_hidden_bp
@@ -546,7 +603,6 @@ void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_thread_creation_hidden_bp
   thread_creation_hidden_bp = b;
 }
 
-
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_thread_death_hidden_bp
 (breakpoint_base_t<VA,IT>* b) 
@@ -554,14 +610,12 @@ void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_thread_death_hidden_bp
   thread_death_hidden_bp = b;
 }
 
-
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_fork_hidden_bp
 (breakpoint_base_t<VA,IT>* b)
 {
   fork_hidden_bp = b;
 }
-
 
 //! PUBLIC: get_pid
 /*!
@@ -594,7 +648,6 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_pid ( bool context_sensitive )
   return retpid;
 }
 
-
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 int
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_cur_thread_ctx ()
@@ -607,7 +660,6 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_cur_thread_ctx ()
 
   return rc;
 }
-
 
 //! PUBIC: process_base_t::make_context:
 /*!
@@ -638,7 +690,6 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::make_context ( const int key )
   return rc;
 }
 
-
 //! PUBIC: process_base_t::get_lwp_state
 /*!
     set the lwp state of the current focus thread
@@ -660,7 +711,6 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_lwp_state (bool use_cxt)
   return rstate;
 }
 
-
 //! PUBIC: process_base_t::set_lwp_state
 /*!
     set the lwp state of the current focus thread
@@ -678,10 +728,16 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_lwp_state
       //std::cout << "this is from " << (int) thrlist[lwpid]->get_state() << " to " << (int) s << std::endl;
       if (!thrlist[lwpid]->check_transition(s)) 
         {
+#if 0
+          //
+          // many illegal transitions will be because we
+          // process the head event in the waitpid queue...
+          //
           self_trace_t::trace ( true,
             "process base",0,
               "illegal transition of thread state for %d from %d to %d",
               lwpid, (int) thrlist[lwpid]->get_state(), (int)s);
+#endif
         }
       thrlist[lwpid]->set_state(s);
     }
@@ -693,7 +749,6 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_lwp_state
 
   return rc;
 }
-
 
 //! PUBLIC : check_and_undo_context
 /*!
@@ -721,7 +776,6 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::check_and_undo_context ( const int key 
     }
   return rc;
 }
-
 
 //! PUBLIC: process_base_t
 /*!
@@ -761,7 +815,6 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_gprset
 
   return NULL;
 }
-
 
 //! PROTECTED: process_base_t
 /*!
@@ -807,7 +860,7 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_fprset ( bool context_sensitive )
 //
 ///////////////////////////////////////////////////////////////////
 
-//! PROTECTED: process_base_t
+//! PROTECTED: protected_init 
 /*!
     protected_init: This should really be something that should
     be handled by this base layer. But we don't want
@@ -954,6 +1007,5 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::protected_init
       abort();
     }
 }
-
 #endif // SDBG_BASE_MACH_IMPL_HXX
 

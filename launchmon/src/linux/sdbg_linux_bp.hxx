@@ -78,7 +78,7 @@ public:
 
   virtual ~linux_breakpoint_t() { }
 
-  virtual T_VA& get_where_pc_would_be()
+  virtual T_VA const & get_where_pc_would_be() 
     {
       where_pc_would_be 
         = get_use_indirection()

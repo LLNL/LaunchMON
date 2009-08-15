@@ -197,6 +197,9 @@ public:
   virtual tracer_error_e tracer_attach  
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt, pid_t newtid )
     throw (linux_tracer_exception_t);
+  
+  virtual tracer_error_e status
+    (  process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt );
 
   virtual tracer_error_e tracer_trace_me   ()
     throw (linux_tracer_exception_t);   

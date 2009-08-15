@@ -59,82 +59,66 @@
 
 #include "sdbg_base_launchmon.hxx"
 
-
 ////////////////////////////////////////////////////////////////////
 //
-// PROTECTED METHODS (class launchmon_base_t<>)
+// PRIVATE METHODS (class launchmon_base_t<>)
 //
 ////////////////////////////////////////////////////////////////////
+//!
+/*!  launchmon_base_t<> constructor
+      
+    
+*/
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-bool
-launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::request_detach
-(process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, pcont_req_reason reason)
+launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::launchmon_base_t (
+                const launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> &l) 
 {
-  if (p.get_please_detach() || p.get_please_kill())
-    {
-      //
-      // either request has already been registered
-      //
-      return false;
-    }
- 
-  for ( p.thr_iter = p.get_thrlist().begin();
-        p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
-    {
-      int status;
-      pid_t thrId;
-      p.make_context ( p.thr_iter->first );
-      get_tracer()->tracer_stop(p, true);
-      // Back-to-back signals can be lost
-      // Thus, Grace period below
-      usleep (GracePeriodBNSignals);
-      p.check_and_undo_context ( p.thr_iter->first );
-    }
-
-  p.set_please_detach ( true );
-  p.set_reason (reason);
-
-  return true;
+  tracer          = l.tracer;
+  ttracer         = l.ttracer;
+  resid           = l.resid;
+  pcount          = l.pcount;
+  toollauncherpid = l.toollauncherpid;
+  FE_sockfd       = l.FE_sockfd;
+  API_mode        = l.API_mode;
+  last_seen       = l.last_seen;
+  warm_period     = l.warm_period;
+  //
+  // This should never be called
+  //
 }
 
+//!
+/*!  launchmon_base_t<> operator= 
+      
+    
+*/
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-bool
-launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::request_kill
-(process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, pcont_req_reason reason)
+launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> &
+launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::operator=(
+                const launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> &rhs ) 
 {
-  if (p.get_please_detach() || p.get_please_kill())
-    {
-      //
-      // either request has already been registered
-      //
-      return false;
-    }
+  tracer          = rhs.tracer;
+  ttracer         = rhs.ttracer;
+  resid           = rhs.resid;
+  pcount          = rhs.pcount;
+  toollauncherpid = rhs.toollauncherpid;
+  FE_sockfd       = rhs.FE_sockfd;
+  API_mode        = rhs.API_mode;
+  last_seen       = rhs.last_seen;
+  warm_period     = rhs.iwarm_period;
+  //
+  // This should actually never be called
+  //
 
-  for ( p.thr_iter = p.get_thrlist().begin();
-        p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
-    {
-      int status;
-      pid_t thrId;
-      p.make_context ( p.thr_iter->first );
-      get_tracer()->tracer_stop(p, true);
-      // Back-to-back signals can be lost
-      // Thus, Grace period below
-      usleep (GracePeriodBNSignals);
-      p.check_and_undo_context ( p.thr_iter->first );
-    }
-
-  p.set_please_kill ( true );
-  p.set_reason (reason);
-
-  return true;
+  return *this;
 }
+
 
 ////////////////////////////////////////////////////////////////////
 //
 // PUBLIC INTERFACES (class launchmon_base_t<>)
 //
 ////////////////////////////////////////////////////////////////////
-
 //!
 /*!  launchmon_base_t<> constructor
       
@@ -157,33 +141,6 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::launchmon_base_t ()
     warm_period = (double) atoi (warm_interval);
 }
 
-
-//!
-/*!  launchmon_base_t<> constructor
-      
-    
-*/
-template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::launchmon_base_t (
-                const launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>& l ) 
-{
-  tracer          = l.tracer;
-  ttracer         = l.ttracer;
-  resid           = l.resid;
-  pcount          = l.pcount;
-  toollauncherpid = l.toollauncherpid;
-  FE_sockfd       = l.FE_sockfd;
-  API_mode        = l.API_mode;
-  last_seen       = l.last_seen;
-  warm_period     = l.warm_period;
-
-  /*
-   * Warning: proctable_copy cannot be copied!
-   * Probably not a good idea to copy this object...
-   */
-}
-
-
 //!
 /*!  launchmon_base_t<> destructor 
       
@@ -201,6 +158,81 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::~launchmon_base_t ()
   proctable_copy.clear();
 }
 
+//!
+/*!  launchmon_base_t<> request_detach
+     stops all threads and mark the detach flag to the process 
+    
+*/
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+bool
+launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::request_detach
+(process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, pcont_req_reason reason)
+{
+  if (p.get_please_detach() || p.get_please_kill())
+    {
+      //
+      // If either request has already been registered, we
+      // must not put additional request. Redundant requests
+      // would confuse actual detach/kill command handler.
+      //
+      return false;
+    }
+ 
+  for ( p.thr_iter = p.get_thrlist().begin();
+        p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
+    {
+      p.make_context ( p.thr_iter->first );
+      if (get_tracer()->status(p, true) == SDBG_TRACE_RUNNING)
+        {
+          get_tracer()->tracer_stop(p, true);
+          usleep (GracePeriodBNSignals);
+        }
+      p.check_and_undo_context ( p.thr_iter->first );
+    }
+
+  p.set_please_detach ( true );
+  p.set_reason (reason);
+
+  return true;
+}
+
+//!
+/*!  launchmon_base_t<> request_kill
+     stops all threads and mark the kill flag to the process 
+    
+*/
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+bool
+launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::request_kill
+(process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, pcont_req_reason reason)
+{
+  if (p.get_please_detach() || p.get_please_kill())
+    {
+      //
+      // If either request has already been registered, we
+      // must not put additional request. Redundant requests
+      // would confuse actual detach/kill command handler.
+      //
+      return false;
+    }
+
+  for ( p.thr_iter = p.get_thrlist().begin();
+        p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
+    {
+      p.make_context ( p.thr_iter->first );
+      if (get_tracer()->status(p, true) == SDBG_TRACE_RUNNING)
+        {
+          get_tracer()->tracer_stop(p, true);
+          usleep (GracePeriodBNSignals);
+        }
+      p.check_and_undo_context ( p.thr_iter->first );
+    }
+
+  p.set_please_kill ( true );
+  p.set_reason (reason);
+
+  return true;
+}
 
 //!
 /*!  launchmon_base_t<> accessors
@@ -210,36 +242,32 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::~launchmon_base_t ()
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 void 
 launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_tracer ( 
-                tracer_base_t<SDBG_DEFAULT_TEMPLPARAM>* t ) 
+                tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *t ) 
 {
   tracer = t;  
 }
 
-
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_base_t<SDBG_DEFAULT_TEMPLPARAM>* 
+tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> * 
 launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_tracer ()
 {
   return tracer;
 }
 
-
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 void 
 launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_ttracer ( 
-                thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM>* t )
+                thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *t )
 {
   ttracer = t;
 }
 
-
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM>* 
+thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> * 
 launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_ttracer()
 {
   return ttracer;
 }
-
 
 //! decipher_an_event:
 /*!
@@ -248,8 +276,8 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_ttracer()
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 launchmon_event_e 
-launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::decipher_an_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, debug_event_t& event)
+launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::decipher_an_event 
+(process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, const debug_event_t &event)
 {
 
   launchmon_event_e return_ev = LM_INVALID;
@@ -277,69 +305,82 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::decipher_an_event (
       {
         self_trace_t::trace ( LEVELCHK(level3), 
 	  MODULENAME, 0,
-	  "converting [pc=0x%x] of the stopped thread[tid=%d] into an debug event.",
+	  "converting [pc=0x%x] of tid=%d into an debug event.",
 	  pc, p.get_cur_thread_ctx());
       }
 
       if ( p.get_never_trapped() )
         {
+          //
+          // This is the first trap ... easy
+          //
 	  return_ev = (p.get_myopts()->get_my_opt()->attach )
 	    ? LM_STOP_AT_FIRST_ATTACH
 	    : LM_STOP_AT_FIRST_EXEC;
         }
-      else if ( p.get_please_detach() 
-	&& ( p.get_pid(true) == p.get_pid(false)))
+      else if ( p.get_please_detach()) 
 	{
           //
           // This method gives priority to the detach request, thereby
-          // eliminate race conditions that can occur: process/thread are
-          // stopped because of an other debug event such as BP event while
-          // detach request was also made
+          // eliminating race conditions that can occur: e.g., a BP stop event 
+          // of a process/thread, (not a detach-stop event) after a detach request 
+          // is considered to be LM_STOP_FOR_DETACH. It doesn't matter 
+          // why p/t stopped once a detach request is made; the detach handler
+          // should be invoked.  
           //
 	  return_ev = LM_STOP_FOR_DETACH;
 	}
-      else if ( p.get_please_kill ()
-	&& ( p.get_pid(true) == p.get_pid(false)))
+      else if ( p.get_please_kill ())
 	{
           //
-          // This method gives priority to the kill request, thereby
-          // eliminate race conditions that can occur: process/thread are
-          // stopped because of an other debug event such as BP event while
-          // kill request was also made
+          // This method gives priority to the detach request, thereby
+          // eliminating race conditions that can occur: e.g., a BP stop event 
+          // of a process/thread, (not a detach-stop event) after a kill request 
+          // is considered to be LM_STOP_FOR_KILl. It doesn't matter 
+          // why p/t stopped once a kill request is made; the kill handler
+          // should be invoked.  
           //
 	  return_ev = LM_STOP_FOR_KILL;
 	}
       else if ( p.get_launch_hidden_bp() 
-	&& ( p.get_launch_hidden_bp()->is_pc_part_of_bp_op(pc)))
+	        && ( p.get_launch_hidden_bp()->is_pc_part_of_bp_op(pc)))
 	{
 	  return_ev = LM_STOP_AT_LAUNCH_BP;
 	}
-      else if ( p.get_loader_hidden_bp() &&
-	( p.get_loader_hidden_bp()->is_pc_part_of_bp_op(pc)))
+      else if ( p.get_loader_hidden_bp() 
+                && ( p.get_loader_hidden_bp()->is_pc_part_of_bp_op(pc)))
 	{
 	  return_ev = LM_STOP_AT_LOADER_BP;
 	}
-      else if ( p.get_thread_creation_hidden_bp() && 
-	( p.get_thread_creation_hidden_bp()->is_pc_part_of_bp_op(pc)))
+      else if ( p.get_thread_creation_hidden_bp() 
+                && ( p.get_thread_creation_hidden_bp()->is_pc_part_of_bp_op(pc)))
 	{
 	  return_ev = LM_STOP_AT_THREAD_CREATION;  
 	}
-      else if ( p.get_thread_death_hidden_bp() && 
-	( p.get_thread_death_hidden_bp()->is_pc_part_of_bp_op(pc)))
+      else if ( p.get_thread_death_hidden_bp() 
+                && ( p.get_thread_death_hidden_bp()->is_pc_part_of_bp_op(pc)))
 	{
 	  return_ev = LM_STOP_AT_THREAD_DEATH;
 	}
-      else if ( p.get_fork_hidden_bp() &&
-	( p.get_fork_hidden_bp()->is_pc_part_of_bp_op(pc)))
+      else if ( p.get_fork_hidden_bp() 
+                && ( p.get_fork_hidden_bp()->is_pc_part_of_bp_op(pc)))
 	{
 	  return_ev = LM_STOP_AT_FORK_BP;
 	}
       else if ( event.get_signum () != SIGTRAP )
         {
+          //
+          // Other event are signals; we resend a signal unless it's TRAP
+          //
           return_ev = LM_RELAY_SIGNAL;
         }
       else  
-	return_ev = LM_STOP_NOT_INTERESTED;
+        {
+          //
+          // P/T stopped because of an event that we don't care about much
+          //
+	  return_ev = LM_STOP_NOT_INTERESTED;
+        }
     }
     break;
 
@@ -375,8 +416,9 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::decipher_an_event (
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 launchmon_rc_e
 launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::invoke_handler ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
-	        launchmon_event_e ev, int data)
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, 
+	        const launchmon_event_e ev, 
+	        const int data)
 {
   launchmon_rc_e rc = LAUNCHMON_FAILED;
 
@@ -449,7 +491,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::invoke_handler (
   // handles a signal-relay event.
   //
   case LM_RELAY_SIGNAL:
-    rc = handle_relay_signal_event (p, data );
+    rc = handle_relay_signal_event (p, data);
     break;
 
   //
@@ -478,6 +520,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::invoke_handler (
   // Oh well...
   //
   default:
+    rc = LAUNCHMON_FAILED;
     break;
   }
 
@@ -518,10 +561,10 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::say_fetofe_msg (
 
 //! launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_proctab_msg 
 /*!
-  sends an lmonp_t packet with {msgclass=lmonp_fetofe: 
-  type.fetofe_type=lmonp_febe_proctab:
-  lmon_payload_length=size of the proctable}
-  to the FE API stub.  
+    sends an lmonp_t packet with {msgclass=lmonp_fetofe: 
+    type.fetofe_type=lmonp_febe_proctab:
+    lmon_payload_length=size of the proctable}
+    to the FE API stub.  
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 launchmon_rc_e
@@ -538,7 +581,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_proctab_msg (
     {    
       self_trace_t::trace ( LEVELCHK(level3), 
 	     MODULENAME, 0, 
-	     "standalone launchmon does not ship process table via LMONP messages");  
+	     "standalone mode does not ship proctab via LMONP messages");  
       return LAUNCHMON_FAILED;
     }
   
@@ -553,7 +596,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_proctab_msg (
   int msgsize;
 
   //
-  // establishing a map and an ordered vector to pack a string table
+  // Establishing a map and an ordered vector to pack a string table
   //
   for ( pos = proctable_copy.begin(); pos != proctable_copy.end(); ++pos )
     {
@@ -708,7 +751,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_resourcehandle_msg (
     {    
       self_trace_t::trace ( LEVELCHK(level3), 
 	     MODULENAME, 0, 
-	     "standalone launchmon does not ship resource handle via LMONP messages");
+	     "standalone mode does not ship resource handle via LMONP");
       return LAUNCHMON_FAILED;
     }
 
@@ -747,7 +790,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_resourcehandle_msg (
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 launchmon_rc_e 
 launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p )
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p )
 {  
   try
     {
@@ -809,7 +852,15 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
 		// launchmon engine will keep the RM_daemon process running, and 
                 // won't be able to do A.1.3.
 		//
-                request_detach(p, FE_disconnected);
+	        // This attempts to stop all of the threads
+                // and mark "detach." If a kill/detach request has been already registered, 
+                // don't bother
+                self_trace_t::trace ( LEVELCHK(level1),
+                  MODULENAME,
+                  0,
+                  "The channel with front-end disconnected. Starting cleanup...");
+
+                request_detach(p, FE_disconnected); 
                 goto ret_ok;
               } // if ( numbytes == -1)
 	    else if ( (numbytes != sizeof (msg))
@@ -832,16 +883,37 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
               {
 	      case lmonp_detach:
                 {
+	          // This attempts to stop all of the threads
+                  // and mark "kill/detach." If a kill/detach request has been already registered, 
+                  // don't bother
+                  self_trace_t::trace ( LEVELCHK(level1),
+                    MODULENAME,
+                    0,
+                    "front-end requested detach...");
                   request_detach(p, FE_requested_detach);
                   break;
 		}
 	      case lmonp_kill:
 	        {
+	          // This attempts to stop all of the threads
+                  // and mark "kill" If a kill/detach request has been already registered, 
+                  // don't bother
+                  self_trace_t::trace ( LEVELCHK(level1),
+                    MODULENAME,
+                    0,
+                    "front-end requested kill...");
                   request_kill(p, FE_requested_kill); 
                   break;
                 }  
               case lmonp_shutdownbe:
                 {
+	          // This attempts to stop all of the threads
+                  // and mark "detach" If a kill/detach request has been already registered, 
+                  // don't bother
+                  self_trace_t::trace ( LEVELCHK(level1),
+                    MODULENAME,
+                    0,
+                    "front-end requested deamon shutdown...");
                   request_kill(p, FE_requested_shutdown_dmon);
                   break;
 		}
@@ -849,7 +921,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
 	       {
                   self_trace_t::trace ( LEVELCHK(level1),
                     MODULENAME, 1,
-                    "read_lmonp_msgheader pulled out a ill-formed message");
+                    "ill-formed msg");
 
 		 goto ret_fail; 
 	       }
@@ -858,8 +930,14 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
         } // if (pollret 
 
 ret_ok:
+      //
+      // this should cause the event loop to continue
+      //
       return LAUNCHMON_OK;
 ret_fail:
+      //
+      // this should cause the event loop to exit
+      //
       return LAUNCHMON_FAILED;	
     }
   catch ( symtab_exception_t e ) 
@@ -898,10 +976,17 @@ ret_fail:
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 launchmon_rc_e
 launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_daemon_exit_event
-                 ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p )
+                 ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p )
 {
   try
     {
+      // This attempts to stop all of the threads
+      // and mark "detach" If a kill/detach request has been already registered, 
+      // don't bother
+      self_trace_t::trace ( LEVELCHK(level1),
+        MODULENAME,
+        0,
+        "daemon exited...");
       request_detach(p, RM_BE_daemon_exited);
       set_last_seen (gettimeofdayD ());
       return LAUNCHMON_OK;

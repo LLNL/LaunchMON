@@ -49,6 +49,41 @@
 
 ////////////////////////////////////////////////////////////////////
 //
+// PRIVATE copy constructor and operator= (class driver_base_t<>)
+//
+////////////////////////////////////////////////////////////////////
+
+//!
+/*!  driver_base_t<> constructors
+
+*/
+template <SDBG_DEFAULT_TEMPLATE_WIDTH> 
+driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::driver_base_t
+(const driver_base_t &d) : evman(NULL), lmon(NULL)
+{
+  // this copy construct doesn't copy evman and lmon
+  MODULENAME = d.MODULENAME;
+}
+
+//!
+/*!  driver_base_t<> operator=
+
+*/
+template <SDBG_DEFAULT_TEMPLATE_WIDTH> 
+driver_base_t<SDBG_DEFAULT_TEMPLPARAM> & 
+driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::operator=
+( const driver_base_t &rhs )
+{
+  evman(NULL);
+  lmon(NULL);
+  MODULENAME = rhs.MODULENAME;
+
+  return *this;
+}
+
+
+////////////////////////////////////////////////////////////////////
+//
 // PUBLIC INTERFACES (class driver_base_t<>)
 //
 ////////////////////////////////////////////////////////////////////
@@ -67,26 +102,30 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::driver_base_t()
   MODULENAME = self_trace_t::driver_module_trace.module_name;
 }
 
+//!
+/*!  driver_base_t<> dtor
 
-template <SDBG_DEFAULT_TEMPLATE_WIDTH> 
-driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::driver_base_t
-(const driver_base_t& d) : evman(NULL), lmon(NULL)
-{
-  // this copy construct doesn't copy evman and lmon
-  MODULENAME = d.MODULENAME;
-}
-
-
+*/
 template <SDBG_DEFAULT_TEMPLATE_WIDTH> 
 driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::~driver_base_t()
 {
   if (evman) 
-    delete evman;
+    {
+      //
+      // This must be the only place to delete evman 
+      //
+      delete evman;
+    }
   
   if (lmon) 
-    delete lmon;  
+    {
+      //
+      // This must be the only place to delete lmon
+      // and lmon must have virtual dtor.
+      //
+      delete lmon;
+    }
 }
-
 
 //!
 /*!  driver_base_t<> accessors
@@ -94,14 +133,14 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::~driver_base_t()
     
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH> 
-event_manager_t<SDBG_DEFAULT_TEMPLPARAM>* 
+event_manager_t<SDBG_DEFAULT_TEMPLPARAM> * 
 driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_evman()
 { 
   return evman; 
 }
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH> 
-launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>* 
+launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> * 
 driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_lmon()
 { 
   return lmon;  
@@ -110,7 +149,7 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_lmon()
 template <SDBG_DEFAULT_TEMPLATE_WIDTH> 
 void 
 driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_evman 
-(event_manager_t<SDBG_DEFAULT_TEMPLPARAM>* em) 
+(event_manager_t<SDBG_DEFAULT_TEMPLPARAM> *em) 
 { 
   evman = em; 
 } 
@@ -118,11 +157,10 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_evman
 template <SDBG_DEFAULT_TEMPLATE_WIDTH> 
 void 
 driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_lmon 
-(launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>* lm) 
+(launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> *lm) 
 { 
   lmon = lm; 
 }
-
 
 //! drive_engine:
 /*! driver_base_t<> drive_engine
@@ -235,8 +273,11 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive_engine(opts_args_t *opt)
 	  //        -----------------------------         //
 	}
 
+      //
+      // this must be the only place to delete launcher_proc
+      // launcher_proc must have a virtual dtor
+      //
       delete launcher_proc;
-      delete lmon;
 
       return SDBG_DRIVER_OK;
     }
@@ -264,17 +305,20 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive_engine(opts_args_t *opt)
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH> 
 driver_error_e 
-driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive ( int argc, char **argv )
+driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive 
+( int argc, char **argv )
 {
  
   opts_args_t *opt = new opts_args_t();
+  driver_error_e rc;
 
   //
   // processing the commandline options and arguments
   //
   opt->process_args(&argc, &argv);
-
-  return (drive_engine(opt));     
+  rc = drive_engine(opt);
+  delete opt;
+  return (rc);
 }
 
 
@@ -284,7 +328,8 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive ( int argc, char **argv )
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH> 
 driver_error_e 
-driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive ( opts_args_t *opt )
+driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive 
+( opts_args_t *opt )
 {
   return (drive_engine(opt));
 }

@@ -69,12 +69,7 @@ class linux_launchmon_t : public launchmon_base_t<SDBG_LINUX_DFLT_INSTANTIATION>
 
 public:
   linux_launchmon_t ( );
-
-  linux_launchmon_t (const linux_launchmon_t& l );
-
-  virtual 
-  ~linux_launchmon_t ( );
-
+  virtual ~linux_launchmon_t ( );
 
   
   ////////////////////////////////////////////////////////////
@@ -155,6 +150,8 @@ private:
   //  Private Methods:
   //
   //
+  linux_launchmon_t (const linux_launchmon_t& l );
+
   bool disable_all_BPs (
                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p, bool );
 

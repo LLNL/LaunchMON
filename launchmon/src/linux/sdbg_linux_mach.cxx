@@ -118,8 +118,8 @@ linux_x86_gpr_set_t::linux_x86_gpr_set_t()
 /*!
     get_pc
 */
-T_VA 
-linux_x86_gpr_set_t::get_pc()
+const T_VA 
+linux_x86_gpr_set_t::get_pc() const
 {
   T_GRS gpr = get_native_rs();
 
@@ -135,8 +135,8 @@ linux_x86_gpr_set_t::get_pc()
 /*!
     get_memloc_for_ret_addr
 */
-T_VA 
-linux_x86_gpr_set_t::get_ret_addr()
+const T_VA 
+linux_x86_gpr_set_t::get_ret_addr() const
 {
   //
   // We need to keep track of the "return address"
@@ -160,8 +160,8 @@ linux_x86_gpr_set_t::get_ret_addr()
 /*!
     get_memloc_for_ret_addr
 */
-T_VA 
-linux_x86_gpr_set_t::get_memloc_for_ret_addr()
+const T_VA 
+linux_x86_gpr_set_t::get_memloc_for_ret_addr() const
 {
   //
   // We need to keep track of the "return address"
@@ -195,9 +195,9 @@ linux_x86_gpr_set_t::set_pc(T_VA addr)
 {
 
 #ifdef X86_ARCHITECTURE
-  get_native_rs().eip = addr;  
+  rs.eip = addr;  
 #elif X86_64_ARCHITECTURE
-  get_native_rs().rip = addr;
+  rs.rip = addr;
 #endif
 }
 
@@ -631,8 +631,8 @@ linux_ppc_gpr_set_t::linux_ppc_gpr_set_t ()
 /*!
     get_pc
 */
-T_VA
-linux_ppc_gpr_set_t::get_pc ()
+const T_VA
+linux_ppc_gpr_set_t::get_pc () const
 {
   //
   // T_GRP for PowerPC is pt_reg in which nip is defined.
@@ -647,8 +647,8 @@ linux_ppc_gpr_set_t::get_pc ()
 /*!
     get_memloc_for_ret_addr
 */
-T_VA
-linux_ppc_gpr_set_t::get_ret_addr()
+const T_VA
+linux_ppc_gpr_set_t::get_ret_addr() const
 {
   //
   // We need to keep track of the "return address"
@@ -674,8 +674,8 @@ linux_ppc_gpr_set_t::get_ret_addr()
 /*!
     get_memloc_for_ret_addr
 */
-T_VA
-linux_ppc_gpr_set_t::get_memloc_for_ret_addr ()
+const T_VA
+linux_ppc_gpr_set_t::get_memloc_for_ret_addr () const
 {
   //
   // We need to keep track of the "return address"
@@ -701,7 +701,7 @@ linux_ppc_gpr_set_t::get_memloc_for_ret_addr ()
 void
 linux_ppc_gpr_set_t::set_pc (T_VA addr)
 {
-  get_native_rs().nip = addr;
+  rs.nip = addr;
 }
  
  

@@ -79,7 +79,7 @@ class machine_exception_t : public exception_base_t
 public:  
 
   machine_exception_t ()                          { }
-  machine_exception_t ( const char* m )
+  explicit machine_exception_t ( const char* m )
                       { set_message (m);
                         set_type ( std::string ( "SDBG_MACHINE_ERROR" ) );
                         set_fn ( std::string (__FILE__) );
@@ -120,18 +120,21 @@ public:
   //
   register_set_base_t ();
   explicit register_set_base_t (const int offset);
-  register_set_base_t(const register_set_base_t<NATIVE_RS,VA,WT>& r);  
+  register_set_base_t(const register_set_base_t<NATIVE_RS,VA,WT> &r);  
   virtual ~register_set_base_t ();
+  register_set_base_t & operator=(
+    const register_set_base_t &r);
 
   //
   // accessors 
   //
   int get_offset_in_user ( ) const           { return offset_in_user; }
   WT * get_rs_ptr ()                         { return rs_ptr; }
-  NATIVE_RS& get_native_rs()                 { return rs; }  
-  virtual VA get_pc ()                       { return 0; }
-  virtual VA get_ret_addr()                  { return 0; }
-  virtual VA get_memloc_for_ret_addr()       { return 0; }
+  NATIVE_RS const & get_native_rs() const    { return rs; }  
+  virtual VA const get_pc () const           { return 0; }
+  virtual VA const get_ret_addr() const      { return 0; }
+  virtual VA const get_memloc_for_ret_addr() const     
+			                     { return 0; }
   unsigned int get_writable_mask()           { return writable_mask; }
   void set_user_offset (int offset)          { offset_in_user = offset; }
   void set_ptr_to_regset ()                  { rs_ptr = (WT*) &rs; }
@@ -142,7 +145,7 @@ public:
   void write_word_to_ptr (WT w)              { (*rs_ptr) = w; }
   unsigned int size_in_word ();
 
-private:
+protected:
   // "rs" retains register set object in its native data structure. 
   // "offset_in_user" contains info about what offset 
   // in "USER" area does regset reside.
@@ -151,6 +154,8 @@ private:
   // Some registers are not simply writtable. 
   // Need a mask(writable_mask).
   NATIVE_RS rs;
+
+private:
   int offset_in_user;
   WT *rs_ptr;
   unsigned int writable_mask; 
@@ -181,9 +186,9 @@ public:
   void set_ev (const enum debug_event_e e) { ev = e; }
   void set_signum (const int s)            { u.signum = s; }
   void set_exitcode (const int ec)         { u.exitcode = ec; }
-  debug_event_e get_ev()                   { return ev; }
-  int get_signum()                         { return u.signum; }
-  int get_exitcode()                       { return u.exitcode; }
+  const debug_event_e get_ev() const       { return ev; }
+  const int get_signum() const             { return u.signum; }
+  const int get_exitcode() const           { return u.exitcode; }
 
 private:
   debug_event_e ev;
@@ -257,16 +262,20 @@ public:
 
   bool is_master_thread () { return get_master_thread(); }
   register_set_base_t<GRS,VA,WT> * get_gprset();
-  void set_gprset(register_set_base_t<GRS,VA,WT>* g);
+  void set_gprset(register_set_base_t<GRS,VA,WT> *g);
   register_set_base_t<FRS,VA,WT> * get_fprset();
-  void set_fprset(register_set_base_t<FRS,VA,WT>* f);
+  void set_fprset(register_set_base_t<FRS,VA,WT> *f);
 
 private:
+
+  thread_base_t(const thread_base_t &t);
+  thread_base_t & operator=(
+                  const thread_base_t &rhs); 
 
   bool master_thread; // indicator for the master thread
   pid_t master_pid;   // process id of the containing proc
   NT thread_info;     // parameterized thread info
-  lwp_state_e state;
+  lwp_state_e state;  // thread's modeled state
   register_set_base_t<GRS,VA,WT> *gprset; 
   register_set_base_t<FRS,VA,WT> *fprset; 
 };
@@ -382,6 +391,9 @@ protected:
   bool protected_init ( const std::string& mi );
 
 private:
+  process_base_t(const process_base_t &p);
+  process_base_t & operator=(
+                 const process_base_t &p); 
 
   // Has the process ever initally exec'ed and stopped ?
   bool never_trapped;

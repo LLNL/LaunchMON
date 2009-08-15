@@ -199,8 +199,8 @@ event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::~event_manager_t ()
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 bool 
 event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::poll_processes (
-		 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-                 launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>& lm ) 
+		 process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
+                 launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> &lm ) 
 {
   using namespace std;
 
@@ -243,6 +243,10 @@ event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::poll_processes (
                   //
                   rc = lm.handle_daemon_exit_event (p);
                 }
+              //
+              // in this case rpid won't be part of the thread list 
+              // so that the following loop body won't be executed.
+              //
             }
  
 	  map<int, thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*, ltstr>& tl 

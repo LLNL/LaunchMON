@@ -1080,15 +1080,15 @@ linux_launchmon_t::handle_launch_bp_event (
                   {
                     // operates on a slave thread
                     p.make_context ( p.thr_iter->first );
-                    // calls detach twice in case there are
-                    // multiple stop event queued up into waitpid
                     get_tracer()->tracer_detach ( p, true );
-                    usleep (GracePeriodBNSignals);
-                    get_tracer()->tracer_detach ( p, true );
-                    usleep (GracePeriodBNSignals);
                     p.check_and_undo_context ( p.thr_iter->first );
                   }
               }
+
+            self_trace_t::trace ( true,
+              MODULENAME,
+              0,
+              "detached from all threads of the RM process...");
 
             //
             // unsetting "MPIR_being_debugged."
@@ -1105,12 +1105,12 @@ linux_launchmon_t::handle_launch_bp_event (
             //
             // detach from the main thread
             //
-            // calls detach twice in case there are
-            // multiple stop event queued up into waitpid
             get_tracer()->tracer_detach ( p, false );
-            usleep ( GracePeriodBNSignals );
-            get_tracer()->tracer_detach ( p, false );
-            usleep ( GracePeriodBNSignals );
+
+            self_trace_t::trace ( true,
+              MODULENAME,
+              0,
+              "detached from all the RM process...");
 
             say_fetofe_msg(lmonp_stop_at_launch_bp_abort);
 
@@ -1188,15 +1188,15 @@ linux_launchmon_t::handle_detach_cmd_event
             {
               // operates on a slave thread
               p.make_context ( p.thr_iter->first );
-              // calls detach twice in case there are
-              // multiple stop event queued up into waitpid
               get_tracer()->tracer_detach ( p, true ); 
-	      usleep (GracePeriodBNSignals);
-              get_tracer()->tracer_detach ( p, true ); 
-	      usleep (GracePeriodBNSignals);
               p.check_and_undo_context ( p.thr_iter->first );
 	    }
 	}
+
+       self_trace_t::trace (  LEVELCHK(level1),
+         MODULENAME,
+         0,
+         "detached from all RM threads...");
 
       //
       // unsetting "MPIR_being_debugged."
@@ -1216,9 +1216,11 @@ linux_launchmon_t::handle_detach_cmd_event
       // calls detach twice in case there are
       // multiple stop event queued up into waitpid
       get_tracer()->tracer_detach ( p, false );
-      usleep ( GracePeriodBNSignals );
-      get_tracer()->tracer_detach ( p, false );
-      usleep ( GracePeriodBNSignals );
+
+       self_trace_t::trace ( LEVELCHK(level1),
+         MODULENAME,
+         0,
+         "detached from the RM process ...");
 
       char *bnbuf = strdup(p.get_myopts()->get_my_opt()->debugtarget.c_str());
       std::string dt = basename(bnbuf);
@@ -1256,7 +1258,6 @@ linux_launchmon_t::handle_detach_cmd_event
           say_fetofe_msg ( lmonp_detach_done );	
           break;
         case FE_disconnected:
-
 	  usleep (GracePeriodFEDisconnection);
           //
           // Please hide this "srun" specific code
@@ -1270,6 +1271,9 @@ linux_launchmon_t::handle_detach_cmd_event
               kill ( get_toollauncherpid(), SIGINT);
               usleep (GracePeriodBNSignals);
             }
+          break;
+        case ENGINE_dying_wsignal:
+          say_fetofe_msg (lmonp_stop_tracing);
           break;
         case reserved_for_rent:
         case FE_requested_kill:
@@ -1346,15 +1350,15 @@ linux_launchmon_t::handle_kill_cmd_event
             {
               // operates on a slave thread
               p.make_context ( p.thr_iter->first );
-              if (p.get_lwp_state (true) == LMON_RM_STOPPED)
-                {
-                  get_tracer()->tracer_detach( p, true );
-	          usleep (GracePeriodBNSignals);
-		}
+              get_tracer()->tracer_detach( p, true );
               p.check_and_undo_context ( p.thr_iter->first );
             }
         }
 
+       self_trace_t::trace ( LEVELCHK(level1),
+         MODULENAME,
+         0,
+         "detached from all RM threads...");
       //
       // unsetting MPIR_being_debugged.
       //
@@ -1371,11 +1375,14 @@ linux_launchmon_t::handle_kill_cmd_event
       //
       // detach from all the main thread
       //
-      get_tracer()->tracer_detach (p, false);
+      get_tracer()->tracer_detach ( p, false );
 
-      std::string dt
-        = basename ( strdup (p.get_myopts()->get_my_opt()->debugtarget.c_str()));
-      //std::cout << dt << std::endl;
+       self_trace_t::trace ( LEVELCHK(level1),
+         MODULENAME,
+         0,
+         "detached from the RM process ...");
+
+      std::string dt = basename ( strdup (p.get_myopts()->get_my_opt()->debugtarget.c_str()));
 
       //
       // Please hide this "srun" specific code
@@ -1422,10 +1429,11 @@ linux_launchmon_t::handle_kill_cmd_event
 	case FE_disconnected:
 	case FE_requested_shutdown_dmon:
 	case FE_requested_detach:
+        case ENGINE_dying_wsignal:
           {
 	    self_trace_t::trace ( LEVELCHK(level1), 
 			          MODULENAME,1,
-	    "RM_BE_daemon_exited should not kill the job!");
+	    "RM_BE_daemon_exited or its equivalents should not kill the job!");
           }
           break;
         case FE_requested_kill:
@@ -1453,6 +1461,7 @@ linux_launchmon_t::handle_kill_cmd_event
       // at this point. 
       //
       set_last_seen (gettimeofdayD ());
+
       return LAUNCHMON_STOP_TRACE;
     }
   catch ( symtab_exception_t e ) 

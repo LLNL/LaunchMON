@@ -179,9 +179,9 @@ public:
   virtual ~linux_x86_gpr_set_t () { }  
 
   virtual void set_pc  (T_VA addr);
-  virtual T_VA get_pc (); 
-  virtual T_VA get_ret_addr();
-  virtual T_VA get_memloc_for_ret_addr();
+  virtual T_VA const get_pc () const; 
+  virtual T_VA const get_ret_addr() const;
+  virtual T_VA const get_memloc_for_ret_addr() const;
 
 private:
   bool LEVELCHK(self_trace_verbosity level)
@@ -449,9 +449,9 @@ public:
   virtual ~linux_ppc_gpr_set_t () { }
  
   virtual void set_pc  (T_VA addr);
-  virtual T_VA get_pc ();
-  virtual T_VA get_ret_addr();
-  virtual T_VA get_memloc_for_ret_addr();
+  virtual T_VA const get_pc () const;
+  virtual T_VA const get_ret_addr() const;
+  virtual T_VA const get_memloc_for_ret_addr() const;
 
 private:
   bool LEVELCHK(self_trace_verbosity level)

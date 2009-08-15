@@ -88,6 +88,18 @@ extern "C" {
 #endif
 }
 
+#if HAVE_FSTREAM
+# include <fstream>
+#else
+# error fstream is required
+#endif
+
+#if HAVE_SSTREAM
+# include <sstream>
+#else
+# error sstream is required
+#endif
+
 #include "sdbg_linux_ptracer.hxx"
 
 
@@ -767,12 +779,6 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_detach (
 
   if ( (r = Pptrace (PTRACE_DETACH, tpid, 0, 0)) != 0 ) 
     {    
-      {
-        self_trace_t::trace ( true,
-        MODULENAME, 0,
-        "detach returned non-zero for %d, continue...",
-        tpid);
-      }
       errno = 0;
       return SDBG_TRACE_FAILED;
     }
@@ -835,6 +841,57 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_attach (
 } // linux_ptracer_t::tracer_attach
 
 
+//! PUBLIC: status
+/*!
+
+*/
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+tracer_error_e 
+linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::status ( 
+                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
+                 bool use_cxt)
+{
+  using namespace std;
+
+  stringstream sst;
+  string ss;
+  pid_t snapTid; 
+  string execName;
+  string tState;
+  string func = "[linux_ptracer_t::status]";
+  pid_t tpid = p.get_pid(use_cxt);
+
+  sst << "/proc/" << (int) tpid << "/stat";
+  sst >> ss;
+  if ( access(ss.c_str(), R_OK) < 0 )
+    {
+      //
+      // This means tpid is nonexistent.
+      //
+      return SDBG_TRACE_ESRCH_ERR;      
+    } 
+
+  ifstream fst(ss.c_str()); 
+  if (!fst)
+    {
+      return SDBG_TRACE_ESRCH_ERR;
+    }
+
+  fst >> snapTid; 
+  fst >> execName;
+  fst >> tState;
+
+  if (tState == string("T"))
+    {
+      return SDBG_TRACE_STOPPED;
+    }
+  
+  fst.close();
+
+  return SDBG_TRACE_RUNNING;
+}
+
+
 //! PUBLIC: tracer_trace_me
 /*!
   
@@ -874,6 +931,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::insert_breakpoint (
   throw (linux_tracer_exception_t)
 {
   IT blend;
+  IT origInst;
 
   if (bp.get_use_indirection()) 
     { 
@@ -883,16 +941,18 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::insert_breakpoint (
            // The upper layer could have filled the
            // indirect address to handle special cases.
            //
+           VA indAddr;
            tracer_read (p,
 		   bp.get_address_at(),
-		   &(bp.get_indirect_address_at()),
+                   &indAddr,
 		   sizeof(VA),
 		   use_cxt);
+           bp.set_indirect_address_at(indAddr);
          }
 
        tracer_read (p, 
                     bp.get_indirect_address_at(),
-                    &(bp.get_orig_instruction()),
+                    &origInst,
 	            sizeof(IT),
 		    use_cxt);
     }
@@ -900,11 +960,12 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::insert_breakpoint (
     {
       tracer_read (p, 
                    bp.get_address_at(),
-                   &(bp.get_orig_instruction()),
+                   &origInst,
 	           sizeof(IT),
                    use_cxt);
      }
 
+  bp.set_orig_instruction(origInst); 
   blend = bp.get_orig_instruction();
   blend &= bp.get_blend_mask();
   blend = blend | bp.get_trap_instruction();
@@ -946,6 +1007,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::pullout_breakpoint (
   throw (linux_tracer_exception_t)
 {
   using namespace std;
+  IT origInst;
 
   string e;
   string func = "[linux_ptracer_t::tracer_pullout_breakpoint]";
@@ -955,11 +1017,13 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::pullout_breakpoint (
       return SDBG_TRACE_OK;     
     }
 
+  origInst = bp.get_orig_instruction();
+
   if (bp.get_use_indirection())
     {
       tracer_write (p, 
 		    bp.get_indirect_address_at(),
-                    &(bp.get_orig_instruction()),
+                    &origInst,
                     sizeof(IT),
                     use_cxt);
     }
@@ -967,7 +1031,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::pullout_breakpoint (
     {
       tracer_write (p, 
 		    bp.get_address_at(),
-                    &(bp.get_orig_instruction()),
+		    &origInst,
                     sizeof(IT),
                     use_cxt);
     }

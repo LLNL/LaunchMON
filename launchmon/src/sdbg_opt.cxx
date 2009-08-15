@@ -347,6 +347,42 @@ opts_args_t::process_args ( int* argc, char*** argv )
 	}
     }
 
+  char *l = getenv("LMON_ENGINE_VERBOSE_LEVEL");
+  if (l) 
+    {
+      int il = atoi(l);
+      self_trace_verbosity verbo;
+
+      switch (il) 
+        {
+        case 0:
+          verbo = quiet;
+          break;
+        case 1:
+          verbo = level1;
+          break;
+        case 2:
+          verbo = level2;
+          break;
+        case 3:
+          verbo = level3;
+          break;
+        default:
+          verbo = quiet;
+          break;
+          
+        }
+
+      self_trace_t::launchmon_module_trace.verbosity_level = verbo;
+      self_trace_t::tracer_module_trace.verbosity_level = verbo;
+      self_trace_t::symtab_module_trace.verbosity_level = verbo;
+      self_trace_t::thread_tracer_module_trace.verbosity_level = verbo;
+      self_trace_t::event_module_trace.verbosity_level = verbo;
+      self_trace_t::driver_module_trace.verbosity_level = verbo;
+      self_trace_t::machine_module_trace.verbosity_level = verbo;
+      self_trace_t::opt_module_trace.verbosity_level = verbo;
+    }
+
   if ( !option_sanity_check() )
     {
       if ( my_opt->remote && (my_opt->verbose == 0 ))
