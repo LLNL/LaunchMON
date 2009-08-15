@@ -1,3 +1,8 @@
+2009-08-15 Dong H. Ahn <ahn1@llnl.gov>
+	* Yet another cut to enhance error handlings; better
+	P/T state tracking system is used to handle idiosyncrasy 
+	of Linux process control
+
 2009-06-03 Dong H. Ahn <ahn1@llnl.gov>
 	* Better enforcement of the error handling semantics. 
 	* Added test.attach_4_kill for BlueGene.
