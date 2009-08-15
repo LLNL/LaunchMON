@@ -1105,7 +1105,7 @@ linux_launchmon_t::handle_launch_bp_event (
                   }
               }
 
-            self_trace_t::trace ( true,
+            self_trace_t::trace ( LEVELCHK(level1),
               MODULENAME,
               0,
               "detached from all threads of the RM process...");
@@ -1119,7 +1119,7 @@ linux_launchmon_t::handle_launch_bp_event (
                 get_tracer()->tracer_detach ( p, false );
               }
 
-            self_trace_t::trace ( true,
+            self_trace_t::trace ( LEVELCHK(level1),
               MODULENAME,
               0,
               "detached from all the RM process...");
