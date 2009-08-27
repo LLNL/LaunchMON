@@ -47,7 +47,7 @@
 
 SUBDIRS                 = lmon_api
 INCLUDES                = -I.. -I@ARCHHEADER@
-BITS                    = @LIBBITSUFFIX@
+#BITS                    = @LIBBITSUFFIX@
 bin_PROGRAMS            = launchmon
 launchmon_SOURCES       = main.cxx \
 	                  sdbg_linux_launchmon.cxx \
@@ -93,8 +93,7 @@ launchmon_SOURCES       = main.cxx \
 			  sdbg_linux_thr_db.hxx
 
 launchmon_LDADD         = @LIBELF@ @LIBDL@
-launchmon_CFLAGS        = @LNCHR_BIT_FLAGS@ $(AM_CFLAGS)
-launchmon_CXXFLAGS      = @LNCHR_BIT_FLAGS@ $(AM_CXXFLAGS)
+launchmon_CFLAGS        = @BUILD_FLAGS@ @LNCHR_BIT_FLAGS@ #$(AM_CFLAGS) 
+launchmon_CXXFLAGS      = @BUILD_FLAGS@ @LNCHR_BIT_FLAGS@ #$(AM_CXXFLAGS)
 launchmon_LDFLAGS       = -rdynamic @LNCHR_BIT_FLAGS@ $(AM_LDFLAGS) 
-
 ## EOF

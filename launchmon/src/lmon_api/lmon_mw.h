@@ -27,15 +27,26 @@
  *
  *
  *  Update Log:
+ *        Aug 26 2009 DHA: lmon-config.h support
  *        Feb 09 2008 DHA: Added LLNS Copyright 
- *        Dec  27 2006 DHA: Created file.          
+ *        Dec 27 2006 DHA: Created file.          
  */
 
 #ifndef LMON_API_LMON_BE_H
 #define LMON_API_LMON_BE_H
 
-#include <unistd.h>
-#include <netdb.h>
+#if LAUNCHMON_HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#else
+# error sys/types.h is required
+#endif
+
+#if LAUNCHMON_HAVE_UNISTD_H
+# include <unistd.h>
+#else
+# error unistd.h is required
+#endif
+
 #include <lmon_api/lmon_api_std.h>
 #include <lmon_api/lmon_proctab.h>
 

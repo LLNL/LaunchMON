@@ -36,7 +36,7 @@
 #include "sdbg_std.hxx"
 
 #ifndef LINUX_CODE_REQUIRED
-#error This source file requires a LINUX OS
+# error This source file requires a LINUX OS
 #endif
 
 #include "sdbg_base_launchmon.hxx"

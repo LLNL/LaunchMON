@@ -62,6 +62,9 @@ libmonfeapi_la_SOURCES       = lmon_fe.cxx \
                                ../../sdbg_opt.hxx \
 			       ../../lmon_api/lmon_say_msg.hxx	
 
+libmonfeapi_la_CFLAGS        = @BUILD_FLAGS@ $(AM_CFLAGS)
+libmonfeapi_la_CXXFLAGS      = @BUILD_FLAGS@ $(AM_CXXFLAGS)
+
 libmonfeapi_la_LDFLAGS       = -L$(top_srcdir)/@COMMLOC@ \
 			       -L$(top_srcdir)/@GCRYPTLOC@ \
 			       -L$(top_srcdir)/@GPGERRLOC@ \
@@ -74,6 +77,9 @@ libmonbeapi_la_SOURCES       = lmon_be.cxx \
 			       lmon_be_comm.cxx \
 			       lmon_lmonp_msg.cxx \
 		               lmon_say_msg.cxx
+
+libmonbeapi_la_CFLAGS        = @BUILD_FLAGS@ $(AM_CFLAGS)
+libmonbeapi_la_CXXFLAGS      = @BUILD_FLAGS@ $(AM_CXXFLAGS)
 
 libmonbeapi_la_LDFLAGS       = -L$(top_srcdir)/@COMMLOC@ \
 			       -L$(top_srcdir)/@GCRYPTLOC@ \
