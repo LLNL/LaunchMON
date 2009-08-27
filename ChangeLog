@@ -1,7 +1,15 @@
+2009-08-26 Dong H. Ahn <ahn1@lnll.gov>
+	* launchmon/src/lmon_api/*.h,
+	config/x_ac_prefix_config_h.m4: Added lmon-config.h support
+	(prefixed config macros) to all header files that are
+	 externally exported.
+
+
 2009-08-15 Dong H. Ahn <ahn1@llnl.gov>
 	* Yet another cut to enhance error handlings; better
 	P/T state tracking system is used to handle idiosyncrasy 
 	of Linux process control
+
 
 2009-06-03 Dong H. Ahn <ahn1@llnl.gov>
 	* Better enforcement of the error handling semantics. 
