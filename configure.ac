@@ -50,6 +50,15 @@ AC_CANONICAL_HOST
 
 
 dnl -----------------------------------------------
+dnl per Todd Gamblin's suggestion... the following
+dnl allows you to export config.h withoug conflicting
+dnl other dependent packages 
+dnl -----------------------------------------------
+X_AC_PREFIX_CONFIG_H([lmon-config.h])
+AC_SUBST(BUILD_FLAGS, -DFOR_LAUNCHMON_BUILD=1)
+
+
+dnl -----------------------------------------------
 dnl Checks for the OS and CPU type
 dnl -----------------------------------------------
 X_AC_OS_ISA

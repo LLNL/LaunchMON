@@ -38,5 +38,5 @@
 ##
 
 SUBDIRS         = tools launchmon test
-include_HEADERS = config.h 
+include_HEADERS = lmon-config.h
 EXTRA_DIST      = config/ap README.ERROR_HANDLING package.conf bootstrap

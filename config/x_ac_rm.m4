@@ -127,12 +127,14 @@ AC_DEFUN([X_AC_RM], [
 	#
         ac_job_launcher_bits="32" 
 	AC_SUBST(LNCHR_BIT_FLAGS, -m32)
+        AC_SUBST(ARCHHEADER,"/") 
       elif test "$bits" = "64-bit"; then
 	#
 	# 64bit srun process
 	#
         ac_job_launcher_bits="64"
 	AC_SUBST(LNCHR_BIT_FLAGS, -m64)
+        AC_SUBST(ARCHHEADER,"/") 
         AC_DEFINE(BIT64,1,[Define 1 for BIT64])
         if test "x$ac_have_known_os" = "xyes"; then
           if test "$ac_target_os" = "linux" && test "$ac_target_isa" = "x86_64"; then
