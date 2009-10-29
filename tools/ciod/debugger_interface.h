@@ -4,7 +4,7 @@
 /* After initializing,  DO NOT MODIFY OR MOVE                       */
 /*  --------------------------------------------------------------- */
 /*                                                                  */
-/* (C) Copyright IBM Corp.  2004, 2007                              */
+/* (C) Copyright IBM Corp.  2004, 2009                              */
 /* IBM CPL License                                                  */
 /*                                                                  */
 /*  --------------------------------------------------------------- */
@@ -19,6 +19,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 #ifdef BG_HEADER_EXISTS
 # include <bpcore/bgp_types.h>
 #else
@@ -74,12 +75,28 @@ typedef union T_BGP_QuadWord
 typedef _bgp_QuadWord_t _QuadWord_t;
 #endif
 
-
 namespace DebuggerInterface {
+
+/*
+   Protocol Version Change Log:
+   1 - Initial implementation
+   2 - Thread id passed in message header to reduce message traffic
+   3 - Added GET_STACK_TRACE and END_DEBUG messages, Signal for detach from nodes
+   4-  Added GET_PROCESS_DATA and GET_THREAD_DATA messages
+*/
 
 #define BG_DEBUGGER_WRITE_PIPE 3
 #define BG_DEBUGGER_READ_PIPE  4
 #define BG_PIPE_TIMEOUT 10
+
+// Max threads passed on get active threads at one time
+#define BG_Debugger_MAX_THREAD_IDS   32
+
+//! Buffer size for GET_AUX_VECTORS request
+#define BG_Debugger_AUX_VECS_BUFFER 1024
+
+//! Number of stack frames returned from compute node
+#define BG_Debugger_MAX_STACK_FRAMES 400 
 
 
 // Some typedefs to insure consistency later.
@@ -270,6 +287,12 @@ typedef enum { GET_REG = 0,
                END_DEBUG,  // Indicate done debugging
                END_DEBUG_ACK,  // Sent when CIOD acknowledges ending of debug
 
+               GET_PROCESS_DATA,
+               GET_PROCESS_DATA_ACK,
+
+               GET_THREAD_DATA,
+               GET_THREAD_DATA_ACK,
+
                THIS_SPACE_FOR_RENT
 
 } BG_MsgType_t;
@@ -347,6 +370,51 @@ typedef struct
 } BG_Stack_Info_t;
 
 
+// Structure for process data.
+typedef struct {
+  uint32_t rank;                       // MPI rank
+  uint32_t tgid;                       // Thread group id
+  uint32_t xCoord;                     // X coordinate
+  uint32_t yCoord;                     // Y coordinate
+  uint32_t zCoord;                     // Z coordinate
+  uint32_t tCoord;                     // T coordinate
+  BG_Addr_t sharedMemoryStartAddr;     // Shared memory region start address
+  BG_Addr_t sharedMemoryEndAddr;       // Shared memory region end address
+  BG_Addr_t persistMemoryStartAddr;    // Persistent memory region start address
+  BG_Addr_t persistMemoryEndAddr;      // Persistent memory region end address
+  BG_Addr_t heapStartAddr;             // Heap start address
+  BG_Addr_t heapEndAddr;               // Heap end address 
+  BG_Addr_t heapBreakAddr;             // Heap break address
+  BG_Addr_t mmapStartAddr;             // Memory map start address
+  BG_Addr_t mmapEndAddr;               // Memory map end address
+  struct timeval jobTime;              // Time job has been running
+} BG_Process_Data_t;
+
+// State of a thread.
+typedef enum {
+  Running = 1,                         // Thread is running executable code
+  Sleeping,                            // Thread is sleeping
+  Waiting,                             // Thread is waiting for event
+  Zombie,                              // Thread is ended
+  Idle                                 // Thread is available 
+} BG_Thread_State_t;
+
+// Structure for thread data.
+typedef struct {
+  BG_ThreadID_t threadID;              // Thread id
+  int core;                            // Core number
+  BG_Thread_State_t state;             // Thread state
+  BG_Addr_t stackStartAddr;            // Stack start address
+  BG_Addr_t stackEndAddr;              // Stack end address
+  BG_Addr_t guardStartAddr;            // Guard page start address
+  BG_Addr_t guardEndAddr;              // Guard page end address
+  BG_GPRSet_t gprs;                    // Set of general purpose registers
+  BG_FPRSet_t fprs;                    // Set of floating point registers
+  BG_DebugSet_t debugRegisters;        // Set of debug registers
+  uint32_t numStackFrames;             // Number of stack frame addr/saved lr entries returned
+  BG_Stack_Info_t stackInfo[BG_Debugger_MAX_STACK_FRAMES]; // Stack trace back
+} BG_Thread_Data_t;
+
 
 typedef enum {
 
@@ -417,13 +485,6 @@ extern volatile int AbortPipeIO;
 #define BG_Debugger_Msg_HEADER_SIZE    24
 #define BG_Debugger_Msg_MAX_PAYLOAD_SIZE (BG_Debugger_Msg_MAX_SIZE-BG_Debugger_Msg_HEADER_SIZE)
 #define BG_Debugger_Msg_MAX_MEM_SIZE 4064
-
-// Max threads passed on get active threads at one time
-#define BG_Debugger_MAX_THREAD_IDS   32
-//! Buffer size for GET_AUX_VECTORS request
-#define BG_Debugger_AUX_VECS_BUFFER 1024
-//! Number of stack frames returned from compute node
-#define BG_Debugger_MAX_STACK_FRAMES 400 
 
 
 
@@ -649,7 +710,21 @@ class BG_Debugger_Msg {
       struct {
       } END_DEBUG_ACK;
 
+      struct {
+      } GET_PROCESS_DATA;
 
+      struct {
+        BG_Process_Data_t processData;
+        uint32_t numThreads;
+        BG_ThreadID_t threadIDS[BG_Debugger_MAX_THREAD_IDS];
+      } GET_PROCESS_DATA_ACK;
+
+      struct {
+      } GET_THREAD_DATA;
+
+      struct {
+         BG_Thread_Data_t threadData;
+      } GET_THREAD_DATA_ACK;
 
       unsigned char      dataStartsHere;
 
@@ -779,6 +854,18 @@ class BG_Debugger_Msg {
            break;
          }
 
+         case GET_DEBUG_REGS: {
+           errMsg.header.messageType = GET_DEBUG_REGS_ACK;
+           errMsg.header.dataLength  = 0;
+           break;
+         }
+
+         case SET_DEBUG_REGS: {
+           errMsg.header.messageType = SET_DEBUG_REGS_ACK;
+           errMsg.header.dataLength  = 0;
+           break;
+         }
+
          case GET_THREAD_INFO: {
            errMsg.header.messageType = GET_THREAD_INFO_ACK;
            errMsg.header.dataLength  = 0;
@@ -809,12 +896,35 @@ class BG_Debugger_Msg {
            break;
          }
 
+         case GET_AUX_VECTORS: {
+           errMsg.header.messageType = GET_AUX_VECTORS_ACK;
+           errMsg.header.dataLength = 0;
+           break;
+         }
+
+         case GET_STACK_TRACE: {
+           errMsg.header.messageType = GET_STACK_TRACE_ACK;
+           errMsg.header.dataLength = 0;
+           break;
+         }
+
          case END_DEBUG: {
            errMsg.header.messageType = END_DEBUG_ACK;
            errMsg.header.dataLength  = 0;
            break;
          }
 
+         case GET_PROCESS_DATA: {
+           errMsg.header.messageType = GET_PROCESS_DATA_ACK;
+           errMsg.header.dataLength = 0;
+           break;
+         }
+
+         case GET_THREAD_DATA: {
+           errMsg.header.messageType = GET_THREAD_DATA_ACK;
+           errMsg.header.dataLength = 0;
+           break;
+         }
 
          default: {
            errMsg.header.messageType = original.header.messageType;
@@ -927,7 +1037,11 @@ class BG_Debugger_Msg {
           "GET_STACK_TRACE",
           "GET_STACK_TRACE_ACK",
           "END_DEBUG",
-          "END_DEBUG_ACK"
+          "END_DEBUG_ACK",
+          "GET_PROCESS_DATA",
+          "GET_PROCESS_DATA_ACK",
+          "GET_THREAD_DATA",
+          "GET_THREAD_DATA_ACK",
 
        };
 
@@ -956,9 +1070,9 @@ class BG_Debugger_Msg {
 
     static void dump( BG_Debugger_Msg &msg, FILE *outfile )
     {
-       fprintf( outfile, "\n\r" );
+       fprintf( outfile, "\n" );
 
-       fprintf( outfile, "Type: %s from node: %d, return code: %d\n\r",
+       fprintf( outfile, "Type: %s from node: %d, return code: %d\n",
                 getMessageName(msg.header.messageType),
                 msg.header.nodeNumber,
                 msg.header.returnCode );
@@ -966,278 +1080,182 @@ class BG_Debugger_Msg {
        switch ( msg.header.messageType ) {
 
          case GET_REG: {
-           fprintf( outfile, "  Register number: %d\n\r", msg.dataArea.GET_REG.registerNumber );
+           fprintf( outfile, "  Register number: %d\n", msg.dataArea.GET_REG.registerNumber );
            break;
          }
 
          case GET_REG_ACK: {
-           fprintf( outfile, "  Register number: %d    Value: %08x\n\r", msg.dataArea.GET_REG.registerNumber, msg.dataArea.GET_REG_ACK.value );
+           fprintf( outfile, "  Register number: %d    Value: %08x\n", msg.dataArea.GET_REG.registerNumber, msg.dataArea.GET_REG_ACK.value );
            break;
          }
 
          case GET_ALL_REGS_ACK: {
-           for ( int i=0; i < 8; i++ ) {
-             for ( int j=0; j < 4; j++ ) {
-               fprintf( outfile, "  r%02d: %08x    ", i*4+j, msg.dataArea.GET_ALL_REGS_ACK.gprs.gpr[i*4+j] );
-             }
-             fprintf( outfile, "\n\r" );
-           }
-           fprintf( outfile, "FPSCR: %08x       LR: %08x       CR: %08x      XER: %08x\n\r",
-                    msg.dataArea.GET_ALL_REGS_ACK.gprs.fpscr, msg.dataArea.GET_ALL_REGS_ACK.gprs.lr,
-                    msg.dataArea.GET_ALL_REGS_ACK.gprs.cr, msg.dataArea.GET_ALL_REGS_ACK.gprs.xer );
-           fprintf( outfile, "  CTR: %08x      IAR: %08x      MSR: %08x     DEAR: %08x\n\r",
-                    msg.dataArea.GET_ALL_REGS_ACK.gprs.ctr, msg.dataArea.GET_ALL_REGS_ACK.gprs.iar,
-                    msg.dataArea.GET_ALL_REGS_ACK.gprs.msr, msg.dataArea.GET_ALL_REGS_ACK.gprs.dear );
-           fprintf( outfile, "  ESR: %08x\n\r", msg.dataArea.GET_ALL_REGS_ACK.gprs.esr );
-
+           dumpGPRSet( &msg.dataArea.GET_ALL_REGS_ACK.gprs, outfile );
            break;
          }
 
 
          case SET_REG: {
-           fprintf( outfile, "  Register number: %d    Value: %08x\n\r", msg.dataArea.SET_REG.registerNumber, msg.dataArea.SET_REG.value );
+           fprintf( outfile, "  Register number: %d    Value: %08x\n", msg.dataArea.SET_REG.registerNumber, msg.dataArea.SET_REG.value );
            break;
          }
 
          case SET_REG_ACK: {
-           fprintf( outfile, "  Register number: %d\n\r", msg.dataArea.SET_REG_ACK.registerNumber );
+           fprintf( outfile, "  Register number: %d\n", msg.dataArea.SET_REG_ACK.registerNumber );
            break;
          }
 
          case GET_MEM: {
-           fprintf( outfile, "  Memory address: %08x    Length: %d\n\r  Vals: ", msg.dataArea.GET_MEM.addr, msg.dataArea.GET_MEM.len );
+           fprintf( outfile, "  Memory address: %08x    Length: %d\n  Vals: ", msg.dataArea.GET_MEM.addr, msg.dataArea.GET_MEM.len );
            break;
          }
 
          case GET_MEM_ACK: {
-           fprintf( outfile, "  Memory address: %08x    Length: %d\n\r  Vals: ", msg.dataArea.GET_MEM_ACK.addr, msg.dataArea.GET_MEM_ACK.len );
+           fprintf( outfile, "  Memory address: %08x    Length: %d\n  Vals: ", msg.dataArea.GET_MEM_ACK.addr, msg.dataArea.GET_MEM_ACK.len );
            for ( unsigned int i = 0; i < msg.dataArea.GET_MEM_ACK.len; i++ ) fprintf( outfile, "%02x ", msg.dataArea.GET_MEM_ACK.data[i] );
-           fprintf( outfile, "\n\r" );
+           fprintf( outfile, "\n" );
            break;
          }
 
          case SET_MEM: {
-           fprintf( outfile, "  Memory address: %08x    Length: %d\n\r  Vals: ", msg.dataArea.SET_MEM.addr, msg.dataArea.SET_MEM.len );
+           fprintf( outfile, "  Memory address: %08x    Length: %d\n  Vals: ", msg.dataArea.SET_MEM.addr, msg.dataArea.SET_MEM.len );
            for ( unsigned int i = 0; i < msg.dataArea.SET_MEM.len; i++ ) fprintf( outfile, "%02x ", msg.dataArea.SET_MEM.data[i] );
-           fprintf( outfile, "\n\r" );
+           fprintf( outfile, "\n" );
            break;
          }
 
          case SET_MEM_ACK: {
-           fprintf( outfile, "  Memory address: %08x    Length: %d\n\r", msg.dataArea.SET_MEM_ACK.addr, msg.dataArea.SET_MEM_ACK.len );
+           fprintf( outfile, "  Memory address: %08x    Length: %d\n", msg.dataArea.SET_MEM_ACK.addr, msg.dataArea.SET_MEM_ACK.len );
            break;
          }
 
          case CONTINUE: {
-           fprintf( outfile, "  Continue with signal number: %d\n\r", msg.dataArea.CONTINUE.signal );
+           fprintf( outfile, "  Continue with signal number: %d\n", msg.dataArea.CONTINUE.signal );
            break;
          }
 
          case KILL: {
-           fprintf( outfile, "  Signal number: %d\n\r", msg.dataArea.KILL.signal );
+           fprintf( outfile, "  Signal number: %d\n", msg.dataArea.KILL.signal );
            break;
          }
 
          case SIGNAL_ENCOUNTERED: {
-           fprintf( outfile, "  Signal number: %d\n\r", msg.dataArea.SIGNAL_ENCOUNTERED.signal );
+           fprintf( outfile, "  Signal number: %d\n", msg.dataArea.SIGNAL_ENCOUNTERED.signal );
            break;
          }
 
          case PROGRAM_EXITED: {
-           fprintf( outfile, "  Exit=0,Signal=1: %d   Return code: %d\n\r", msg.dataArea.PROGRAM_EXITED.type, msg.dataArea.PROGRAM_EXITED.rc );
+           fprintf( outfile, "  Exit=0,Signal=1: %d   Return code: %d\n", msg.dataArea.PROGRAM_EXITED.type, msg.dataArea.PROGRAM_EXITED.rc );
            break;
          }
 
          case GET_ALL_FLOAT_REGS_ACK: {
-           fprintf( outfile, "  Double hummer set 0:\n\r" );
-           for ( int i=0; i < 8; i++ ) {
-             for ( int j=0; j < 4; j++ ) {
-               double val;
-               memcpy( &val, &msg.dataArea.GET_ALL_FLOAT_REGS_ACK.fprs.fprs[i*4+j].w0, sizeof( _QuadWord_t ) );
-               fprintf( outfile, "  f%02d: %f    ", i*4+j, val );
-             }
-             fprintf( outfile, "\n\r" );
-           }
-           fprintf( outfile, "\n\r" );
-           fprintf( outfile, "  Double hummer set 1:\n\r" );
-           for ( int i=0; i < 8; i++ ) {
-             for ( int j=0; j < 4; j++ ) {
-               double val;
-               memcpy( &val, &msg.dataArea.GET_ALL_FLOAT_REGS_ACK.fprs.fprs[i*4+j].w2, sizeof( _QuadWord_t ) ); 
-               fprintf( outfile, "  f%02d: %f    ", i*4+j, val );
-             }
-             fprintf( outfile, "\n\r" );
-           }
-           fprintf( outfile, "\n\r" );
-           fprintf( outfile, "  Double hummer set 0 in hex:\n\r" );
-           for ( int i=0; i < 8; i++ ) {
-             for ( int j=0; j < 4; j++ ) {
-               uint32_t val1 = msg.dataArea.GET_ALL_FLOAT_REGS_ACK.fprs.fprs[i*4+j].w0;
-               uint32_t val2 = msg.dataArea.GET_ALL_FLOAT_REGS_ACK.fprs.fprs[i*4+j].w1;
-               fprintf( outfile, "  f%02d: %08x%08x  ", i*4+j, val1, val2 );
-             }
-             fprintf( outfile, "\n\r" );
-           }
-           fprintf( outfile, "\n\r" );
-           fprintf( outfile, "  Double hummer set 1 in hex:\n\r" );
-           for ( int i=0; i < 8; i++ ) {
-             for ( int j=0; j < 4; j++ ) {
-               uint32_t val1 = msg.dataArea.GET_ALL_FLOAT_REGS_ACK.fprs.fprs[i*4+j].w2;
-               uint32_t val2 = msg.dataArea.GET_ALL_FLOAT_REGS_ACK.fprs.fprs[i*4+j].w3;
-               fprintf( outfile, "  f%02d: %08x%08x  ", i*4+j, val1, val2 );
-             }
-             fprintf( outfile, "\n\r" );
-           }
-
-
-           break;
-         }
-
-         case GET_REGS_AND_FLOATS_ACK: 
-         {
-           for ( int i=0; i < 8; i++ ) 
-           {
-             for ( int j=0; j < 4; j++ ) 
-             {
-               fprintf( outfile, "  r%02d: %08x    ", 
-                        i*4+j, msg.dataArea.GET_REGS_AND_FLOATS_ACK.gprs.gpr[i*4+j] );
-             }
-             fprintf( outfile, "\n\r" );
-           }
-           fprintf( outfile, "FPSCR: %08x       LR: %08x       CR: %08x      XER: %08x\n\r",
-                    msg.dataArea.GET_REGS_AND_FLOATS_ACK.gprs.fpscr, 
-                    msg.dataArea.GET_REGS_AND_FLOATS_ACK.gprs.lr,
-                    msg.dataArea.GET_REGS_AND_FLOATS_ACK.gprs.cr, 
-                    msg.dataArea.GET_REGS_AND_FLOATS_ACK.gprs.xer );
-           fprintf( outfile, "  CTR: %08x      IAR: %08x      MSR: %08x     DEAR: %08x\n\r",
-                    msg.dataArea.GET_REGS_AND_FLOATS_ACK.gprs.ctr, 
-                    msg.dataArea.GET_REGS_AND_FLOATS_ACK.gprs.iar,
-                    msg.dataArea.GET_REGS_AND_FLOATS_ACK.gprs.msr, 
-                    msg.dataArea.GET_REGS_AND_FLOATS_ACK.gprs.dear );
-           fprintf( outfile, "  ESR: %08x\n\r", msg.dataArea.GET_REGS_AND_FLOATS_ACK.gprs.esr );
-
-           fprintf( outfile, "  Double hummer set 0:\n\r" );
-           for ( int i=0; i < 8; i++ ) 
-           {
-             for ( int j=0; j < 4; j++ ) 
-             {
-               double val;
-               memcpy( &val, &msg.dataArea.GET_REGS_AND_FLOATS_ACK.fprs.fprs[i*4+j].w0, 
-                       sizeof( _QuadWord_t ) );
-               fprintf( outfile, "  f%02d: %f    ", i*4+j, val );
-             }
-             fprintf( outfile, "\n\r" );
-           }
-           fprintf( outfile, "\n\r" );
-           fprintf( outfile, "  Double hummer set 1:\n\r" );
-           for ( int i=0; i < 8; i++ ) 
-           {
-             for ( int j=0; j < 4; j++ ) 
-             {
-               double val;
-               memcpy( &val, &msg.dataArea.GET_REGS_AND_FLOATS_ACK.fprs.fprs[i*4+j].w2,
-                       sizeof( _QuadWord_t ) );
-               fprintf( outfile, "  f%02d: %f    ", i*4+j, val );
-             }
-             fprintf( outfile, "\n\r" );
-           }
-           fprintf( outfile, "\n\r" );
-
-           fprintf( outfile, "  Double hummer set 0 in hex:\n\r" );
-           for ( int i=0; i < 8; i++ ) 
-           {
-             for ( int j=0; j < 4; j++ ) 
-             {
-               uint32_t val1 = msg.dataArea.GET_REGS_AND_FLOATS_ACK.fprs.fprs[i*4+j].w0;
-               uint32_t val2 = msg.dataArea.GET_REGS_AND_FLOATS_ACK.fprs.fprs[i*4+j].w1;
-               fprintf( outfile, "  f%02d: %08x%08x  ", i*4+j, val1, val2 );
-             }
-             fprintf( outfile, "\n\r" );
-           }
-           fprintf( outfile, "\n\r" );
-
-           fprintf( outfile, "  Double hummer set 1 in hex:\n\r" );
-           for ( int i=0; i < 8; i++ )
-           {
-             for ( int j=0; j < 4; j++ ) 
-             {
-               uint32_t val1 = msg.dataArea.GET_REGS_AND_FLOATS_ACK.fprs.fprs[i*4+j].w2;
-               uint32_t val2 = msg.dataArea.GET_REGS_AND_FLOATS_ACK.fprs.fprs[i*4+j].w3;
-               fprintf( outfile, "  f%02d: %08x%08x  ", i*4+j, val1, val2 );
-             }
-             fprintf( outfile, "\n\r" );
-           }
-
+           dumpFPRSet( &msg.dataArea.GET_ALL_FLOAT_REGS_ACK.fprs, outfile );
            break;
          }
 
          case VERSION_MSG_ACK: {
-           fprintf( outfile, "  Protocol version: %u   Physical Processors: %u  Logical Processors: %u\n\r",
+           fprintf( outfile, "  Protocol version: %u   Physical Processors: %u  Logical Processors: %u\n",
                     msg.dataArea.VERSION_MSG_ACK.protocolVersion,
                     msg.dataArea.VERSION_MSG_ACK.numPhysicalProcessors,
                     msg.dataArea.VERSION_MSG_ACK.numLogicalProcessors );
            break;
          }
 
-         case GET_DEBUG_REGS_ACK:
+         case GET_DEBUG_REGS_ACK: {
+           dumpDebugSet( &msg.dataArea.GET_DEBUG_REGS_ACK.debugRegisters, outfile );
+           break;
+         }
+
          case SET_DEBUG_REGS: {
+           dumpDebugSet( &msg.dataArea.SET_DEBUG_REGS.debugRegisters, outfile );
+           break;
+         }
 
-           BG_DebugSet_t *debugRegisters;
-
-           if ( msg.header.messageType == GET_DEBUG_REGS_ACK ) {
-             debugRegisters = &msg.dataArea.GET_DEBUG_REGS_ACK.debugRegisters;
+         case GET_THREAD_INFO_ACK: {
+           fprintf( outfile, "  Number of threads: %u  TIDs:", msg.dataArea.GET_THREAD_INFO_ACK.numThreads );
+           for ( unsigned int i = 0; i < msg.dataArea.GET_THREAD_INFO_ACK.numThreads; i++ ) {
+             fprintf( outfile, " %u", msg.dataArea.GET_THREAD_INFO_ACK.threadIDS[i] );
            }
-           else {
-             debugRegisters = &msg.dataArea.SET_DEBUG_REGS.debugRegisters;
-           }
+           fprintf( outfile, "\n");
+           break;
+         }
 
-           fprintf( outfile, "  DBCR0: %08x   DBCR1: %08x   DBCR2: %08x    DBSR: %08x\n\r",
-                    debugRegisters->DBCR0, debugRegisters->DBCR1, debugRegisters->DBCR2, debugRegisters->DBSR );
-           fprintf( outfile, "   IAC1: %08x    IAC2: %08x    IAC3: %08x    IAC4: %08x\n\r",
-                    debugRegisters->IAC1, debugRegisters->IAC2, debugRegisters->IAC3, debugRegisters->IAC4 );
-           fprintf( outfile, "   DAC1: %08x    DAC2: %08x    DVC1: %08x    DVC2: %08x\n\r",
-                    debugRegisters->DAC1, debugRegisters->DAC2, debugRegisters->DVC1, debugRegisters->DVC2 );
+         case THREAD_ALIVE: {
+           fprintf( outfile, "  TID: %u\n", msg.dataArea.THREAD_ALIVE.tid );
+           break;
+         }
+
+         case GET_THREAD_ID_ACK: {
+           fprintf( outfile, "  TID: %u\n", msg.dataArea.GET_THREAD_ID_ACK.tid );
+           break;
+         }
+
+         case SET_THREAD_OPS: {
+           fprintf( outfile, "  TID: %u  Operation: %d\n", msg.dataArea.SET_THREAD_OPS.tid, msg.dataArea.SET_THREAD_OPS.operation );
+           break;
+         }
+
+         case GET_REGS_AND_FLOATS_ACK: {
+           dumpGPRSet( &msg.dataArea.GET_REGS_AND_FLOATS_ACK.gprs, outfile );
+           dumpFPRSet( &msg.dataArea.GET_REGS_AND_FLOATS_ACK.fprs, outfile );
            break;
          }
 
          case GET_AUX_VECTORS: {
-           fprintf( outfile, "  Offset: %08x    Requested Length: %d\n\r  Vals: ", msg.dataArea.GET_AUX_VECTORS.auxVecBufferOffset, msg.dataArea.GET_AUX_VECTORS.auxVecBufferLength );
+           fprintf( outfile, "  Offset: %08x    Requested Length: %d\n  Vals: ", msg.dataArea.GET_AUX_VECTORS.auxVecBufferOffset, msg.dataArea.GET_AUX_VECTORS.auxVecBufferLength );
            break;
          }
 
          case GET_AUX_VECTORS_ACK: {
-           fprintf( outfile, "  Offset: %08x    Length: %d\n\r  Vals: ", msg.dataArea.GET_AUX_VECTORS_ACK.auxVecBufferOffset, msg.dataArea.GET_AUX_VECTORS_ACK.auxVecBufferLength );
+           fprintf( outfile, "  Offset: %08x    Length: %d\n  Vals: ", msg.dataArea.GET_AUX_VECTORS_ACK.auxVecBufferOffset, msg.dataArea.GET_AUX_VECTORS_ACK.auxVecBufferLength );
            for ( unsigned int i = 0; i < msg.dataArea.GET_AUX_VECTORS_ACK.auxVecBufferLength; i++ ) 
-              fprintf( outfile, "%02x ", msg.dataArea.GET_AUX_VECTORS_ACK.auxVecData[i] );
-           fprintf( outfile, "\n\r" );
-           break;
-         }
-
-         case GET_STACK_TRACE: {
+             fprintf( outfile, "%02x ", msg.dataArea.GET_AUX_VECTORS_ACK.auxVecData[i] );
+           fprintf( outfile, "\n" );
            break;
          }
 
          case GET_STACK_TRACE_ACK: {
+           fprintf( outfile, "  LR: %08x  IAR: %08x  R1: %08x  Number of stack frames: %u\n",
+                    msg.dataArea.GET_STACK_INFO_ACK.lr, msg.dataArea.GET_STACK_INFO_ACK.iar,
+                    msg.dataArea.GET_STACK_INFO_ACK.stackFrame, msg.dataArea.GET_STACK_INFO_ACK.numStackFrames );
+           for ( unsigned int i = 0; i < msg.dataArea.GET_STACK_INFO_ACK.numStackFrames; i++ ) {
+             fprintf( outfile, "  Frame address: %08x  Saved LR: %08x\n", msg.dataArea.GET_STACK_INFO_ACK.stackInfo[i].frameAddr, msg.dataArea.GET_STACK_INFO_ACK.stackInfo[i].savedLR );
+           }
            break;
          }
 
-         // TODO: Add THREAD ID data
-         case GET_THREAD_ID_ACK: {
+         case GET_PROCESS_DATA_ACK: {
+           fprintf( outfile, "  Rank: %u  TGID: %u  xCoord: %u  yCoord: %u  zCoord: %u  tCoord: %u\n",
+                    msg.dataArea.GET_PROCESS_DATA_ACK.processData.rank, msg.dataArea.GET_PROCESS_DATA_ACK.processData.tgid,
+                    msg.dataArea.GET_PROCESS_DATA_ACK.processData.xCoord, msg.dataArea.GET_PROCESS_DATA_ACK.processData.yCoord,
+                    msg.dataArea.GET_PROCESS_DATA_ACK.processData.zCoord, msg.dataArea.GET_PROCESS_DATA_ACK.processData.tCoord );
+           fprintf( outfile, "  Shared memory start: %08x  Shared memory end: %08x  Persistent memory start: %08x  Persistent memory end: %08x\n",
+                    msg.dataArea.GET_PROCESS_DATA_ACK.processData.sharedMemoryStartAddr, msg.dataArea.GET_PROCESS_DATA_ACK.processData.sharedMemoryEndAddr,
+                    msg.dataArea.GET_PROCESS_DATA_ACK.processData.persistMemoryStartAddr, msg.dataArea.GET_PROCESS_DATA_ACK.processData.persistMemoryEndAddr );
+           fprintf( outfile, "  Heap start: %08x  Heap end: %08x  Heap break: %08x  Mmap start: %08x  Mmap end: %08x\n",
+                    msg.dataArea.GET_PROCESS_DATA_ACK.processData.heapStartAddr, msg.dataArea.GET_PROCESS_DATA_ACK.processData.heapEndAddr,
+                    msg.dataArea.GET_PROCESS_DATA_ACK.processData.heapBreakAddr, msg.dataArea.GET_PROCESS_DATA_ACK.processData.mmapStartAddr,
+                    msg.dataArea.GET_PROCESS_DATA_ACK.processData.mmapEndAddr );
+           fprintf( outfile, "  Number of threads: %u  TIDs:", msg.dataArea.GET_PROCESS_DATA_ACK.numThreads );
+           for ( unsigned int i = 0; i < msg.dataArea.GET_PROCESS_DATA_ACK.numThreads; i++ ) {
+             fprintf( outfile, " %u", msg.dataArea.GET_PROCESS_DATA_ACK.threadIDS[i] );
+           }
+           fprintf( outfile, "\n");
            break;
          }
 
-         //  Add ack data
-         case GET_THREAD_INFO_ACK: {
-           break;
-         }
-
-         // TODO: Add THREAD_ALIVE data
-         case THREAD_ALIVE: {
-           break;
-         }
-
-         // TODO: Add SET_THREAD_OPS data
-         case SET_THREAD_OPS: {
+         case GET_THREAD_DATA_ACK: {
+           fprintf( outfile, "  TID: %u  Core: %d  Stack start: %08x  Stack end: %08x  Guard start: %08x  Guard end: %08x\n",
+                    msg.dataArea.GET_THREAD_DATA_ACK.threadData.threadID, msg.dataArea.GET_THREAD_DATA_ACK.threadData.core,
+                    msg.dataArea.GET_THREAD_DATA_ACK.threadData.stackStartAddr, msg.dataArea.GET_THREAD_DATA_ACK.threadData.stackEndAddr,
+                    msg.dataArea.GET_THREAD_DATA_ACK.threadData.guardStartAddr, msg.dataArea.GET_THREAD_DATA_ACK.threadData.guardEndAddr );
+           dumpGPRSet( &msg.dataArea.GET_THREAD_DATA_ACK.threadData.gprs, outfile );
+           dumpFPRSet( &msg.dataArea.GET_THREAD_DATA_ACK.threadData.fprs, outfile );
+           dumpDebugSet( &msg.dataArea.GET_THREAD_DATA_ACK.threadData.debugRegisters, outfile );
+           for ( unsigned int i = 0; i < msg.dataArea.GET_THREAD_DATA_ACK.threadData.numStackFrames; i++ ) {
+             fprintf( outfile, "  Frame address: %08x  Saved LR: %08x\n", msg.dataArea.GET_THREAD_DATA_ACK.threadData.stackInfo[i].frameAddr, msg.dataArea.GET_THREAD_DATA_ACK.threadData.stackInfo[i].savedLR );
+           }
            break;
          }
 
@@ -1263,8 +1281,11 @@ class BG_Debugger_Msg {
          case THREAD_ALIVE_ACK:
          case SET_THREAD_OPS_ACK:
          case GET_REGS_AND_FLOATS:
+         case GET_STACK_TRACE:
          case END_DEBUG:
          case END_DEBUG_ACK:
+         case GET_PROCESS_DATA:
+         case GET_THREAD_DATA:
          case THIS_SPACE_FOR_RENT: {
            // Nothing to do for these packet types unless data is added to them
            break;
@@ -1387,8 +1408,93 @@ private:
       return true;
    }
 
-};
+   //! \brief  Print the set of GPRs to the specified file.
+   //! \param  gprs Pointer to set of GPRs.
+   //! \param  outfile Pointer to file for printing message.
+   //! \return Nothing.
 
+   static void dumpGPRSet( BG_GPRSet_t *gprs, FILE *outfile )
+   {
+     for ( int i=0; i < 8; i++ ) {
+       for ( int j=0; j < 4; j++ ) {
+         fprintf( outfile, "  r%02d: %08x    ", i*4+j, gprs->gpr[i*4+j] );
+       }
+       fprintf( outfile, "\n" );
+     }
+     fprintf( outfile, "FPSCR: %08x       LR: %08x       CR: %08x      XER: %08x\n",
+              gprs->fpscr, gprs->lr, gprs->cr, gprs->xer );
+     fprintf( outfile, "  CTR: %08x      IAR: %08x      MSR: %08x     DEAR: %08x\n",
+              gprs->ctr, gprs->iar, gprs->msr, gprs->dear );
+     fprintf( outfile, "  ESR: %08x\n", gprs->esr );
+     return;
+   }
+
+   //! \brief  Print the set of FPRs to the specified file.
+   //! \param  fprs Pointer to set of FPRs.
+   //! \param  outfile Pointer to file for printing message.
+   //! \return Nothing.
+
+   static void dumpFPRSet( BG_FPRSet_t *fprs, FILE *outfile )
+   {
+     fprintf( outfile, "  Double hummer set 0:\n" );
+     for ( int i=0; i < 8; i++ ) {
+       for ( int j=0; j < 4; j++ ) {
+         double val;
+         memcpy( &val, &fprs->fprs[i*4+j].w0, sizeof( _QuadWord_t ) );
+         fprintf( outfile, "  f%02d: %f    ", i*4+j, val );
+       }
+       fprintf( outfile, "\n" );
+     }
+     fprintf( outfile, "\n" );
+     fprintf( outfile, "  Double hummer set 1:\n" );
+     for ( int i=0; i < 8; i++ ) {
+       for ( int j=0; j < 4; j++ ) {
+         double val;
+         memcpy( &val, &fprs->fprs[i*4+j].w2, sizeof( _QuadWord_t ) ); 
+         fprintf( outfile, "  f%02d: %f    ", i*4+j, val );
+       }
+       fprintf( outfile, "\n" );
+     }
+     fprintf( outfile, "\n" );
+     fprintf( outfile, "  Double hummer set 0 in hex:\n" );
+     for ( int i=0; i < 8; i++ ) {
+       for ( int j=0; j < 4; j++ ) {
+         uint32_t val1 = fprs->fprs[i*4+j].w0;
+         uint32_t val2 = fprs->fprs[i*4+j].w1;
+         fprintf( outfile, "  f%02d: %08x%08x  ", i*4+j, val1, val2 );
+       }
+       fprintf( outfile, "\n" );
+     }
+     fprintf( outfile, "\n" );
+     fprintf( outfile, "  Double hummer set 1 in hex:\n" );
+     for ( int i=0; i < 8; i++ ) {
+       for ( int j=0; j < 4; j++ ) {
+         uint32_t val1 = fprs->fprs[i*4+j].w2;
+         uint32_t val2 = fprs->fprs[i*4+j].w3;
+         fprintf( outfile, "  f%02d: %08x%08x  ", i*4+j, val1, val2 );
+       }
+       fprintf( outfile, "\n" );
+     }
+     return;
+   }
+
+   //! \brief  Print the set of debug registers to the specified file.
+   //! \param  gprs Pointer to set of debug registers.
+   //! \param  outfile Pointer to file for printing message.
+   //! \return Nothing.
+
+   static void dumpDebugSet( BG_DebugSet_t *debugRegisters, FILE *outfile )
+   {
+     fprintf( outfile, "  DBCR0: %08x   DBCR1: %08x   DBCR2: %08x    DBSR: %08x\n",
+              debugRegisters->DBCR0, debugRegisters->DBCR1, debugRegisters->DBCR2, debugRegisters->DBSR );
+     fprintf( outfile, "   IAC1: %08x    IAC2: %08x    IAC3: %08x    IAC4: %08x\n",
+              debugRegisters->IAC1, debugRegisters->IAC2, debugRegisters->IAC3, debugRegisters->IAC4 );
+     fprintf( outfile, "   DAC1: %08x    DAC2: %08x    DVC1: %08x    DVC2: %08x\n",
+              debugRegisters->DAC1, debugRegisters->DAC2, debugRegisters->DVC1, debugRegisters->DVC2 );
+     return;
+   }
+
+};
 
 }
 
