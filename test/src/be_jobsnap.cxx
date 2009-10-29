@@ -638,15 +638,15 @@ main(int argc, char *argv[])
      //
       ostringstream ost1, ost2;
       ifstream ifst;
-      char *line = NULL;
+      char line[4096];
       size_t len;
 
       ost1 << "/proc/" << proctab[i].pd.pid << "/stat";
 
       // how do you want to check exceptions?
-      ofst.open(ost1.str().c_str(), ios::in);
+      ifst.open(ost1.str().c_str(), ios::in);
 
-      tps[i].mpirank = proctab[i].mpirank;
+      tps[i].mpiRank = proctab[i].mpirank;
 
       ifst >> tps[i].pid
 	   >> tps[i].comm
@@ -670,8 +670,8 @@ main(int argc, char *argv[])
 	   >> tps[i].nThread
 	   >> tps[i].xStat.LinuxStat.itrealvalue
 	   >> tps[i].xStat.LinuxStat.starttime
-	   >> tps[i].xStat.LinuxStat.vsize,
-	   >> tps[i].xStat.LinuxStat.rss,
+	   >> tps[i].xStat.LinuxStat.vsize
+	   >> tps[i].xStat.LinuxStat.rss
 	   >> tps[i].xStat.LinuxStat.rlim
 	   >> tps[i].xStat.LinuxStat.startcode
 	   >> tps[i].xStat.LinuxStat.endcode
@@ -686,21 +686,26 @@ main(int argc, char *argv[])
 	   >> tps[i].xStat.LinuxStat.nswap
 	   >> tps[i].xStat.LinuxStat.cnswap
 	   >> tps[i].xStat.LinuxStat.exit_signal
-	   >> tps[i].xStat.LinuxStat.processor,
+	   >> tps[i].xStat.LinuxStat.processor
 	   >> tps[i].xStat.LinuxStat.rt_prior
 	   >> tps[i].xStat.LinuxStat.policy;
 
-      ofst.close();
+      ifst.close();
 
       ost2 << "/proc/" << proctab[i].pd.pid << "/status";
 
       // how do you want to check exceptions?
-      ofst.open(ost1.str().c_str(), ios::in);
+      ifst.open(ost2.str().c_str(), ios::in);
 
-      while (!ofst.getline(&line, len).eof()) {
+      while (!ifst.eof()) {
+        ifst.getline(line, 4096);
 	char* tok;
 	char* linebuf = strdup (line);
 	tok = strtok ( linebuf, ": \t");
+
+        if (!tok)
+          continue;
+
 	if ( strcmp ( tok, "VmPeak") == 0 ) {
 	  tok = strtok ( NULL, ": \t");
 	  tms[i].xMem.LinuxMemStat.vm_high_watermark = atoi(tok)*1024;
@@ -723,12 +728,12 @@ main(int argc, char *argv[])
 	}
 	else if ( strcmp ( tok, "StaBrk") == 0 ) {
 	  tok = strtok ( NULL, ": \t");
-          sscanf (tok, "%lx", &(tms[i].brkstart));
+          sscanf (tok, "%lx", &(tms[i].xMem.LinuxMemStat.brkstart));
 	  tms[i].xMem.LinuxMemStat.brkstart *= 1024;
 	}
 	else if ( strcmp ( tok, "Brk") == 0 ) {
 	   tok = strtok ( NULL, ": \t");
-	   sscanf (tok, "%lx", &(tms[i].brk));
+	   sscanf (tok, "%lx", &(tms[i].xMem.LinuxMemStat.brk));
            tms[i].xMem.LinuxMemStat.brk *= 1024;
 	}
 	else if ( strcmp ( tok, "VmLib") == 0 ) {
@@ -742,10 +747,7 @@ main(int argc, char *argv[])
 	free (linebuf);
       }
 
-      if (line)
-	free(line);
-
-      ofst.close();
+      ifst.close();
 #endif //RM_BG_MPIRUN vs LINUX with /proc
   } // local proctab loop
 
@@ -773,7 +775,7 @@ main(int argc, char *argv[])
       LMON_be_finalize();
 
       return EXIT_FAILURE;
-    }
+  }
 
   lrc = LMON_be_gather((void *) tms,
 		       sizeof(MemStat)*maxSize, 
@@ -806,28 +808,28 @@ main(int argc, char *argv[])
      begin_timer ();
 #endif
 
-     ofs << setw(6) << "Rank" << setw(24) << "Execname" << setw(6) << "State" << setw(12) << "InstPtr" << setw(8) << "nThread" 
-         << setw(12) << "StartStk" << setw(12) << "StackPtr" << setw(15) << "Brk Size(Byte)" << setw(15) << "Utime (secs)" << setw(15) << "Stime (secs)" << endl; 
+     ofs << setw(6) << "Rank" << setw(24) << "Execname" << setw(6) << "State" << setw(20) << "InstPtr" << setw(8) << "nThread" 
+         << setw(20) << "StartStk" << setw(20) << "StackPtr" << setw(15) << "Brk Size(Byte)" << setw(15) << "Utime (secs)" << setw(15) << "Stime (secs)" << endl; 
 
      for ( i=0; i < be_size*maxSize; ++i ) {
        if ( gatheredTps[i].mpiRank != -1 )  {
          char bname[24];
 	 char *execname = strdup(gatheredTps[i].comm);
          snprintf(bname, 24, basename(execname));
-         ofs << setw(6)  << gatheredTps[i].mpiRank 
+         ofs << setw(6)  << dec << gatheredTps[i].mpiRank 
              << setw(24) << bname
 	     << setw(6)  << gatheredTps[i].state
-	     << "  Ox" << setfill('0') << setw(8) << hex << gatheredTps[i].stkIp << setfill(' ')
+	     << "  Ox" << setfill('0') << setw(16) << hex << gatheredTps[i].stkIp << setfill(' ')
 	     << setw(8)  << gatheredTps[i].nThread
-	     << "  Ox" << setfill('0') << setw(8) << hex << gatheredTps[i].startStack
-	     << "  Ox" << setfill('0') << setw(8) << hex << gatheredTps[i].stkSp << setfill(' ')
+	     << "  Ox" << setfill('0') << setw(16) << hex << gatheredTps[i].startStack
+	     << "  Ox" << setfill('0') << setw(16) << hex << gatheredTps[i].stkSp << setfill(' ')
 #if RM_BG_MPIRUN
 	     << setw(15) << dec << (gatheredTms[i].xMem.BgpMemStat.brk - gatheredTms[i].xMem.BgpMemStat.heapStart)
 	     << setw(15) << (double) gatheredTps[i].xStat.BgpStat.jobtime
 	     << setw(15) << 0.0
 	     << endl;
 #else
-	     << setw(15) << dec << (gatheredTms[i].xMem.LinuxMemStat.brk - gatheredTms[i].xMem.LinuxMemStat.heapStart)
+	     << setw(15) << "Not avail yet" //dec << (gatheredTms[i].xMem.LinuxMemStat.brk - gatheredTms[i].xMem.LinuxMemStat.brkstart)
 	     << setw(15) << (double)(gatheredTps[i].xStat.LinuxStat.utime)/100.0 
 	     << setw(15) << (double)(gatheredTps[i].xStat.LinuxStat.stime)/100.0 
 	     << endl;
