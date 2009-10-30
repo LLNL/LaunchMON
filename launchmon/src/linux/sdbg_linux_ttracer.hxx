@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Oct 30 2009 DHA: A patch to work around a bug in NPTL thread debug 
+ *                         library's td_thr_get_info call.
  *        Mar 06 2008 DHA: Thread debug library dll support 
  *        Sep 25 2008 DHA: Fixed a compatibility issue against thread_db 
  *                         in the 2.6.18 Linux kernel

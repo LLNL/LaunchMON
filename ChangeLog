@@ -1,3 +1,10 @@
+2009-10-30 Dong H. Ahn <ahn1@llnl.gov>
+	* tools/ciod/debugger_interface.h: updated this with ciod debug
+	  interface version 4.
+	* test/src/be_jobsnap.cxx: added BGP port 
+	* launchmon/src/linux/sdbg_linux_ttracer.hxx: patch to work around 
+	  a bug in NPTL thread debug library's td_thr_get_info call.
+
 2009-08-26 Dong H. Ahn <ahn1@lnll.gov>
 	* launchmon/src/lmon_api/*.h,
 	config/x_ac_prefix_config_h.m4: Added lmon-config.h support
