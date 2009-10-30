@@ -94,6 +94,15 @@ public:
       td_err_e te;
       int threadpid;
 
+      if (tt->th_unique == 0) {
+        // this is the main thread
+        // this is to work around a bug in the linux debug library's 
+        // td_thr_get_info call which has a conditional based upon an uninitialized
+        // value. And the condition happens when the thread is the main thread
+        // and we don't need to do much with the main thread anyway. 
+        return SDBG_TTRACE_OK;
+      }
+
 #if X86_ARCHITECTURE || X86_64_ARCHITECTURE
       thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>* thrinfo 
 	     = new linux_x86_thread_t();
@@ -107,7 +116,11 @@ public:
 
       if ( (te = td.dll_td_thr_event_enable(tt, 1)) != TD_OK )
 	return SDBG_TTRACE_FAILED;
-      if ( (te = td.dll_td_thr_get_info(tt, &(thrinfo->get_thread_info()))) != TD_OK )
+
+      td_thrinfo_t &tinfo = thrinfo->get_thread_info();
+      memset(&tinfo, '\0', sizeof(td_thrinfo_t));
+      te = td.dll_td_thr_get_info(tt, &tinfo);
+      if ( te != TD_OK )
         return SDBG_TTRACE_FAILED;
 
       threadpid = (int) thrinfo->thr2pid(); 
@@ -156,6 +169,15 @@ public:
       td_err_e te;
       int threadpid;
  
+      if (tt->th_unique == 0) {
+        // this is the main thread
+        // this is to work around a bug in the linux debug library's 
+        // td_thr_get_info call which has a conditional based upon an uninitialized
+        // value. And the condition happens when the thread is the main thread
+        // and we don't need to do much with the main thread anyway. 
+        return SDBG_TTRACE_OK;
+      }
+
 #if X86_ARCHITECTURE || X86_64_ARCHITECTURE
       thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper> *thrinfo 
 	= new linux_x86_thread_t();
@@ -168,8 +190,12 @@ public:
 
       if ( (te = td.dll_td_thr_event_enable(tt, 1)) != TD_OK ) 
 	return SDBG_TTRACE_FAILED;
-      if ( (te = td.dll_td_thr_get_info(tt, &(thrinfo->get_thread_info()))) != TD_OK )
-	return SDBG_TTRACE_FAILED;
+
+      td_thrinfo_t &tinfo = thrinfo->get_thread_info();
+      memset(&tinfo, '\0', sizeof(td_thrinfo_t));
+      te = td.dll_td_thr_get_info(tt, &tinfo);
+      if ( te != TD_OK )
+        return SDBG_TTRACE_FAILED;
 
       threadpid = thrinfo->thr2pid();
       //cout << "thread lwpid" << threadpid << endl;
