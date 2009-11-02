@@ -44,7 +44,7 @@
 */
 int pmgr_processops(int* fds, int nprocs);
     
-#if FINEGRAIN_MPIRUN_INTERFACE
+#if LAUNCHMON_FINEGRAIN_MPIRUN_INTERFACE
 int pmgr_process_singleop (int *fd, int nprocs, int targetop);
 #endif /* FINEGRAIN_MPIRUN_INTERFACE */
 

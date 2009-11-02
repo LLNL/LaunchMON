@@ -36,11 +36,11 @@
 int pmgr_open ();
 int pmgr_close();
 
-#if LAZY_BINDING 
+#if LAUNCHMON_LAZY_BINDING 
 int pmgr_getmyrank (int *rank);
 int pmgr_getmysize (int *size);
 int pmgr_getsockfd (int *fd);
-#endif /* LAZY_BINDING */
+#endif /* LAUNCHMON_LAZY_BINDING */
 
 /* sync point, no task makes it past until all have reached */
 int pmgr_barrier  ();
