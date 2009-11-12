@@ -29,7 +29,8 @@
  *  ./fe_launch_smoketest.debug /bin/hostname 9 5 pdebug `pwd`/be_kicker.debug
  *
  *  Update Log:
- *        Mar 04 2008 DHA: Added generic BlueGene support
+ *        Nov 12 2009 DHA: Change BG mpirun options to cover /P running under IBM LL
+ *        Mar 04 2009 DHA: Added generic BlueGene support
  *        Jun 16 2008 DHA: Added LMON_fe_recvUsrDataBe at the end to 
  *                         coordinate the testing result with back-end 
  *                         daemons better. 
@@ -109,7 +110,6 @@ main (int argc, char *argv[])
   unsigned int proctabsize = 0;
   int jobidsize   = 0;
   int i           = 0;
-  char *part      = NULL;
   char jobid[PATH_MAX]        = {0};
   char **launcher_argv        = NULL;
   char **daemon_opts          = NULL;
@@ -156,31 +156,24 @@ main (int argc, char *argv[])
     daemon_opts = argv+6;
 
 #if RM_BG_MPIRUN
-  launcher_argv = (char **) malloc(12*sizeof(char*));
+  //
+  // This will exercise CO or SMP on BlueGene
+  //
+  launcher_argv = (char **) malloc(8*sizeof(char *));
   launcher_argv[0] = strdup(mylauncher);
   launcher_argv[1] = strdup("-verbose");
-  launcher_argv[2] = strdup("1");
+  launcher_argv[2] = strdup("3");
   launcher_argv[3] = strdup("-np");
   launcher_argv[4] = strdup(argv[2]);
   launcher_argv[5] = strdup("-exe"); 
   launcher_argv[6] = strdup(argv[1]); 
-  launcher_argv[7] = strdup("-partition");
-  if ( (part = getenv ("MPIRUN_PARTITION")) == NULL )
-    {
-      fprintf(stdout,
-        "MPIRUN_PARTITION envVar isn't present\n");
-      return EXIT_FAILURE;
-    } 
-  launcher_argv[8] = strdup(part);
-  launcher_argv[9] = strdup("-mode");
-  launcher_argv[10] = strdup("VN");
-  launcher_argv[11] = NULL;
+  launcher_argv[7] = NULL;
   fprintf (stdout, "[LMON_FE] launching the job/daemons via %s\n", mylauncher);
 #elif RM_SLURM_SRUN
   numprocs_opt     = string("-n") + string(argv[2]);
   numnodes_opt     = string("-N") + string(argv[3]);
   partition_opt    = string("-p") + string(argv[4]);
-  launcher_argv    = (char**) malloc(7*sizeof(char*));
+  launcher_argv    = (char **) malloc (7*sizeof(char*));
   launcher_argv[0] = strdup(mylauncher);
   launcher_argv[1] = strdup(numprocs_opt.c_str());
   launcher_argv[2] = strdup(numnodes_opt.c_str());
