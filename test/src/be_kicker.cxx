@@ -215,10 +215,10 @@ main( int argc, char* argv[] )
 	      return EXIT_FAILURE;
 	    }
         }
-      }
+    } 
 
-      for (i=0; i < proctab_size; i++)
-        {
+    for (i=0; i < proctab_size; i++)
+      {
           BG_Debugger_Msg dbgmsg(CONTINUE,proctab[i].pd.pid,0,0,0);
           BG_Debugger_Msg ackmsg;	  
           dbgmsg.dataArea.CONTINUE.signal = signum;
@@ -249,7 +249,7 @@ main( int argc, char* argv[] )
           	  "[LMON BE(%d)] FAILED: the CONTINUE_ACK msg contains a wrong nodeNumber.\n", rank);
               return EXIT_FAILURE;
             }   
-         }
+      }
 
 #else
   for(i=0; i < proctab_size; i++)
@@ -268,6 +268,7 @@ main( int argc, char* argv[] )
 
   /* sending this to mark the end of the BE session */
   /* This should be used to determine PASS/FAIL criteria */
+  sleep(1);
   if ( (( lrc = LMON_be_sendUsrData ( NULL )) == LMON_EBDARG)
        || ( lrc == LMON_EINVAL ) 
        || ( lrc == LMON_ENOMEM )

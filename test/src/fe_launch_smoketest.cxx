@@ -369,7 +369,7 @@ main (int argc, char *argv[])
       return EXIT_FAILURE;
     } 
 
-  sleep (3); /* wait until all BE outputs are printed */
+  //sleep (3); /* wait until all BE outputs are printed */
 
   if (getenv ("LMON_ADDITIONAL_FE_STALL"))
     {
@@ -381,3 +381,4 @@ main (int argc, char *argv[])
 
   return EXIT_SUCCESS;
 }
+

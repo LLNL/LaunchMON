@@ -97,12 +97,22 @@ LMON_say_msg ( const char* m, const char* output, ... )
 static void 
 pass_its_neighbor(const int rank, const int size, int* buf)
 {  
+  int i;
   MPI_Request request[2];
   MPI_Status status[2];
 
   MPI_Irecv((void*)buf, 1, MPI_INT, ((rank+size-1)%size), COMM_TAG, MPI_COMM_WORLD, &request[0]);
   MPI_Isend((void*)&rank, 1, MPI_INT, ((rank+1)%size), COMM_TAG, MPI_COMM_WORLD, &request[1]);
   MPI_Waitall(2, request, status);
+
+  for (i=0; i < 10; i++) 
+    {
+      sleep(1);
+      if (rank == 0) 
+        {
+          LMON_say_msg ( "APP", "sleeped 1 sec \n");
+        }
+    }
 
   if (rank == 0) 
    {
