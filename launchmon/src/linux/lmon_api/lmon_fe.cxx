@@ -205,6 +205,12 @@
 # error fcntl.h is required
 #endif
 
+#if HAVE_LIMITS_H
+# include <limits.h>
+#else
+# error limits.h is required
+#endif
+
 #include "sdbg_self_trace.hxx"
 #include "sdbg_opt.hxx"
 #include "lmon_api/lmon_say_msg.hxx"

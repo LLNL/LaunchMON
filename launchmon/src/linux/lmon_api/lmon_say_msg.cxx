@@ -61,6 +61,12 @@
 # error ctime and sys_time.h is required
 #endif
 
+#if HAVE_LIMITS_H
+# include <limits.h>
+#else
+# error limits.h is required
+#endif
+
 #include <lmon_api/lmon_say_msg.hxx>
 
 const int pipe_t::uninitializedFileDescriptor = -1;

@@ -42,6 +42,12 @@
  *        Jun 06 2006 DHA: File created
  */ 
 
+#if HAVE_LIMITS_H
+# include <limits.h>
+#else
+# error limits.h is required
+#endif
+
 #include <lmon_api/common.h>
 #include "sdbg_opt.hxx"
 #include "sdbg_self_trace.hxx"

@@ -53,6 +53,12 @@
 # error ctime and sys_time.h is required 
 #endif
 
+#if HAVE_LIMITS_H
+# include <limits.h>
+#else
+# error limits.h is required
+#endif
+
 #include "sdbg_self_trace.hxx"
 
 self_trace_entry_t self_trace_t::launchmon_module_trace 

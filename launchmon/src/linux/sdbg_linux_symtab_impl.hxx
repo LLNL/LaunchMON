@@ -102,6 +102,13 @@ extern "C" {
 #else
 # error errno.h is required 
 #endif
+
+#if HAVE_LIMITS_H
+# include <limits.h>
+#else
+# error limits.h is required
+#endif
+
 }
 
 #include "sdbg_linux_std.hxx"
