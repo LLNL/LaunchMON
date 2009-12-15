@@ -1,4 +1,15 @@
 /*
+ * Copyright (c) 2009, Lawrence Livermore National Security, LLC.
+ * Produced at the Lawrence Livermore National Laboratory.
+ * Written by Adam Moody <moody20@llnl.gov>.
+ * LLNL-CODE-411040.
+ * All rights reserved.
+ * This file is part of the PMGR_COLLECTIVE library.
+ * For details, see https://sourceforge.net/projects/pmgrcollective.
+ * Please also read this file: LICENSE.TXT.
+*/
+
+/*
  * PMGR_COLLECTIVE ============================================================
  * This protocol enables MPI to bootstrap itself through a series of collective
  * operations.  The collective operations are modeled after MPI collectives --
@@ -22,10 +33,6 @@
  * amount of data.  All message sizes are specified in bytes.
  *
  * All functions return PMGR_SUCCESS on successful completion.
- *
- * Copyright (C) 2007 The Regents of the University of California.
- * Produced at Lawrence Livermore National Laboratory.
- * Author: Adam Moody <moody20@llnl.gov>
 */
 
 #ifndef _PMGR_COLLECTIVE_CLIENT_H
@@ -36,11 +43,9 @@
 int pmgr_open ();
 int pmgr_close();
 
-#if LAUNCHMON_LAZY_BINDING 
 int pmgr_getmyrank (int *rank);
 int pmgr_getmysize (int *size);
 int pmgr_getsockfd (int *fd);
-#endif /* LAUNCHMON_LAZY_BINDING */
 
 /* sync point, no task makes it past until all have reached */
 int pmgr_barrier  ();

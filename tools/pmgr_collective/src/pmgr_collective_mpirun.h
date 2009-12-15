@@ -1,4 +1,15 @@
 /*
+ * Copyright (c) 2009, Lawrence Livermore National Security, LLC.
+ * Produced at the Lawrence Livermore National Laboratory.
+ * Written by Adam Moody <moody20@llnl.gov>.
+ * LLNL-CODE-411040.
+ * All rights reserved.
+ * This file is part of the PMGR_COLLECTIVE library.
+ * For details, see https://sourceforge.net/projects/pmgrcollective.
+ * Please also read this file: LICENSE.TXT.
+*/
+
+/*
  * PMGR_COLLECTIVE ============================================================
  * This protocol enables MPI to bootstrap itself through a series of collective
  * operations.  The collective operations are modeled after MPI collectives --
@@ -18,10 +29,6 @@
  * pmgr_processops will handle all PMGR_COLLECTIVE operations and return control
  * upon an error or after receiving PMGR_CLOSE from the MPI tasks.  If no errors
  * are encountered, it will close all socket file descriptors before returning.
- *
- * Copyright (C) 2007 The Regents of the University of California.
- * Produced at Lawrence Livermore National Laboratory.
- * Author: Adam Moody <moody20@llnl.gov>
 */
 
 #ifndef _PMGR_COLLECTIVE_MPIRUN_H
@@ -43,9 +50,6 @@
   If no errors are encountered, all sockets are closed before returning.
 */
 int pmgr_processops(int* fds, int nprocs);
-    
-#if LAUNCHMON_FINEGRAIN_MPIRUN_INTERFACE
 int pmgr_process_singleop (int *fd, int nprocs, int targetop);
-#endif /* FINEGRAIN_MPIRUN_INTERFACE */
 
 #endif /* _PMGR_COLLECTIVE_MPIRUN_H */
