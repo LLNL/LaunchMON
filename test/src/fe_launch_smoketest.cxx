@@ -50,6 +50,12 @@
 # error unistd.h is required
 #endif
 
+#if HAVE_LIMITS_H
+# include <limits.h>
+#else
+# error limits.h is required 
+#endif
+
 #include <string>
 
 #include <lmon_api/lmon_proctab.h>

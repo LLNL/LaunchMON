@@ -50,7 +50,7 @@
 #else
 # error signal.h is required
 #endif
-                                                                                                                                        
+                                                                                                                               
 #define COMM_TAG    1000
 #define MAX_BUF_LEN 1024
 

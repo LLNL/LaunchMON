@@ -53,6 +53,12 @@
 # error stdarg.h is required
 #endif
 
+#if HAVE_LIMITS_H
+# include <limits.h>
+#else
+# error limits.h is required 
+#endif
+
 #include <lmon_api/lmon_proctab.h>
 #include <lmon_api/lmon_fe.h>
 

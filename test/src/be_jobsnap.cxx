@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Dec 16 2009 DHA: Added limits.h
  *        Sep 14 2009 DHA: Added Blue Gene support.
  *        Jun 12 2008 DHA: Added GNU build system support.
  *        Feb 09 2008 DHA: Added LLNS Copyright.
@@ -53,6 +54,12 @@
 # include <signal.h>
 #else
 # error signal.h is required 
+#endif
+
+#if HAVE_LIMITS_H
+# include <limits.h>
+#else
+# error limits.h is required 
 #endif
 
 #if RM_BG_MPIRUN
