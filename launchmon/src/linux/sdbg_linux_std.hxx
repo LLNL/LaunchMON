@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Dec  16 2009 DHA: Moved backtrace support with C++ demangling here
  *        Aug  10 2009 DHA: Added more comments
  *        Mar  06 2008 DHA: Deprecate GLUESYM support
  *        Mar  11 2008 DHA: Added PowerPC support (BlueGene FEN)
@@ -38,6 +39,36 @@
 
 #ifndef SDBG_LINUX_STD_HXX
 #define SDBG_LINUX_STD_HXX 1
+
+extern "C" {
+#if HAVE_EXECINFO_H
+# include <execinfo.h>
+#else
+#error execinfo.h is required 
+#endif
+
+#if HAVE_LIBGEN_H
+# include <libgen.h>
+#else
+# error libgen.h is required
+#endif
+
+#if HAVE_STDDEF_H
+# include <stddef.h>
+#endif
+}
+
+#if HAVE_STRING
+# include <string>
+#else
+# error string is required
+#endif
+
+#if HAVE_CXXABI_H
+# if HAVE_STDDEF_H
+#  include <cxxabi.h> /* picking up demangling service */
+# endif
+#endif
 
 //! LAUNCH_BREAKPOINT:
 /*!
@@ -151,6 +182,90 @@ const char * const LIBTHREAD_DB             = "libthread_db.so.1";
 
 const int MAX_LIB_PATH                      = 128;
 const int MAX_STRING_SIZE                   = 1024;
+const int BPCHAINMAX                        = 128;
+
+inline 
+bool glic_backtrace_wrapper (std::string &bt)
+{
+  using namespace std;
+  void *StFrameArray[BPCHAINMAX] = {0};
+  char **stacksymbols, **ssUsed;
+  int size;
+  int i;
+  string mybt;
+
+  if ( (size = backtrace (StFrameArray, BPCHAINMAX)) <= 0 )
+    {
+      return false;
+    }
+
+  size = (size > BPCHAINMAX) ? BPCHAINMAX: size;
+  stacksymbols = backtrace_symbols (StFrameArray, BPCHAINMAX);
+
+#if HAVE_STDDEF_H && HAVE_CXXABI_H 
+  /* demangle support */
+  char **demangleStSyms = (char **) malloc (size * sizeof(char *));
+  size_t dnSize; 
+  if (!demangleStSyms) 
+    ssUsed = stacksymbols;
+  else 
+    {
+      int i;
+      string delims("()+[]");
+      /* starting from 2 to remove two top stack frames */
+      for (i=2; i < size; ++i) 
+	{
+	  char *demangledName;
+	  int status;
+	  string targetStr (stacksymbols[i]);
+	  string binName, funcName, newStr;
+	  string::size_type begIdx, endIdx;
+	  
+	  begIdx = targetStr.find_first_not_of (delims); 	
+	  endIdx = targetStr.find_first_of (delims, begIdx);
+	  if ( (begIdx == string::npos) || (endIdx == string::npos) ) 
+	    binName = "BinaryNameNA";
+	  else
+	    {
+	      binName = targetStr.substr(begIdx, endIdx-begIdx);
+	      char *bn = strdup (binName.c_str());
+	      binName = basename(bn);
+	      free(bn);
+	    }
+	  
+	  begIdx = targetStr.find_first_not_of (delims, endIdx);
+	  endIdx = targetStr.find_first_of (delims, begIdx);
+	  if ( (begIdx == string::npos) || (endIdx == string::npos) ) 
+	    funcName = "FuncNameNA";
+	  else
+	    {
+	      funcName = targetStr.substr(begIdx, endIdx-begIdx);
+	      
+	      demangledName = abi::__cxa_demangle (funcName.c_str(), NULL, NULL, &status);
+	      if ( status < 0 )
+		newStr = binName + ": " + funcName;
+	      else
+		newStr = binName + ": " + demangledName;
+	      demangleStSyms[i] = strdup (newStr.c_str());
+	    }
+	}
+      ssUsed = demangleStSyms;
+    }
+#else
+  ssUsed = stacksymbols;
+#endif
+
+  bt = "BACKTRACE: \n";  
+  /* starting from 2 to remove two top stack frames */  
+  for( i=2 ; i < size ; ++i)
+    {
+      bt += ssUsed[i]; 
+      bt += "\n";
+    }
+
+  return true;
+}
+
 
 #if X86_ARCHITECTURE
 
