@@ -1,0 +1,14 @@
+2009-12-17 Dong Ahn <ahn1@llnl.gov>
+	* src/cobo.h,
+	  src/cobo.c: Added cobo_server_get_rootsocket and cobo_get_parentsocket
+
+2009-12-16 Dong Ahn <ahn1@llnl.gov>
+	* Makefile.am,
+	  src/Makefile.am,
+	  test/Makefile.am : Added automake support
+
+2009-12-16 Adam Moody <moody20@llnl.gov>
+
+	* test/client.c : Had rank and ranks args swapped in cobo_open().
+
+	* : initial import.
