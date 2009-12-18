@@ -278,7 +278,7 @@ LMON_be_internal_getConnFd ( int *fd )
     {
       return LMON_EDUNAV;
     }
-#elif
+#else
   return LMON_EDUNAV;
 #endif
 }
