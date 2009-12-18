@@ -64,7 +64,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = pmgr_collective ciod libgpg-error
+DIST_SUBDIRS = pmgr_collective cobo ciod libgpg-error
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
@@ -151,6 +151,8 @@ TESTNNODES = @TESTNNODES@
 VERSION = @VERSION@
 WITH_CIOD_FALSE = @WITH_CIOD_FALSE@
 WITH_CIOD_TRUE = @WITH_CIOD_TRUE@
+WITH_COBO_FALSE = @WITH_COBO_FALSE@
+WITH_COBO_TRUE = @WITH_COBO_TRUE@
 WITH_GCRYPT_FALSE = @WITH_GCRYPT_FALSE@
 WITH_GCRYPT_TRUE = @WITH_GCRYPT_TRUE@
 WITH_PMGR_COLLECTIVE_FALSE = @WITH_PMGR_COLLECTIVE_FALSE@
@@ -205,7 +207,8 @@ tvcmd = @tvcmd@
 @WITH_PMGR_COLLECTIVE_TRUE@OPT_PMGR_COLLECTIVE = pmgr_collective
 @WITH_CIOD_TRUE@OPT_CIOD = ciod
 @WITH_GCRYPT_TRUE@OPT_GCRYPT = libgpg-error
-SUBDIRS = $(OPT_PMGR_COLLECTIVE) $(OPT_CIOD) $(OPT_GCRYPT)
+@WITH_COBO_TRUE@OPT_COBO = cobo
+SUBDIRS = $(OPT_PMGR_COLLECTIVE) $(OPT_COBO) $(OPT_CIOD) $(OPT_GCRYPT)
 LIBGCRYPTDISTFILES = libgcrypt/src libgcrypt/src/gcrypt.h \
 	libgcrypt/src/gcrypt-module.h libgcrypt/src/Makefile.in \
 	libgcrypt/src/ChangeLog libgcrypt/src/Makefile.am \
