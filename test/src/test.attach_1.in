@@ -30,6 +30,7 @@
 #  Attach the tool to a running program and unlock the hang. 
 #
 #  Update Log:
+#        Dec 17 2009 DHA: Added minimum WAITAMOUNT
 #        Mar 06 2009 DHA: Changed bglrm to bgrm
 #        Dec 14 2008 DHA: configurable NUMNODES
 #        Jun 16 2008 DHA: Created file.
@@ -43,7 +44,12 @@ if test "x$RM_TYPE" = "xbgrm" ; then
 fi
 
 NUMTASKS=`expr $NUMNODES \* @SMP@`
+
 WAITAMOUNT=$NUMNODES 
+if test $NUMNODES -lt 10 ; then 
+  WAITAMOUNT=10
+fi 
+
 SIGNUM=10
 MPI_JOB_LAUNCHER_PATH=@TJLPATH@
 export LMON_LAUNCHMON_ENGINE_PATH=@LMON@

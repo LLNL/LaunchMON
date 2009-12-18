@@ -31,6 +31,7 @@
 #  and kill the BE daemons.
 #
 #  Update Log:
+#        Dec 17 2009 DHA: Added tminimum waittime
 #        Mar 06 2009 DHA: Changed bglrm to bgrm
 #        Dec 14 2008 DHA: configurable NUMNODES
 #        Jun 17 2008 DHA: Created file.
@@ -47,6 +48,9 @@ NUMNODES=@NNODES@
 
 NUMTASKS=`expr $NUMNODES \* @SMP@`
 WAITAMOUNT=$NUMNODES 
+if test $NUMNODES -lt 10 ; then
+  WAITAMOUNT=10
+fi
 SIGNUM=10
 MPI_JOB_LAUNCHER_PATH=@TJLPATH@
 export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
