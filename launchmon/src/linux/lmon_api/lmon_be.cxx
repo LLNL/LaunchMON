@@ -26,6 +26,9 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Dec 11 2009 DHA: Deprecate the static LMON_be_parse_raw_RPDTAB_msg
+ *                         function in favor of parse_raw_RPDTAB_msg designed 
+ *                         to used broadly.
  *        May 19 2009 DHA: Added errorCB support (ID2787962).
  *        May 06 2009 DHA: Bug fix for ID2787959: LMON_be_recvUsrData not returning
  *                         a correct error code.
@@ -221,10 +224,10 @@ LMON_be_getWhereToConnect ( struct sockaddr_in *servaddr )
 {
   char *portinfo;
   char *ipinfo;
-  
+
   if (servaddr == NULL)
     {
-      LMON_say_msg (LMON_BE_MSG_PREFIX, true, 
+      LMON_say_msg (LMON_BE_MSG_PREFIX, true,
         "servaddr is NULL");
 
       return LMON_EBDARG;
@@ -235,12 +238,12 @@ LMON_be_getWhereToConnect ( struct sockaddr_in *servaddr )
   // LMON_FE_WHERETOCONNECT_PORT
   // envVar which should have been sent by FE 
   //
-  if ( (portinfo = getenv (LMON_FE_PORT_ENVNAME)) == NULL )    
+  if ( (portinfo = getenv (LMON_FE_PORT_ENVNAME)) == NULL )
     {
       LMON_say_msg (LMON_BE_MSG_PREFIX, true, 
         "LMON_FE_PORT_ENVNAME envVar not found");
 
-      return LMON_EINVAL;    
+      return LMON_EINVAL;
     }
 
   //
@@ -288,128 +291,30 @@ LMON_be_getSharedKeyAndID ( char *shared_key, int *id )
 
   if ( shared_key == NULL )
     {
-      LMON_say_msg (LMON_BE_MSG_PREFIX, true, 
+      LMON_say_msg (LMON_BE_MSG_PREFIX, true,
         "one of the arguments is NULL" );
 
       return LMON_EBDARG;
     }
 
-  if ( (sk = getenv (LMON_SHRD_SEC_ENVNAME)) == NULL )    
+  if ( (sk = getenv (LMON_SHRD_SEC_ENVNAME)) == NULL )
     {
       LMON_say_msg (LMON_BE_MSG_PREFIX, true, 
         "LMON_SHRD_SEC_ENVNAME envVar not found");
 
-      return LMON_EINVAL;    
+      return LMON_EINVAL;
     }
 
   sprintf (shared_key, "%s", sk);
-  if ( (char_id = getenv (LMON_SEC_CHK_ENVNAME)) == NULL )    
+  if ( (char_id = getenv (LMON_SEC_CHK_ENVNAME)) == NULL )
     {
-      LMON_say_msg (LMON_BE_MSG_PREFIX, true, 
+      LMON_say_msg (LMON_BE_MSG_PREFIX, true,
         "LMON_SEC_CHK_ENVNAME envVar not found");
 
-      return LMON_EINVAL;    
+      return LMON_EINVAL;
     } 
-  
+
   (*id) = atoi (char_id);
-  
-  return LMON_OK;
-}
-
-
-static lmon_rc_e 
-LMON_be_parse_raw_RPDTAB_msg ( )
-{
-  using namespace std;
-
-  char *mpirent;
-  char *strtab;
-  int i;
-  unsigned int ntasks;
-  
-  if ( proctab_cache.size () != 0 )
-    {
-      LMON_say_msg (LMON_BE_MSG_PREFIX, false, 
-        "don't need to call parse_raw_RPDTAB_msg more than once");
-
-      return LMON_EINVAL;
-    }  
- 
-  mpirent = get_lmonpayload_begin ( bedata.proctab_msg );
-  if ( mpirent == NULL )
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-        "bedata.proctab_msg doesn't contain the lmon payload! ");
-
-      return LMON_EINVAL;
-    }
-
-  strtab  = get_strtab_begin ( bedata.proctab_msg );
-  if ( strtab  == NULL )
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-        "bedata.proctab_msg doesn't contain the string table! ");
-
-      return LMON_EINVAL;
-    }
-
-    if (bedata.proctab_msg->sec_or_jobsizeinfo.num_tasks < LMON_NTASKS_THRE)
-      {
-        ntasks = bedata.proctab_msg->sec_or_jobsizeinfo.num_tasks;
-      }
-    else
-      {
-        ntasks = bedata.proctab_msg->long_num_tasks;
-      }
-
-#if VERBOSE
-    LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-      "entered the loop that populates RPDTAB, numtasks: %d", ntasks);
-#endif
-
-
-  for ( i=0; i < ntasks; i++ )
-    {
-      unsigned int *hn_ix_ptr = (unsigned int*) mpirent;
-      unsigned int *exec_ix_ptr = (unsigned int*) (mpirent + sizeof (int));
-      int *pid_ptr = (int *) (mpirent + 2*sizeof(int));
-      int *rank_ptr = (int *) (mpirent + 3*sizeof(int));
-      mpirent += 4*sizeof (int);
-      string hntmpstr( strtab + (*hn_ix_ptr) );
-      char *exeptr = ( strtab + (*exec_ix_ptr) );      
-
-      MPIR_PROCDESC_EXT *anentry = (MPIR_PROCDESC_EXT *) 
-	malloc (sizeof (MPIR_PROCDESC_EXT) );
-	  
-      if ( anentry == NULL )
-	{
-	  LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-            "malloc returned null ");
-
-	  return LMON_ENOMEM;
-	}
-
-      anentry->pd.executable_name = strdup ( exeptr );
-      anentry->pd.host_name = strdup ( hntmpstr.c_str () );
-      anentry->pd.pid = (*pid_ptr);
-      anentry->mpirank = (*rank_ptr);
-	
-      if ( proctab_cache.find (hntmpstr) == proctab_cache.end() )
-	{
-	  vector<MPIR_PROCDESC_EXT *> avec;
-	  avec.push_back (anentry);
-	  proctab_cache[hntmpstr] = avec;
-	}
-      else
-	{
-	  proctab_cache[hntmpstr].push_back (anentry);	  
-	}      
-    }
-
-#if VERBOSE
-    LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-      "exited the loop that populated RPDTAB"); 
-#endif
 
   return LMON_OK;
 }
@@ -429,10 +334,10 @@ LMON_be_parse_raw_RPDTAB_msg ( )
 /*!
     Please refer to the header file: lmon_be.h
 */
-extern "C" lmon_rc_e 
+extern "C" lmon_rc_e
 LMON_be_init ( int ver, int *argc, char ***argv )
-{  
-  int rc;  
+{
+  int rc;
   lmon_rc_e lrc;
   struct sockaddr_in servaddr;
 
@@ -449,7 +354,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
   if ( LMON_be_internal_init ( argc, argv ) != LMON_OK )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true,
-        "LMON_be_mpibased_init failed");
+        "LMON_be_internal_init failed");
 
       return LMON_ESUBCOM;
     }
@@ -521,10 +426,10 @@ LMON_be_init ( int ver, int *argc, char ***argv )
  
   BEGIN_MASTER_ONLY
     /*
-     *      
+     *
      * The backend master initiates a handshake with FE
      *
-     */    
+     */
     int i;
     lmonp_t initmsg;   
     char shared_key[LMON_KEY_LENGTH];
@@ -538,7 +443,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
       {
 	/*
 	 * Establishing a connection with the FE
-	 * if no connection has yet been made.
+	 * if the master has not established a connection
 	 */
 	if ( ( servsockfd = socket ( AF_INET, SOCK_STREAM, 0 )) < 0 )
 	  {
@@ -546,11 +451,11 @@ LMON_be_init ( int ver, int *argc, char ***argv )
 	      "socket failed ");
 
 	    return LMON_ESYS;
-	  }     
+	  }
 
 #if VERBOSE
-    LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-      "BE master: socket created" );
+      LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+        "BE master: socket created" );
 #endif
 	/*
 	 * Where does the master be connect to?
@@ -575,7 +480,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
 	  {
 	    LMON_say_msg ( LMON_BE_MSG_PREFIX, true, 
               "connect failed " );
-	    
+
 	    return LMON_ESYS;
 	  }
       }
@@ -584,13 +489,13 @@ LMON_be_init ( int ver, int *argc, char ***argv )
     LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
       "BE master: got an actual connection" );
 #endif
-    
+
     bzero ( shared_key, LMON_KEY_LENGTH );
     /*
      * getting shared key and session ID that will be used 
      * to securely connect to the front-end.
      */
-    if ( (lrc = LMON_be_getSharedKeyAndID ( shared_key, 
+    if ( (lrc = LMON_be_getSharedKeyAndID ( shared_key,
 		  &intsessID) ) != LMON_OK)
       {
 	LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
@@ -1068,7 +973,7 @@ LMON_be_handshake ( void *udata )
 
 #if VERBOSE
     LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-      "BE master: set a msg header of lmonp_befe_hostname type");
+      "BE master: about to write the hosts list to the FE");
 #endif
     
     //
@@ -1079,6 +984,11 @@ LMON_be_handshake ( void *udata )
     		sendbuf, 
     		sendbufsize );
     free (sendbuf);      
+
+#if VERBOSE
+    LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+      "BE master: the hosts list written to the FE");
+#endif
 
     //
     // receiving the PROCTAB stream from the front-end 
@@ -1400,7 +1310,7 @@ LMON_be_ready ( void *udata )
                     (int) lmonp_befe_usrdata,
                     0,0,0,0,0,0,
                     LMON_MAX_USRPAYLOAD);
-                 
+
     	uoffset = get_usrpayload_begin ( readymsg );
     	bedata.pack ( udata,  
     		      uoffset, 
@@ -1456,15 +1366,20 @@ LMON_be_getMyProctab (
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
         "bedata.proctab_msg is null!  ");
-      
+
       return LMON_EINVAL;
     }
 
   if ( proctab_cache.size () == 0 )
     {
-      lrc = LMON_be_parse_raw_RPDTAB_msg ();
-      if ( lrc != LMON_OK ) 
-	return lrc;
+      if ( parse_raw_RPDTAB_msg ( bedata.proctab_msg, &proctab_cache) < 0 )
+        {
+          LMON_say_msg (LMON_BE_MSG_PREFIX, false,
+            "parse_raw_RPDTAB_msg failed to parse RPDTAB");
+
+          return LMON_EINVAL;
+        }
+
     }
 
 #if RM_BG_MPIRUN
@@ -1511,7 +1426,7 @@ LMON_be_getMyProctab (
   (*size) = (int) proctab_cache[myhostname].size ();
   map<string, vector<MPIR_PROCDESC_EXT* > >::const_iterator viter 
     = proctab_cache.find (myhostname);  
-  
+
   for ( i=0; (i < (*size)) && (i < proctab_num_elem); ++i )
     {
       proctabbuf[i].pd.executable_name = strdup ((*viter).second[i]->pd.executable_name);
@@ -1522,7 +1437,7 @@ LMON_be_getMyProctab (
 
   if ( ( i == proctab_num_elem ) && ( proctab_num_elem < (*size) ) )
     return LMON_EINVAL;
-    
+
   return LMON_OK;
 }  
 
@@ -1550,9 +1465,13 @@ LMON_be_getMyProctabSize ( int *size )
 
   if ( proctab_cache.size () == 0 )
     {
-      lrc = LMON_be_parse_raw_RPDTAB_msg ();
-      if ( lrc != LMON_OK ) 
-	return lrc;
+      if ( parse_raw_RPDTAB_msg ( bedata.proctab_msg, &proctab_cache) < 0 )
+        {
+          LMON_say_msg (LMON_BE_MSG_PREFIX, false,
+            "parse_raw_RPDTAB_msg failed to parse RPDTAB");
+
+          return LMON_EINVAL;
+        }
     }
 #if RM_BG_MPIRUN
   /*
@@ -1775,7 +1694,7 @@ LMON_be_sendUsrData ( void* udata )
                     (int) lmonp_befe_usrdata,
                     0,0,0,0,0,0,
                     LMON_MAX_USRPAYLOAD);
-                 
+
     	uoffset = get_usrpayload_begin ( usrmsg );
         if ( bedata.pack ( udata, uoffset, LMON_MAX_USRPAYLOAD, &upl_leng ) < 0 )
           {

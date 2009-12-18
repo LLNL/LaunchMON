@@ -82,6 +82,18 @@
 # error iostream is required
 #endif
 
+#if HAVE_VECTOR
+# include <vector>
+#else
+# error vector is required
+#endif
+
+#if HAVE_MAP
+# include <map>
+#else
+# error map is required
+#endif
+
 #if HAVE_ERRNO_H
 #include <errno.h>
 #else
@@ -101,6 +113,7 @@
 #endif
 
 #include <lmon_api/lmon_lmonp_msg.h>
+#include <lmon_api/lmon_proctab.h>
 
 #define LMONP_MSG_OP "[LMONP MSG]"
 
@@ -257,7 +270,7 @@ lmon_accept ( int s, struct sockaddr *addr, socklen_t *addrlen )
   for ( ; ; )
     {
       connfd  = accept ( s, addr, addrlen );
-      
+
       //
       // If s is not marked with O_NONBLOCK and no connection 
       // arrive, above accept will block. Make sure to mark
@@ -277,7 +290,7 @@ lmon_accept ( int s, struct sockaddr *addr, socklen_t *addrlen )
               continue; 
             }
         }
-      
+
       break;
     }
 
@@ -298,18 +311,18 @@ lmon_timedaccept ( int s, struct sockaddr *addr,
   struct timeval to;
   fd_set readset;
   int nready = 0;
-                                                                                                        
+
   if (toutsec < 0 )
     return -1;
-                                                                                                        
+
   FD_ZERO (&readset);
   FD_SET (s, &readset);
-                                                                                                        
+
   to.tv_sec = toutsec;
   to.tv_usec = 0;
-                                                                                                        
+
   nready = select (s+1, &readset, NULL, NULL, &to);
-                                                                                                        
+
   if ( nready < 0 )
     {
       return -1;
@@ -321,7 +334,7 @@ lmon_timedaccept ( int s, struct sockaddr *addr,
       //
       return -2;
     }
-                                                                                                        
+
  return ( lmon_accept (s, addr, addrlen) );
 }
 
@@ -529,15 +542,15 @@ typedef struct _lmonp_t {
 */
 extern "C" 
 int 
-set_msg_header (lmonp_t* msg, 
-		lmonp_msg_class_e mc, 
-		int type, 
-		unsigned short seckey_or_numtasks, 
+set_msg_header (lmonp_t *msg,
+		lmonp_msg_class_e mc,
+		int type,
+		unsigned short seckey_or_numtasks,
 		unsigned int security_key2,
 		unsigned short num_exec_name,
 		unsigned short num_host_name,
 		unsigned int lntask,
-		unsigned int lmonlen, 
+		unsigned int lmonlen,
 		unsigned int usrlen )
 {
   if (!msg)
@@ -581,7 +594,7 @@ set_msg_header (lmonp_t* msg,
 }
 
 
-char* 
+char *
 get_lmonpayload_begin ( lmonp_t *msg )
 {
   char* ret = (char *) msg;
@@ -597,10 +610,10 @@ get_lmonpayload_begin ( lmonp_t *msg )
 }
 
 
-char* 
+char *
 get_usrpayload_begin ( lmonp_t *msg )
 {
-  char* ret = (char *) msg;
+  char *ret = (char *) msg;
   if ( !msg )
     return NULL;
 
@@ -613,9 +626,9 @@ get_usrpayload_begin ( lmonp_t *msg )
 }
 
 
-char* 
-get_strtab_begin ( lmonp_t *msg ) 
-{ 
+char *
+get_strtab_begin ( lmonp_t *msg )
+{
   char *ret = NULL;
   if ( msg->msgclass == lmonp_fetobe )
   {
@@ -671,4 +684,76 @@ get_strtab_begin ( lmonp_t *msg )
  
   return ret;
 }
- 
+
+
+//
+// 0 on success
+// <0 on failure
+//
+int
+parse_raw_RPDTAB_msg (lmonp_t *proctabMsg, void *pMap)
+{
+  using namespace std;
+
+  char *mpirent;
+  char *strtab;
+  int i;
+  unsigned int ntasks;
+
+  //
+  // This implementation assumes that pMap is C++ STD Map type
+  //
+  std::map<std::string, std::vector<MPIR_PROCDESC_EXT *> > *pTab
+    = (std::map<std::string, std::vector<MPIR_PROCDESC_EXT *> > *)pMap;
+
+  if ( (*pTab).size() != 0 || proctabMsg == NULL)
+    return -1;
+
+  mpirent = get_lmonpayload_begin ( proctabMsg );
+  if ( !mpirent )
+    return -2;
+
+  strtab  = get_strtab_begin ( proctabMsg );
+  if ( !strtab )
+    return -3;
+
+    if (proctabMsg->sec_or_jobsizeinfo.num_tasks < LMON_NTASKS_THRE)
+        ntasks = proctabMsg->sec_or_jobsizeinfo.num_tasks;
+    else
+        ntasks = proctabMsg->long_num_tasks;
+
+  for ( i=0; i < ntasks; i++ )
+    {
+      unsigned int *hn_ix_ptr = (unsigned int *) mpirent;
+      unsigned int *exec_ix_ptr = (unsigned int *) (mpirent + sizeof (int));
+      int *pid_ptr = (int *) (mpirent + 2*sizeof(int));
+      int *rank_ptr = (int *) (mpirent + 3*sizeof(int));
+      mpirent += 4*sizeof (int);
+      string hntmpstr( strtab + (*hn_ix_ptr) );
+      char *exeptr = ( strtab + (*exec_ix_ptr) );
+
+      MPIR_PROCDESC_EXT *anentry = (MPIR_PROCDESC_EXT *)
+	malloc (sizeof (MPIR_PROCDESC_EXT) );
+
+      if ( anentry == NULL )
+        return -4;
+
+      anentry->pd.executable_name = strdup ( exeptr );
+      anentry->pd.host_name = strdup ( hntmpstr.c_str () );
+      anentry->pd.pid = ( *pid_ptr );
+      anentry->mpirank = ( *rank_ptr );
+	
+      if ( (*pTab).find (hntmpstr) == (*pTab).end() )
+	{
+	  vector<MPIR_PROCDESC_EXT *> avec;
+	  avec.push_back (anentry);
+	  (*pTab)[hntmpstr] = avec;
+	}
+      else
+	{
+	  (*pTab)[hntmpstr].push_back (anentry);
+	}
+    }
+
+  return 0;
+}

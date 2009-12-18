@@ -188,7 +188,7 @@ typedef enum _lmonp_fe_to_be_msg_e {
   lmonp_febe_usrdata                   = 2,
 
   /*
-   * FE->BE: launch           
+   * FE->BE: launch
    */
   lmonp_febe_launch                    = 3,
 
@@ -273,7 +273,7 @@ typedef enum  _my_lmon_kind_e {
 /*!
     lmonp protocol
 
-    
+
 */
 /* The first 32 bits                                                    */ 
 /*     0 - 2: MSG class: defines communication pair                     */
@@ -306,7 +306,7 @@ typedef enum  _my_lmon_kind_e {
 
     1 and 2 are offset value from the end of such per-task elements
     ( = 16Bytes x num_proc )
-    
+
     16Bytes x num_proc + the size of string table constitues 
     lmon_payload_length.
 */
@@ -425,9 +425,10 @@ int set_msg_header (
 char* get_lmonpayload_begin ( lmonp_t *msg );
 char* get_usrpayload_begin ( lmonp_t *msg );
 char* get_strtab_begin ( lmonp_t *msg );
+int parse_raw_RPDTAB_msg (lmonp_t *proctabMsg, void *pMap);
 
 ssize_t lmon_write_raw ( int fd, void *buf, size_t count );
-ssize_t lmon_read_raw ( int fd, void *buf, size_t count );  
+ssize_t lmon_read_raw ( int fd, void *buf, size_t count );
 
 END_C_DECLS
 

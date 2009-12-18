@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Dec 16 2009 DHA: Added COBO support
  *        May 07 2009 DHA: Added a patch to fix the attach-detach-and-reattach failure
  *                         on BlueGene. This requires IBM efix27.
  *        Mar 04 2009 DHA: Added BlueGene/P support. 
@@ -778,7 +779,7 @@ linux_launchmon_t::launch_tool_daemons (
 
   if ( !get_API_mode() 
        && !(p.get_myopts()->get_my_opt()->modelchecker))
-    {    
+    {
       //
       // Standalone launchmon. The launchmon session is not
       // driven by LMON APIs...
@@ -817,7 +818,7 @@ linux_launchmon_t::launch_tool_daemons (
 	      if(!execname) 
 		execname = strdup((*vpos)->pd.executable_name);
 	}				
-	  
+
 	  if ( !(p.get_myopts()->get_my_opt()->modelchecker) )
 	    {
 	      // 
@@ -904,17 +905,17 @@ linux_launchmon_t::launch_tool_daemons (
 
       if (p.get_myopts()) 
 	{
+	  char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
+	  char *sharedsecret = strtok (tokenize2, ":");
+	  char *randomID = strtok (NULL, ":");
 #if PMGR_BASED
           char *tokenize = strdup(p.get_myopts()->get_my_opt()->pmgr_info.c_str());
 	  char *mip = strtok ( tokenize, ":" );
 	  char *mport = strtok ( NULL, ":" );
-	  char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->pmgr_sec_info.c_str());
-	  char *sharedsecret = strtok (tokenize2, ":");
-	  char *randomID = strtok (NULL, ":");
 
-	  sprintf ( expanded_string, 
+	  sprintf ( expanded_string,
 		p.get_myopts()->get_my_opt()->launchstring.c_str(), 
-		get_resid(),	
+		get_resid(),
 		get_proctable_copy().size(),
 		get_proctable_copy().size(),
 		get_proctable_copy().size(),
@@ -926,9 +927,11 @@ linux_launchmon_t::launch_tool_daemons (
 #else
 	  sprintf ( expanded_string, 
 		p.get_myopts()->get_my_opt()->launchstring.c_str(), 
-		get_resid(),	
+		get_resid(),
 		get_proctable_copy().size(),
-		get_proctable_copy().size());
+		get_proctable_copy().size(),
+		sharedsecret,
+		randomID);
 #endif
 	}
 	
@@ -962,8 +965,8 @@ linux_launchmon_t::launch_tool_daemons (
 	  exit(1);
 	}
     }
-#endif 
-   
+#endif
+
   return LAUNCHMON_OK;
 }
 
@@ -1605,16 +1608,20 @@ linux_launchmon_t::handle_trap_after_attach_event (
       // Chaged the macro to RM_BG_MPIRUN from RM_BGL_MPIRUN to
       // genericize BlueGene support.
       //
+#if PMGR_BASED || COBO_BASED
+      char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
+      char *sharedsecret = strtok (tokenize2, ":");
+      char *randomID = strtok (NULL, ":");
       char serverargstmp[BG_SERVERARG_LENGTH];
       char serverargs[BG_SERVERARG_LENGTH] = {0};
       char *curptr = NULL;
       char *token = NULL;
+#if PMGR_BASED
       char *tokenize = strdup(p.get_myopts()->get_my_opt()->pmgr_info.c_str());
       char *mip = strtok ( tokenize, ":" );
       char *mport = strtok ( NULL, ":" );
-      char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->pmgr_sec_info.c_str());
-      char *sharedsecret = strtok (tokenize2, ":");
-      char *randomID = strtok (NULL, ":");
+#endif
+
 
       const symbol_base_t<T_VA>& executablepath
         = main_im->get_a_symbol (p.get_launch_exec_path ());
@@ -1637,9 +1644,11 @@ linux_launchmon_t::handle_trap_after_attach_event (
 
       sprintf ( serverargstmp,
                 p.get_myopts()->get_my_opt()->launchstring.c_str(),
+#if PMGR_BASED
                 mip,
                 mport,
                 24689, /* just a random number for pmgrjobid on BGL */
+#endif
                 sharedsecret,
                 randomID);
 
@@ -1671,6 +1680,7 @@ linux_launchmon_t::handle_trap_after_attach_event (
                                    serverargs,
                                    BG_SERVERARG_LENGTH,
                                    use_cxt );
+#endif /* PMGR_BASED || COBO_BASED */
 #endif /* RM_BG_MPIRUN */
 
       //	
@@ -1812,16 +1822,19 @@ linux_launchmon_t::handle_trap_after_exec_event (
       // Chaged the macro to RM_BG_MPIRUN from RM_BGL_MPIRUN to
       // genericize BlueGene support.
       //
+#if PMGR_BASED || COBO_BASED
+      char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
+      char *sharedsecret = strtok (tokenize2, ":");
+      char *randomID = strtok (NULL, ":");
       char serverargstmp[BG_SERVERARG_LENGTH];
       char serverargs[BG_SERVERARG_LENGTH] = {0};
       char *curptr = NULL;
       char *token = NULL;
+#if PMGR_BASED
       char *tokenize = strdup(p.get_myopts()->get_my_opt()->pmgr_info.c_str());
       char *mip = strtok ( tokenize, ":" );
       char *mport = strtok ( NULL, ":" );
-      char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->pmgr_sec_info.c_str());
-      char *sharedsecret = strtok (tokenize2, ":");
-      char *randomID = strtok (NULL, ":");
+#endif
 
       const symbol_base_t<T_VA>& executablepath
 	= main_im->get_a_symbol (p.get_launch_exec_path ());
@@ -1842,13 +1855,15 @@ linux_launchmon_t::handle_trap_after_exec_event (
 
       sprintf ( serverargstmp,
                 p.get_myopts()->get_my_opt()->launchstring.c_str(),
+#if PMGR_BASED
                 mip,
                 mport,
                 24689, /* just a random number */
+#endif
                 sharedsecret,
                 randomID);
 
-      curptr = serverargs;  
+      curptr = serverargs;
       token = strtok (serverargstmp, " ");
       int tlen = strlen(token);
       while ( curptr != NULL && ((curptr-serverargs+tlen+1) < BG_SERVERARG_LENGTH))
@@ -1871,11 +1886,12 @@ linux_launchmon_t::handle_trap_after_exec_event (
 
       (*curptr) = '\0';
       curptr += 1; 
-      get_tracer()->tracer_write ( p, 
-				   sa_addr,	
+      get_tracer()->tracer_write ( p,
+				   sa_addr,
 				   serverargs,
 				   BG_SERVERARG_LENGTH,
 				   use_cxt );
+#endif /* PMGR_BASED || COBO_BASED */
 #endif
  
       //

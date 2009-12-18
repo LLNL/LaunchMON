@@ -27,6 +27,8 @@
  *						
  *
  *  Update Log:
+ *        Mar 16 2009 DHA: Added COBO support
+ *                         Added 2010 to copyright 
  *        Mar 11 2009 DHA: Added 2009 to copyright
  *        Mar 17 2008 DHA: Added PMGR Collective support.
  *        Feb 09 2008 DHA: Added LLNS Copyright.
@@ -58,7 +60,7 @@ const std::string software_name
 const std::string version 
    = PACKAGE_VERSION;
 const std::string copyright 
-   = "Copyright (C) 2008-2009, Lawrence Livermore National Security, LLC.";
+   = "Copyright (C) 2008-2010, Lawrence Livermore National Security, LLC.";
 const std::string produced 
    = "Produced at Lawrence Livermore National Laboratory.";
 const std::string right 
@@ -82,10 +84,10 @@ opts_args_t::opts_args_t ()
   my_opt->tool_daemon = "";
   my_opt->tool_daemon_opts = "";
   my_opt->remote_info = "";
-#if PMGR_BASED
+#if PMGR_BASED 
   my_opt->pmgr_info = "";
-  my_opt->pmgr_sec_info = "";
 #endif
+  my_opt->lmon_sec_info = "";
   my_opt->debugtarget = "";
   my_opt->launchstring = "";
   my_opt->copyright = LAUNCHMON_COPYRIGHT;
@@ -112,10 +114,10 @@ opts_args_t::opts_args_t ( const opts_args_t& o )
     my_opt->tool_daemon = o.my_opt->tool_daemon;
     my_opt->tool_daemon_opts = o.my_opt->tool_daemon_opts;
     my_opt->remote_info = o.my_opt->remote_info;
-#if PMGR_BASED
+#if PMGR_BASED 
     my_opt->pmgr_info = o.my_opt->pmgr_info;
-    my_opt->pmgr_sec_info = o.my_opt->pmgr_sec_info;
 #endif
+    my_opt->lmon_sec_info = o.my_opt->lmon_sec_info;
     my_opt->debugtarget = o.my_opt->debugtarget;
     my_opt->launchstring = o.my_opt->launchstring;
     my_opt->copyright = o.my_opt->copyright;
@@ -128,8 +130,8 @@ opts_args_t::opts_args_t ( const opts_args_t& o )
 
 //!
 /*!  opt_args_t destructor
-      
-    
+
+
 */
 opts_args_t::~opts_args_t()
 {
@@ -142,8 +144,8 @@ opts_args_t::~opts_args_t()
 
 //!
 /*!  opt_args_t::process_args
-      
-    
+
+
 */
 bool 
 opts_args_t::process_args ( int* argc, char*** argv )
@@ -194,36 +196,36 @@ opts_args_t::process_args ( int* argc, char*** argv )
 		c = 'o';
 	      else if ( string(&nargv[i][2]) == string("remote"))
 		c = 'r';
-#if PMGR_BASED
+#if PMGR_BASED 
 	      else if ( string(&nargv[i][2]) == string("pmgr"))
-	        c = 'm';  	
-	      else if ( string(&nargv[i][2]) == string("pmgrsec"))	
-	        c = 's';
+	        c = 'm';
 #endif
+	      else if ( string(&nargv[i][2]) == string("lmonsec"))	
+	        c = 's';
 	    }
-            
+
 	  switch (c) 
 	    {
-      
+
 	    case 'a':  
 	      if(debugtarget)
-		nargv[i] = debugtarget;	      
+		nargv[i] = debugtarget;
 	      else
 		exit(1);  
 
 	      my_opt->remaining = &(nargv[i]);
 	      fin_parsing = true;
 	      break;
-	      
+
 	    case 'o':
-	      self_trace_t::tracefptr = fopen (nargv[i+1], "w+");	     
+	      self_trace_t::tracefptr = fopen (nargv[i+1], "w+");
 	      assert ( self_trace_t::tracefptr != NULL);
 	      i++;
 	      break;
 
 	    case 'v':
 	      my_opt->verbose = atoi(nargv[i+1]);
-	      
+
 	      if (my_opt->verbose == 0)
 		ver = quiet;
 	      else if (my_opt->verbose == 1 )
@@ -241,20 +243,20 @@ opts_args_t::process_args ( int* argc, char*** argv )
 	      self_trace_t::driver_module_trace.verbosity_level = ver;
 	      self_trace_t::machine_module_trace.verbosity_level = ver;
 	      self_trace_t::opt_module_trace.verbosity_level = ver;
-	      
+
 	      i++;
 	      break;
-	      
+
 	    case 'h':
 	      print_usage();
 	      break;
-       
-	    case 'd':	     	
+
+	    case 'd':
 	      my_opt->tool_daemon =  nargv[i+1];
 	      bspth = nargv[i+1];
 	      if (!check_path(bspth, my_opt->tool_daemon))
   	        exit(1);
-	   
+
 	      i++;
 	      break;
 	
@@ -265,28 +267,28 @@ opts_args_t::process_args ( int* argc, char*** argv )
 
 	    case 'p':
 	      my_opt->launcher_pid = (pid_t)atoi(nargv[i+1]);
-	      my_opt->attach = true;	   
+	      my_opt->attach = true;
 	      i++;
 	      break;
-	      
+
 	    case 'r':
 	      my_opt->remote = true;
 	      my_opt->remote_info = nargv[i+1]; // it should have hostname:port 
 	      i++;
 	      break;
-#if PMGR_BASED
+#if PMGR_BASED || PMGR_COBO
 
  	    case 'm':
 	      my_opt->pmgr_info = nargv[i+1]; // should also be hostname:port	
 	      i++;
 	      break;	
+#endif
 
  	    case 's':
-	      my_opt->pmgr_sec_info = nargv[i+1]; 	
+	      my_opt->lmon_sec_info = nargv[i+1];
 	      i++;
 	      break;	
 
-#endif
 	    case 'x':
 	      //
 	      // this is a hidden option for self-tracing
@@ -337,7 +339,7 @@ opts_args_t::process_args ( int* argc, char*** argv )
 
 	      i++;
 	      break;
-	      
+
 	    default:
 	      print_usage();
 	      rv = false;
@@ -350,7 +352,7 @@ opts_args_t::process_args ( int* argc, char*** argv )
 	  my_opt->debugtarget = nargv[i];
 	  bspth = debugtarget;
 	  if (!check_path(bspth, my_opt->debugtarget))
-	    exit(1);     
+	    exit(1);
 	}
     }
 
@@ -377,7 +379,7 @@ opts_args_t::process_args ( int* argc, char*** argv )
         default:
           verbo = quiet;
           break;
-          
+
         }
 
       self_trace_t::launchmon_module_trace.verbosity_level = verbo;
@@ -402,7 +404,7 @@ opts_args_t::process_args ( int* argc, char*** argv )
     {
       if ( my_opt->remote && (my_opt->verbose == 0 ))
         exit (1);
-    
+
       print_usage();
     }
 
@@ -414,8 +416,8 @@ opts_args_t::process_args ( int* argc, char*** argv )
 
 
 //!  opts_args_t::construct_launchstring()
-/*!        
-    
+/*!
+ 
 */
 bool 
 opts_args_t::construct_launch_string ()
@@ -441,7 +443,7 @@ opts_args_t::construct_launch_string ()
     }
   
   if ( my_opt->attach ) 
-    {    
+    {
       sprintf(path, "/proc/%d/exe", my_opt->launcher_pid);   
       cnt = readlink(path, tar, PATH_MAX);
       if ( cnt < 0 )
@@ -452,7 +454,7 @@ opts_args_t::construct_launch_string ()
 	    1,
 	    "pid[%d] isn't valid.",
 	    my_opt->launcher_pid);
-	  }	  
+	  }
 	  return false;
 	}
       tar[cnt] = '\0';
@@ -467,10 +469,10 @@ opts_args_t::construct_launch_string ()
 	= my_opt->debugtarget + string(" --input=none --jobid=%d --nodes=%d --ntasks=%d ")
 	+ my_opt->tool_daemon + string(" ")
 	+ my_opt->tool_daemon_opts
-#if PMGR_BASED
-	+ string (" --pmgrsize=%d --pmgrip=%s --pmgrport=%s --pmgrjobid=%d --pmgrsharedsec=%s --pmgrsecchk=%s --pmgrlazyrank=1 --pmgrlazysize=1") 
+#if PMGR_BASED 
+	+ string (" --pmgrsize=%d --pmgrip=%s --pmgrport=%s --pmgrjobid=%d --pmgrlazyrank=1 --pmgrlazysize=1" )
 #endif	
-	;
+        + string (" --lmonsharedsec=%s --lmonsecchk=%s" );
 
       if ( getenv("LMON_DEBUG_BES") != NULL)
 	{
@@ -479,13 +481,13 @@ opts_args_t::construct_launch_string ()
 	    + my_opt->tool_daemon + string(" ")
 	    + my_opt->tool_daemon_opts
 #if PMGR_BASED
-            + string (" --pmgrsize=%d --pmgrip=%s --pmgrport=%s --pmgrjobid=%d --pmgrsharedsec=%s --pmgrsecchk=%s --pmgrlazyrank=1 --pmgrlazysize=1")
+            + string (" --pmgrsize=%d --pmgrip=%s --pmgrport=%s --pmgrjobid=%d --pmgrlazyrank=1 --pmgrlazysize=1")
 #endif
-            ;
+        + string (" --lmonsharedsec=%s --lmonsecchk=%s" );
 	}
 
       //cout << my_opt->launchstring << endl;
-      
+
       {
 	self_trace_t::trace ( LEVELCHK(level2), 
 	  MODULENAME,
@@ -501,9 +503,9 @@ opts_args_t::construct_launch_string ()
       my_opt->launchstring 
         = my_opt->tool_daemon_opts  
 #if PMGR_BASED
-        + string (" --pmgrip=%s --pmgrport=%s --pmgrjobid=%d --pmgrsharedsec=%s --pmgrsecchk=%s --pmgrlazyrank=1 --pmgrlazysize=1")
-#endif     
-      ;
+        + string (" --pmgrip=%s --pmgrport=%s --pmgrjobid=%d --pmgrlazyrank=1 --pmgrlazysize=1")
+#endif
+        + string (" --lmonsharedsec=%s --lmonsecchk=%s" );
     } 
   else if ( (dt == string ("LE_model_checker.debug") )
 	    || (dt == string ("LE_model_checker")) )
@@ -516,13 +518,14 @@ opts_args_t::construct_launch_string ()
         = my_opt->tool_daemon_opts  
 #if PMGR_BASED
         + string (" --pmgrip=%s --pmgrport=%s --pmgrlazyrank=1 --pmgrlazysize=1")
-#endif     
-      ;
+#endif
+        + string (" --lmonsharedsec=%s --lmonsecchk=%s" );
+
       my_opt->modelchecker = true;
 
     }
   else 
-    {    
+    {
       {
 	self_trace_t::trace ( LEVELCHK(quiet), 
 			      MODULENAME,
@@ -530,8 +533,8 @@ opts_args_t::construct_launch_string ()
 			      "unknown launcher: %s ",
 			      dt.c_str());
       }
-      
-      rc = false;    
+
+      rc = false;
     }
 
   //
@@ -580,7 +583,7 @@ opts_args_t::print_usage()
 
 
 //!  opts_args_t::print_copyright()
-/*!  
+/*!
      print the copyright
 */
 void 

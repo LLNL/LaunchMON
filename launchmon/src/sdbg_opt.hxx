@@ -110,8 +110,8 @@ struct opt_struct_t {
   std::string remote_info;      // ip:port
 #if PMGR_BASED
   std::string pmgr_info;        // ip:port
-  std::string pmgr_sec_info;    // shared secret:randomID
 #endif
+  std::string lmon_sec_info;    // shared secret:randomID
   pid_t       launcher_pid;     // the pid of a running parallel launcher process
   char**      remaining;        // options and arguments to be passed 
   std::map<std::string, std::string> envMap;
