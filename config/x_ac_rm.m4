@@ -59,7 +59,7 @@ AC_DEFUN([X_AC_RM], [
     [with_rm_name="check"]
   )
 
-  AC_ARG_WITH([rm-launcher], 
+  AC_ARG_WITH([rm-launcher],
     AS_HELP_STRING(--with-rm-launcher@<:@=LAUNCHERPATH@:>@,specify the RM launcher path @<:@default=/usr/bin/srun@:>@), 
     [with_launcher=$withval],
     [with_launcher="check"]

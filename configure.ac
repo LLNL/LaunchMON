@@ -223,6 +223,9 @@ AC_CONFIG_FILES([Makefile
                  tools/pmgr_collective/Makefile
 	  	 tools/pmgr_collective/src/Makefile
 		 tools/pmgr_collective/test/Makefile
+                 tools/cobo/Makefile
+	  	 tools/cobo/src/Makefile
+		 tools/cobo/test/Makefile
                  launchmon/Makefile
 		 launchmon/src/Makefile
 		 launchmon/src/linux/Makefile

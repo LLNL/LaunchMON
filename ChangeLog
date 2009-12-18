@@ -1,3 +1,6 @@
+2009-12-17 Dong H. Ahn <ahn1@llnl.gov>
+	* Added COBO support. The default value for --with-bootfabric is now cobo
+
 2009-10-30 Dong H. Ahn <ahn1@llnl.gov>
 	* tools/ciod/debugger_interface.h: updated this with ciod debug
 	  interface version 4.

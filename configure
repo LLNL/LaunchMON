@@ -466,7 +466,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS LMON_CURRENT LMON_REVISION LMON_AGE INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar build build_cpu build_vendor build_os host host_cpu host_vendor host_os BUILD_FLAGS LMONENABSLOC LMONENLOC LMONAPILOC COMMLOC LIBCOMM WITH_PMGR_COLLECTIVE_TRUE WITH_PMGR_COLLECTIVE_FALSE subdirs GPGERRLOC GCRYPTLOC LIBGCRYPT LIBGPGERR WITH_GCRYPT_TRUE WITH_GCRYPT_FALSE RM_TYPE LNCHR_BIT_FLAGS ARCHHEADER LIBBITSUFFIX CIODLOC LIBCIOD SMPFACTOR ARCHLIB WITH_CIOD_TRUE WITH_CIOD_FALSE TARGET_JOB_LAUNCHER_PATH TESTNNODES CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CC CFLAGS ac_ct_CC CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE SED EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CPP CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL envcmd sshcmd tvcmd LIBELF LIBPTHREAD LIBRT LIBDL MPICC MPICXX LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS LMON_CURRENT LMON_REVISION LMON_AGE INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar build build_cpu build_vendor build_os host host_cpu host_vendor host_os BUILD_FLAGS LMONENABSLOC LMONENLOC LMONAPILOC COMMLOC LIBCOMM WITH_PMGR_COLLECTIVE_TRUE WITH_PMGR_COLLECTIVE_FALSE WITH_COBO_TRUE WITH_COBO_FALSE subdirs GPGERRLOC GCRYPTLOC LIBGCRYPT LIBGPGERR WITH_GCRYPT_TRUE WITH_GCRYPT_FALSE RM_TYPE LNCHR_BIT_FLAGS ARCHHEADER LIBBITSUFFIX CIODLOC LIBCIOD SMPFACTOR ARCHLIB WITH_CIOD_TRUE WITH_CIOD_FALSE TARGET_JOB_LAUNCHER_PATH TESTNNODES CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CC CFLAGS ac_ct_CC CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE SED EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CPP CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL envcmd sshcmd tvcmd LIBELF LIBPTHREAD LIBRT LIBDL MPICC MPICXX LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1055,7 +1055,12 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-bootfabric[=FABRICTYPE]
                           specify a communication fabric for bootstrapping of
-                          ditributed LaunchMON components [default=pmgr]
+                          ditributed LaunchMON components [cobo pmgr@:>
+                          [default=cobo]
+  --with-cobo-port[=LAUNCHERPATH]
+                          specify the beginning TCP port number from which
+                          COBO reserves the range of usable ports
+                          [default=20101]
   --with-gcrypt[=ARG]
                           configure and build gcrypt [default=yes]
   --with-rm[=RMTYPE]
@@ -2217,6 +2222,15 @@ else
   with_fab="check"
 fi;
 
+# Check whether --with-cobo-port or --without-cobo-port was given.
+if test "${with_cobo_port+set}" = set; then
+  withval="$with_cobo_port"
+  with_cobo_port=$withval
+else
+  with_cobo_port="check"
+
+fi;
+
   commfab_found="no"
 
   if test "x$with_fab" = "xpmgr" -o "x$with_fab" = "xyes"; then
@@ -2230,21 +2244,6 @@ fi;
 
 cat >>confdefs.h <<\_ACEOF
 #define PMGR_BASED 1
-_ACEOF
-
-
-cat >>confdefs.h <<\_ACEOF
-#define COMMLINE_SUPPORT 1
-_ACEOF
-
-
-cat >>confdefs.h <<\_ACEOF
-#define LAZY_BINDING 1
-_ACEOF
-
-
-cat >>confdefs.h <<\_ACEOF
-#define FINEGRAIN_MPIRUN_INTERFACE 1
 _ACEOF
 
 
@@ -2292,6 +2291,73 @@ _ACEOF
     { { echo "$as_me:$LINENO: error: MPI as a underlying comm. fabric no longer supported" >&5
 echo "$as_me: error: MPI as a underlying comm. fabric no longer supported" >&2;}
    { (exit 1); exit 1; }; }
+  elif test "x$with_fab" = "xcobo" -o "x$with_fab" = "xyes"; then
+    if test -d tools/cobo; then
+      #
+      # Following defines macroes to pick up the customization
+      # added to the original COBO implementation.
+      #
+      with_fab="cobo"
+      commfab_found="yes"
+
+cat >>confdefs.h <<\_ACEOF
+#define COBO_BASED 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define TEST_MORE_COLL 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define TOOL_HOST_ENV "LMON_FE_WHERETOCONNECT_ADDR"
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define TOOL_PORT_ENV "LMON_FE_WHERETOCONNECT_PORT"
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define TOOL_SS_ENV "LMON_SHARED_SECRET"
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define TOOL_SCH_ENV "LMON_SEC_CHK"
+_ACEOF
+
+      COMMLOC=tools/cobo/src
+
+      LIBCOMM=-lcobo
+
+
+      if test "x$with_cobo_port" != "xcheck" -a "x$with_cobo_port" != "xyes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define COBO_BEGIN_PORT $with_cobo_port
+_ACEOF
+
+      else
+
+cat >>confdefs.h <<\_ACEOF
+#define COBO_BEGIN_PORT 20101
+_ACEOF
+
+      fi
+
+cat >>confdefs.h <<\_ACEOF
+#define COBO_PORT_RANGE 72
+_ACEOF
+
+    else
+      commfab_found="no"
+      { { echo "$as_me:$LINENO: error: --with-bootfabric=cobo is given, but tools/cobo not found" >&5
+echo "$as_me: error: --with-bootfabric=cobo is given, but tools/cobo not found" >&2;}
+   { (exit 1); exit 1; }; }
+    fi
   else
     { { echo "$as_me:$LINENO: error: --with-bootfabric is a required option" >&5
 echo "$as_me: error: --with-bootfabric is a required option" >&2;}
@@ -2306,6 +2372,16 @@ if test "x$commfab_found" = "xyes" -a "x$with_fab" = "xpmgr"; then
 else
   WITH_PMGR_COLLECTIVE_TRUE='#'
   WITH_PMGR_COLLECTIVE_FALSE=
+fi
+
+
+
+if test "x$commfab_found" = "xyes" -a "x$with_fab" = "xcobo"; then
+  WITH_COBO_TRUE=
+  WITH_COBO_FALSE='#'
+else
+  WITH_COBO_TRUE='#'
+  WITH_COBO_FALSE=
 fi
 
   echo "$as_me:$LINENO: result: $with_fab:$commfab_found" >&5
@@ -4944,7 +5020,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 4947 "configure"' > conftest.$ac_ext
+  echo '#line 5023 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -6079,7 +6155,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:6082:" \
+echo "$as_me:6158:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7142,11 +7218,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7145: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7221: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7149: \$? = $ac_status" >&5
+   echo "$as_me:7225: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7410,11 +7486,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7413: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7489: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7417: \$? = $ac_status" >&5
+   echo "$as_me:7493: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7514,11 +7590,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7517: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7593: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7521: \$? = $ac_status" >&5
+   echo "$as_me:7597: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -8983,7 +9059,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 8986 "configure"' > conftest.$ac_ext
+    echo '#line 9062 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -9880,7 +9956,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9883 "configure"
+#line 9959 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9980,7 +10056,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9983 "configure"
+#line 10059 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12323,11 +12399,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12326: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12402: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:12330: \$? = $ac_status" >&5
+   echo "$as_me:12406: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -12427,11 +12503,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12430: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12506: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:12434: \$? = $ac_status" >&5
+   echo "$as_me:12510: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12963,7 +13039,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 12966 "configure"' > conftest.$ac_ext
+    echo '#line 13042 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -14021,11 +14097,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14024: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14100: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14028: \$? = $ac_status" >&5
+   echo "$as_me:14104: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14125,11 +14201,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14128: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14204: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14132: \$? = $ac_status" >&5
+   echo "$as_me:14208: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15574,7 +15650,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 15577 "configure"' > conftest.$ac_ext
+    echo '#line 15653 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -16352,11 +16428,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16355: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16431: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16359: \$? = $ac_status" >&5
+   echo "$as_me:16435: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16620,11 +16696,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16623: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16699: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16627: \$? = $ac_status" >&5
+   echo "$as_me:16703: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16724,11 +16800,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16727: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16803: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16731: \$? = $ac_status" >&5
+   echo "$as_me:16807: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18193,7 +18269,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 18196 "configure"' > conftest.$ac_ext
+    echo '#line 18272 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -22496,7 +22572,7 @@ done
 
 
 
-                                                                                                                                  ac_config_files="$ac_config_files Makefile tools/Makefile tools/ciod/Makefile tools/pmgr_collective/Makefile tools/pmgr_collective/src/Makefile tools/pmgr_collective/test/Makefile launchmon/Makefile launchmon/src/Makefile launchmon/src/linux/Makefile launchmon/src/linux/lmon_api/Makefile launchmon/man/Makefile test/Makefile test/src/Makefile"
+                                                                                                                                                                ac_config_files="$ac_config_files Makefile tools/Makefile tools/ciod/Makefile tools/pmgr_collective/Makefile tools/pmgr_collective/src/Makefile tools/pmgr_collective/test/Makefile tools/cobo/Makefile tools/cobo/src/Makefile tools/cobo/test/Makefile launchmon/Makefile launchmon/src/Makefile launchmon/src/linux/Makefile launchmon/src/linux/lmon_api/Makefile launchmon/man/Makefile test/Makefile test/src/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -22593,6 +22669,13 @@ if test -z "${WITH_PMGR_COLLECTIVE_TRUE}" && test -z "${WITH_PMGR_COLLECTIVE_FAL
   { { echo "$as_me:$LINENO: error: conditional \"WITH_PMGR_COLLECTIVE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"WITH_PMGR_COLLECTIVE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${WITH_COBO_TRUE}" && test -z "${WITH_COBO_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"WITH_COBO\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"WITH_COBO\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -23082,6 +23165,9 @@ do
   "tools/pmgr_collective/Makefile" ) CONFIG_FILES="$CONFIG_FILES tools/pmgr_collective/Makefile" ;;
   "tools/pmgr_collective/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES tools/pmgr_collective/src/Makefile" ;;
   "tools/pmgr_collective/test/Makefile" ) CONFIG_FILES="$CONFIG_FILES tools/pmgr_collective/test/Makefile" ;;
+  "tools/cobo/Makefile" ) CONFIG_FILES="$CONFIG_FILES tools/cobo/Makefile" ;;
+  "tools/cobo/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES tools/cobo/src/Makefile" ;;
+  "tools/cobo/test/Makefile" ) CONFIG_FILES="$CONFIG_FILES tools/cobo/test/Makefile" ;;
   "launchmon/Makefile" ) CONFIG_FILES="$CONFIG_FILES launchmon/Makefile" ;;
   "launchmon/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES launchmon/src/Makefile" ;;
   "launchmon/src/linux/Makefile" ) CONFIG_FILES="$CONFIG_FILES launchmon/src/linux/Makefile" ;;
@@ -23218,6 +23304,8 @@ s,@COMMLOC@,$COMMLOC,;t t
 s,@LIBCOMM@,$LIBCOMM,;t t
 s,@WITH_PMGR_COLLECTIVE_TRUE@,$WITH_PMGR_COLLECTIVE_TRUE,;t t
 s,@WITH_PMGR_COLLECTIVE_FALSE@,$WITH_PMGR_COLLECTIVE_FALSE,;t t
+s,@WITH_COBO_TRUE@,$WITH_COBO_TRUE,;t t
+s,@WITH_COBO_FALSE@,$WITH_COBO_FALSE,;t t
 s,@subdirs@,$subdirs,;t t
 s,@GPGERRLOC@,$GPGERRLOC,;t t
 s,@GCRYPTLOC@,$GCRYPTLOC,;t t
