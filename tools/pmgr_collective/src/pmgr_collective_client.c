@@ -1162,19 +1162,7 @@ int pmgr_init(int *argc_p, char ***argv_p, int *np_p, int *me_p, int *id_p)
 	    /* exporting a commandline option to an envVar */
             setenv ("MPIRUN_ID", &(nargv[i][2])+10, 1); 
 	    n_pmgropt++;
-	  }	
-	else if ( strncmp (&(nargv[i][2]), "pmgrsharedsec=", 14)== 0 ) 
-	  {
-	    /* exporting a commandline option to an envVar */
-            setenv (TOOL_SS_ENV, &(nargv[i][2])+14, 1); 
-	    n_pmgropt++;
-	  }	
-	else if ( strncmp (&(nargv[i][2]), "pmgrsecchk=", 11)== 0 ) 
-	  {
-	    /* exporting a commandline option to an envVar */
-            setenv (TOOL_SCH_ENV, &(nargv[i][2])+11, 1); 
-	    n_pmgropt++;
-	  }	
+	  }
 	else if ( strncmp (&(nargv[i][2]), "pmgrdebug=", 10)== 0 ) 
 	  {
 	    /* exporting a commandline option to an envVar */
