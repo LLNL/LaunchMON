@@ -28,6 +28,7 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        Dec 16 2009 DHA: Added COBO support
 ##        Jun 10 2007 DHA: Copied from the old Makefile.
 ##
 
@@ -40,7 +41,11 @@ endif
 if WITH_GCRYPT
   OPT_GCRYPT = libgpg-error
 endif
-SUBDIRS = $(OPT_PMGR_COLLECTIVE) $(OPT_CIOD) $(OPT_GCRYPT)
+if WITH_COBO
+  OPT_COBO = cobo
+endif
+
+SUBDIRS = $(OPT_PMGR_COLLECTIVE) $(OPT_COBO) $(OPT_CIOD) $(OPT_GCRYPT)
 
 all-local:
 	if test -f libgcrypt/Makefile; then \
