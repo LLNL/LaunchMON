@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Dec 20 2009 DHA: Fixed a bug that arose when Mark's patch
+ *                         was folded in.  
  *        Mar 06 2009 DHA: Folded in Mark O'Connor's patch that 
  *                         allows use of dynamic symbol table 
  *                         in the absence of reguar linkage symbol 
@@ -500,9 +502,11 @@ throw(symtab_exception_t)
   string func = "[linux_image_t::read_linkage_symbols]";
 #if BIT64 
   Elf64_Shdr *shdr = NULL;
+  Elf64_Shdr *shdrdyn = NULL;
   Elf64_Sym *first_sym, *last_sym;
 #else
   Elf32_Shdr *shdr = NULL;
+  Elf32_Shdr *shdrdyn = NULL;
   Elf32_Sym *first_sym, *last_sym;
 #endif
   Elf_Data *elf_data = NULL;
@@ -535,20 +539,26 @@ throw(symtab_exception_t)
 	  else if ( shdr->sh_type == SHT_DYNSYM )
             {
 	      dynsym_sect = sect;
+              shdrdyn = shdr;
             }
 	}
     }
 
-  if (symtab_sect == 0)
-    symtab_sect = dynsym_sect;
-
-  if (symtab_sect == 0) 
+  if (!symtab_sect)
     {
-      e = func 
+      if ( dynsym_sect && shdrdyn)
+        {
+          symtab_sect = dynsym_sect;
+          shdr = shdrdyn;
+        } 
+      else 
+        {
+          e = func 
           + " No symbol table section is found in "
           + get_base_image_name()
           + " ";
-      throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);
+          throw symtab_exception_t(e, SDBG_SYMTAB_FAILED);
+        }
     }
 
   if ( ( ( elf_data = elf_getdata ( symtab_sect, elf_data )) == NULL) 

@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Dec 23 2009 DHA: Added explict config.h inclusion 
  *        Dec 16 2009 DHA: COBO support
  *        Dec 11 2009 DHA: BE hostname list generation in preparation for 
  *                         scalable PMGR Collective bootstrapping
@@ -110,6 +111,9 @@
  *        Dec 15 2006 DHA: Created file.
  */
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
 #include <lmon_api/lmon_api_std.h>
 
 #ifndef LINUX_CODE_REQUIRED

@@ -33,6 +33,7 @@
  *  
  *
  *  Update Log:
+ *        Dec 23 2009 DHA: Added explict config.h inclusion 
  *        Dec  16 2008 DHA: Added COBO support
  *        Mar  26 2008 DHA: Added the END_DEBUG message support
  *                          for BlueGene with a debugger protocol version >= 3
@@ -46,6 +47,10 @@
  *        Dec  29 2006 DHA: Created file. Most routines are lifted 
  *                          from lmon_be.cxx
  */
+
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
 
 #include <lmon_api/lmon_api_std.h>
 

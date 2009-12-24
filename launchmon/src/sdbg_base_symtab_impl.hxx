@@ -34,6 +34,10 @@
 #ifndef SDBG_BASE_SYMTAB_IMPL_HXX
 #define SDBG_BASE_SYMTAB_IMPL_HXX 1
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
+
 extern "C" {
 #if HAVE_LIBGEN_H
 # include <libgen.h>

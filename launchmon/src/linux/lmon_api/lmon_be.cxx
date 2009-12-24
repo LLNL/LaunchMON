@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Dec 23 2009 DHA: Added explict config.h inclusion 
  *        Dec 11 2009 DHA: Deprecate the static LMON_be_parse_raw_RPDTAB_msg
  *                         function in favor of parse_raw_RPDTAB_msg designed 
  *                         to used broadly.
@@ -52,6 +53,10 @@
  *                         lmon_be_comm.cxx
  *        Dec 20 2006 DHA: File created
  */
+
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
 
 #include <lmon_api/lmon_api_std.h>
 

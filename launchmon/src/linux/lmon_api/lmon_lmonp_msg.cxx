@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Dec 23 2009 DHA: Added explict config.h inclusion 
  *        Mar 13 2009 DHA: Added large nTasks supporf
  *        Mar 05 2008 DHA: Added timedaccept support 
  *        Mar 05 2008 DHA: Rewrote lmon_write_raw and lmon_read_raw to enhance 
@@ -33,6 +34,10 @@
  *        Feb 09 2008 DHA: Added LLNS Copyright
  *        Dec 19 2006 DHA: Created file.
  */
+
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
 
 #include <lmon_api/lmon_api_std.h>
 

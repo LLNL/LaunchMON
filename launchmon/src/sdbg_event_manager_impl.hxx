@@ -45,6 +45,10 @@
 #ifndef SDBG_EVENT_MANAGER_IMPL_HXX
 #define SDBG_EVENT_MANAGER_IMPL_HXX 1
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
+
 extern "C" {
 #if HAVE_SYS_TYPES_H
 # include <sys/types.h>

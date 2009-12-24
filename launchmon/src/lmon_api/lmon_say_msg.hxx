@@ -38,7 +38,7 @@
 #ifndef LMON_API_LMON_SAY_MSG_HXX
 #define LMON_API_LMON_SAY_MSG_HXX 1
 
-#if LAUNCHMON_HAVE_STDARG_H
+#if HAVE_STDARG_H
 # include <cstdarg>
 #else
 # error stdarg.h is required

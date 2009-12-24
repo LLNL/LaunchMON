@@ -27,6 +27,9 @@
  *
  *
  *  Update Log:
+ *        Dec  23 2009 DHA: Removed header file macroes for header files that
+ *                          would exit on almost all UNIX based platforms,
+ *                          facilitaing binary distribution.
  *        Mar 13 2009 DHA: Added large nTasks support
  *        Feb 09 2008 DHA: Added LLNS Copyright 
  *        Dec 19 2006 DHA: Created file.

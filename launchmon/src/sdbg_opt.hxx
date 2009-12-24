@@ -92,7 +92,6 @@ extern "C" {
 #include "sdbg_std.hxx"
 #include "sdbg_self_trace.hxx"
 
-
 //! struct opt_struct_t
 /*!
     Structure capturing optionset. Look at comments on each member

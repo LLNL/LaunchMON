@@ -27,6 +27,9 @@
  *	
  *
  *  Update Log:
+ *        Dec  23 2009 DHA: Removed header file macroes for header files that
+ *                          would exit on almost all UNIX based platforms,
+ *                               facilitaing binary distribution.
  *        Aug  26 2009 DHA: lmon-config.h support
  *        Jun  06 2008 DHA: Remove description comments; the man pages
  *                          now contain most up-to-date info.
@@ -39,17 +42,8 @@
 #ifndef LMON_API_LMON_BE_H
 #define LMON_API_LMON_BE_H 1
 
-#if LAUNCHMON_HAVE_UNISTD_H
-# include <unistd.h>
-#else
-# error unistd.h is required
-#endif
-
-#if LAUNCHMON_HAVE_NETDB_H
-# include <netdb.h>
-#else
-# error netdb.h is required
-#endif
+#include <unistd.h>
+#include <netdb.h>
 
 #include <lmon_api/lmon_api_std.h>
 #include <lmon_api/lmon_proctab.h>

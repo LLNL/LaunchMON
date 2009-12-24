@@ -27,6 +27,9 @@
  *
  *
  *  Update Log:
+ *        	Dec 23 2009 DHA: Removed header file macroes for header files that
+ *                          	 would exit on almost all UNIX based platforms,
+ *                               facilitaing binary distribution.
  *              Aug 26 2009 DHA: Added lmon-config.h support
  *              Aug 10 2009 DHA: Added HAVE_STDIO_H and HAVE_SYS_TYPES_H check
  *              Jun 06 2008 DHA: File created. Mostly from the autobook.
@@ -44,39 +47,12 @@
 # define END_C_DECLS
 #endif /* __cplusplus */
 
-#if FOR_LAUNCHMON_BUILD
-# include "config.h"
-# include "lmon-config.h"
-#else
-# include "lmon-config.h"
-#endif
-
-#if LAUNCHMON_HAVE_STDIO_H
 #include <stdio.h>
-#else
-# error stdio.h is required
-#endif 
-
-#if LAUNCHMON_HAVE_SYS_TYPES_H
 #include <sys/types.h>
-#else
-# error sys/types.h is required
-#endif
-
-#if LAUNCHMON_STDC_HEADERS
-# include <stdlib.h>
-# include <string.h>
-#elif LAUNCHMON_HAVE_STRINGS_H
-# include <strings.h>
-#endif /*LAUNCHMON_STDC_HEADERS*/
-
-#if LAUNCHMON_HAVE_UNISTD_H
-# include <unistd.h>
-#endif
-
-#if LAUNCHMON_HAVE_ERRNO_H
-# include <errno.h>
-#endif /*LAUNCHMON_HAVE_ERRNO_H*/
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <errno.h>
 
 #ifndef errno
 extern int errno;

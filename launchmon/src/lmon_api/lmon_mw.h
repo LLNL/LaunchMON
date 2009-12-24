@@ -27,6 +27,9 @@
  *
  *
  *  Update Log:
+ *        Dec  23 2009 DHA: Removed header file macroes for header files that
+ *                          would exit on almost all UNIX based platforms,
+ *                               facilitaing binary distribution.
  *        Aug 26 2009 DHA: lmon-config.h support
  *        Feb 09 2008 DHA: Added LLNS Copyright 
  *        Dec 27 2006 DHA: Created file.          
@@ -35,17 +38,8 @@
 #ifndef LMON_API_LMON_BE_H
 #define LMON_API_LMON_BE_H
 
-#if LAUNCHMON_HAVE_SYS_TYPES_H
 # include <sys/types.h>
-#else
-# error sys/types.h is required
-#endif
-
-#if LAUNCHMON_HAVE_UNISTD_H
 # include <unistd.h>
-#else
-# error unistd.h is required
-#endif
 
 #include <lmon_api/lmon_api_std.h>
 #include <lmon_api/lmon_proctab.h>
@@ -54,49 +48,49 @@ BEGIN_C_DECLS
 
 lmon_rc_e LMON_mw_amIMaster ();
 
-lmon_rc_e LMON_mw_init ( int ver, int* argc, char*** argv );
+lmon_rc_e LMON_mw_init ( int ver, int *argc, char ***argv );
 
 lmon_rc_e LMON_mw_barrier ();
 
 lmon_rc_e LMON_mw_gather ( 
                 void *sendbuf,
                 int numbyte_per_elem,
-                void* recvbuf );
+                void *recvbuf );
 
 lmon_rc_e LMON_mw_scatter ( 
                 void *sendbuf,
                 int numbyte_per_element,
-                void* recvbuf );
+                void *recvbuf );
 
 lmon_rc_e LMON_mw_broadcast ( 
-                void* buf, 
+                void *buf, 
                 int numbyte );
 
-lmon_rc_e LMON_mw_getSize ( int* size );
+lmon_rc_e LMON_mw_getSize ( int *size );
 
 lmon_rc_e LMON_mw_getMyRank ( int *rank );
 
 lmon_rc_e LMON_mw_regPackForMwToFe (
                 int (*packMwfe) 
-                ( void* udata,void* msgbuf,int msgbufmax,int* msgbuflen ) );
+                ( void *udata,void *msgbuf,int msgbufmax,int *msgbuflen ) );
 
 lmon_rc_e LMON_mw_regUnpackForFeToMw (
                 int (*unpackFebe) 
-                ( void* udatabuf,int udatabuflen, void* udata  ) );
+                ( void *udatabuf,int udatabuflen, void *udata  ) );
 
-lmon_rc_e LMON_mw_handshake ( void* udata );
+lmon_rc_e LMON_mw_handshake ( void *udata );
 
-lmon_rc_e LMON_mw_ready ( void* udata );
+lmon_rc_e LMON_mw_ready ( void *udata );
 
 lmon_rc_e LMON_mw_finalize ();
 
-lmon_rc_e LMON_mw_recvUsrData ( void* udata );
+lmon_rc_e LMON_mw_recvUsrData ( void *udata );
 
-lmon_rc_e LMON_mw_sendUsrData ( void* udata );
+lmon_rc_e LMON_mw_sendUsrData ( void *udata );
 
 lmon_rc_e LMON_mw_getMyProctab ( 
-                MPIR_PROCDESC_EXT* proctabbuf, 
-                int* size, 
+                MPIR_PROCDESC_EXT *proctabbuf, 
+                int *size, 
                 int proctab_num_elem );
 
 END_C_DECLS

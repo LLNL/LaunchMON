@@ -26,6 +26,9 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Dec 22 2009 DHA: Added auxilliary vector support to discover 
+ *                         the loader's load address accurately. (e.g.,  
+ *                         without having to rely on the "_start" symbol exported. 
  *        Dec 16 2009 DHA: Added COBO support
  *        May 07 2009 DHA: Added a patch to fix the attach-detach-and-reattach failure
  *                         on BlueGene. This requires IBM efix27.
@@ -81,6 +84,7 @@
  *        Mar 30 2006 DHA: Added exception handling support.
  *        Jan 12 2006 DHA: Created file.
  */
+
 
 #include "sdbg_std.hxx"
 
@@ -171,6 +175,9 @@ static double endTS;
      shared library using /proc file system. It returns T_UNINIT_HEX
      when fails to find "dynname." This is a hack; I need to get
      the base link address of the dynamic linker from AUX vector.
+     
+     NOTE: Dec 23 2009 DHA: This function shouldn't be used if other
+     more standard methods are available like get_auxv below
 */
 static
 T_VA 
@@ -235,6 +242,56 @@ get_va_from_procfs ( pid_t pid, const std::string& dynname )
 }
 
 
+//!  File scope  get_auxv
+/*!  get_auxv
+
+     returns the base address of the loader through the auxvector information 
+     that OS provides.
+*/
+static
+T_VA 
+get_auxv ( pid_t pid )
+{ 
+  using namespace std;
+
+  FILE *fptr = NULL;
+  char auxvFile[PATH_MAX];
+  
+#if BIT64
+  Elf64_auxv_t auxvBuf;
+  int len = sizeof (Elf64_auxv_t);
+#else
+  Elf32_auxv_t auxvBuf;
+  int len = sizeof (Elf32_auxv_t);
+#endif
+
+  T_VA ret_pc = T_UNINIT_HEX;
+
+  sprintf ( auxvFile, "/proc/%d/auxv", pid );
+
+  if ( ( fptr = fopen(auxvFile, "r")) == NULL )   
+    {
+      //
+      // In case we see problems with opening up auxv pseudo file,
+      // simply return T_UNITNIT_HEX
+      //
+      return ret_pc;
+    }
+    
+  do {
+    if (fread (&auxvBuf, len, 1, fptr) < 0)
+      {
+	//
+	// Should I wrap this call as well w.r.t. EINTR?
+	//
+        return ret_pc;
+      }
+  } while (auxvBuf.a_type != AT_BASE);
+
+  ret_pc = (auxvBuf.a_type == AT_BASE)? auxvBuf.a_un.a_val : T_UNINIT_HEX;
+
+  return ret_pc;
+}
 ////////////////////////////////////////////////////////////////////
 //
 // PRIVATE METHODS (class linux_launchmon_t<>)
@@ -1526,8 +1583,25 @@ linux_launchmon_t::handle_trap_after_attach_event (
 			      " trap after attach event handler invoked. ");
       }
 
-      assert ( (main_im  = p.get_myimage()) != NULL );
-      assert ( (dynloader_im = p.get_mydynloader_image()) != NULL );
+      main_im  = p.get_myimage();
+      if ( !main_im )
+	{
+	  self_trace_t::trace ( LEVELCHK(level1), 
+			        MODULENAME,1,
+				"main image is null.");
+				
+	  return LAUNCHMON_FAILED;
+	}
+      
+      dynloader_im = p.get_mydynloader_image();
+      if ( !dynloader_im )
+      {
+	self_trace_t::trace ( LEVELCHK(level1), 
+			      MODULENAME,1,
+			      "dynamic loader image is null.");
+			      
+	return LAUNCHMON_FAILED;
+      }      
 
       main_im->set_image_base_address(0);
       main_im->compute_reloc();
@@ -1535,6 +1609,21 @@ linux_launchmon_t::handle_trap_after_attach_event (
       lpc = get_va_from_procfs ( p.get_master_thread_pid(), 
 				 dynloader_im->get_base_image_name() );
 
+      if ( (lpc = get_auxv (p.get_master_thread_pid()) ) == T_UNINIT_HEX)
+      {
+	 lpc = get_va_from_procfs ( p.get_master_thread_pid(), 
+		 dynloader_im->get_base_image_name() );
+      }
+      
+      if ( lpc == T_UNINIT_HEX )
+      {
+	self_trace_t::trace ( LEVELCHK(level1), 
+			      MODULENAME,1,
+			      "can't resolve the base address of the loader.");
+			      
+	return LAUNCHMON_FAILED;
+      }	
+      
       dynloader_im->set_image_base_address(lpc);
       dynloader_im->compute_reloc();
 
@@ -1763,10 +1852,25 @@ linux_launchmon_t::handle_trap_after_exec_event (
 			      "trap after first exec event handler invoked.");
       }
 
-      main_im  = p.get_myimage();  
+      main_im  = p.get_myimage();
+      if ( !main_im )
+	{
+	  self_trace_t::trace ( LEVELCHK(level1), 
+			        MODULENAME,1,
+				"main image is null.");
+				
+	  return LAUNCHMON_FAILED;
+	}
+      
       dynloader_im = p.get_mydynloader_image();
-      assert (main_im != NULL);
-      assert (dynloader_im != NULL);
+      if ( !dynloader_im )
+      {
+	self_trace_t::trace ( LEVELCHK(level1), 
+			      MODULENAME,1,
+			      "dynamic loader image is null.");
+			      
+	return LAUNCHMON_FAILED;
+      }    
 
       main_im->set_image_base_address(0);
       main_im->compute_reloc();
@@ -1779,6 +1883,7 @@ linux_launchmon_t::handle_trap_after_exec_event (
 
       la_bp = new linux_breakpoint_t();
       la_bp->set_address_at(launch_bp_sym.get_relocated_address());
+      
 #if RM_BG_MPIRUN
       //
       // DHA Mar 05 2009
@@ -1900,41 +2005,52 @@ linux_launchmon_t::handle_trap_after_exec_event (
       const symbol_base_t<T_VA>& dynload_sym 
 	= dynloader_im->get_a_symbol (p.get_loader_breakpoint_sym());  
 
-      const symbol_base_t<T_VA>& dynload_start_sym 
-	= dynloader_im->get_a_symbol (p.get_loader_start_sym());
-
-      addr_dl_start 
-	= dynload_start_sym.get_raw_address();
-
-
+      if ( (dl_linked_addr = get_auxv (p.get_pid (true)) ) == T_UNINIT_HEX)
+        {
+	  //
+	  // Corner case; we deal with a heuristics
+	  //
 #if PPC_ARCHITECTURE
-      //
-      // DHA Mar 05 2009
-      // There're systems that do not directly 
-      // export function symbols, and the original logic 
-      // to determining the base linked address of the runtime 
-      // linker maps has some problems. 
-      // Specifically, one must know the relative function address of 
-      // _start to compute the linked addrss, but the system 
-      // that only allows indirection to get this function address 
-      // won't provide that without
-      // having to collect that info from the memory. Now,
-      // collecting this from the mem isn't possible 
-      // for symbols within the runtime linker until
-      // the base mapped address for the linker is determined.
-      // Egg-and-Chicken problem. 
-      //
-      // In such a system, we use a hack assuming the runtime
-      // linker is mapped to an address aligned in some multiple pages, 
-      // which insn't too outragous to assume. 
-      //
-      dl_linked_addr
-        = p.get_gprset(use_cxt)->get_pc() & 0xffffffffff0000; 
-
+          //
+          // DHA Mar 05 2009
+	  // There're systems that do not directly 
+	  // export function symbols, and the original logic 
+	  // to determining the base linked address of the runtime 
+	  // linker maps has some problems. 
+	  // Specifically, one must know the relative function address of 
+	  // _start to compute the linked addrss, but the system 
+	  // that only allows indirection to get this function address 
+	  // won't provide that without
+	  // having to collect that info from the memory. Now,
+	  // collecting this from the mem isn't possible 
+	  // for symbols within the runtime linker until
+	  // the base mapped address for the linker is determined.
+	  // Egg-and-Chicken problem. 
+	  //
+	  // In such a system, we use a hack assuming the runtime
+	  // linker is mapped to an address aligned in some multiple pages, 
+	  // which insn't too outragous to assume. 
+	  //
+	  
+	  dl_linked_addr
+# if BIT64
+	    =  p.get_gprset(use_cxt)->get_pc() & 0xffffffffff0000;
+# else
+	    =  p.get_gprset(use_cxt)->get_pc() & 0xffff0000;
+# endif
+#else /* PPC_ARCHITECTURE */
+          //
+          // This requires the actual page size to compute this loader load
+          // address implictly. Just using the following bits for now.  
+          //
+	  dl_linked_addr
+#if BIT64
+	    =  p.get_gprset(use_cxt)->get_pc() & 0xfffffffffff000;
 #else
-      dl_linked_addr 
-	=  p.get_gprset(use_cxt)->get_pc() - addr_dl_start;
+	    =  p.get_gprset(use_cxt)->get_pc() & 0xfffff000;
 #endif
+#endif
+        }
   
       dynloader_im->set_image_base_address(dl_linked_addr);
       dynloader_im->compute_reloc();
@@ -1942,6 +2058,7 @@ linux_launchmon_t::handle_trap_after_exec_event (
       lo_bp = new linux_breakpoint_t();
       addr_dl_bp = dynload_sym.get_relocated_address();
       lo_bp->set_address_at ( addr_dl_bp );
+      
 #if PPC_ARCHITECTURE
       lo_bp->set_use_indirection();
       T_VA adjusted_indirect_addr; 
@@ -1957,6 +2074,7 @@ linux_launchmon_t::handle_trap_after_exec_event (
 
       lo_bp->set_indirect_address_at(adjusted_indirect_addr + dl_linked_addr);
 #endif
+
       lo_bp->status 
 	= breakpoint_base_t<T_VA, T_IT>::set_but_not_inserted;
 
