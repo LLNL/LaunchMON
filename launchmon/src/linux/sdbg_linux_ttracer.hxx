@@ -96,6 +96,9 @@ public:
       td_err_e te;
       int threadpid;
 
+      if ( (te = td.dll_td_thr_event_enable(tt, 1)) != TD_OK )
+	return SDBG_TTRACE_FAILED;
+
       if (tt->th_unique == 0) {
         // this is the main thread
         // this is to work around a bug in the linux debug library's 
@@ -106,18 +109,16 @@ public:
       }
 
 #if X86_ARCHITECTURE || X86_64_ARCHITECTURE
-      thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>* thrinfo 
+      thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper> *thrinfo 
 	     = new linux_x86_thread_t();
 #elif PPC_ARCHITECTURE
-      thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>* thrinfo 
+      thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper> *thrinfo 
 	     = new linux_ppc_thread_t();
 #endif
 
-      process_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>* p 
+      process_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper> *p 
 	     = (process_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>*) proc;
 
-      if ( (te = td.dll_td_thr_event_enable(tt, 1)) != TD_OK )
-	return SDBG_TTRACE_FAILED;
 
       td_thrinfo_t &tinfo = thrinfo->get_thread_info();
       memset(&tinfo, '\0', sizeof(td_thrinfo_t));
@@ -154,7 +155,7 @@ public:
       else 
 	{
 
-	  delete thrinfo;	 
+	  //delete thrinfo;	 
  
 	  //if (te != TD_OK)  
 	    //return SDBG_TTRACE_FAILED;
@@ -170,7 +171,10 @@ public:
 
       td_err_e te;
       int threadpid;
- 
+
+      if ( (te = td.dll_td_thr_event_enable(tt, 1)) != TD_OK ) 
+	return SDBG_TTRACE_FAILED;
+
       if (tt->th_unique == 0) {
         // this is the main thread
         // this is to work around a bug in the linux debug library's 
@@ -190,8 +194,6 @@ public:
       process_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper> *p 
 	     = (process_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>*) proc;
 
-      if ( (te = td.dll_td_thr_event_enable(tt, 1)) != TD_OK ) 
-	return SDBG_TTRACE_FAILED;
 
       td_thrinfo_t &tinfo = thrinfo->get_thread_info();
       memset(&tinfo, '\0', sizeof(td_thrinfo_t));
