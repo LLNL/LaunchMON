@@ -52,7 +52,7 @@ AC_DEFUN([X_AC_GCRYPT], [
       # I addressed this issue by inserting a dispatcher Makefile.am
       # to tools, in which configures are explictly issued. 
       #	
-      AC_CONFIG_SUBDIRS([tools/libgpg-error])
+      #AC_CONFIG_SUBDIRS([tools/libgpg-error])
       AC_SUBST(GPGERRLOC, [tools/libgpg-error/src])
       AC_SUBST(GCRYPTLOC, [tools/libgcrypt/src])
       AC_SUBST(LIBGCRYPT, [-lgcrypt])
@@ -64,7 +64,6 @@ AC_DEFUN([X_AC_GCRYPT], [
   else
       AC_MSG_ERROR([--with-gcrypt is now mandatory])
   fi # with_gcrypt
-  AM_CONDITIONAL([WITH_GCRYPT], [test "x$gcrypt_configured" = "xyes"])
   AC_MSG_RESULT($gcrypt_configured)
 ])
 

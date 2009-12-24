@@ -48,7 +48,7 @@ AC_DEFUN([X_AC_BOOTFABRIC], [
 
   commfab_found="no"
 
-  if test "x$with_fab" = "xpmgr" -o "x$with_fab" = "xyes"; then
+  if test "x$with_fab" = "xpmgr" ; then
     if test -d tools/pmgr_collective; then 
       #
       # Following defines macroes to pick up the customization

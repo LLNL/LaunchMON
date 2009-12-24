@@ -128,6 +128,8 @@ AC_DEFUN([X_AC_RM], [
         ac_job_launcher_bits="32" 
 	AC_SUBST(LNCHR_BIT_FLAGS, -m32)
         AC_SUBST(ARCHHEADER,"/") 
+        CFLAGS="$CFLAGS -m32"
+        CXXFLAGS="$CXXFLAGS -m32"
       elif test "$bits" = "64-bit"; then
 	#
 	# 64bit srun process
@@ -135,6 +137,8 @@ AC_DEFUN([X_AC_RM], [
         ac_job_launcher_bits="64"
 	AC_SUBST(LNCHR_BIT_FLAGS, -m64)
         AC_SUBST(ARCHHEADER,"/") 
+        CFLAGS="$CFLAGS -m64"
+        CXXFLAGS="$CXXFLAGS -m64"
         AC_DEFINE(BIT64,1,[Define 1 for BIT64])
         if test "x$ac_have_known_os" = "xyes"; then
           if test "$ac_target_os" = "linux" && test "$ac_target_isa" = "x86_64"; then
@@ -186,8 +190,6 @@ AC_DEFUN([X_AC_RM], [
     if test "x$rm_found" = "xyes"; then  
  
       AC_SUBST(CIODLOC, [tools/ciod])
-      AC_SUBST(LIBCIOD, [-lciod_db])
-
       #
       #In this case, CN-IO ratio
       #
@@ -207,6 +209,8 @@ AC_DEFUN([X_AC_RM], [
           AC_DEFINE(BG_HEADER_EXISTS,1,[Define 1 if debugger interface related header files are available in the system])
         fi
 	AC_SUBST(LNCHR_BIT_FLAGS, -m32)
+        CFLAGS="$CFLAGS -m32"
+        CXXFLAGS="$CXXFLAGS -m32"
       elif test $bits = "64-bit"; then
         ac_job_launcher_bits="64"
         AC_SUBST(ARCHHEADER,"/bgsys/drivers/ppcfloor/arch/include")
@@ -215,6 +219,8 @@ AC_DEFUN([X_AC_RM], [
           AC_DEFINE(BG_HEADER_EXISTS,1,[Define 1 if debugger interface related header files are available in the system])
         fi
 	AC_SUBST(LNCHR_BIT_FLAGS, -m64)
+        CFLAGS="$CFLAGS -m64"
+        CXXFLAGS="$CXXFLAGS -m64"
         AC_DEFINE(BIT64,1,[Define 1 for BIT64])
       else
         ac_job_launcher_bits="unknown"
