@@ -35,15 +35,13 @@
 if WITH_PMGR_COLLECTIVE
   OPT_PMGR_COLLECTIVE = pmgr_collective
 endif 
-if WITH_CIOD
-  OPT_CIOD = ciod
-endif
-if WITH_GCRYPT
-  OPT_GCRYPT = libgpg-error
-endif
 if WITH_COBO
   OPT_COBO = cobo
 endif
+if WITH_CIOD
+  OPT_CIOD = ciod
+endif
+  OPT_GCRYPT = libgpg-error
 
 SUBDIRS = $(OPT_PMGR_COLLECTIVE) $(OPT_COBO) $(OPT_CIOD) $(OPT_GCRYPT)
 

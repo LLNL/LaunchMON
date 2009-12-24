@@ -41,9 +41,7 @@
 if WITH_CIOD
 OPT_CIOD                     = -I$(top_srcdir)/@CIODLOC@ 
 endif
-if WITH_GCRYPT
 OPT_GCRYPT                  = -I$(top_srcdir)/@GCRYPTLOC@ -I$(top_srcdir)/@GPGERRLOC@ 
-endif
 
 INCLUDES                     = -I@ARCHHEADER@ $(OPT_CIOD) $(OPT_GCRYPT) -I.. -I../.. -I$(top_srcdir)/@COMMLOC@ 
 

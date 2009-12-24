@@ -40,9 +40,7 @@ TARGET_JOB_LAUNCHER_PATH          = @TARGET_JOB_LAUNCHER_PATH@
 RM_TYPE                           = @RM_TYPE@
 
 INCLUDES                          = -I$(top_srcdir)/launchmon/src -I$(top_srcdir)/@LMONAPILOC@
-if WITH_GCRYPT
 INCLUDES                          += -I$(top_srcdir)/@GCRYPTLOC@ -I$(top_srcdir)/@GPGERRLOC@
-endif
 if WITH_CIOD
 INCLUDES                          += -I@ARCHHEADER@ -I$(top_srcdir)/@CIODLOC@
 endif
