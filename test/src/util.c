@@ -31,6 +31,10 @@
  *        Aug 15 2006 DHA: File created
  */
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
+
 #include <lmon_api/common.h>
 
 #if TIME_WITH_SYS_TIME

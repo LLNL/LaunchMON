@@ -33,6 +33,10 @@
  *          
  */
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
+
 #include <lmon_api/common.h> 
 
 #if RM_BG_MPIRUN

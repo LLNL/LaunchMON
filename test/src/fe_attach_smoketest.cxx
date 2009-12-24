@@ -39,6 +39,10 @@
  *        Dec  27 2006 DHA: Created file.
  */
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
+
 #include <lmon_api/common.h>
 
 #if HAVE_UNISTD_H
