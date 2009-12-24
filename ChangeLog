@@ -1,5 +1,13 @@
+2009-12-22 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/linux/sdbg_linux_symtab_impl.hxx: Bug fix 
+	* launchmon/src/linux/sdbg_linux_launchmon.cxx: Added auxillary
+	  vector support to discover the base load address of the system
+	  loader more accurately.
+
+
 2009-12-17 Dong H. Ahn <ahn1@llnl.gov>
 	* Added COBO support. The default value for --with-bootfabric is now cobo
+
 
 2009-10-30 Dong H. Ahn <ahn1@llnl.gov>
 	* tools/ciod/debugger_interface.h: updated this with ciod debug
@@ -7,6 +15,7 @@
 	* test/src/be_jobsnap.cxx: added BGP port 
 	* launchmon/src/linux/sdbg_linux_ttracer.hxx: patch to work around 
 	  a bug in NPTL thread debug library's td_thr_get_info call.
+
 
 2009-08-26 Dong H. Ahn <ahn1@lnll.gov>
 	* launchmon/src/lmon_api/*.h,
