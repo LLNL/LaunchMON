@@ -28,6 +28,8 @@ dnl  Place, Suite 330, Boston, MA 02111-1307 USA
 dnl --------------------------------------------------------------------------------
 dnl 
 dnl   Update Log:
+dnl         Dec 28 2009 DHA: Deprecated X_AC_PREFIX_CONFIG_H to better support
+dnl                          binary distribution
 dnl         Mar 20 2009 DHA: Increase LMON_CURRENT by one as we've added 
 dnl                          a few more API calls. Similarly, increase
 dnl                          LMON_AGE as this still supports 0th interface. 
@@ -54,8 +56,8 @@ dnl per Todd Gamblin's suggestion... the following
 dnl allows you to export config.h without conflicting
 dnl other dependent packages 
 dnl -----------------------------------------------
-X_AC_PREFIX_CONFIG_H([lmon-config.h])
-AC_SUBST(BUILD_FLAGS, -DFOR_LAUNCHMON_BUILD=1)
+dnl X_AC_PREFIX_CONFIG_H([lmon-config.h])
+dnl AC_SUBST(BUILD_FLAGS, -DFOR_LAUNCHMON_BUILD=1)
 
 
 dnl -----------------------------------------------
