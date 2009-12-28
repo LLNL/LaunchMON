@@ -35,5 +35,4 @@ lib_LTLIBRARIES = libcobo.la
 libcobo_la_SOURCES = cobo.c \
 	          cobo.h
 include_HEADERS = cobo.h 
-libcobo_la_CFLAGS  = @BUILD_FLAGS@
 libcobo_la_LDFLAGS = -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@

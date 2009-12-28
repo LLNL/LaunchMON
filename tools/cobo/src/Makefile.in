@@ -66,7 +66,7 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libcobo_la_LIBADD =
-am_libcobo_la_OBJECTS = libcobo_la-cobo.lo
+am_libcobo_la_OBJECTS = cobo.lo
 libcobo_la_OBJECTS = $(am_libcobo_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -224,7 +224,6 @@ libcobo_la_SOURCES = cobo.c \
 	          cobo.h
 
 include_HEADERS = cobo.h 
-libcobo_la_CFLAGS = @BUILD_FLAGS@
 libcobo_la_LDFLAGS = -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
 all: all-am
 
@@ -295,7 +294,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcobo_la-cobo.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cobo.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -317,13 +316,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
-
-libcobo_la-cobo.lo: cobo.c
-@am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcobo_la_CFLAGS) $(CFLAGS) -MT libcobo_la-cobo.lo -MD -MP -MF "$(DEPDIR)/libcobo_la-cobo.Tpo" -c -o libcobo_la-cobo.lo `test -f 'cobo.c' || echo '$(srcdir)/'`cobo.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcobo_la-cobo.Tpo" "$(DEPDIR)/libcobo_la-cobo.Plo"; else rm -f "$(DEPDIR)/libcobo_la-cobo.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cobo.c' object='libcobo_la-cobo.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcobo_la_CFLAGS) $(CFLAGS) -c -o libcobo_la-cobo.lo `test -f 'cobo.c' || echo '$(srcdir)/'`cobo.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
