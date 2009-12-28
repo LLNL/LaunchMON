@@ -1,3 +1,13 @@
+2009-12-28 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/linux/lmon_api/lmon_fe.cxx,
+	  launchmon/src/linux/lmon_api/lmon_be_comm.cxx,
+	  tools/cobo/src/cobo.c,
+	  tools/cobo/src/cobo.h,
+	  tools/cobo/test/client.c,
+	  tools/cobo/test/server_rsh.c: Picked up latest COBO update and
+	  adjusted LaunchMON for its minor API change
+
+
 2009-12-22 Dong H. Ahn <ahn1@llnl.gov>
 	* launchmon/src/linux/sdbg_linux_symtab_impl.hxx: Bug fix 
 	* launchmon/src/linux/sdbg_linux_launchmon.cxx: Added auxillary

@@ -233,7 +233,10 @@ LMON_be_internal_init ( int* argc, char*** argv )
    for (j=0; j < COBO_PORT_RANGE; ++j)
      portlist[j] = COBO_BEGIN_PORT+j;
 
-  if ( ( rc = cobo_open (portlist, COBO_PORT_RANGE, &ICCL_rank, &ICCL_size) )
+   //
+   //TODO: session id=10 for now. 
+   //
+   if ( ( rc = cobo_open (10, portlist, COBO_PORT_RANGE, &ICCL_rank, &ICCL_size) )
        != COBO_SUCCESS )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true,
@@ -272,7 +275,7 @@ LMON_be_internal_getConnFd ( int *fd )
 #elif COBO_BASED
   if ( ICCL_rank == 0)
     {
-      if ( cobo_get_parentsocket (fd) != COBO_SUCCESS )
+      if ( cobo_get_parent_socket (fd) != COBO_SUCCESS )
         {
           LMON_say_msg(LMON_BE_MSG_PREFIX, false,"no connection estabilished with FE");
           return LMON_EDUNAV;

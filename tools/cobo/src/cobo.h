@@ -26,10 +26,16 @@
  */
 
 /* provide list of ports and number of ports as input, get number of tasks and my rank as output */
-int cobo_open(int* portlist, int num_ports, int* rank, int *num_ranks);
+int cobo_open(unsigned int sessionid, int* portlist, int num_ports, int* rank, int *num_ranks);
 
 /* shut down the connections between tasks and free data structures */
 int cobo_close();
+
+/* fills in fd with socket file desriptor to our parent */
+/* TODO: the upside here is that the upper layer can directly use our
+ * communication tree, but the downside is that it exposes the implementation
+ * and forces sockets */
+int cobo_get_parent_socket(int* fd);
 
 /* sync point, no task makes it past until all have reached */
 int cobo_barrier();
@@ -49,9 +55,6 @@ int cobo_allgather(void* sendbuf, int sendcount, void* recvbuf);
 /* each task sends N*sendcount bytes from sendbuf and receives N*sendcount bytes into recvbuf */
 int cobo_alltoall (void* sendbuf, int sendcount, void* recvbuf);
 
-/* returns the parent TCP socket */ 
-int cobo_get_parentsocket (int *fd);
-
 /*
  * Perform MPI-like Allgather of NULL-terminated strings (whose lengths may vary
  * from task to task).
@@ -70,7 +73,7 @@ int cobo_get_parentsocket (int *fd);
  *   free(hosts);
  *   free(buf);
  */
-int cobo_allgatherstr(char* sendstr, char*** recvstr, char** recvbuf);
+int cobo_allgather_str(char* sendstr, char*** recvstr, char** recvbuf);
 
 /*
  * ==========================================================================
@@ -81,12 +84,15 @@ int cobo_allgatherstr(char* sendstr, char*** recvstr, char** recvbuf);
  */
 
 /* given a hostlist and portlist where clients are running, open the tree and assign ranks to clients */
-int cobo_server_open(char** hostlist, int num_hosts, int* portlist, int num_ports);
+int cobo_server_open(unsigned int sessionid, char** hostlist, int num_hosts, int* portlist, int num_ports);
 
 /* shut down the tree connections (leaves processes running) */
 int cobo_server_close();
 
-/* returns the child TCP socket to rank 0*/ 
-int cobo_server_get_rootsocket (int *fd);
+/* fills in fd with socket file desriptor to the root client process (rank 0) */
+/* TODO: the upside here is that the upper layer can directly use our
+ * communication tree, but the downside is that it exposes the implementation
+ * and forces sockets */
+int cobo_server_get_root_socket(int* fd);
 
 #endif /* _COBO_H */

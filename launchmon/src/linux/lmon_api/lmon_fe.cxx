@@ -1506,8 +1506,9 @@ LMON_assist_ICCL_BE_init (lmon_session_desc_t *mydesc)
 #elif COBO_BASED
   /*
    * Now taking advantage of COBO's new scalable bootstrapping
+   * Session id=10 for now.
    */
-  if ( cobo_server_open ((char **) hostlist, hcnt, portlist, COBO_PORT_RANGE)
+  if ( cobo_server_open (10, (char **) hostlist, hcnt, portlist, COBO_PORT_RANGE)
        != COBO_SUCCESS )
     {
        LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
@@ -1516,7 +1517,7 @@ LMON_assist_ICCL_BE_init (lmon_session_desc_t *mydesc)
       return LMON_ESYS;
     }
 
-   if ( cobo_server_get_rootsocket (&(mydesc->commDesc[fe_be_conn].sessionAcceptSockFd)) != COBO_SUCCESS)
+   if ( cobo_server_get_root_socket (&(mydesc->commDesc[fe_be_conn].sessionAcceptSockFd)) != COBO_SUCCESS)
      {
         LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
           "cobo_server_get_rootsocket failed.");

@@ -67,21 +67,43 @@ int main(int argc, char* argv[])
   int root = 0;
   int i;
 
-  int num_ports = 10;
-  int portlist[10] = {5000,5100,5200,5300,5400,5500,5600,5700,5800,5900};
+  int num_ports = atoi(argv[1]);
+
+  int* portlist = malloc(num_ports * sizeof(int));
+  for (i=0; i<num_ports; i++) {
+    portlist[i] = 5000 + i;
+  }
+
+/*
+  int num_ports = 100;
+  int portlist[100] = {
+    5000,5100,5200,5300,5400,5500,5600,5700,5800,5900,
+    6000,6100,6200,6300,6400,6500,6600,6700,6800,6900,
+    7000,7100,7200,7300,7400,7500,7600,7700,7800,7900,
+    8000,8100,8200,8300,8400,8500,8600,8700,8800,8900,
+    9000,9100,9200,9300,9400,9500,9600,9700,9800,9900,
+    5060,5160,5260,5360,5460,5560,5660,5760,5860,5960,
+    6060,6160,6260,6360,6460,6560,6660,6760,6860,6960,
+    7060,7160,7260,7360,7460,7560,7660,7760,7860,7960,
+    8060,8160,8260,8360,8460,8560,8660,8760,8860,8960,
+    9060,9160,9260,9360,9460,9560,9660,9760,9860,9960
+  };
+*/
 
   /* initialize the client (read environment variables) */
-  if (cobo_open(portlist, num_ports, &my_rank, &ranks) != COBO_SUCCESS) {
+  if (cobo_open(2384932, portlist, num_ports, &my_rank, &ranks) != COBO_SUCCESS) {
     printf("Failed to init\n");
     exit(1);
   }
-  printf("Ranks: %d, Rank: %d\n", ranks, my_rank);
+  printf("Ranks: %d, Rank: %d\n", ranks, my_rank);  fflush(stdout);
+#if 0
 
   buffer_size = ranks * size;
   sbuffer = malloc(buffer_size);
   rbuffer = malloc(buffer_size);
 
   /* test cobo_barrier */
+  if (my_rank == root) { printf("Barrier\n");  fflush(stdout); }
   if (cobo_barrier() != COBO_SUCCESS) {
     printf("Barrier failed\n");
     exit(1);
@@ -92,6 +114,7 @@ int main(int argc, char* argv[])
   init_rbuffer(my_rank);
   void* buf = (void*) rbuffer;
   if (my_rank == root) { buf = sbuffer; }
+  if (my_rank == root) { printf("Bcast\n");  fflush(stdout); }
   if (cobo_bcast(buf, (int) size, root) != COBO_SUCCESS) {
     printf("Bcast failed\n");
     exit(1);
@@ -102,6 +125,7 @@ int main(int argc, char* argv[])
   /* test cobo_scatter */
   init_sbuffer(my_rank);
   init_rbuffer(my_rank);
+  if (my_rank == root) { printf("Scatter\n");  fflush(stdout); }
   if (cobo_scatter(sbuffer, (int) size, rbuffer, root) != COBO_SUCCESS) {
     printf("Scatter failed\n");
     exit(1);
@@ -112,6 +136,7 @@ int main(int argc, char* argv[])
   /* test cobo_gather */
   init_sbuffer(my_rank);
   init_rbuffer(my_rank);
+  if (my_rank == root) { printf("Gather\n");  fflush(stdout); }
   if (cobo_gather(sbuffer, (int) size, rbuffer, root) != COBO_SUCCESS) {
     printf("Gather failed\n");
     exit(1);
@@ -126,6 +151,7 @@ int main(int argc, char* argv[])
   /* test cobo_allgather */
   init_sbuffer(my_rank);
   init_rbuffer(my_rank);
+  if (my_rank == root) { printf("Allgather\n");  fflush(stdout); }
   if (cobo_allgather(sbuffer, (int) size, rbuffer) != COBO_SUCCESS) {
     printf("Allgather failed\n");
     exit(1);
@@ -134,12 +160,14 @@ int main(int argc, char* argv[])
   for (i = 0; i < ranks; i++) {
     check_rbuffer(rbuffer, i*size, i, 0, size, "cobo_allgather");
   }
+#endif
 
 #if 0
   /* test cobo_alltoall */
 /*
   init_sbuffer(my_rank);
   init_rbuffer(my_rank);
+  if (my_rank == root) { printf("Alltoall\n");  fflush(stdout); }
   if (cobo_alltoall(sbuffer, (int) size, rbuffer) != COBO_SUCCESS) {
     printf("Alltoall failed\n");
     exit(1);
