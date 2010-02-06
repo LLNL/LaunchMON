@@ -132,7 +132,7 @@ invoked  (default: 10 seconds).
 overwrites the front-end host name that the LaunchMON front-end 
 uses to open a communication TCP socket with a remote daemon or daemons. 
 On non-BlueGene systems, LaunchMON front-end uses the host name 
-returned by the \fIgethostname\fR function by default. 
+returned by the \fIgethostname()\fR function by default. 
 On BlueGene, it uses hostname-io to indicate a network
 that has I/O nodes connectivity. In general, the name is  
 site-specific. Thus, should the name be different from default,
