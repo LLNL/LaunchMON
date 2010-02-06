@@ -1,3 +1,17 @@
+2009-02-05 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/linux/lmon_api/lmon_fe.cxx
+	launchmon/src/linux/lmon_api/lmon_be_comm.cxx
+	launchmon/src/linux/lmon_api/lmon_be.cxx
+	launchmon/src/linux/lmon_api/lmon_be_internal.hxx
+	tools/cobo/src/cobo.c
+	tools/pmgr_collective/src/pmgr_collective_client.h
+	tools/pmgr_collective/src/pmgr_collective_common.h
+	tools/pmgr_collective/src/pmgr_collective_client.c
+	man/LMON_fe_launchAndSpawnDaemons.3: Add support to address a problem 
+	where some systems like Eugene, the ORNL BGP sytsem, don't allow 
+	resolving a hostname into an IP with gethostname and gethostbyname
+
+
 2009-12-28 Dong H. Ahn <ahn1@llnl.gov>
 	* launchmon/src/linux/lmon_api/lmon_fe.cxx,
 	  launchmon/src/linux/lmon_api/lmon_be_comm.cxx,
