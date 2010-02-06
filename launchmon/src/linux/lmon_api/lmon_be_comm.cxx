@@ -33,7 +33,12 @@
  *  
  *
  *  Update Log:
- *        Dec 23 2009 DHA: Added explict config.h inclusion 
+ *        Feb  05 2010 DHA: Added pmgr_register_hname to register the local 
+ *                          hostname to the PMGR Collective layer. This is to work 
+ *                          around the system in which gethostname followed by
+ *                          gethostbyname doesn't resolve the hostname into
+ *                          an IP. 
+ *        Dec  23 2009 DHA: Added explict config.h inclusion 
  *        Dec  16 2008 DHA: Added COBO support
  *        Mar  26 2008 DHA: Added the END_DEBUG message support
  *                          for BlueGene with a debugger protocol version >= 3
@@ -132,7 +137,7 @@ static int ICCL_global_id = -1;
 
 */
 lmon_rc_e 
-LMON_be_internal_init ( int* argc, char*** argv )
+LMON_be_internal_init ( int* argc, char*** argv, char *myhn )
 {
   int rc;
   char **nargv = *argv;
@@ -204,6 +209,13 @@ LMON_be_internal_init ( int* argc, char*** argv )
 		   "pmgr_init failed");
       return LMON_EINVAL;
     }
+
+  if (pmgr_register_hname (myhn) < 0)
+    {
+      LMON_say_msg(LMON_BE_MSG_PREFIX, true,
+		   "pmgr_register_hname failed");
+      return LMON_EINVAL;
+    } 
   
   if ( ( rc = pmgr_open () ) != PMGR_SUCCESS ) 
     {

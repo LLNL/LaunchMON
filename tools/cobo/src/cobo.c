@@ -463,14 +463,22 @@ static int cobo_connect(struct in_addr ip, int port)
 static int cobo_connect_hostname(char* hostname, int rank)
 {
     int s = -1;
+    struct in_addr saddr;
 
     /* lookup host address by name */
     struct hostent* he = gethostbyname(hostname);
     if (!he) {
-        cobo_error("Hostname lookup failed (gethostbyname(%s) %s h_errno=%d) @ file %s:%d",
-                   hostname, hstrerror(h_errno), h_errno, __FILE__, __LINE__
-        );
-        return s;
+       /* gethostbyname doesn't know how to resolve hostname, trying inet_addr */ 
+       saddr.s_addr = inet_addr(hostname);
+       if (saddr.s_addr == -1) {
+           cobo_error("Hostname lookup failed (gethostbyname(%s) %s h_errno=%d) @ file %s:%d",
+                hostname, hstrerror(h_errno), h_errno, __FILE__, __LINE__
+           );
+           return s;
+       }
+    }
+    else {
+      saddr = *((struct in_addr *) (*he->h_addr_list));
     }
 
     /* Loop until we make a connection or until our timeout expires. */
@@ -488,7 +496,8 @@ static int cobo_connect_hostname(char* hostname, int rank)
 
             /* attempt to connect to hostname on this port */
             cobo_debug(1, "Trying rank %d port %d on %s", rank, port, hostname);
-            s = cobo_connect(*(struct in_addr *) (*he->h_addr_list), htons(port));
+            /* s = cobo_connect(*(struct in_addr *) (*he->h_addr_list), htons(port)); */
+            s = cobo_connect(saddr, htons(port));
             if (s != -1) {
                 /* got a connection, let's test it out */
                 cobo_debug(1, "Connected to rank %d port %d on %s", rank, port, hostname);
@@ -573,7 +582,7 @@ static int cobo_connect_hostname(char* hostname, int rank)
     /* check that we successfully opened a socket */
     if (s == -1) {
         cobo_error("Connecting socket to %s at %s failed @ file %s:%d",
-                   he->h_name, inet_ntoa(*(struct in_addr *) (*he->h_addr_list)),
+                   hostname, inet_ntoa(saddr),
                    __FILE__, __LINE__
         );
         return s;
@@ -1547,3 +1556,4 @@ int cobo_server_close()
 
     return COBO_SUCCESS;
 }
+

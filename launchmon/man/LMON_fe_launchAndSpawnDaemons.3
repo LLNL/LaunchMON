@@ -127,6 +127,16 @@ overwrites the value that controls the length of the "warm period"
 in which the LaunchMON engine polls events at the fastest rate.
 This parameter is reset each time the engine's handler is
 invoked  (default: 10 seconds).
+.TP
+.B LMON_FE_HOSTNAME_TO_CONN
+overwrites the front-end host name that the LaunchMON front-end 
+uses to open a communication TCP socket with a remote daemon or daemons. 
+On non-BlueGene systems, LaunchMON front-end uses the host name 
+returned by the \fIgethostname\fR function by default. 
+On BlueGene, it uses hostname-io to indicate a network
+that has I/O nodes connectivity. In general, the name is  
+site-specific. Thus, should the name be different from default,
+it needs to be be specified through this environment variable. 
 
 .SH ERROR HANDLING SEMANTICS 
 \fBA.\fR When the LaunchMON engine fails, the cleanup semantics 

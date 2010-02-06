@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Feb 04 2010 DHA: Added LMON_FE_HOSTNAME_TO_CONN support
  *        Dec 23 2009 DHA: Added explict config.h inclusion 
  *        Dec 16 2009 DHA: COBO support
  *        Dec 11 2009 DHA: BE hostname list generation in preparation for 
@@ -1961,6 +1962,7 @@ LMON_openBindAndListen ( int *sfd )
   struct hostent *hp;
   struct in_addr **addr; 
   char hn[MAX_LMON_STRING]; 
+  char *hngiven;
 
   if ( (rc = gethostname(hn, MAX_LMON_STRING)) < 0 ) 
     {
@@ -1983,6 +1985,19 @@ LMON_openBindAndListen ( int *sfd )
   //
   strcat (hn, "-io");
 #endif  
+
+  //
+  // LMON_FE_HOSTNAME_TO_CONN support to handle a condition where 
+  // the hostname returned by gethostname doesn't represent a 
+  // hostname for remote tool daemons to connect to 
+  //
+  if ( (hngiven = getenv ("LMON_FE_HOSTNAME_TO_CONN")) != NULL)
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
+		     "front-end hostname that remote daemons use is given");	
+      memset (hn, '\0', MAX_LMON_STRING);
+      snprintf(hn, MAX_LMON_STRING, "%s", hngiven);
+    } 
 
   if ( (hp = gethostbyname(hn)) == NULL ) 
     {

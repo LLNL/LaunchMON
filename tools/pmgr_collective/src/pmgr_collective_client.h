@@ -46,6 +46,7 @@ int pmgr_close();
 int pmgr_getmyrank (int *rank);
 int pmgr_getmysize (int *size);
 int pmgr_getsockfd (int *fd);
+int pmgr_register_hname (char *hn);
 
 /* sync point, no task makes it past until all have reached */
 int pmgr_barrier  ();

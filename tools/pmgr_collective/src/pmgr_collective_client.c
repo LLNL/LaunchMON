@@ -118,6 +118,7 @@ static struct timeval time_open, time_close;
 
 static unsigned pmgr_backoff_rand_seed;
 
+static char *pmgr_myhostname = NULL;
 /*
  * =============================
  * Utility functions for use by other functions in this file
@@ -483,7 +484,22 @@ static int pmgr_open_tree()
     char hn[256];
     gethostname(hn, 256);
     struct hostent* he = gethostbyname(hn);
-    struct in_addr ip = * (struct in_addr *) *(he->h_addr_list);
+    struct in_addr ip;
+    if (!he) {
+      if (pmgr_myhostname) {
+        ip.s_addr = inet_addr(pmgr_myhostname);
+        printf("== %s %d\n", pmgr_myhostname, ip.s_addr); 
+      }
+      else {
+        pmgr_error("Can't resolve the hostname into an IP @ file %s:%d",
+            errno, __FILE__, __LINE__);
+        exit(1);
+      }
+    }
+    else {
+      ip = * (struct in_addr *) *(he->h_addr_list);
+    }
+
     short port = sin.sin_port;
 
     /* allocate buffers to receive ip:port table for all tasks */
@@ -1460,4 +1476,11 @@ int pmgr_abort(int code, const char *fmt, ...)
     }
 
     return PMGR_SUCCESS;
+}
+
+
+int pmgr_register_hname (char *hn)
+{
+  pmgr_myhostname = strdup(hn);
+  return PMGR_SUCCESS;
 }
