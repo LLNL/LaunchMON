@@ -523,7 +523,7 @@ opts_args_t::construct_launch_string ()
 #if PMGR_BASED
         + string (" --pmgrip=%s --pmgrport=%s --pmgrlazyrank=1 --pmgrlazysize=1")
 #endif
-        + string (" --lmonsharedsec=%s --lmonsecchk=%s" );
+	;
 
       my_opt->modelchecker = true;
 
