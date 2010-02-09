@@ -305,9 +305,12 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_attach (
 	    TD_THR_ANY_USER_FLAGS);
 
     if ( te != TD_OK) {
+#if 0
       e = func +
 	" td_ta_thr_iter is not TD_OK.";
       throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);
+#endif
+      //cout << "TD NOT OK" << endl;
     }
 
     return SDBG_TTRACE_OK;

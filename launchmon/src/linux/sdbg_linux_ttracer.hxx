@@ -138,6 +138,9 @@ public:
 	  threadpid );
       }
 
+      if (threadpid < 0)
+        return -1;
+
       if ( p->get_thrlist().find ( threadpid ) 
 	   == p->get_thrlist().end())
 	{
@@ -203,6 +206,8 @@ public:
 
       threadpid = thrinfo->thr2pid();
       //cout << "thread lwpid" << threadpid << endl;
+      if (threadpid < 0)
+        return -1;
       {
         self_trace_t::trace ( LEVELCHK(level2),
           MODULENAME,0,
@@ -222,6 +227,7 @@ public:
           p->get_thrlist().insert ( make_pair ( threadpid, thrinfo ) );
           if( threadpid != p->get_master_thread_pid())
             {
+	      //cout << "Adding New" << endl;
               thread_tracer_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>::
                     get_tracer()->tracer_attach ( *p, false, threadpid );
             }
