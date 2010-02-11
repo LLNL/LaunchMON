@@ -65,6 +65,7 @@
 
 #define SDBG_DEFAULT_TEMPLPARAM VA,WT,IT,GRS,FRS,NT,EXECHANDLER
 
+const unsigned int GracePeriodForZombieThread = 10000;
 const unsigned int GracePeriodBNSignals       = 100000; // 100 millisecs
 const unsigned int GracePeriodFEDisconnection = 2000000; // 2 secs
 const double DefaultWarmPeriods               = 10.0;

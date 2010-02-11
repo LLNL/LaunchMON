@@ -26,6 +26,13 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Feb 10 2010 DHA: Rewrite methods to better handle an exception 
+ *                         arising from the thread_db wherein
+ *                         a garbage value is provided when a thread within the inferior 
+ *                         recently exited and presumably is in zombie state.  
+ *                         Under this condition, the new logic calls td_ta_thr_iter
+ *                         once more. If that fails, attaching to the new thread
+ *                         is deferred until the next pthread create point, which can be bad!. 
  *        Mar 09 2009 DHA: Removed an equality check between the thread_db-provided 
  *                         thread creation breakpoint address and the one that 
  *                         the pthread library itself provides for the sake of simplicity.
@@ -104,13 +111,11 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_init (
     string func = "[linux_thread_tracer_t::ttracer_init]";
     td_err_e te;
     td_notify_t event_notify;
-    td_thragent_t *ta_pp = NULL;
     image_base_t<VA,elf_wrapper>* thrlib_im = NULL;
     breakpoint_base_t<VA, IT>* bp = NULL;  
 #if THREAD_DEATH_EVENT_NEEDED
     breakpoint_base_t<VA, IT>* tdbp = NULL;  
-#endif  
-    struct ps_prochandle ph_p;
+#endif
     char *cppath, *dirpath_libpthread; 
 
 
@@ -153,8 +158,19 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_init (
       throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);
     }
 
-    ph_p.p = &p;
-    if ( ( te = linux_thread_callback_t::td.dll_td_ta_new (&ph_p, &ta_pp)) 
+    //
+    // p better be persisent during the life time of this object
+    //
+    my_ph_p.p = &p;
+    if (my_thragent != NULL) 
+      {
+        e = func +
+	  " my_thragent has already been initialized!.";
+        throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);
+
+      }
+
+    if ( ( te = linux_thread_callback_t::td.dll_td_ta_new (&my_ph_p, &my_thragent)) 
 	 != TD_OK ) {
       e = func +
 	" td_ta_new is not TD_OK.";
@@ -163,25 +179,13 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_init (
 
     td_event_emptyset ( &thread_event_mask );
     td_event_addset   ( &thread_event_mask, TD_CREATE );
-//    td_event_addset   ( &thread_event_mask, TD_DEATH );
-    linux_thread_callback_t::td.dll_td_ta_set_event( ta_pp, 
+#if THREAD_DEATH_EVENT_NEEDED
+    td_event_addset   ( &thread_event_mask, TD_DEATH );
+#endif
+    linux_thread_callback_t::td.dll_td_ta_set_event( my_thragent, 
       &thread_event_mask );
 
-    te = linux_thread_callback_t::td.dll_td_ta_thr_iter ( ta_pp,
-            linux_thread_callback_t::ttracer_thread_iter_callback,
-	    (void*) (&p),
-	    TD_THR_ANY_STATE, 
-	    TD_THR_LOWEST_PRIORITY, 
-	    TD_SIGNO_MASK, 
-	    TD_THR_ANY_USER_FLAGS);
-
-    if (te != TD_OK) {
-      e = func +
-	" td_ta_thr_iter is not TD_OK.";
-      throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);
-    }
-
-    te = linux_thread_callback_t::td.dll_td_ta_event_addr (ta_pp, 
+    te = linux_thread_callback_t::td.dll_td_ta_event_addr (my_thragent, 
             TD_CREATE, &event_notify);
 
     if ( te != TD_OK ) {
@@ -215,7 +219,7 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_init (
     }
 
 #if THREAD_DEATH_EVENT_NEEDED
-    te = linux_thread_callback_t::td.dll_td_ta_event_addr ( ta_pp,
+    te = linux_thread_callback_t::td.dll_td_ta_event_addr ( my_thragent,
             TD_DEATH, &event_notify);
 
     if (te != TD_OK) {
@@ -232,7 +236,7 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_init (
 #if WITH_INDIRECT_BP
       tdbp->set_use_indirection();
 #endif
-      tdbp->set_address_at(thread_create_bp_sym.get_relocated_address());
+      tdbp->set_address_at(thread_death_bp_sym.get_relocated_address());
       tdbp->status = breakpoint_base_t<VA, IT>::set_but_not_inserted;
       p.set_thread_death_hidden_bp(tdbp);
       pt->insert_breakpoint ( p, 
@@ -240,6 +244,40 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_init (
 			      true);
     }
 #endif
+
+    te = linux_thread_callback_t::td.dll_td_ta_thr_iter ( my_thragent,
+            linux_thread_callback_t::ttracer_thread_iter_callback,
+	    (void*) (&p),
+	    TD_THR_ANY_STATE, 
+	    TD_THR_LOWEST_PRIORITY, 
+	    TD_SIGNO_MASK, 
+	    TD_THR_ANY_USER_FLAGS);
+
+    if (te != TD_OK) {
+      self_trace_t::trace ( true,
+             MODULENAME, 0,
+             "return code from td_ta_thr_iter isn't TD_OK, one more attempt");
+
+      te = linux_thread_callback_t::td.dll_td_ta_thr_iter ( my_thragent,
+            linux_thread_callback_t::ttracer_thread_iter_callback,
+	    (void*) (&p),
+	    TD_THR_ANY_STATE, 
+	    TD_THR_LOWEST_PRIORITY, 
+	    TD_SIGNO_MASK, 
+	    TD_THR_ANY_USER_FLAGS);
+
+      if (te != TD_OK) {
+        self_trace_t::trace ( true,
+             MODULENAME, 0,
+             "td_ta_thr_iter failed twice. waiting until the next pthread create point to discover this new thread");
+      } 
+      else {
+        self_trace_t::trace ( true,
+             MODULENAME, 0,
+             "succeeded");
+      }
+    }
+
     return SDBG_TTRACE_OK;
   } 
   catch ( symtab_exception_t e ) {
@@ -268,12 +306,7 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_attach (
 
     string e;
     string func = "[linux_thread_tracer_t::ttracer_attach]";
-    int nthr;  
     td_err_e te;
-    td_thragent_t* new_ta;
-    struct ps_prochandle ph_p;
-
-    ph_p.p = &p;
 
 
     {
@@ -282,21 +315,15 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_attach (
 	"A thread newly created and ttracer_attach event handler invoked");
     }
 
-    te = linux_thread_callback_t::td.dll_td_ta_new (&ph_p, &new_ta);
-    if (te != TD_OK) {
-      e = func +
-	" td_ta_thr_iter is not TD_OK.";
-      throw thread_tracer_exception_t (e, SDBG_TTRACE_FAILED);
-    }
+    if (my_thragent == NULL)
+      {
+        e = func +
+          " my_thragent has not been initialized!.";
+        throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);
 
-    te = linux_thread_callback_t::td.dll_td_ta_get_nthreads (new_ta, &nthr);
-    if (te != TD_OK) {
-      e = func +
-	" td_ta_thr_iter is not TD_OK.";
-      throw thread_tracer_exception_t (e, SDBG_TTRACE_FAILED);
-    }
+      }
 
-    te = linux_thread_callback_t::td.dll_td_ta_thr_iter ( new_ta,
+    te = linux_thread_callback_t::td.dll_td_ta_thr_iter ( my_thragent,
             linux_thread_callback_t::ttracer_thread_iter_attach_callback,
 	    (void*) (&p),
 	    TD_THR_ANY_STATE,
@@ -304,17 +331,39 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_attach (
 	    TD_SIGNO_MASK,
 	    TD_THR_ANY_USER_FLAGS);
 
-    if ( te != TD_OK) {
-#if 0
-      e = func +
-	" td_ta_thr_iter is not TD_OK.";
-      throw thread_tracer_exception_t(e, SDBG_TTRACE_FAILED);
-#endif
-      //cout << "TD NOT OK" << endl;
-    }
+    if (te != TD_OK) 
+      {
+        self_trace_t::trace ( LEVELCHK(level1),
+             MODULENAME, 0,
+             "return code from td_ta_thr_iter isn't TD_OK, one more attempt");
+
+        //
+        // Yield CPU
+        //
+        usleep(GracePeriodForZombieThread);
+        te = linux_thread_callback_t::td.dll_td_ta_thr_iter ( my_thragent,
+            linux_thread_callback_t::ttracer_thread_iter_attach_callback,
+	    (void*) (&p),
+	    TD_THR_ANY_STATE, 
+	    TD_THR_LOWEST_PRIORITY, 
+	    TD_SIGNO_MASK, 
+	    TD_THR_ANY_USER_FLAGS);
+
+        if (te != TD_OK) 
+          {
+            self_trace_t::trace ( true,
+             MODULENAME, 0,
+             "td_ta_thr_iter failed twice. waiting until the next pthread create point to discover this new thread");
+          } 
+          else {
+            self_trace_t::trace ( LEVELCHK(level1), 
+             MODULENAME, 0,
+             "succeeded");
+          }
+      }
 
     return SDBG_TTRACE_OK;
-  }
+  } 
   catch ( symtab_exception_t e ) {
     e.report();
     abort();

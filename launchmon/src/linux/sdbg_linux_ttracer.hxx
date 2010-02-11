@@ -26,6 +26,16 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Feb 10 2010 DHA: Rewrite some of the thread iterator callback routines
+ *                         to handle an exception arising from the thread_db where
+ *                         it provides a garbage value when a target thread
+ *                         recently exited and is in zombie state.  
+ *                         The W/R will simply stop the iteration down in the
+ *                         thread_db avoiding the infinite loop formed.  
+ *                         Under this condition, the new logic within the ttracer_attach 
+ *                         calls td_ta_thr_iter to fail over. If that also fails, 
+ *                         attaching to the new thread is deferred until the next 
+ *                         pthread create point, which can be bad!.
  *        Oct 30 2009 DHA: A patch to work around a bug in NPTL thread debug 
  *                         library's td_thr_get_info call.
  *        Mar 06 2008 DHA: Thread debug library dll support 
@@ -80,7 +90,7 @@ class linux_thread_tracer_t
 {
 public:
 
-  linux_thread_tracer_t()          { }
+  linux_thread_tracer_t()          { my_thragent = NULL;}
   virtual ~linux_thread_tracer_t() { }
 
   class linux_thread_callback_t {
@@ -94,39 +104,25 @@ public:
       using namespace std;
 
       td_err_e te;
-      int threadpid;
 
       if ( (te = td.dll_td_thr_event_enable(tt, 1)) != TD_OK )
 	return SDBG_TTRACE_FAILED;
 
-      if (tt->th_unique == 0) {
-        // this is the main thread
-        // this is to work around a bug in the linux debug library's 
-        // td_thr_get_info call which has a conditional based upon an uninitialized
-        // value. And the condition happens when the thread is the main thread
-        // and we don't need to do much with the main thread anyway. 
-        return SDBG_TTRACE_OK;
-      }
-
-#if X86_ARCHITECTURE || X86_64_ARCHITECTURE
-      thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper> *thrinfo 
-	     = new linux_x86_thread_t();
-#elif PPC_ARCHITECTURE
-      thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper> *thrinfo 
-	     = new linux_ppc_thread_t();
-#endif
-
       process_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper> *p 
 	     = (process_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>*) proc;
 
-
-      td_thrinfo_t &tinfo = thrinfo->get_thread_info();
+      td_thrinfo_t tinfo; 
       memset(&tinfo, '\0', sizeof(td_thrinfo_t));
       te = td.dll_td_thr_get_info(tt, &tinfo);
-      if ( te != TD_OK )
-        return SDBG_TTRACE_FAILED;
 
-      threadpid = (int) thrinfo->thr2pid(); 
+      if ( te != TD_OK )
+        {
+          self_trace_t::trace ( LEVELCHK(level1),
+             MODULENAME, 1,
+             "td_thr_get_info returned a non TD_OK code.");
+
+          return -1;
+        }
 
       {
 	self_trace_t::trace ( LEVELCHK(level2), 
@@ -135,36 +131,58 @@ public:
 	self_trace_t::trace ( LEVELCHK(level2), 
 	  MODULENAME,0, 
 	  "this callback is for the thread %d",
-	  threadpid );
+	  tinfo.ti_lid);
       }
 
-      if (threadpid < 0)
-        return -1;
+      if (tinfo.ti_lid < 0)
+        {
+          return -1;
+        }
 
-      if ( p->get_thrlist().find ( threadpid ) 
-	   == p->get_thrlist().end())
-	{
-          // if the process doesn't contain tid of the given thread,
-          // those threads must have not been attached
-          //   
-	  p->get_thrlist().insert ( make_pair ( threadpid, thrinfo ) );
-	  if( threadpid != p->get_master_thread_pid()) 
+      if ( tinfo.ti_lid == p->get_master_thread_pid() )
+        {
+          p->get_thrlist()[tinfo.ti_lid]->copy_thread_info(tinfo) ;
+          if ( (te = td.dll_td_thr_event_enable(tt, 1)) != TD_OK )
+            {
+              self_trace_t::trace ( LEVELCHK(level1),
+                MODULENAME, 1,
+                "td_thr_event_enable didn't return TD_OK");
+
+	      return -1;
+            }
+        }
+      else
+        {
+          if ( p->get_thrlist().find ( tinfo.ti_lid ) 
+	       == p->get_thrlist().end())
 	    {
+              // this thread has not been seen
+#if X86_ARCHITECTURE || X86_64_ARCHITECTURE
+             thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper> *thrinfo 
+	       = new linux_x86_thread_t();
+#elif PPC_ARCHITECTURE
+             thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper> *thrinfo 
+	       = new linux_ppc_thread_t();
+#endif
+	     thrinfo->copy_thread_info(tinfo);
+             // if the process doesn't contain tid of the given thread,
+             // those threads must have not been attached
+             //   
+	     p->get_thrlist().insert ( make_pair ( tinfo.ti_lid, thrinfo ) );
+	     thread_tracer_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>::
+		    get_tracer()->tracer_attach ( *p, false, tinfo.ti_lid);
+             if ( (te = td.dll_td_thr_event_enable(tt, 1)) != TD_OK )
+               {
+                 self_trace_t::trace ( LEVELCHK(level1),
+                   MODULENAME, 1,
+                   "td_thr_event_enable didn't return TD_OK");
 
-	      thread_tracer_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>::
-		    get_tracer()->tracer_attach ( *p, false, threadpid );
+	         return -1;
+               }
 	    }
 	}
-      else 
-	{
 
-	  //delete thrinfo;	 
- 
-	  //if (te != TD_OK)  
-	    //return SDBG_TTRACE_FAILED;
-	}
-
-      return SDBG_TTRACE_OK;
+      return 0;
     }
 
     static int ttracer_thread_iter_attach_callback ( const td_thrhandle_t* tt, 
@@ -173,76 +191,79 @@ public:
       using namespace std;
 
       td_err_e te;
-      int threadpid;
 
-      if ( (te = td.dll_td_thr_event_enable(tt, 1)) != TD_OK ) 
-	return SDBG_TTRACE_FAILED;
-
-      if (tt->th_unique == 0) {
-        // this is the main thread
-        // this is to work around a bug in the linux debug library's 
-        // td_thr_get_info call which has a conditional based upon an uninitialized
-        // value. And the condition happens when the thread is the main thread
-        // and we don't need to do much with the main thread anyway. 
-        return SDBG_TTRACE_OK;
-      }
-
-#if X86_ARCHITECTURE || X86_64_ARCHITECTURE
-      thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper> *thrinfo 
-	= new linux_x86_thread_t();
-#elif PPC_ARCHITECTURE
-      thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper> *thrinfo 
-	= new linux_ppc_thread_t();
-#endif   
       process_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper> *p 
 	     = (process_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>*) proc;
 
-
-      td_thrinfo_t &tinfo = thrinfo->get_thread_info();
+      td_thrinfo_t tinfo; 
       memset(&tinfo, '\0', sizeof(td_thrinfo_t));
       te = td.dll_td_thr_get_info(tt, &tinfo);
+
       if ( te != TD_OK )
         return SDBG_TTRACE_FAILED;
 
-      threadpid = thrinfo->thr2pid();
-      //cout << "thread lwpid" << threadpid << endl;
-      if (threadpid < 0)
-        return -1;
       {
-        self_trace_t::trace ( LEVELCHK(level2),
-          MODULENAME,0,
-          "ttracer_thread_iter_attach_callback is called back by thread_db" );
-        self_trace_t::trace ( LEVELCHK(level2),
-          MODULENAME,0,
-          "this callback is for the thread %d",
-          threadpid );
+	self_trace_t::trace ( LEVELCHK(level2), 
+	  MODULENAME,0, 
+	  "ttracer_thread_iteration is called back by thread_db" );
+	self_trace_t::trace ( LEVELCHK(level2), 
+	  MODULENAME,0, 
+	  "this callback is for the thread %d",
+	  tinfo.ti_lid);
       }
 
-      if ( p->get_thrlist().find ( threadpid )
-           == p->get_thrlist().end())
+      if (tinfo.ti_lid < 0)
         {
-          // if the process doesn't contain tid of the given thread,
-          // those threads must have not been attached
-          //
-          p->get_thrlist().insert ( make_pair ( threadpid, thrinfo ) );
-          if( threadpid != p->get_master_thread_pid())
+          return -1;
+        }
+
+      if ( tinfo.ti_lid == p->get_master_thread_pid() )
+        {
+          p->get_thrlist()[tinfo.ti_lid]->copy_thread_info(tinfo) ;
+          if ( (te = td.dll_td_thr_event_enable(tt, 1)) != TD_OK )
             {
-	      //cout << "Adding New" << endl;
-              thread_tracer_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>::
-                    get_tracer()->tracer_attach ( *p, false, threadpid );
+              self_trace_t::trace ( LEVELCHK(level1),
+                MODULENAME, 1,
+                "td_thr_event_enable didn't return TD_OK");
+
+	      return -1;
             }
         }
       else
         {
-          // does thrinfo has a pointer to point to data belonging to thread_db?
-          delete thrinfo;
+          if ( p->get_thrlist().find ( tinfo.ti_lid ) 
+	       == p->get_thrlist().end())
+	    {
+              // this thread has not been seen
+#if X86_ARCHITECTURE || X86_64_ARCHITECTURE
+             thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper> *thrinfo 
+	       = new linux_x86_thread_t();
+#elif PPC_ARCHITECTURE
+             thread_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper> *thrinfo 
+	       = new linux_ppc_thread_t();
+#endif
+	     thrinfo->copy_thread_info(tinfo);
+             // if the process doesn't contain tid of the given thread,
+             // those threads must have not been attached
+             //   
+	     p->get_thrlist().insert ( make_pair ( tinfo.ti_lid, thrinfo ) );
+	     thread_tracer_base_t<VA,WT,IT,GRS,FRS,td_thrinfo_t,elf_wrapper>::
+		    get_tracer()->tracer_attach ( *p, false, tinfo.ti_lid);
 
-          //if (te != TD_OK)
-            //return SDBG_TTRACE_FAILED;
-        }
+             if ( (te = td.dll_td_thr_event_enable(tt, 1)) != TD_OK )
+               {
+                 self_trace_t::trace ( LEVELCHK(level1),
+                   MODULENAME, 1,
+                   "td_thr_event_enable didn't return TD_OK");
 
-      return SDBG_TTRACE_OK;      
+	         return -1;
+               }
+            }
+	}
+
+      return 0;
     }
+
   }; // nested class linux_thread_callback_t 
 
   ////////////////////////////////////////////////////////////
@@ -271,6 +292,12 @@ private:
   // the global mask that sets kinds of event to be notified.
   //
   static td_thr_events_t thread_event_mask;
+
+  //
+  // make sure there is only one td_thragent_t and ps_prochandle
+  //
+  td_thragent_t *my_thragent;
+  struct ps_prochandle my_ph_p;
 
   static bool LEVELCHK(self_trace_verbosity level) 
        { return (self_trace_t::thread_tracer_module_trace.verbosity_level >= level); }

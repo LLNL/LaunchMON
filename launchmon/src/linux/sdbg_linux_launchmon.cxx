@@ -2298,6 +2298,7 @@ linux_launchmon_t::handle_exit_event (
 	      "a slave thread has exited.");
 	  }
 
+	  //cout << "slave thread exited: " << p.get_cur_thread_ctx() << endl;
 	  rc = LAUNCHMON_OK;
 	}
       else 
@@ -2474,7 +2475,7 @@ linux_launchmon_t::handle_thrdeath_bp_event (
 {
   try 
     {
-      //bool use_cxt = true; 
+      bool use_cxt = true; 
 
       if ( is_bp_prologue_done(p, p.get_thread_death_hidden_bp()) != LAUNCHMON_OK )
 	return LAUNCHMON_OK;
@@ -2486,9 +2487,12 @@ linux_launchmon_t::handle_thrdeath_bp_event (
       }
 
       //
-      // Not implemented yet
+      // UNIMPLEMENTED!!
       //
-
+      self_trace_t::trace ( true, 
+	  MODULENAME,1,
+	  "UNIMPLEMENTED %d : %d", p.get_pid(true),  p.get_pid(false));
+      get_tracer()->tracer_continue(p,use_cxt);
       {
 	self_trace_t::trace ( LEVELCHK(level2), 
 	  MODULENAME,0,
