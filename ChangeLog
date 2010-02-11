@@ -1,4 +1,11 @@
-2009-02-05 Dong H. Ahn <ahn1@llnl.gov>
+2010-02-10 Dong H. Ahn <ahn1@llnl.gov>
+	* Rewrite some of the thread iterator callback routines
+	to handle an exception arising from Linux thread_db where
+	it provides a garbage value when a target thread within the
+	inferior process recently exited but is still in zombie state.  
+
+
+2010-02-05 Dong H. Ahn <ahn1@llnl.gov>
 	* launchmon/src/linux/lmon_api/lmon_fe.cxx
 	launchmon/src/linux/lmon_api/lmon_be_comm.cxx
 	launchmon/src/linux/lmon_api/lmon_be.cxx
