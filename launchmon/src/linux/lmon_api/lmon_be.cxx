@@ -1510,20 +1510,7 @@ LMON_be_getMyProctab (
 
     }
 
-#if RM_BG_MPIRUN
-  //
-  //  BLUEGENE's RPDTAB contains raw IPs instead of hostnames.
-  //
-  //	
-  // DHA 3/4/3009, reviewed. 
-  //
-  // Changed RM_BGL_MPIRUN to RM_BG_MPIRUN to genericize 
-  // BlueGene Support
-  //
-  key = bedata.my_ip;
-#else
   key = bedata.my_hostname;
-#endif
 
   string myhostname (key);
   (*size) = (int) proctab_cache[myhostname].size ();
@@ -1576,20 +1563,7 @@ LMON_be_getMyProctabSize ( int *size )
         }
     }
 
-#if RM_BG_MPIRUN
-  //
-  //  BLUEGENE's RPDTAB contains raw IPs instead of hostnames.
-  //
-  //	
-  // DHA 3/4/3009, reviewed. 
-  //
-  // Changed RM_BGL_MPIRUN to RM_BG_MPIRUN to genericize 
-  // BlueGene Support
-  //
-  key = bedata.my_ip;
-#else
   key = bedata.my_hostname;
-#endif
 
   string myhostname (key);
   (*size) = (int) proctab_cache[myhostname].size ();
