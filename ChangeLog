@@ -1,5 +1,12 @@
 2010-02-10 Dong H. Ahn <ahn1@llnl.gov>
-	* Rewrite some of the thread iterator callback routines
+	* launchmon/src/linux/sdbg_linux_ttracer.hxx
+	launchmon/src/linux/sdbg_linux_launchmon.cxx
+	launchmon/src/linux/sdbg_linux_ttracer_impl.hxx
+	launchmon/src/sdbg_base_mach_impl.hxx
+	launchmon/src/sdbg_std.hxx
+	launchmon/src/sdbg_opt.cxx
+	launchmon/src/sdbg_base_mach.hxx: Rewrite some of the 
+	thread iterator callback routines
 	to handle an exception arising from Linux thread_db where
 	it provides a garbage value when a target thread within the
 	inferior process recently exited but is still in zombie state.  
