@@ -26,6 +26,10 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Apr 06 2010 DHA: It turned out the /etc/hosts trick works partially because
+ *                         the entry returned by gethostname isn't unique on Eugene!
+ *                         Added a new parser to parse /proc/personality.sh to 
+ *                         fully work around the problem described below  
  *        Feb 04 2010 DHA: Added /etc/hosts parser to work around a problem of 
  *                         systems that are not capable of resolving the hostname 
  *                         returned by gethostname into an IP. 
@@ -337,6 +341,61 @@ LMON_be_getSharedKeyAndID ( char *shared_key, int *id )
   return LMON_OK;
 }
 
+//! bool getPersonalityField ()
+static bool
+getPersonalityField ( std::string& pFilePath, std::string &fieldName, std::string &value)
+{
+  try
+    {
+      using namespace std;
+      char line[PATH_MAX];
+      ifstream ifs(pFilePath.c_str());
+      string delim = "=";
+      bool found = false;
+
+      //
+      // checking if pFilePath is valid 
+      //
+      if ( access(pFilePath.c_str(), R_OK) < 0)
+        {
+          LMON_say_msg (LMON_BE_MSG_PREFIX, true,
+            "%s doesn't exist", pFilePath.c_str());
+          return found;
+        }
+
+      //
+      // ios_base::failure exception can be thrown
+      //
+      while (!ifs.getline (line, PATH_MAX).eof())
+        {
+          string strLine (line);
+          string::size_type lastPos = strLine.find_first_not_of(delim, 0);
+          string::size_type pos = strLine.find_first_of(delim, lastPos);
+
+          while (pos != string::npos || lastPos != string::npos)
+            {
+              if ( fieldName == strLine.substr(lastPos, pos - lastPos)) 
+                {
+                  lastPos = strLine.find_first_not_of(delim, pos);
+	          pos = strLine.find_first_of(delim, lastPos);
+                  value = strLine.substr(lastPos, pos - lastPos);
+                  found = true;
+                  break;
+                }
+            }
+        }
+
+      ifs.close();
+      return found;
+    }
+  catch (std::ios_base::failure f)
+   {
+     LMON_say_msg (LMON_BE_MSG_PREFIX, true,
+       "ios_base::failure exception thrown while parsing the personality file");
+     return false;
+   }
+}
+
 
 //! bool resolvHNAlias
 /*
@@ -362,6 +421,7 @@ resolvHNAlias ( std::string& hostsFilePath, std::string &alias, std::string &IP)
         {
           LMON_say_msg (LMON_BE_MSG_PREFIX, true,
             "%s doesn't exist", hostsFilePath.c_str()); 
+
           return found;
         }
 
@@ -522,6 +582,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
   struct hostent *hent = gethostbyname(bedata.my_hostname);
   if ( hent == NULL )
     { 
+#if 0
       std::string resIP;
       std::string hFile("/etc/hosts");
       std::string hnameStr(bedata.my_hostname);
@@ -544,6 +605,30 @@ LMON_be_init ( int ver, int *argc, char ***argv )
         resIP.c_str());
       snprintf(bedata.my_hostname, LMON_BE_HN_MAX, "%s", 
         resIP.c_str());
+#endif
+      std::string resIP;
+      std::string pFile("/proc/personality.sh");
+      std::string fieldStr("BG_IP");
+
+      LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+        "BES: this machine does not know how to resolve %s into an IP",
+        bedata.my_hostname);
+      LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+        "BES: parsing /proc/personality.sh to try to resolve");
+     
+      if (!getPersonalityField (pFile, fieldStr, resIP))
+        {
+          LMON_say_msg ( LMON_BE_MSG_PREFIX, true,  
+            "BES: getPersonalityField also failed to resolve %s through", 
+	    bedata.my_hostname, fieldStr);
+
+          return LMON_ESYS;
+        }
+      snprintf(bedata.my_ip, LMON_BE_HN_MAX, "%s", 
+        resIP.c_str());
+      snprintf(bedata.my_hostname, LMON_BE_HN_MAX, "%s", 
+        resIP.c_str());
+
     }
   else
     {

@@ -1,3 +1,11 @@
+2010-04-06 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/linux/lmon_api/lmon_be.cxx: Added 
+	a new parser to parse /proc/personality.sh to 
+	fully work around the hostname resolution problem 
+	with ORNL Eugene's ION environment where gethostname returns 
+	a non-unique, non-standard BG rack-midplane-based hostname.
+
+
 2010-02-10 Dong H. Ahn <ahn1@llnl.gov>
 	* launchmon/src/linux/sdbg_linux_ttracer.hxx
 	launchmon/src/linux/sdbg_linux_launchmon.cxx
