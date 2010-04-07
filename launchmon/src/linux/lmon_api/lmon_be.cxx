@@ -372,7 +372,7 @@ getPersonalityField ( std::string& pFilePath, std::string &fieldName, std::strin
           string::size_type lastPos = strLine.find_first_not_of(delim, 0);
           string::size_type pos = strLine.find_first_of(delim, lastPos);
 
-          while (pos != string::npos || lastPos != string::npos)
+          if (pos != string::npos || lastPos != string::npos)
             {
               if ( fieldName == strLine.substr(lastPos, pos - lastPos)) 
                 {
@@ -382,8 +382,8 @@ getPersonalityField ( std::string& pFilePath, std::string &fieldName, std::strin
                   found = true;
                   break;
                 }
-            }
-        }
+             } 
+          }
 
       ifs.close();
       return found;
@@ -619,8 +619,8 @@ LMON_be_init ( int ver, int *argc, char ***argv )
       if (!getPersonalityField (pFile, fieldStr, resIP))
         {
           LMON_say_msg ( LMON_BE_MSG_PREFIX, true,  
-            "BES: getPersonalityField also failed to resolve %s through", 
-	    bedata.my_hostname, fieldStr);
+            "BES: getPersonalityField also failed to resolve %s through %s", 
+	    bedata.my_hostname, fieldStr.c_str());
 
           return LMON_ESYS;
         }
