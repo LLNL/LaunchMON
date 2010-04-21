@@ -1031,9 +1031,22 @@ int pmgr_open()
         pmgr_error("Connecting mpirun socket to %s at %s:%d failed @ file %s:%d",
             mpirun_hostent->h_name, inet_ntoa(*(struct in_addr *) (*mpirun_hostent->h_addr_list)),
             mpirun_port, __FILE__, __LINE__);
+/*        char filename[]="/tmp/work/ramya/ALAXXXXXX";
+        int fd;
+        fd=mkstemp(filename);
+        write(fd,"pmgrconnect fails",strlen("pmgrconnect fails")+1);*/
+
         exit(1);
     }
+/*    else
+    {
+       char filename[]="/tmp/work/ramya/ALAXXXXXX";
+        int fd;
+        fd=mkstemp(filename);
+        write(fd,"pmgrconnect success",strlen("pmgrconnect success")+1);
 
+
+     }*/
     /* we are now connected to the mpirun process */
 
     /* 
@@ -1090,7 +1103,7 @@ int pmgr_getmysize (int *size)
 
 int pmgr_getsockfd (int *fd)
 {
-  if ( mpirun_socket > 0 )
+  if ( mpirun_socket >= 0 )
     {
       (*fd) = mpirun_socket;
       return PMGR_SUCCESS;
