@@ -51,7 +51,7 @@
 #if HAVE_UNISTD_H
 # include <unistd.h>
 #else
-# error unistd.h is required
+//# error unistd.h is required
 #endif
 
 #if HAVE_LIMITS_H
@@ -75,7 +75,8 @@ extern "C" {
 /*
  * OUR PARALLEL JOB LAUNCHER  
  */
-const char* mylauncher    = TARGET_JOB_LAUNCHER_PATH;
+//const char* mylauncher    = TARGET_JOB_LAUNCHER_PATH;
+const char* mylauncher    = "/usr/bin/orig/aprun";
 
 int statusFunc ( int *status )
 {
@@ -130,6 +131,7 @@ main (int argc, char *argv[])
   string numnodes_opt;
   string partition_opt;
 
+/*
   if ( argc < 6 )
     {
       fprintf ( stdout, 
@@ -138,6 +140,18 @@ main (int argc, char *argv[])
         "[LMON FE] FAILED\n" );
       return EXIT_FAILURE;
     }
+*/
+
+   if ( argc < 4 )
+    {
+      fprintf ( stdout,
+        "Usage: fe_launch_smoketest appcode numprocs daemonpath [daemonargs]\n" );
+      fprintf ( stdout,
+        "[LMON FE] FAILED\n" );
+      return EXIT_FAILURE;
+    }
+
+
 
   if ( access(argv[1], X_OK) < 0 )
     {
@@ -151,7 +165,7 @@ main (int argc, char *argv[])
 
   if ( getenv ("LMON_INVALIDDAEMON_TEST") == NULL )
     {
-      if ( access(argv[5], X_OK) < 0 )
+      if ( access(argv[3], X_OK) < 0 )
         {
           fprintf(stdout, 
             "%s cannot be executed\n", 
@@ -162,8 +176,8 @@ main (int argc, char *argv[])
         }
     }
 
-  if ( argc > 6 )
-    daemon_opts = argv+6;
+  if ( argc > 4 )
+    daemon_opts = argv+4;
 
 #if RM_BG_MPIRUN
   //
@@ -191,8 +205,21 @@ main (int argc, char *argv[])
   launcher_argv[4] = strdup("-l");
   launcher_argv[5] = strdup(argv[1]);
   launcher_argv[6] = NULL;
+#elif RM_ALPS_APRUN
+  numprocs_opt     = string("-n") + string(argv[2]);
+  launcher_argv    = (char**) malloc(4*sizeof(char*));
+  launcher_argv[0] = strdup(mylauncher);
+  launcher_argv[1] = strdup(numprocs_opt.c_str());
+  launcher_argv[2] = strdup(argv[1]);
+  launcher_argv[3] = NULL;
+  printf("inside alps aprun from launch smoketest\n");
+  printf("arg0 is %s", launcher_argv[0]);
+  printf("arg1 is %s", launcher_argv[1]);
+  printf("arg2 is %s", launcher_argv[2]);
+  printf("arg3 is %s", launcher_argv[3]);
+
 #else
-# error add support for the RM of your interest here
+//# error add support for the RM of your interest here
 #endif
  
   if ( ( rc = LMON_fe_init ( LMON_VERSION ) ) 
@@ -235,7 +262,7 @@ main (int argc, char *argv[])
    	            hn,
 	    	    launcher_argv[0],
 		    launcher_argv,
-		    argv[5],
+		    argv[3],
 		    daemon_opts,
 		    NULL,
 		    NULL)) 
@@ -262,7 +289,7 @@ main (int argc, char *argv[])
    	            NULL,
 		    launcher_argv[0],
 		    launcher_argv,
-		    argv[5],
+		    argv[3],
 		    daemon_opts,
 		    NULL,
 		    NULL)) 
@@ -280,7 +307,15 @@ main (int argc, char *argv[])
 
           fprintf ( stdout, "[LMON FE] FAILED\n" );
           return EXIT_FAILURE;
-        }  
+        }
+        else
+        {   
+        /*   printf("Handshake starts at %ld\n",((febe_handshake_start.tv_sec *1000000) +(febe_handshake_start.tv_usec)) ); 
+           printf("Handshake ends at %ld\n",((febe_handshake_end.tv_sec *1000000) +(febe_handshake_end.tv_usec)) );
+           printf("ICCL init starts  at %ld\n",((lmon_assist_start.tv_sec *1000000) +(lmon_assist_start.tv_usec)) );
+           printf("ICCL init ends at %ld\n",((lmon_assist_end.tv_sec *1000000) +(lmon_assist_end.tv_usec)) );
+        */
+        }
     }
 
 #if MEASURE_TRACING_COST
@@ -380,6 +415,11 @@ main (int argc, char *argv[])
     } 
 
   //sleep (3); /* wait until all BE outputs are printed */
+
+   rc = LMON_fe_detach(aSession);
+  if(rc != LMON_OK)
+     printf("Launchmon failed to detach from launcher... have the daemons exited?\n");
+
 
   if (getenv ("LMON_ADDITIONAL_FE_STALL"))
     {

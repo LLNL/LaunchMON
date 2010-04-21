@@ -250,7 +250,7 @@ main (int argc, char* argv[])
   launcher_argv[7] = NULL;
   fprintf (stdout, "[LMON FE] launching the job/daemons via %s\n", mylauncher);
 #else
-# error add support for the RM of your interest here
+//# error add support for the RM of your interest here
 #endif  
 
   if ( ( rc = LMON_fe_init ( LMON_VERSION ) ) 

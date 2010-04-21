@@ -93,13 +93,26 @@ main( int argc, char* argv[] )
 
   kill_detach_shutdown_test = 0;
 
+/*
+ char filename[]="/tmp/work/ramya/ACAXXXXXX";
+  int be_fd1;
+  be_fd1=mkstemp(filename);
+  write(be_fd1,"here1",strlen("here1")+1);
+*/
+
+
   if ( (lrc = LMON_be_init(LMON_VERSION, &argc, &argv)) 
               != LMON_OK )
     {      
       fprintf(stdout, 
         "[LMON BE] FAILED: LMON_be_init\n");
+      //write(be_fd1,"bekicker started and init 0", strlen("bekicker started and init 0")+1);
       return EXIT_FAILURE;
     }
+   else
+   {
+       //write(be_fd1,"bekicker started and init 0", strlen("bekicker started and init 0")+1);
+   }
 
   if (argc > 1) 
     {
@@ -175,7 +188,7 @@ main( int argc, char* argv[] )
     }
 
 #if RM_BG_MPIRUN
-  /* the tool wants to send a signal other than the default */
+  // the tool wants to send a signal other than the default 
   if (signum != 0)  
     {
       for (i=0; i < proctab_size; i++)
@@ -270,8 +283,8 @@ main( int argc, char* argv[] )
 
   free (proctab);
 
-  /* sending this to mark the end of the BE session */
-  /* This should be used to determine PASS/FAIL criteria */
+  // sending this to mark the end of the BE session 
+  // This should be used to determine PASS/FAIL criteria 
   sleep(1);
   if ( (( lrc = LMON_be_sendUsrData ( NULL )) == LMON_EBDARG)
        || ( lrc == LMON_EINVAL ) 
@@ -285,6 +298,7 @@ main( int argc, char* argv[] )
      }
 
   LMON_be_finalize();
+
 
   return EXIT_SUCCESS;
 }

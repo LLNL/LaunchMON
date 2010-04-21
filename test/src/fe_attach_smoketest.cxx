@@ -39,6 +39,13 @@
  *        Dec  27 2006 DHA: Created file.
  */
 
+
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <sstream>
+
+
 #ifndef HAVE_LAUNCHMON_CONFIG_H
 #include "config.h"
 #endif
@@ -180,7 +187,7 @@ main (int argc, char* argv[])
       return EXIT_FAILURE;
     }
 
-  if ( getenv ("LMON_STATUS_CB_TEST"))
+  if (getenv ("LMON_STATUS_CB_TEST"))
     {
        if ( LMON_fe_regStatusCB(aSession, statusFunc) != LMON_OK )
          {
@@ -208,6 +215,22 @@ main (int argc, char* argv[])
        */
       char hn[1024];
       gethostname ( hn, 1024);
+      /*
+   std::ifstream ifs( "/proc/cray_xt/nid" );
+    uint32_t nid;
+    ifs >> nid;
+
+    std::ostringstream nidStr;
+    nidStr << "nid"
+        << std::setw( 5 )
+        << std::setfill( '0' )
+        << nid
+        << std::ends;
+    std::string hostname1=nidStr.str();
+     sprintf(hn,"%s",hostname1.c_str()); 
+    printf("hn is %s", hn);
+   */
+
       if ( ( rc = LMON_fe_attachAndSpawnDaemons(
                 aSession,
                 hn,
@@ -251,6 +274,8 @@ main (int argc, char* argv[])
     } 
   else
     {
+
+         
       if ( ( rc = LMON_fe_attachAndSpawnDaemons( 
                 aSession, 
 	        NULL,
