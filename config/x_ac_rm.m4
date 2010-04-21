@@ -54,7 +54,7 @@ AC_DEFUN([X_AC_RM], [
   AC_MSG_CHECKING([resource manager type])
 
   AC_ARG_WITH([rm], 
-    AS_HELP_STRING(--with-rm@<:@=RMTYPE@:>@,specify a system Resource Manager @<:@slurm bgrm@:>@ @<:@default=slurm@:>@),
+    AS_HELP_STRING(--with-rm@<:@=RMTYPE@:>@,specify a system Resource Manager @<:@slurm, bgrm, alps@:>@ @<:@default=slurm@:>@),
     [with_rm_name=$withval],
     [with_rm_name="check"]
   )
@@ -65,6 +65,18 @@ AC_DEFUN([X_AC_RM], [
     [with_launcher="check"]
   )
 
+  AC_ARG_WITH([alps-lib],
+     AS_HELP_STRING(--with-alps-lib@<:@=ALPSLIBS@>@,specify the directory containing ALPS libraries @<:@default=/usr/lib@:>@),
+     [with_alpslib=$withval],
+     [with_alpslib="/usr/lib"]
+    )
+
+    AC_ARG_WITH([alps-inc],
+     AS_HELP_STRING(--with-alps-inc<:@=ALPSINC@>@,specify the directory containing ALPS include files @<:@default=/usr/include@:>@),
+     [with_alpsinc=$withval],
+     [with_alpsinc="/usr/include"]
+    )
+ 
   rm_default_dirs="/usr/bin /usr/local/bin /bgl/BlueLight/ppcfloor/bglsys/bin /bgsys/drivers/ppcfloor/bin" 
   rm_found="no"
  
@@ -218,10 +230,89 @@ AC_DEFUN([X_AC_RM], [
         ac_job_launcher_bits="unknown"
       fi # test $bits = "32-bit"
       AC_MSG_RESULT($ac_job_launcher_bits)
-    fi # test "x$rm_found" = "xyes"; 	
+	    fi # test "x$rm_found" = "xyes"; 	
+  elif test "x$with_rm_name" = "xalps" ; then
+    #
+    # Configure for CrayXT/ALPS
+    #
+    if test "x$with_launcher" != "xcheck" -a "x$with_launcher" != "xyes"; then
+      #
+      # The MPIRUN path is given
+      #
+      pth=""
+      if test -f $with_launcher; then
+        pth=`config/ap $with_launcher`
+        if test -f $pth ; then
+          ac_job_launcher_path=$pth
+          rm_found="yes"
+        fi
+      fi
+    else
+      #
+      # Try the default MPIRUN path
+      #
+      for rm_dir in $rm_default_dirs; do
+        if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
+          continue;
+        fi
+
+        if test ! -z "$rm_dir/aprun" -a -f "$rm_dir/aprun"; then
+          pth=`config/ap $rm_dir/aprun`
+          ac_job_launcher_path=$pth
+          rm_found="yes"
+          break
+        fi
+      done
+    fi
+    AC_MSG_RESULT($with_rm_name:$rm_found)
+    if test "x$rm_found" = "xyes"; then
+      #
+      # ALPS found, export some configuration params
+      #
+      AC_SUBST(RM_TYPE, alps)
+        AC_DEFINE(GLUESYM,[""], [Define dot for GLUESYM])
+        AC_DEFINE(BIT64,1,[Define 1 for BIT64])
+      ac_job_launcher_bits="64"
+      if test -z "$with_alpslib" -o ! -d "$with_alpslib" ; then
+        AC_MSG_ERROR([ALPS directory $with_alpslib was not a directory])
+      fi
+      if test ! -z "$with_alpslib" -a -d "$with_alpslib/alps" ; then
+        ALPSLIB_SEARCH="-L$with_alpslib/alps"
+      fi
+      if test ! -z "$with_alpslib" -a -d "$with_alpslib/alpsutil" ; then
+        ALPSLIB_SEARCH="$ALPSLIB_SEARCH -L$with_alpslib/alpsutil"
+      fi
+      if test ! -z "$with_alpslib" -a -d "$with_alpslib/xmlrpc" ; then
+           ALPSLIB_SEARCH="$ALPSLIB_SEARCH -L$with_alpslib/xmlrpc"
+      fi
+      ALPSLIB_SEARCH="$ALPSLIB_SEARCH -L$with_alpslib"
+      LDFLAGS="$LDFLAGS $ALPSLIB_SEARCH"
+
+      if test -z "$with_alpsinc" -o ! -d "$with_alpsinc" ; then
+        AC_MSG_ERROR([ALPS directory $with_alpsinc was not a directory])
+      fi
+      CFLAGS="$CFLAGS -I$with_alpsinc"
+      AC_CHECK_HEADER(apInfo.h,
+        AC_SUBST(ALPS_INC_DIR, $with_alpsinc),
+        AC_ERROR("apInfo.h not found in $with_alpsinc"))
+
+      AC_DEFINE(RM_ALPS_APRUN,1, ["Definition for ALPS/APRUN]")
+
+      AC_MSG_CHECKING(for libalps)
+      AC_CHECK_LIB(alps,alps_launch_tool_helper,libalps_found=yes,libalps_found=no,[-lalpsutil -lxmlrpc])
+      if test "$libalps_found" = yes; then
+         LIBALPS="-lalps -lxmlrpc"
+         AC_SUBST(LIBALPS)
+      else
+         AC_MSG_ERROR([libalps not found])
+      fi
+    fi
+   
+
   else
     AC_MSG_ERROR([--with-rm is a required option])
   fi
+  AM_CONDITIONAL([WITH_ALPS], [test "x$with_rm_name" = "xalps" -a "x$rm_found" = "xyes"])
   AM_CONDITIONAL([WITH_CIOD], [test "xyes" = "xyes"])
 ])
 

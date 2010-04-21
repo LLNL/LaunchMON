@@ -6850,11 +6850,11 @@ exit $?
 # configuration.  But we'll never go from static-only to shared-only.
 
 # ### BEGIN LIBTOOL TAG CONFIG: disable-shared
-disable_libs=shared
+# disable_libs=shared
 # ### END LIBTOOL TAG CONFIG: disable-shared
 
 # ### BEGIN LIBTOOL TAG CONFIG: disable-static
-disable_libs=static
+# disable_libs=static
 # ### END LIBTOOL TAG CONFIG: disable-static
 
 # Local Variables:
