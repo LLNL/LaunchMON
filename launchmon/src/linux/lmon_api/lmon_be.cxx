@@ -570,13 +570,20 @@ LMON_be_init ( int ver, int *argc, char ***argv )
       return LMON_ESYS;
     }
 #endif /* RM_BG_MPIRUN */
+/*
+   char filename[]="/tmp/work/ramya/ALAXXXXXX";
+   int fd;
+   fd=mkstemp(filename);
+   write(fd,"here1",strlen("here1")+1);
+*/
 
   if ( LMON_be_internal_init ( argc, argv, bedata.my_hostname ) != LMON_OK )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true,
         "LMON_be_internal_init failed");
 
-      return LMON_ESUBCOM;
+       //write(fd,"beinternalinitsuccess", strlen("beinternalinitsuccess")+1);    
+  return LMON_ESUBCOM;
     }
  
   if ( LMON_be_getMyRank ( &(bedata.myrank) ) != LMON_OK )
@@ -615,19 +622,48 @@ LMON_be_init ( int ver, int *argc, char ***argv )
     gcry_cipher_hd_t cipher_hndl;
     gcry_error_t gcrc;
 
+/*    char filename[]="/tmp/work/ramya/AYAXXXXXX";
+    int fd_bog5;
+    fd_bog5=mkstemp(filename);
+    write(fd_bog5,"before lmonbeinternalgetconn",strlen("before lmonbeinternalgetconn")+1); */
+
     if ( LMON_be_internal_getConnFd (&servsockfd) != LMON_OK )
       {
 	/*
 	 * Establishing a connection with the FE
 	 * if the master has not established a connection
 	 */
+
+//        write(fd_bog5,"inside lmonbeinternalgetconn",strlen("inside lmonbeinternalgetconn")+1);
+
+
 	if ( ( servsockfd = socket ( AF_INET, SOCK_STREAM, 0 )) < 0 )
 	  {
 	    LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
 	      "socket failed ");
 
+/*            char filename[]="/tmp/work/ramya/AXAXXXXXX";
+                   int fd_bog;
+           fd_bog=mkstemp(filename);
+           write(fd_bog,"socket fails",strlen("socket fails")+1); 
+           char bog[100];
+           sprintf(bog,"errno is %d",errno);
+           write(fd_bog,bog,strlen(bog)+1);
+  */
+
 	    return LMON_ESYS;
 	  }
+          else 
+          {
+/*
+               char filename[]="/tmp/work/ramya/AXAXXXXXX";
+                   int fd_bog;
+           fd_bog=mkstemp(filename);
+           write(fd_bog,"socket success",strlen("socket success")+1);
+*/
+
+          }
+
 
 #if VERBOSE
       LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
@@ -771,16 +807,38 @@ LMON_be_init ( int ver, int *argc, char ***argv )
 			 0,                    /* security_key1 */
 			 (unsigned int)tmpSK,  /* security_key2 */
 			 0,0,0,0,0 );   
-
+        //printf("serverock fd while writing is %d\n", servsockfd);
+   
 	if ( ( write_lmonp_long_msg ( servsockfd, 
 				      &initmsg, 
 				      sizeof (initmsg) )) < 0 )
 	  {
+/*             char filename[]="/tmp/work/ramya/AWAXXXXXX";
+		   int fd_bog;
+	   fd_bog=mkstemp(filename);
+           write(fd_bog,"write unsuccessful",strlen("write unsuccessful")+1);
+           char cff[100];
+           sprintf(cff,"servsockfd is %d", servsockfd);
+           write(fd_bog, cff, strlen(cff) +1);            
+*/
+
 	    LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
 	      "write_lmonp_long_msg failed");
 
 	    return LMON_ESYS;
 	  }
+/*         else
+         {
+          
+           char filename[]="/tmp/work/ramya/AWAXXXXXX";
+                   int fd_bog;
+           fd_bog=mkstemp(filename);
+           char bog[100];
+           sprintf(bog,"msg type is %d",initmsg.type.fetobe_type); 
+           write(fd_bog,bog,strlen(bog)+1);
+
+         }   */
+
 
 	sid_traverse += 4;
       } // for (i=0; i < 4; i++ )

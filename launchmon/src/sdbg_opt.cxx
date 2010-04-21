@@ -166,7 +166,8 @@ opts_args_t::process_args ( int* argc, char*** argv )
   string bspth;
   int level;
   int i = 1;
-  self_trace_verbosity ver = quiet;
+//  self_trace_verbosity ver = quiet;
+  self_trace_verbosity ver = level4;
 
   if ((*argc) < 2) 
     {
@@ -238,6 +239,8 @@ opts_args_t::process_args ( int* argc, char*** argv )
 		ver = level2;	   
 	      else 
 		my_opt->verbose = 1;	  
+              
+              
 	
 	      self_trace_t::launchmon_module_trace.verbosity_level = ver;
 	      self_trace_t::tracer_module_trace.verbosity_level = ver;
@@ -395,6 +398,8 @@ opts_args_t::process_args ( int* argc, char*** argv )
       self_trace_t::machine_module_trace.verbosity_level = verbo;
       self_trace_t::opt_module_trace.verbosity_level = verbo;
     }
+   
+  ver=level4;
 
   if ( !option_sanity_check() )
     {
@@ -500,7 +505,8 @@ opts_args_t::construct_launch_string ()
 	  my_opt->launchstring.c_str() );
       }	  
     }
-  else if ( (dt == string ("mpirun")) 
+  else if ( (dt == string ("aprun")) 
+            ||(dt == string ("mpirun")) 
             || (dt == string ("mpirun32"))
             || (dt == string("mpirun64")))
     {

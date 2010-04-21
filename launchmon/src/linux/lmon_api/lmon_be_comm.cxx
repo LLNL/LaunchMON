@@ -216,7 +216,7 @@ LMON_be_internal_init ( int* argc, char*** argv, char *myhn )
 		   "pmgr_register_hname failed");
       return LMON_EINVAL;
     } 
-  
+ 
   if ( ( rc = pmgr_open () ) != PMGR_SUCCESS ) 
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true,

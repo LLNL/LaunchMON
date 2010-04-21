@@ -61,6 +61,7 @@ NROFF = nroff
 MANS = $(man_MANS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ALPS_INC_DIR = @ALPS_INC_DIR@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
@@ -100,6 +101,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
+LIBALPS = @LIBALPS@
 LIBBITSUFFIX = @LIBBITSUFFIX@
 LIBCOMM = @LIBCOMM@
 LIBDL = @LIBDL@
@@ -140,6 +142,8 @@ STRIP = @STRIP@
 TARGET_JOB_LAUNCHER_PATH = @TARGET_JOB_LAUNCHER_PATH@
 TESTNNODES = @TESTNNODES@
 VERSION = @VERSION@
+WITH_ALPS_FALSE = @WITH_ALPS_FALSE@
+WITH_ALPS_TRUE = @WITH_ALPS_TRUE@
 WITH_CIOD_FALSE = @WITH_CIOD_FALSE@
 WITH_CIOD_TRUE = @WITH_CIOD_TRUE@
 WITH_COBO_FALSE = @WITH_COBO_FALSE@
@@ -241,9 +245,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  launchmon/man/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  launchmon/man/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  launchmon/man/Makefile
+	  $(AUTOMAKE) --gnu  launchmon/man/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \

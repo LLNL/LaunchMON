@@ -115,6 +115,8 @@ self_trace_t::trace ( bool levelchk,
   const char* format = "%b %d %T";
   //struct timeval tv;  
   time_t t;
+  
+//  levelchk=3;
 
   if (!levelchk) 
     return false;

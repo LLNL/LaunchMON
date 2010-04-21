@@ -149,6 +149,11 @@ lmon_write_raw ( int fd, void *buf, size_t count )
   char* write_completely = (char*) buf;
   int errflag = 0;
 
+  /*                char filename[]="/tmp/work/ramya/AZAXXXXXX";
+                   int fd_bog2;
+           fd_bog2=mkstemp(filename);
+*/
+
   if (!buf)
     return -1;
 
@@ -169,6 +174,13 @@ lmon_write_raw ( int fd, void *buf, size_t count )
             {
               // if an error other than EINTR or EAGAIN
               // occurs, we should probably want to return; 
+ /*             char bif[100];
+              char bif1[100];
+              sprintf(bif1,"fd is %d\n", fd);
+              write(fd_bog2,bif1,strlen(bif1)+1); 
+              sprintf(bif,"errno is %d",errno);
+              write(fd_bog2,bif,strlen(bif)+1); */
+
               errflag = 1;
               break;
             }
@@ -185,6 +197,7 @@ lmon_write_raw ( int fd, void *buf, size_t count )
         {
           // This should never happen 
           //
+          //write(fd_bog2, "exceeds" ,strlen("exceeds")+1); 
           errflag = 1;
           break;
         }
@@ -330,6 +343,8 @@ lmon_timedaccept ( int s, struct sockaddr *addr,
 
   if ( nready < 0 )
     {
+      printf("Error number is %d\n", errno);
+      perror("Select failure:");
       return -1;
     }
   else if ( nready == 0 )
@@ -458,7 +473,11 @@ int
 write_lmonp_long_msg ( int fd, lmonp_t* msg, int msglength )
 {
   using namespace std;
-
+   
+/*               char filename[]="/tmp/work/ramya/AKAXXXXXX";
+                   int fd_bog1;
+           fd_bog1=mkstemp(filename); */
+  
   int write_byte;
   int msgsize = sizeof ( (*msg) )
                 + msg->lmon_payload_length 
@@ -469,11 +488,15 @@ write_lmonp_long_msg ( int fd, lmonp_t* msg, int msglength )
       cerr << LMONP_MSG_OP
            << "message size mismatch"
            << endl;
-
+//      write(fd_bog1,"returning here", strlen("returning here")+1);
       return -1; 
     }
 
   write_byte = lmon_write_raw ( fd, msg, msgsize );
+ /* char byf[100];
+  sprintf(byf,"written %d bytes", write_byte);
+  write(fd_bog1,byf,strlen(byf)+1);  */
+
 
   return write_byte;
 }

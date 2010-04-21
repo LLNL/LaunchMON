@@ -59,6 +59,12 @@ int main(int argc, char* argv[])
     //
     linux_driver_t<T_VA,T_WT,T_IT,T_GRS,T_FRS> driver;
 #endif
+    //static volatile int stop_here=0;
+    //while(!stop_here)
+    //    printf("launchmon engine looping here %d \n", getpid());
+
+
+
 
     return ( driver.driver_main(argc, argv));
   }

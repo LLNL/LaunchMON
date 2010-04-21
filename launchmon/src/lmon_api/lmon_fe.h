@@ -175,4 +175,10 @@ lmon_rc_e LMON_fe_launchMwDaemons (
 
 END_C_DECLS
 
+/*
+struct timeval febe_handshake_start;
+struct timeval lmon_assist_start;
+struct timeval lmon_assist_end;
+struct timeval febe_handshake_end; */
+
 #endif /* LMON_API_LMON_FE_H */

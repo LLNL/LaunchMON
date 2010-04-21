@@ -142,6 +142,9 @@ public:
   virtual 
   launchmon_rc_e handle_relay_signal_event
                  ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p, int sig);
+  
+   //struct timeval    
+
 
 private:
 
