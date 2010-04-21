@@ -165,7 +165,7 @@ test -z "$CC" && CC=cc
 test -z "$LTCC" && LTCC=$CC
 test -z "$LTCFLAGS" && LTCFLAGS=$CFLAGS
 test -z "$DLLTOOL" && DLLTOOL=dlltool
-test -z "$LD" && LD=ld
+test -z "$LD" && LD=ld.x
 test -z "$LN_S" && LN_S="ln -s"
 test -z "$MAGIC_CMD" && MAGIC_CMD=file
 test -z "$NM" && NM=nm
@@ -1258,7 +1258,7 @@ aix4* | aix5*)
 	   echo '#endif'; } | ${CC} -E - | grep yes > /dev/null; then
 	:
       else
-	can_build_shared=no
+	can_build_shared=yes
       fi
       ;;
     esac
@@ -2141,7 +2141,7 @@ AC_REQUIRE([LT_AC_PROG_SED])dnl
 AC_REQUIRE([AC_PROG_CC])dnl
 AC_REQUIRE([AC_CANONICAL_HOST])dnl
 AC_REQUIRE([AC_CANONICAL_BUILD])dnl
-ac_prog=ld
+ac_prog=ld.x
 if test "$GCC" = yes; then
   # Check if gcc -print-prog-name=ld gives a path.
   AC_MSG_CHECKING([for ld used by $CC])
@@ -7225,6 +7225,7 @@ AC_SUBST([am__tar])
 AC_SUBST([am__untar])
 ]) # _AM_PROG_TAR
 
+
 m4_include([config/x_ac_bootfabric.m4])
 m4_include([config/x_ac_enable_debug.m4])
 m4_include([config/x_ac_enable_verbose.m4])
@@ -7234,3 +7235,4 @@ m4_include([config/x_ac_os_isa.m4])
 m4_include([config/x_ac_rm.m4])
 m4_include([config/x_ac_testnnodes.m4])
 m4_include([config/x_ac_tracing_cost.m4])
+
