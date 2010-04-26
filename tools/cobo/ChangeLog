@@ -1,3 +1,7 @@
+2010-04-26 Adam Moody <moody20@llnl.gov>
+	* src/cobo.c : Added a bug fix for the 32bit interger overflow 
+	  that has led to a failure in the exponential connect logic.
+
 2009-12-22 Adam Moody <moody20@llnl.gov>
 
 	* src/cobo.c : Adjusted timeouts so parent avoids dropping connection
