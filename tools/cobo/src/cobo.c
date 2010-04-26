@@ -27,7 +27,10 @@
 #define COBO_CONNECT_TIMEOUT (10) /* milliseconds -- wait this long before a connect() call times out*/
 #endif
 #ifndef COBO_CONNECT_BACKOFF
-#define COBO_CONNECT_BACKOFF (2) /* milliseconds -- wait this long before trying a new round of connects() */
+#define COBO_CONNECT_BACKOFF (2) /* exponential backoff factor for timeout */
+#endif
+#ifndef COBO_CONNECT_SLEEP  
+#define COBO_CONNECT_SLEEP   (10) /* milliseconds -- wait this long before trying a new round of connects() */
 #endif
 #ifndef COBO_CONNECT_TIMELIMIT
 #define COBO_CONNECT_TIMELIMIT (120) /* seconds -- wait this long before giving up for good */
@@ -60,6 +63,7 @@ static int cobo_nprocs = -1;
 /* connection settings */
 static int cobo_connect_timeout       = COBO_CONNECT_TIMEOUT;   /* milliseconds */
 static int cobo_connect_backoff       = COBO_CONNECT_BACKOFF;   /* exponential backoff factor for connect timeout */
+static int cobo_connect_sleep         = COBO_CONNECT_SLEEP;     /* milliseconds to sleep before rescanning ports */
 static double cobo_connect_timelimit  = COBO_CONNECT_TIMELIMIT; /* seconds */
 
 /* to establish a connection, the service and session ids must match
@@ -1389,6 +1393,11 @@ int cobo_open(unsigned int sessionid, int* portlist, int num_ports, int* rank, i
     /* exponential backoff factor for connect */
     if ((value = cobo_getenv("COBO_CONNECT_BACKOFF", ENV_OPTIONAL))) {
         cobo_connect_backoff = atoi(value);
+    }
+
+    /* milliseconds to sleep before rescanning ports */
+    if ((value = cobo_getenv("COBO_CONNECT_SLEEP", ENV_OPTIONAL))) {
+        cobo_connect_sleep = atoi(value);
     }
 
     /* seconds */
