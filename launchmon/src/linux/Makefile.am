@@ -98,7 +98,8 @@ launchmon_SOURCES       = main.cxx \
 			  sdbg_linux_ptracer.hxx \
 			  sdbg_linux_symtab.hxx \
 		          sdbg_linux_ttracer_impl.hxx \
-			  sdbg_linux_thr_db.hxx
+			  sdbg_linux_thr_db.hxx \
+                          daemon_launcher.c
 else
 launchmon_SOURCES       = main.cxx \
                           sdbg_linux_launchmon.cxx  \

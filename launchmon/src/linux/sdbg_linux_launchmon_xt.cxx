@@ -1513,7 +1513,7 @@ linux_launchmon_t::handle_detach_cmd_event
           say_fetofe_msg ( lmonp_detach_done );	
           break;
         case FE_disconnected:
-	  usleep (GracePeriodFEDisconnection);
+	  //usleep (GracePeriodFEDisconnection);
           //
           // Please hide this "srun" specific code
           //
