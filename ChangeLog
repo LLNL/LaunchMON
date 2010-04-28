@@ -1,6 +1,14 @@
-2010-04-27 Dong H. Ahn <ahn1@llnl.gov>
-	* launchmon/src/linux/sdbg_linux_launchmon.cxx:
-	Added more ENABLE_TRACING_COST support.
+2010-04-28 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/linux/sdbg_linux_launchmon.cxx,
+	launchmon/src/linux/lmon_api/lmon_be_comm.cxx
+	launchmon/src/linux/lmon_api/lmon_fe.cxx
+	launchmon/src/linux/lmon_api/lmon_say_msg.cxx
+	launchmon/src/linux/sdbg_linux_launchmon.cxx
+	launchmon/src/lmon_api/lmon_say_msg.hxx
+	launchmon/src/sdbg_base_launchmon.hxx
+	tools/pmgr_collective/src/pmgr_collective_client.c
+	tools/pmgr_collective/src/pmgr_collective_client.h:
+	Added more MEASURE_TRACING_COST support.
 
 
 2010-04-06 Dong H. Ahn <ahn1@llnl.gov>
