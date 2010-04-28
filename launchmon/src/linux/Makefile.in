@@ -356,7 +356,7 @@ BITS = @LIBBITSUFFIX@
 @WITH_ALPS_TRUE@			  sdbg_linux_ptracer.hxx \
 @WITH_ALPS_TRUE@			  sdbg_linux_symtab.hxx \
 @WITH_ALPS_TRUE@		          sdbg_linux_ttracer_impl.hxx \
-@WITH_ALPS_TRUE@			  sdbg_linux_thr_db.hxx
+@WITH_ALPS_TRUE@			  sdbg_linux_thr_db.hxx 
 
 @WITH_ALPS_FALSE@launchmon_LDADD = @LIBELF@ @LIBDL@
 @WITH_ALPS_TRUE@launchmon_LDADD = @LIBELF@ @LIBALPS@ @LIBDL@
@@ -467,9 +467,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
-
-daemon_launcher.o: daemon_launcher.c
-	cc demon_launcher.c -o $@ 
 
 launchmon-main.o: main.cxx
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(launchmon_CXXFLAGS) $(CXXFLAGS) -MT launchmon-main.o -MD -MP -MF "$(DEPDIR)/launchmon-main.Tpo" -c -o launchmon-main.o `test -f 'main.cxx' || echo '$(srcdir)/'`main.cxx; \
@@ -610,7 +607,6 @@ launchmon-sdbg_linux_launchmon_xt.obj: sdbg_linux_launchmon_xt.cxx
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sdbg_linux_launchmon_xt.cxx' object='launchmon-sdbg_linux_launchmon_xt.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(launchmon_CXXFLAGS) $(CXXFLAGS) -c -o launchmon-sdbg_linux_launchmon_xt.obj `if test -f 'sdbg_linux_launchmon_xt.cxx'; then $(CYGPATH_W) 'sdbg_linux_launchmon_xt.cxx'; else $(CYGPATH_W) '$(srcdir)/sdbg_linux_launchmon_xt.cxx'; fi`
-
 
 mostlyclean-libtool:
 	-rm -f *.lo
