@@ -119,6 +119,9 @@ static struct timeval time_open, time_close;
 static unsigned pmgr_backoff_rand_seed;
 
 static char *pmgr_myhostname = NULL;
+
+double __pmgr_ts = 0.0f;
+
 /*
  * =============================
  * Utility functions for use by other functions in this file
@@ -149,6 +152,12 @@ static int pmgr_write(void* buf, int size)
 
 /* write integer into mpirun_socket */
 static int pmgr_write_int(int value)
+{
+    return pmgr_write(&value, sizeof(value));
+}
+
+/* write double into mpirun_socket */
+static int pmgr_write_double(double value)
 {
     return pmgr_write(&value, sizeof(value));
 }
@@ -1045,6 +1054,11 @@ int pmgr_open()
 
     /* send version number, then rank */
     pmgr_write_int(PMGR_COLLECTIVE);
+    if (__pmgr_ts != 0.0f) {
+      /* this happens if the upper layer turns on MEASURE_TRACING_COST */
+      pmgr_write_double(__pmgr_ts);
+    }
+
     pmgr_write(&pmgr_me, sizeof(pmgr_me));
 
 

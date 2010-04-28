@@ -71,6 +71,7 @@ private:
 };
 
 extern int (*errorCB) (const char *format, va_list ap);
+extern double gettimeofdayD ();
 extern void LMON_say_msg ( const char* m, bool error_or_info, const char* output, ... );
 extern void LMON_TotalView_debug ( );
 

@@ -91,18 +91,6 @@ extern "C" {
     event occurs.
 */
 
-inline double gettimeofdayD ()
-{
-  struct timeval ts;
-  double rt;
-
-  gettimeofday (&ts, NULL);
-  rt = (double) (ts.tv_sec);
-  rt += (double) ((double)(ts.tv_usec))/1000000.0;
-
-  return rt;
-}
-
 //! enumerator launchmon_rc_e 
 /*!
     Defines a set of launchmon engine handler's return codes.

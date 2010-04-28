@@ -195,6 +195,13 @@ LMON_be_internal_init ( int* argc, char*** argv, char *myhn )
   MPI_Comm_rank (MPI_COMM_WORLD, &ICCL_rank);
   ICCL_global_id = ICCL_rank;
 #elif PMGR_BASED
+
+#if MEASURE_TRACING_COST
+  /* Hack, but MEASURE_TRACING_COST doesn't propagate to the iccl layer 
+   * so we use the global variable trick here
+   */
+  __pmgr_ts = gettimeofdayD();
+#endif
   /*
    * with PMGR Collective Interface 
    */
