@@ -1,3 +1,8 @@
+2010-04-27 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/linux/sdbg_linux_launchmon.cxx:
+	Added more ENABLE_TRACING_COST support.
+
+
 2010-04-06 Dong H. Ahn <ahn1@llnl.gov>
 	* launchmon/src/linux/lmon_api/lmon_be.cxx: Added 
 	a new parser to parse /proc/personality.sh to 
