@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Apr 27 2010 DHA: Added more ENABLE_TRACING_COST support.
  *        Dec 22 2009 DHA: Added auxilliary vector support to discover 
  *                         the loader's load address accurately. (e.g.,  
  *                         without having to rely on the "_start" symbol exported. 
@@ -650,6 +651,12 @@ linux_launchmon_t::acquire_proctable (
       T_VA where_is_rid;
       unsigned long long i, maxcount;   // proctable index can be large!
       int local_pcount;      
+#if MEASURE_TRACING_COST   
+      double c_start_ts;
+      double c_end_ts;
+      c_start_ts = gettimeofdayD();
+#endif
+
       assert ( (main_im  = p.get_myimage()) != NULL );
 
       //
@@ -667,11 +674,6 @@ linux_launchmon_t::acquire_proctable (
       set_pcount (local_pcount);
       assert(get_pcount() > 0 );
 
-#if MEASURE_TRACING_COST   
-    double c_start_ts;
-    double c_end_ts;
-    c_start_ts = gettimeofdayD();
-#endif
       //
       // launcher_proctable holds the MPIR_PROCDESC array. Note that
       // it only contains scalars and pointer addresses. To fetch 
@@ -748,10 +750,6 @@ linux_launchmon_t::acquire_proctable (
 	  return LAUNCHMON_FAILED;
 	}
 
-#if MEASURE_TRACING_COST
-     c_end_ts = gettimeofdayD();
-     fprintf(stdout, "PROCTAB(%d) Fetching: %f \n", get_pcount(), (c_end_ts - c_start_ts));
-#endif
 
       //
       //
@@ -790,6 +788,16 @@ linux_launchmon_t::acquire_proctable (
 
 	  return LAUNCHMON_FAILED;
 	}
+#endif
+
+#if MEASURE_TRACING_COST
+      c_end_ts = gettimeofdayD();
+      {
+        self_trace_t::trace ( true, 
+ 	   MODULENAME,0,
+	   "PROCTAB(%d) Fetching: %f ",
+	   get_pcount(), (c_end_ts - c_start_ts));
+     }
 #endif
 
       return LAUNCHMON_OK;
@@ -935,6 +943,16 @@ linux_launchmon_t::launch_tool_daemons (
   //
 #else
 
+#if MEASURE_TRACING_COST
+      {
+        self_trace_t::trace ( true, /* print always */
+ 	   MODULENAME,0,
+	  "About to fork a RM process to bulk-launch daemons");
+        self_trace_t::trace ( true, /* print always */ 
+           MODULENAME,0,
+	  "COUNT: %d, ACCUM TIME (except for the proctab fetching): %f", countHandler, accum);
+     }
+#endif
   set_toollauncherpid  (fork());
   if ( !get_toollauncherpid ())
     {
@@ -1058,9 +1076,18 @@ linux_launchmon_t::handle_launch_bp_event (
 	return LAUNCHMON_OK;
       }
 
-      self_trace_t::trace ( LEVELCHK(level2),
-	MODULENAME,0,
-	"launch-breakpoint hit event handler invoked.");
+#if MEASURE_TRACING_COST
+      {
+        self_trace_t::trace ( true, /* print always */
+	  MODULENAME,0,
+	  "launch-breakpoint hit event handler invoked.");
+      }
+#endif
+      {
+        self_trace_t::trace ( LEVELCHK(level2),
+	  MODULENAME,0,
+	  "launch-breakpoint hit event handler invoked.");
+      }
 
       main_im  = p.get_myimage();  
       assert(main_im != NULL);
@@ -1566,6 +1593,15 @@ linux_launchmon_t::handle_trap_after_attach_event (
     {    
       using namespace std; 
 
+#if MEASURE_TRACING_COST
+      beginTS = gettimeofdayD ();
+      {
+        self_trace_t::trace ( true, // print always 
+                              MODULENAME,0,
+                              "The RM process has just been trapped due to attach"); 
+      }
+#endif
+
       bool use_cxt = true;
       image_base_t<T_VA,elf_wrapper> *dynloader_im = NULL;
       image_base_t<T_VA,elf_wrapper> *main_im = NULL;  
@@ -1802,6 +1838,19 @@ linux_launchmon_t::handle_trap_after_attach_event (
 	"trap after attach event handler completed.");
       }
   
+#if MEASURE_TRACING_COST
+      endTS = gettimeofdayD ();
+      accum += endTS - beginTS;
+      countHandler++;
+      // accum and countHandler now contain the cost of this handler which 
+      // is invoked just once per job
+      {
+        self_trace_t::trace ( true, // print always 
+                              MODULENAME,0,
+                              "Just continued the RM process out of the first trap"); 
+      }
+#endif
+
       set_last_seen (gettimeofdayD ());
       return LAUNCHMON_OK;
     }
@@ -1837,6 +1886,11 @@ linux_launchmon_t::handle_trap_after_exec_event (
 
 #if MEASURE_TRACING_COST
      beginTS = gettimeofdayD ();
+     {
+       self_trace_t::trace ( true, // print always 
+                             MODULENAME,0,
+                             "The RM process has just been forked and exec'ed.");
+     }
 #endif
 
       bool use_cxt = true;
@@ -2098,6 +2152,13 @@ linux_launchmon_t::handle_trap_after_exec_event (
       endTS = gettimeofdayD ();
       accum += endTS - beginTS;
       countHandler++;
+      // accum and countHandler now contain the cost of this handler which 
+      // is invoked just once per job
+      {
+        self_trace_t::trace ( true, // print always 
+                              MODULENAME,0,
+                              "Just continued the RM process out of the first trap"); 
+      }
 #endif
 
       set_last_seen (gettimeofdayD ());
@@ -2207,7 +2268,7 @@ linux_launchmon_t::handle_fork_bp_event (
       using namespace std;
 
 #if MEASURE_TRACING_COST
-     beginTS = gettimeofdayD ();
+      beginTS = gettimeofdayD ();
 #endif
 
       bool use_cxt = true; 
@@ -2335,10 +2396,13 @@ linux_launchmon_t::handle_exit_event (
       accum += endTS - beginTS;
       countHandler++;
 
+#if 0
       if (rc == LAUNCHMON_MAINPROG_EXITED) { 
         fprintf (stdout, "COUNT: %d\n", countHandler);
         fprintf (stdout, "ACCUM TIME: %f\n", accum);
       } 
+#endif
+
 #endif
 
       set_last_seen (gettimeofdayD ());
@@ -2372,6 +2436,10 @@ linux_launchmon_t::handle_term_event (
 {
   using namespace std;
 
+#if MEASURE_TRACING_COST
+  beginTS = gettimeofdayD ();
+#endif
+
   {
     self_trace_t::trace ( LEVELCHK(level2), 
       MODULENAME,0,
@@ -2386,6 +2454,12 @@ linux_launchmon_t::handle_term_event (
       "termination event handler completed.");
   }
 	
+#if MEASURE_TRACING_COST
+  endTS = gettimeofdayD ();
+  accum += endTS - beginTS;
+  countHandler++;
+#endif
+
   set_last_seen (gettimeofdayD ());
   return LAUNCHMON_OK;
 }
@@ -2475,10 +2549,21 @@ linux_launchmon_t::handle_thrdeath_bp_event (
 {
   try 
     {
+#if MEASURE_TRACING_COST
+      beginTS = gettimeofdayD (); 
+#endif
+
       bool use_cxt = true; 
 
       if ( is_bp_prologue_done(p, p.get_thread_death_hidden_bp()) != LAUNCHMON_OK )
-	return LAUNCHMON_OK;
+        {
+#if MEASURE_TRACING_COST
+           endTS = gettimeofdayD (); 
+           accum += endTS - beginTS;
+           countHandler++; 
+#endif
+	   return LAUNCHMON_OK;
+        }
 
       {
 	self_trace_t::trace ( LEVELCHK(level2), 
@@ -2498,6 +2583,12 @@ linux_launchmon_t::handle_thrdeath_bp_event (
 	  MODULENAME,0,
 	  "thread death event handler completed");
       }   
+
+#if MEASURE_TRACING_COST
+      endTS = gettimeofdayD (); 
+      accum += endTS - beginTS;
+      countHandler++; 
+#endif
 
       set_last_seen (gettimeofdayD ());
       return LAUNCHMON_OK;

@@ -4261,9 +4261,12 @@ bld_exec_lmon_launch_str ( bool isLocal,
 
   if ( execvp ( myargv[0], myargv) < 0 )
     {
+     
+      printf("myarv[0] is %s\n", myargv[0]);
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "LaunchMON Engine invocation failed, exiting: %s",
 	strerror(errno));
+       
 
       //
       // If execv fails, sink here. 

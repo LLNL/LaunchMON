@@ -873,15 +873,16 @@ int launch_daemons(char *daemon_path,char* daemon_opts, int aprun_pid,const char
      return -1;
   }
 
-  #if PMGR_BASED
 
      char *tokenize = strdup(pmgr_info);
      char *mip = strtok ( tokenize, ":" );
      char *mport = strtok ( NULL, ":" );
      char *tokenize2 = strdup(pmgr_sec_info);
-     char *sharedsecret = strtok (tokenize2, ":");
-     char *randomID = strtok (NULL, ":");
+     
+     char* sharedsecret = strdup(strtok (tokenize2, ":"));
+     char* randomID = strdup(strtok (NULL, ":"));
 
+  #if PMGR_BASED
      sprintf ( expanded_string,
          launchstring,
          mip,
@@ -890,6 +891,16 @@ int launch_daemons(char *daemon_path,char* daemon_opts, int aprun_pid,const char
          sharedsecret,
          randomID);
   #endif
+  
+  #if COBO_BASED 
+  printf("expanded string is %s\n" , expanded_string);
+  printf("launch string is %s\n", launchstring);
+  sprintf ( expanded_string,
+         launchstring,
+         sharedsecret,
+         randomID);
+   #endif
+   
 
 
   result = alps_get_appinfo(my_apid, &appinfo, &cmdDetail, &places);
@@ -1272,14 +1283,23 @@ linux_launchmon_t::handle_launch_bp_event (
 
             if (p.get_myopts())
             {
+                
+                 opt_struct_t* tmpopt=(p.get_myopts())->get_my_opt();
 
+    
                 #if PMGR_BASED
-                   opt_struct_t* tmpopt=(p.get_myopts())->get_my_opt();
                    std::string pmgr_info_str=tmpopt->pmgr_info;
                   //sprintf(pmgr_info,"%s",p.get_myopts()->get_my_opt()->pmgr_info.c_str());
                   sprintf(pmgr_info,"%s",pmgr_info_str.c_str());
+                #endif
+  
                   sprintf(pmgr_sec_info,"%s",p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
-               #endif
+                   
+                //   printf("pmgr_info is %s\n", pmgr_info);
+                 printf("pmgr sec info is %s\n", pmgr_sec_info);  
+
+
+               //#endif
 
             }
 
@@ -1998,33 +2018,40 @@ linux_launchmon_t::handle_trap_after_attach_event (
      if (p.get_myopts())
      {
 
-//#if PMGR_BASED
       opt_struct_t* tmpopt=(p.get_myopts())->get_my_opt();
-      std::string pmgr_info_str=tmpopt->pmgr_info;
-      std::string lmon_sec_info_str=tmpopt->lmon_sec_info;
+
+#if PMGR_BASED
+     std::string pmgr_info_str=tmpopt->pmgr_info;
       sprintf(pmgr_info,"%s",pmgr_info_str.c_str());
+
+#endif
+
+
+     std::string lmon_sec_info_str=tmpopt->lmon_sec_info;
 
      //sprintf(pmgr_info,"%s",p.get_myopts()->get_my_opt()->pmgr_info.c_str());
      //sprintf(pmgr_sec_info,"%s",p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
      sprintf(pmgr_sec_info, "%s", lmon_sec_info_str.c_str()); 
-     printf("p value is %p\n", &p);
-     printf("pid here2 p is  %d\n", p.get_pid(use_cxt));
 
-//#endif
+     printf("pmgr info is %s\n", pmgr_info);
+     printf("pmgr sec info is %s\n", pmgr_sec_info);
+     //printf("p value is %p\n", &p);
+     //printf("pid here2 p is  %d\n", p.get_pid(use_cxt));
+
 
      }
   
  
-    if(use_cxt)
-    printf("value of ue_cxt is 1\n");
-    else
-    printf("value of use_cxt is 0\n"); 
+    //if(use_cxt)
+    //printf("value of ue_cxt is 1\n");
+    //else
+    //printf("value of use_cxt is 0\n"); 
     const char* launchstring=p.get_myopts()->get_my_opt()->launchstring.c_str();
 
-  //  int aprun_pid=(int)p.get_myopts()->get_my_opt()->launcher_pid;
+    //int aprun_pid=(int)p.get_myopts()->get_my_opt()->launcher_pid;
 
     launch_daemons((char*)daemon_path.c_str(),(char*)daemon_opts.c_str(),aprun_pid,launchstring,pmgr_info,pmgr_sec_info);
-    printf("pid here3 p is  %d\n", p.get_pid(use_cxt));
+    //printf("pid here3 p is  %d\n", p.get_pid(use_cxt));
 #else
     launch_tool_daemons(p);
 #endif
