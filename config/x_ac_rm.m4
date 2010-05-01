@@ -54,7 +54,7 @@ AC_DEFUN([X_AC_RM], [
   AC_MSG_CHECKING([resource manager type])
 
   AC_ARG_WITH([rm], 
-    AS_HELP_STRING(--with-rm@<:@=RMTYPE@:>@,specify a system Resource Manager @<:@slurm, bgrm, alps@:>@ @<:@default=slurm@:>@),
+    AS_HELP_STRING(--with-rm@<:@=RMTYPE@:>@,specify a system Resource Manager @<:@slurm bgrm alps@:>@ @<:@default=slurm@:>@),
     [with_rm_name=$withval],
     [with_rm_name="check"]
   )
@@ -66,13 +66,13 @@ AC_DEFUN([X_AC_RM], [
   )
 
   AC_ARG_WITH([alps-lib],
-     AS_HELP_STRING(--with-alps-lib@<:@=ALPSLIBS@>@,specify the directory containing ALPS libraries @<:@default=/usr/lib@:>@),
+     AS_HELP_STRING(--with-alps-lib@<:@=ALPSLIBS@:>@,specify the directory containing ALPS libraries @<:@default=/usr/lib@:>@),
      [with_alpslib=$withval],
      [with_alpslib="/usr/lib"]
     )
 
     AC_ARG_WITH([alps-inc],
-     AS_HELP_STRING(--with-alps-inc<:@=ALPSINC@>@,specify the directory containing ALPS include files @<:@default=/usr/include@:>@),
+     AS_HELP_STRING(--with-alps-inc@<:@=ALPSINC@:>@,specify the directory containing ALPS include files @<:@default=/usr/include@:>@),
      [with_alpsinc=$withval],
      [with_alpsinc="/usr/include"]
     )
@@ -269,6 +269,10 @@ AC_DEFUN([X_AC_RM], [
       #
       # ALPS found, export some configuration params
       #
+      AC_ARG_VAR(LD, [linker loader])
+      AC_CHECK_PROGS(LD, ld.x ld, $LD)
+      AC_SUBST(LD)
+
       AC_SUBST(RM_TYPE, alps)
         AC_DEFINE(GLUESYM,[""], [Define dot for GLUESYM])
         AC_DEFINE(BIT64,1,[Define 1 for BIT64])
