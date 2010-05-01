@@ -93,26 +93,27 @@ main( int argc, char* argv[] )
 
   kill_detach_shutdown_test = 0;
 
-/*
- char filename[]="/tmp/work/ramya/ACAXXXXXX";
+
+/* char filename[]="/tmp/work/ramya/ACAXXXXXX";
   int be_fd1;
   be_fd1=mkstemp(filename);
   write(be_fd1,"here1",strlen("here1")+1);
-*/
 
+  write(be_fd1,"here2",strlen("here2")+1);
+*/
 
   if ( (lrc = LMON_be_init(LMON_VERSION, &argc, &argv)) 
               != LMON_OK )
     {      
       fprintf(stdout, 
         "[LMON BE] FAILED: LMON_be_init\n");
-      //write(be_fd1,"bekicker started and init 0", strlen("bekicker started and init 0")+1);
+ //     write(be_fd1,"bekicker started and init 0", strlen("bekicker started and init 0")+1);
       return EXIT_FAILURE;
     }
-   else
+  /* else
    {
-       //write(be_fd1,"bekicker started and init 0", strlen("bekicker started and init 0")+1);
-   }
+       write(be_fd1,"bekicker started and init 0", strlen("bekicker started and init 0")+1);
+   }*/
 
   if (argc > 1) 
     {
