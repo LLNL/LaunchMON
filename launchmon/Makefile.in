@@ -77,6 +77,7 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BE_STARTER = @BE_STARTER@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -216,9 +217,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  launchmon/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  launchmon/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  launchmon/Makefile
+	  $(AUTOMAKE) --foreign  launchmon/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \

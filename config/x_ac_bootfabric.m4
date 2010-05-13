@@ -92,9 +92,9 @@ AC_DEFUN([X_AC_BOOTFABRIC], [
       if test "x$with_cobo_port" != "xcheck" -a "x$with_cobo_port" != "xyes"; then
 	AC_DEFINE(COBO_BEGIN_PORT, $with_cobo_port, [Define 20101 for COBO_BASED; port range will be 20101 - 20172])
       else
-        AC_DEFINE(COBO_BEGIN_PORT, 20101, [Define 20101 for COBO_BASED; port range will be 20101 - 20172])
+        AC_DEFINE(COBO_BEGIN_PORT, 20999, [Define 20999 for COBO_BASED; port range will be 20999 ~ ])
       fi
-	AC_DEFINE(COBO_PORT_RANGE, 72, [Define 72 for COBO_BASED])
+	AC_DEFINE(COBO_PORT_RANGE, 8, [Define 8 for COBO_BASED])
     else
       commfab_found="no"
       AC_MSG_ERROR([--with-bootfabric=cobo is given, but tools/cobo not found])

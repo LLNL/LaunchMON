@@ -103,4 +103,6 @@ int pmgr_finalize(void);
 
 int pmgr_abort(int code, const char *fmt, ...);
 
+extern double __pmgr_ts;
+
 #endif /* _PMGR_COLLECTIVE_CLIENT_H */

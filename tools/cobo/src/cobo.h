@@ -95,4 +95,6 @@ int cobo_server_close();
  * and forces sockets */
 int cobo_server_get_root_socket(int* fd);
 
+extern double __cobo_ts;
+
 #endif /* _COBO_H */

@@ -283,7 +283,7 @@ opts_args_t::process_args ( int* argc, char*** argv )
 	      my_opt->remote_info = nargv[i+1]; // it should have hostname:port 
 	      i++;
 	      break;
-#if PMGR_BASED || PMGR_COBO
+#if PMGR_BASED
 
  	    case 'm':
 	      my_opt->pmgr_info = nargv[i+1]; // should also be hostname:port	

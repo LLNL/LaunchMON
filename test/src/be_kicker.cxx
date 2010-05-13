@@ -126,6 +126,8 @@ main( int argc, char* argv[] )
       kill_detach_shutdown_test = 1;
     } 
 
+  printf("[LMON BE] argc: %d\n", argc);
+
   LMON_be_getMyRank(&rank);
   LMON_be_getSize(&size);
 

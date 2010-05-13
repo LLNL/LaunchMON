@@ -33,6 +33,7 @@
  *  
  *
  *  Update Log:
+ *        May  11 2010 DHA: Added MEASURE_TRACING_COST for the PMGR layer
  *        Feb  05 2010 DHA: Added pmgr_register_hname to register the local 
  *                          hostname to the PMGR Collective layer. This is to work 
  *                          around the system in which gethostname followed by
@@ -195,6 +196,14 @@ LMON_be_internal_init ( int* argc, char*** argv, char *myhn )
   MPI_Comm_rank (MPI_COMM_WORLD, &ICCL_rank);
   ICCL_global_id = ICCL_rank;
 #elif PMGR_BASED
+
+# if MEASURE_TRACING_COST
+  /* Hack, but MEASURE_TRACING_COST doesn't propagate to the iccl layer 
+   * so we use the global variable trick here
+   */
+  __pmgr_ts = gettimeofdayD();
+# endif
+
   /*
    * with PMGR Collective Interface 
    */
@@ -231,6 +240,15 @@ LMON_be_internal_init ( int* argc, char*** argv, char *myhn )
     pmgr_getmysize (&ICCL_size); 
 
 #elif COBO_BASED
+
+# if MEASURE_TRACING_COST
+  /* Hack, but the MEASURE_TRACING_COST macro doesn't 
+   * propagate to the iccl layer 
+   * so we use the global variable trick here
+   */
+  __cobo_ts = gettimeofdayD();
+# endif
+
    int j;
    int *portlist = (int *) malloc (COBO_PORT_RANGE * sizeof(int));
 
@@ -256,6 +274,66 @@ LMON_be_internal_init ( int* argc, char*** argv, char *myhn )
 
       return LMON_EINVAL;
     }
+
+# if VERBOSE
+    LMON_say_msg(LMON_BE_MSG_PREFIX, false,
+      "My rank is %d, My size is %d", ICCL_rank, ICCL_size);
+# endif
+
+# if MEASURE_TRACING_COST
+#  if VERBOSE
+    LMON_say_msg(LMON_BE_MSG_PREFIX, false,
+      "__cobo_ts: %f", __cobo_ts);
+#  endif
+    if (ICCL_size <= 0)
+      {
+        LMON_say_msg(LMON_BE_MSG_PREFIX, true,
+	  "cobo_open failed; checked during MEASURE_TRACING_COST");
+
+        return LMON_EINVAL;
+      }
+
+    double *tsvector = NULL;
+    if (ICCL_rank == 0)
+      {
+        tsvector = (double *) malloc (ICCL_size * sizeof(double));
+      }
+
+    if ( ( rc = cobo_gather(&__cobo_ts, sizeof(__cobo_ts), tsvector, 0)) != COBO_SUCCESS )
+      {
+        LMON_say_msg(LMON_BE_MSG_PREFIX, true,
+	  "cobo_gather failed during MEASURE_TRACING_COST");
+
+        return LMON_EINVAL;
+      }
+
+    if (ICCL_rank == 0)
+      {
+        long rix;
+        double maxts=0.0f;
+        int parentfd = -1;
+        for ( rix=0; rix < ICCL_size; ++rix) 
+          {
+            maxts = (tsvector[rix] > maxts) ? tsvector[rix] : maxts; 
+          }  
+        if ( cobo_get_parent_socket(&parentfd) != COBO_SUCCESS )
+          {
+            LMON_say_msg(LMON_BE_MSG_PREFIX, true,
+	      "cobo_client_get_parent_socket failed during MEASURE_TRACING_COST");
+
+            return LMON_EINVAL;
+          } 
+
+       if (write(parentfd, &maxts, sizeof(double)) < 0 )
+         {
+            LMON_say_msg(LMON_BE_MSG_PREFIX, true,
+	      "write failed during MEASURE_TRACING_COST");
+
+            return LMON_EINVAL;
+         }
+      }
+# endif
+
 #else
   LMON_say_msg(LMON_BE_MSG_PREFIX, true,"no internal communication fabric to leverage");
   return LMON_EINVAL; 

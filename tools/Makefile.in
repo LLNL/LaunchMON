@@ -63,9 +63,10 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = pmgr_collective cobo ciod libgpg-error
+DIST_SUBDIRS = pmgr_collective cobo ciod alps libgpg-error
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ALPS_INC_DIR = @ALPS_INC_DIR@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
@@ -76,6 +77,7 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BE_STARTER = @BE_STARTER@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -104,7 +106,9 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+LD = @LD@
 LDFLAGS = @LDFLAGS@
+LIBALPS = @LIBALPS@
 LIBBITSUFFIX = @LIBBITSUFFIX@
 LIBCOMM = @LIBCOMM@
 LIBDL = @LIBDL@
@@ -145,6 +149,8 @@ STRIP = @STRIP@
 TARGET_JOB_LAUNCHER_PATH = @TARGET_JOB_LAUNCHER_PATH@
 TESTNNODES = @TESTNNODES@
 VERSION = @VERSION@
+WITH_ALPS_FALSE = @WITH_ALPS_FALSE@
+WITH_ALPS_TRUE = @WITH_ALPS_TRUE@
 WITH_CIOD_FALSE = @WITH_CIOD_FALSE@
 WITH_CIOD_TRUE = @WITH_CIOD_TRUE@
 WITH_COBO_FALSE = @WITH_COBO_FALSE@
@@ -201,8 +207,9 @@ tvcmd = @tvcmd@
 @WITH_PMGR_COLLECTIVE_TRUE@OPT_PMGR_COLLECTIVE = pmgr_collective
 @WITH_COBO_TRUE@OPT_COBO = cobo
 @WITH_CIOD_TRUE@OPT_CIOD = ciod
+@WITH_ALPS_TRUE@OPT_ALPS = alps
 OPT_GCRYPT = libgpg-error
-SUBDIRS = $(OPT_PMGR_COLLECTIVE) $(OPT_COBO) $(OPT_CIOD) $(OPT_GCRYPT)
+SUBDIRS = $(OPT_PMGR_COLLECTIVE) $(OPT_COBO) $(OPT_CIOD) $(OPT_ALPS) $(OPT_GCRYPT)
 LIBGCRYPTDISTFILES = libgcrypt/src libgcrypt/src/gcrypt.h \
 	libgcrypt/src/gcrypt-module.h libgcrypt/src/Makefile.in \
 	libgcrypt/src/ChangeLog libgcrypt/src/Makefile.am \
@@ -686,7 +693,7 @@ all-local:
 		&& cd libgcrypt && $(MAKE) $(AM_MAKEFILE) all; \
 	else \
 		export GPG_ERROR_CONFIG=`$(top_srcdir)/config/ap $(top_srcdir)/tools/libgpg-error/src/gpg-error-config` \
-		&& cd libgcrypt && ./configure --prefix=$(prefix) CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" && $(MAKE) $(AM_MAKEFILE) all; \
+		&& cd libgcrypt && ./configure --prefix=$(prefix) CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LD="$(LD)" && $(MAKE) $(AM_MAKEFILE) all; \
 	fi
 
 install-exec-local:
@@ -695,7 +702,7 @@ install-exec-local:
 		&& cd libgcrypt && $(MAKE) $(AM_MAKEFILE) install-exec; \
 	else \
 		export GPG_ERROR_CONFIG=`$(top_srcdir)/config/ap $(top_srcdir)/tools/libgpg-error/src/gpg-error-config` \
-		&& cd libgcrypt && ./configure --prefix=$(prefix) CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" && $(MAKE) $(AM_MAKEFILE) install-exec; \
+		&& cd libgcrypt && ./configure --prefix=$(prefix) CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LD="$(LD)" && $(MAKE) $(AM_MAKEFILE) install-exec; \
 	fi
 
 install-data-local:
@@ -704,7 +711,7 @@ install-data-local:
 		&& cd libgcrypt && $(MAKE) $(AM_MAKEFILE) install-data; \
 	else \
 		export GPG_ERROR_CONFIG=`$(top_srcdir)/config/ap $(top_srcdir)/tools/libgpg-error/src/gpg-error-config` \
-		&& cd libgcrypt && ./configure --prefix=$(prefix) CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" && $(MAKE) $(AM_MAKEFILE) install-data; \
+		&& cd libgcrypt && ./configure --prefix=$(prefix) CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LD="$(LD)" && $(MAKE) $(AM_MAKEFILE) install-data; \
 	fi
 
 clean-local:
@@ -713,7 +720,7 @@ clean-local:
 		&& cd libgcrypt && $(MAKE) $(AM_MAKEFILE) clean; \
 	else \
 		export GPG_ERROR_CONFIG=`$(top_srcdir)/config/ap $(top_srcdir)/tools/libgpg-error/src/gpg-error-config` \
-		&& cd libgcrypt && ./configure --prefix=$(prefix) CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" && $(MAKE) $(AM_MAKEFILE) clean; \
+		&& cd libgcrypt && ./configure --prefix=$(prefix) CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LD="$(LD)" && $(MAKE) $(AM_MAKEFILE) clean; \
         fi
 
 distclean-local:
@@ -722,7 +729,7 @@ distclean-local:
 		&& cd libgcrypt && $(MAKE) $(AM_MAKEFILE) distclean; \
 	else \
 		export GPG_ERROR_CONFIG=`$(top_srcdir)/config/ap $(top_srcdir)/tools/libgpg-error/src/gpg-error-config` \
-		&& cd libgcrypt && ./configure --prefix=$(prefix) CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" && $(MAKE) $(AM_MAKEFILE) distclean; \
+		&& cd libgcrypt && ./configure --prefix=$(prefix) CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" LD="$(LD)" && $(MAKE) $(AM_MAKEFILE) distclean; \
         fi
 
 		export gpg_config_path=`$(top_srcdir)/config/ac ../libgpg-error/src/gpg-error-config`; 

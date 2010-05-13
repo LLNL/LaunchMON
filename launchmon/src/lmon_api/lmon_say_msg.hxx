@@ -27,6 +27,7 @@
  *
  *
  *  Update Log:
+ *        May 11 2010 DHA: Moved gettimeofdayD here
  *        May 19 2008 DHA: Added errorCB support
  *        Feb 09 2008 DHA: Added LLNS Copyright 
  *        Mar 13 2006 DHA: Added duplex pipe class a simple
@@ -71,6 +72,7 @@ private:
 };
 
 extern int (*errorCB) (const char *format, va_list ap);
+extern double gettimeofdayD ();
 extern void LMON_say_msg ( const char* m, bool error_or_info, const char* output, ... );
 extern void LMON_TotalView_debug ( );
 

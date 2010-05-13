@@ -109,7 +109,7 @@ pass_its_neighbor(const int rank, const int size, int* buf)
   MPI_Isend((void*)&rank, 1, MPI_INT, ((rank+1)%size), COMM_TAG, MPI_COMM_WORLD, &request[1]);
   MPI_Waitall(2, request, status);
 
-  for (i=0; i < 10; i++) 
+  for (i=0; i < 20; i++) 
     {
       sleep(1);
       if (rank == 0) 

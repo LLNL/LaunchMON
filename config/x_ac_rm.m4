@@ -28,6 +28,7 @@
 # --------------------------------------------------------------------------------
 # 
 #   Update Log:
+#         Jun 12 2010 DHA: Added alps_be_starter support
 #         Mar 11 2009 DHA: Added ARCHHEADER, ARCHLIB in anticipation of 
 #                          ports on more RM variants.
 #         Mar 06 2009 DHA: Deprecated NPTL_UNDER_TLS: this isn't needed 
@@ -237,7 +238,7 @@ AC_DEFUN([X_AC_RM], [
     #
     if test "x$with_launcher" != "xcheck" -a "x$with_launcher" != "xyes"; then
       #
-      # The MPIRUN path is given
+      # The APRUN path is given
       #
       pth=""
       if test -f $with_launcher; then
@@ -273,12 +274,15 @@ AC_DEFUN([X_AC_RM], [
       AC_CHECK_PROGS(LD, ld.x ld, $LD)
       AC_SUBST(LD)
 
+      SMPFACTOR=12
+      AC_SUBST(SMPFACTOR)
+      AC_SUBST(BE_STARTER, "alps_be_starter")
       AC_SUBST(RM_TYPE, alps)
-        AC_DEFINE(GLUESYM,[""], [Define dot for GLUESYM])
-        AC_DEFINE(BIT64,1,[Define 1 for BIT64])
+      AC_DEFINE(GLUESYM,[""], [Define dot for GLUESYM])
+      AC_DEFINE(BIT64,1,[Define 1 for BIT64])
       ac_job_launcher_bits="64"
       if test -z "$with_alpslib" -o ! -d "$with_alpslib" ; then
-        AC_MSG_ERROR([ALPS directory $with_alpslib was not a directory])
+        AC_MSG_ERROR([ALPS directory $with_alpslib is not a directory])
       fi
       if test ! -z "$with_alpslib" -a -d "$with_alpslib/alps" ; then
         ALPSLIB_SEARCH="-L$with_alpslib/alps"
@@ -293,12 +297,12 @@ AC_DEFUN([X_AC_RM], [
       LDFLAGS="$LDFLAGS $ALPSLIB_SEARCH"
 
       if test -z "$with_alpsinc" -o ! -d "$with_alpsinc" ; then
-        AC_MSG_ERROR([ALPS directory $with_alpsinc was not a directory])
+        AC_MSG_ERROR([ALPS directory $with_alpsinc is not a directory])
       fi
       CFLAGS="$CFLAGS -I$with_alpsinc"
       AC_CHECK_HEADER(apInfo.h,
-        AC_SUBST(ALPS_INC_DIR, $with_alpsinc),
-        AC_ERROR("apInfo.h not found in $with_alpsinc"))
+      AC_SUBST(ALPS_INC_DIR, $with_alpsinc),
+      AC_ERROR("apInfo.h not found in $with_alpsinc"))
 
       AC_DEFINE(RM_ALPS_APRUN,1, ["Definition for ALPS/APRUN]")
 

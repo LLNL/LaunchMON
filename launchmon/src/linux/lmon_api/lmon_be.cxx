@@ -504,8 +504,6 @@ LMON_be_init ( int ver, int *argc, char ***argv )
   lmon_rc_e lrc;
   struct sockaddr_in servaddr;
 
-
-/*
 #if VERBOSE && USE_VERBOSE_LOGDIR
   //
   // DHA 3/4/2009, reviewed. Looks fine for BGP as well.
@@ -534,7 +532,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
     }
 
   snprintf(debugfn, PATH_MAX, "%s/stdout.%d.%s", 
-	VERBOSE_LOGDIR,bedata.myrank,local_hostname);
+	VERBOSE_LOGDIR,getpid(),local_hostname);
   if ( freopen (debugfn, "w", stdout) == NULL )
     {
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
@@ -544,7 +542,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
     }
 
   snprintf(debugfn, PATH_MAX, "%s/stderr.%d.%s", 
-	VERBOSE_LOGDIR,bedata.myrank,local_hostname);
+	VERBOSE_LOGDIR,getpid(),local_hostname);
   if ( freopen (debugfn, "w", stderr) == NULL )
     {
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
@@ -552,9 +550,11 @@ LMON_be_init ( int ver, int *argc, char ***argv )
 
       return LMON_EINVAL;
     }
-#endif
-*/
 
+# if MEASURE_TRACING_COST  
+  system("ps x");
+#endif
+#endif
 
   if ( ver != LMON_return_ver() ) 
     {
@@ -593,30 +593,6 @@ LMON_be_init ( int ver, int *argc, char ***argv )
   struct hostent *hent = gethostbyname(bedata.my_hostname);
   if ( hent == NULL )
     { 
-#if 0
-      std::string resIP;
-      std::string hFile("/etc/hosts");
-      std::string hnameStr(bedata.my_hostname);
-
-      LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-        "BES: this machine does not know how to resolve %s into an IP",
-        bedata.my_hostname);
-      LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-        "BES: parsing /etc/hosts to try to resolve");
-     
-      if (!resolvHNAlias(hFile, hnameStr, resIP))
-        {
-          LMON_say_msg ( LMON_BE_MSG_PREFIX, true,  
-            "BES: resolvHNAlias also failed to resolve %s", 
-	    bedata.my_hostname);
-
-          return LMON_ESYS;
-        }
-      snprintf(bedata.my_ip, LMON_BE_HN_MAX, "%s", 
-        resIP.c_str());
-      snprintf(bedata.my_hostname, LMON_BE_HN_MAX, "%s", 
-        resIP.c_str());
-#endif
       std::string resIP;
       std::string pFile("/proc/personality.sh");
       std::string fieldStr("BG_IP");
@@ -667,23 +643,13 @@ LMON_be_init ( int ver, int *argc, char ***argv )
     }
 #endif /* RM_BG_MPIRUN */
 
-   /*char filename[]="/tmp/work/ramya/ALAXXXXXX";
-   int fd;
-   fd=mkstemp(filename);
-   write(fd,"here1",strlen("here1")+1);*/
-
-
   if ( LMON_be_internal_init ( argc, argv, bedata.my_hostname ) != LMON_OK )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true,
         "LMON_be_internal_init failed");
      
-       //write(fd,"beinternalinitfailed", strlen("beinternalinitfailed")+1);    
-  return LMON_ESUBCOM;
+      return LMON_ESUBCOM;
     }
-    else
-       //write(fd,"beinternalinitsuccess", strlen("beinternalinitsuccess")+1);
-
  
   if ( LMON_be_getMyRank ( &(bedata.myrank) ) != LMON_OK )
     {

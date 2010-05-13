@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Apr 27 2010 DHA: Added more MEASURE_TRACING_COST support.
  *        Dec 22 2009 DHA: Added auxilliary vector support to discover 
  *                         the loader's load address accurately. (e.g.,  
  *                         without having to rely on the "_start" symbol exported. 
@@ -775,8 +776,21 @@ linux_launchmon_t::acquire_proctable (
 	}
 
 #if MEASURE_TRACING_COST
-     c_end_ts = gettimeofdayD();
-     fprintf(stdout, "PROCTAB(%d) Fetching: %f \n", get_pcount(), (c_end_ts - c_start_ts));
+      c_end_ts = gettimeofdayD();
+      {
+        self_trace_t::trace ( true,
+           MODULENAME,0,
+           "PROCTAB(%d) Fetching: %f ",
+           get_pcount(), (c_end_ts - c_start_ts));
+     }
+
+
+      {
+        self_trace_t::trace ( true, /* print always */
+           MODULENAME,0,
+          "Right after proctab fetch, COUNT: %d, ACCUM TIME (except for the proctab fetching): %f", countHandler, accum);
+     }
+
 #endif
 
       //
@@ -843,7 +857,7 @@ linux_launchmon_t::acquire_proctable (
 
 // XT version for launching tool daemons
 
-int launch_daemons(char *daemon_path,char* daemon_opts, int aprun_pid,const char* launchstring,char *pmgr_info,char *pmgr_sec_info)
+int launch_daemons(char *daemon_path, char *daemon_opts, int aprun_pid, const char *launchstring, char *pmgr_info, char *pmgr_sec_info)
 {
   int my_nid;
   int my_apid;
@@ -856,8 +870,7 @@ int launch_daemons(char *daemon_path,char* daemon_opts, int aprun_pid,const char
   placeList_t *places;
  
   char expanded_string[MAX_STRING_SIZE];
-  char *t;
-  t = expanded_string;
+  char *t = expanded_string;
  
   err_str = alpsGetMyNid(&my_nid); 
   if (err_str)
@@ -874,32 +887,31 @@ int launch_daemons(char *daemon_path,char* daemon_opts, int aprun_pid,const char
   }
 
 
-     char *tokenize = strdup(pmgr_info);
-     char *mip = strtok ( tokenize, ":" );
-     char *mport = strtok ( NULL, ":" );
-     char *tokenize2 = strdup(pmgr_sec_info);
-     
-     char* sharedsecret = strdup(strtok (tokenize2, ":"));
-     char* randomID = strdup(strtok (NULL, ":"));
+  char *tokenize2 = strdup(pmgr_sec_info);
+  char *sharedsecret = strdup(strtok (tokenize2, ":"));
+  char *randomID = strdup(strtok (NULL, ":"));
 
-  #if PMGR_BASED
-     sprintf ( expanded_string,
-         launchstring,
-         mip,
-         mport,
-         my_apid,
-         sharedsecret,
-         randomID);
-  #endif
-  
-  #if COBO_BASED 
+#if PMGR_BASED
+  char *tokenize = strdup(pmgr_info);
+  char *mip = strtok ( tokenize, ":" );
+  char *mport = strtok ( NULL, ":" );
+  sprintf ( expanded_string, 
+            launchstring,
+            mip,
+            mport,
+            my_apid,
+            sharedsecret,
+            randomID);
+#elif COBO_BASED 
+  sprintf ( expanded_string,
+            launchstring,
+            sharedsecret,
+            randomID);
+#if 0 
   printf("expanded string is %s\n" , expanded_string);
   printf("launch string is %s\n", launchstring);
-  sprintf ( expanded_string,
-         launchstring,
-         sharedsecret,
-         randomID);
-   #endif
+#endif
+#endif
    
 
 
@@ -917,13 +929,13 @@ int launch_daemons(char *daemon_path,char* daemon_opts, int aprun_pid,const char
 */
 
  
-  char* daemon_launcher;
+  char *daemon_launcher;
   daemon_launcher = getenv("LMON_DAEMON_LAUNCHER");
 
-  char launchcmd_temp[300];
+  char launchcmd_temp[MAX_STRING_SIZE];
   sprintf(launchcmd_temp,"%s %d %s %s",daemon_launcher,my_apid,daemon_path,expanded_string);
-  char* launchcmd=launchcmd_temp;
-  printf("Passing %s to alps tool launcher\n",launchcmd);
+  char *launchcmd = launchcmd_temp;
+  //printf("Passing %s to alps tool launcher\n",launchcmd);
   
 
   pe0Node = places[0].nid;
@@ -932,38 +944,40 @@ int launch_daemons(char *daemon_path,char* daemon_opts, int aprun_pid,const char
 /*** STAGING LIBRARIES AT THE BACKEND - reading STAGE_LIBRARY_PATH environment variable                                                              ***/
 /*** ------------------------------------------------------------------------------------------------------------------------------------------------***/
 
-  const char* c_err_str_cplusplus;
-  char* save_ptr;
-  char** cplusplus_lib=(char**)malloc(sizeof(char*));
-  cplusplus_lib[0]=(char*)malloc(sizeof(char*));
+  const char *c_err_str_cplusplus;
+  char *save_ptr;
+  char *slib; 
+  char *stage_lib_path;
+  char *copy;
+  char *cptrav;
 
-  char* stage_lib_path;
   stage_lib_path = getenv("STAGE_LIBRARY_PATH");
-  char* copy=(char*)malloc(strlen(stage_lib_path)+1);
-  strcpy(copy,stage_lib_path);
-
-  cplusplus_lib[0] = strtok_r(copy, ":", &save_ptr);
-  c_err_str_cplusplus=alps_launch_tool_helper(my_apid,pe0Node,true,false,1,cplusplus_lib);
-  if (c_err_str_cplusplus!=NULL)
-  {
-    fprintf(stderr, "Error %s in %s lib staging\n", c_err_str_cplusplus,cplusplus_lib[0]);
-    return -1;
-  }
-
-  while (cplusplus_lib[0] = strtok_r(NULL,":",&save_ptr))
-  {
-    c_err_str_cplusplus=alps_launch_tool_helper(my_apid,pe0Node,true,false,1,cplusplus_lib);
-    if (c_err_str_cplusplus!=NULL)
+  if (stage_lib_path) 
     {
-      fprintf(stderr, "Error %s in %s lib staging\n", c_err_str_cplusplus,cplusplus_lib[0]);
-      return -1;
-    }
-  }
+      copy = strdup(stage_lib_path);
+      cptrav = copy;
+      while ( slib = strtok_r(cptrav, ":", &save_ptr))
+        {
+          if (access(slib, R_OK) < 0)
+           {
+             continue;
+           }
+          c_err_str_cplusplus = alps_launch_tool_helper(my_apid,pe0Node,true,false,1,&slib);
+          if (c_err_str_cplusplus) 
+            {
+              fprintf(stderr, "alps_launch_tool_helper returned an error msg: %s", c_err_str_cplusplus);
 
+              //Hmm
+              return -1; 
+            }
+          cptrav = NULL; 
+        }
+    }
+      
   const char *c_err_str;
- // printf("calling alps tool helper\n");
+  //printf("calling alps tool helper\n");
   c_err_str = alps_launch_tool_helper(my_apid, pe0Node,true, true, 1, &launchcmd);
-//  printf("after call to tool helper\n");
+  //printf("after call to tool helper\n");
   if (c_err_str!=NULL)
   {
      fprintf(stderr, "Error %s\n", c_err_str);
@@ -1096,6 +1110,16 @@ linux_launchmon_t::launch_tool_daemons (
   //
 #else
 
+#if MEASURE_TRACING_COST
+      {
+        self_trace_t::trace ( true, /* print always */
+           MODULENAME,0,
+          "About to fork a RM process to bulk-launch daemons");
+        self_trace_t::trace ( true, /* print always */
+           MODULENAME,0,
+          "COUNT: %d, ACCUM TIME (except for the proctab fetching): %f", countHandler, accum);
+     }
+#endif
   set_toollauncherpid  (fork());
   if ( !get_toollauncherpid ())
     {
@@ -1202,7 +1226,6 @@ linux_launchmon_t::handle_launch_bp_event (
     {
       
       using namespace std;
-      printf("inside handle_launch_bp_event\n");
 #if MEASURE_TRACING_COST
       beginTS = gettimeofdayD ();
 #endif
@@ -1223,6 +1246,13 @@ linux_launchmon_t::handle_launch_bp_event (
 	return LAUNCHMON_OK;
       }
 
+#if MEASURE_TRACING_COST
+      {
+        self_trace_t::trace ( true, /* print always */
+          MODULENAME,0,
+          "launch-breakpoint hit event handler invoked.");
+      }
+#endif
       self_trace_t::trace ( LEVELCHK(level2),
 	MODULENAME,0,
 	"launch-breakpoint hit event handler invoked.");
@@ -1254,8 +1284,6 @@ linux_launchmon_t::handle_launch_bp_event (
 	{
 	case MPIR_DEBUG_SPAWNED:
           {
-	   
-            printf("inside handle_launch_bp_event\n"); 
             /*
 	     * Apparently, MPI tasks have just been spawned.
 	     *   We want to acquire RPDTAB and the resource ID, 
@@ -1273,7 +1301,7 @@ linux_launchmon_t::handle_launch_bp_event (
 	    ship_resourcehandle_msg ( lmonp_resourcehandle_avail, get_resid() );
 	    say_fetofe_msg ( lmonp_stop_at_launch_bp_spawned );
             
-            #if RM_ALPS_APRUN
+#if RM_ALPS_APRUN
 
             pid_t temppid=p.get_master_thread_pid();
             int ramya=(int)temppid;
@@ -1287,16 +1315,16 @@ linux_launchmon_t::handle_launch_bp_event (
                  opt_struct_t* tmpopt=(p.get_myopts())->get_my_opt();
 
     
-                #if PMGR_BASED
+# if PMGR_BASED
                    std::string pmgr_info_str=tmpopt->pmgr_info;
                   //sprintf(pmgr_info,"%s",p.get_myopts()->get_my_opt()->pmgr_info.c_str());
                   sprintf(pmgr_info,"%s",pmgr_info_str.c_str());
-                #endif
+# endif
   
                   sprintf(pmgr_sec_info,"%s",p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
                    
                 //   printf("pmgr_info is %s\n", pmgr_info);
-                 printf("pmgr sec info is %s\n", pmgr_sec_info);  
+                // printf("pmgr sec info is %s\n", pmgr_sec_info);  
 
 
                //#endif
@@ -1306,10 +1334,26 @@ linux_launchmon_t::handle_launch_bp_event (
 
             const char* launchstring=p.get_myopts()->get_my_opt()->launchstring.c_str();
             int aprun_pid=(int)p.get_myopts()->get_my_opt()->launcher_pid;
+# if MEASURE_TRACING_COST
+            {
+              self_trace_t::trace ( true, // print always 
+                            MODULENAME,0,
+                            "Calling launch_daemons");
+            }
+# endif
+
             launch_daemons((char*)daemon_path.c_str(),(char*)daemon_opts.c_str(),ramya,launchstring,pmgr_info,pmgr_sec_info);
-            #else
+# if MEASURE_TRACING_COST
+            {
+              self_trace_t::trace ( true, // print always 
+                            MODULENAME,0,
+                            "Calling launch_daemons");
+            }
+# endif
+
+#else /* RM_ALPS_APRUN */
             launch_tool_daemons(p);
-            #endif
+#endif
 
 	    get_tracer()->tracer_continue (p, use_cxt);
 
@@ -1769,6 +1813,15 @@ linux_launchmon_t::handle_trap_after_attach_event (
     {    
       using namespace std; 
 
+#if MEASURE_TRACING_COST
+      beginTS = gettimeofdayD ();
+      {
+        self_trace_t::trace ( true, // print always 
+                              MODULENAME,0,
+                              "The RM process has just been trapped due to attach");
+      }
+#endif
+
       bool use_cxt = true;
       image_base_t<T_VA,elf_wrapper> *dynloader_im = NULL;
       image_base_t<T_VA,elf_wrapper> *main_im = NULL;  
@@ -1998,7 +2051,7 @@ linux_launchmon_t::handle_trap_after_attach_event (
 	   *
 	   *
 	   */
-      #if RM_ALPS_APRUN
+# if RM_ALPS_APRUN
 
      pid_t temppid=p.get_master_thread_pid();
      std::string daemon_path=p.get_myopts()->get_my_opt()->tool_daemon;
@@ -2020,12 +2073,10 @@ linux_launchmon_t::handle_trap_after_attach_event (
 
       opt_struct_t* tmpopt=(p.get_myopts())->get_my_opt();
 
-#if PMGR_BASED
+#  if PMGR_BASED
      std::string pmgr_info_str=tmpopt->pmgr_info;
-      sprintf(pmgr_info,"%s",pmgr_info_str.c_str());
-
-#endif
-
+     sprintf(pmgr_info,"%s",pmgr_info_str.c_str());
+#  endif
 
      std::string lmon_sec_info_str=tmpopt->lmon_sec_info;
 
@@ -2033,8 +2084,8 @@ linux_launchmon_t::handle_trap_after_attach_event (
      //sprintf(pmgr_sec_info,"%s",p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
      sprintf(pmgr_sec_info, "%s", lmon_sec_info_str.c_str()); 
 
-     printf("pmgr info is %s\n", pmgr_info);
-     printf("pmgr sec info is %s\n", pmgr_sec_info);
+     //printf("pmgr info is %s\n", pmgr_info);
+     //printf("pmgr sec info is %s\n", pmgr_sec_info);
      //printf("p value is %p\n", &p);
      //printf("pid here2 p is  %d\n", p.get_pid(use_cxt));
 
@@ -2050,8 +2101,23 @@ linux_launchmon_t::handle_trap_after_attach_event (
 
     //int aprun_pid=(int)p.get_myopts()->get_my_opt()->launcher_pid;
 
+#  if MEASURE_TRACING_COST
+    {
+      self_trace_t::trace ( true, // print always 
+                            MODULENAME,0,
+                            "Calling launch_daemons");
+    }
+#  endif
     launch_daemons((char*)daemon_path.c_str(),(char*)daemon_opts.c_str(),aprun_pid,launchstring,pmgr_info,pmgr_sec_info);
-    //printf("pid here3 p is  %d\n", p.get_pid(use_cxt));
+
+#  if MEASURE_TRACING_COST
+    {
+      self_trace_t::trace ( true, // print always 
+                            MODULENAME,0,
+                            "launch_daemons returned");
+    }
+#  endif
+
 #else
     launch_tool_daemons(p);
 #endif
@@ -2064,6 +2130,19 @@ linux_launchmon_t::handle_trap_after_attach_event (
 			      MODULENAME,0,
 	"trap after attach event handler completed.");
       }
+
+#if MEASURE_TRACING_COST
+      endTS = gettimeofdayD ();
+      accum += endTS - beginTS;
+      countHandler++;
+      // accum and countHandler now contain the cost of this handler which 
+      // is invoked just once per job
+      {
+        self_trace_t::trace ( true, // print always 
+                              MODULENAME,0,
+                              "Just continued the RM process out of the first trap");
+      }
+#endif
   
       set_last_seen (gettimeofdayD ());
       return LAUNCHMON_OK;
@@ -2096,12 +2175,15 @@ linux_launchmon_t::handle_trap_after_exec_event (
 {
   try 
     {
-
-      printf("Inside handle_trap_after_exec_event\n");
       using namespace std;
 
 #if MEASURE_TRACING_COST
      beginTS = gettimeofdayD ();
+     {
+       self_trace_t::trace ( true, // print always 
+                             MODULENAME,0,
+                             "The RM process has just been forked and exec'ed.");
+     }
 #endif
 
       bool use_cxt = true;
@@ -2363,6 +2445,13 @@ linux_launchmon_t::handle_trap_after_exec_event (
       endTS = gettimeofdayD ();
       accum += endTS - beginTS;
       countHandler++;
+      // accum and countHandler now contain the cost of this handler which 
+      // is invoked just once per job
+      {
+        self_trace_t::trace ( true, // print always 
+                              MODULENAME,0,
+                              "Just continued the RM process out of the first trap");
+      }
 #endif
 
       set_last_seen (gettimeofdayD ());
@@ -2600,10 +2689,13 @@ linux_launchmon_t::handle_exit_event (
       accum += endTS - beginTS;
       countHandler++;
 
+#if 0
       if (rc == LAUNCHMON_MAINPROG_EXITED) { 
         fprintf (stdout, "COUNT: %d\n", countHandler);
         fprintf (stdout, "ACCUM TIME: %f\n", accum);
       } 
+#endif
+
 #endif
 
       set_last_seen (gettimeofdayD ());
@@ -2637,6 +2729,10 @@ linux_launchmon_t::handle_term_event (
 {
   using namespace std;
 
+#if MEASURE_TRACING_COST
+  beginTS = gettimeofdayD ();
+#endif
+
   {
     self_trace_t::trace ( LEVELCHK(level2), 
       MODULENAME,0,
@@ -2650,6 +2746,12 @@ linux_launchmon_t::handle_term_event (
       MODULENAME,0,
       "termination event handler completed.");
   }
+
+#if MEASURE_TRACING_COST
+  endTS = gettimeofdayD ();
+  accum += endTS - beginTS;
+  countHandler++;
+#endif
 	
   set_last_seen (gettimeofdayD ());
   return LAUNCHMON_OK;
@@ -2740,10 +2842,21 @@ linux_launchmon_t::handle_thrdeath_bp_event (
 {
   try 
     {
+#if MEASURE_TRACING_COST
+      beginTS = gettimeofdayD ();
+#endif
+
       bool use_cxt = true; 
 
       if ( is_bp_prologue_done(p, p.get_thread_death_hidden_bp()) != LAUNCHMON_OK )
-	return LAUNCHMON_OK;
+        {
+#if MEASURE_TRACING_COST
+           endTS = gettimeofdayD ();
+           accum += endTS - beginTS;
+           countHandler++;
+#endif
+	  return LAUNCHMON_OK;
+        }
 
       {
 	self_trace_t::trace ( LEVELCHK(level2), 
@@ -2763,6 +2876,12 @@ linux_launchmon_t::handle_thrdeath_bp_event (
 	  MODULENAME,0,
 	  "thread death event handler completed");
       }   
+
+#if MEASURE_TRACING_COST
+      endTS = gettimeofdayD ();
+      accum += endTS - beginTS;
+      countHandler++;
+#endif
 
       set_last_seen (gettimeofdayD ());
       return LAUNCHMON_OK;

@@ -1,3 +1,60 @@
+2010-06-12 Dong H. Ahn <ahn1@llnl.gov>
+	* test/src/simple_MPI.c
+	test/src/Makefile.in
+	test/src/fe_launch_smoketest.cxx
+	test/src/be_kicker.cxx
+	test/src/Makefile.am
+	test/src/test.launch_1.in
+	configure
+	launchmon/src/sdbg_base_launchmon.hxx
+	launchmon/src/lmon_api/lmon_say_msg.hxx
+	launchmon/src/linux/lmon_api/lmon_fe.cxx
+	launchmon/src/linux/lmon_api/lmon_lmonp_msg.cxx
+	launchmon/src/linux/lmon_api/lmon_be_comm.cxx
+	launchmon/src/linux/lmon_api/lmon_say_msg.cxx
+	launchmon/src/linux/lmon_api/lmon_be.cxx
+	launchmon/src/linux/sdbg_linux_launchmon_xt.cxx
+	launchmon/src/sdbg_opt.cxx
+	ChangeLog
+	tools/alps
+	tools/alps/src
+	tools/alps/src/Makefile.am
+	tools/alps/src/alps_be_starter
+	tools/alps/src/alps_be_starter.c
+	tools/alps/Makefile.am
+	tools/cobo/src/cobo.c
+	tools/cobo/src/cobo.h
+	tools/Makefile.am
+	tools/pmgr_collective/src/pmgr_collective_client.h
+	tools/pmgr_collective/src/pmgr_collective_client.c
+	configure.ac
+	config/x_ac_bootfabric.m4
+	config/x_ac_rm.m4:
+	Added Cray XT support including COBO and MEASURE_TRACING_COST
+	across the board.
+
+
+2010-04-28 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/linux/sdbg_linux_launchmon.cxx,
+	launchmon/src/linux/lmon_api/lmon_be_comm.cxx
+	launchmon/src/linux/lmon_api/lmon_fe.cxx
+	launchmon/src/linux/lmon_api/lmon_say_msg.cxx
+	launchmon/src/linux/sdbg_linux_launchmon.cxx
+	launchmon/src/lmon_api/lmon_say_msg.hxx
+	launchmon/src/sdbg_base_launchmon.hxx
+	tools/pmgr_collective/src/pmgr_collective_client.c
+	tools/pmgr_collective/src/pmgr_collective_client.h:
+	Added more MEASURE_TRACING_COST support.
+
+
+2010-04-06 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/linux/lmon_api/lmon_be.cxx: Added 
+	a new parser to parse /proc/personality.sh to 
+	fully work around the hostname resolution problem 
+	with ORNL Eugene's ION environment where gethostname returns 
+	a non-unique, non-standard BG rack-midplane-based hostname.
+
+
 2010-02-10 Dong H. Ahn <ahn1@llnl.gov>
 	* launchmon/src/linux/sdbg_linux_ttracer.hxx
 	launchmon/src/linux/sdbg_linux_launchmon.cxx

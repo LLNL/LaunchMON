@@ -214,7 +214,7 @@ lmon_write_raw ( int fd, void *buf, size_t count )
 }
 
 
-//! ssize_t lmon_read_raw ( int fd, const void *buf, size_t count )
+//! ssize_t lmon_read_raw ( int fd, void *buf, size_t count )
 /*!
     a wrapper for the read call. 
 */

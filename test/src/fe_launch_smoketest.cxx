@@ -131,7 +131,6 @@ main (int argc, char *argv[])
   string numnodes_opt;
   string partition_opt;
 
-/*
   if ( argc < 6 )
     {
       fprintf ( stdout, 
@@ -140,8 +139,8 @@ main (int argc, char *argv[])
         "[LMON FE] FAILED\n" );
       return EXIT_FAILURE;
     }
-*/
 
+#if 0
    if ( argc < 4 )
     {
       fprintf ( stdout,
@@ -150,8 +149,7 @@ main (int argc, char *argv[])
         "[LMON FE] FAILED\n" );
       return EXIT_FAILURE;
     }
-
-
+#endif
 
   if ( access(argv[1], X_OK) < 0 )
     {
@@ -165,19 +163,19 @@ main (int argc, char *argv[])
 
   if ( getenv ("LMON_INVALIDDAEMON_TEST") == NULL )
     {
-      if ( access(argv[3], X_OK) < 0 )
+      if ( access(argv[5], X_OK) < 0 )
         {
           fprintf(stdout, 
             "%s cannot be executed\n", 
-            argv[2]);
+            argv[5]);
           fprintf(stdout, 
             "[LMON FE] FAILED\n");
           return EXIT_FAILURE;
         }
     }
 
-  if ( argc > 4 )
-    daemon_opts = argv+4;
+  if ( argc > 6 )
+    daemon_opts = argv+6;
 
 #if RM_BG_MPIRUN
   //
@@ -212,11 +210,13 @@ main (int argc, char *argv[])
   launcher_argv[1] = strdup(numprocs_opt.c_str());
   launcher_argv[2] = strdup(argv[1]);
   launcher_argv[3] = NULL;
+#if 0
   printf("inside alps aprun from launch smoketest\n");
   printf("arg0 is %s", launcher_argv[0]);
   printf("arg1 is %s", launcher_argv[1]);
   printf("arg2 is %s", launcher_argv[2]);
   printf("arg3 is %s", launcher_argv[3]);
+#endif
 
 #else
 //# error add support for the RM of your interest here
@@ -262,7 +262,7 @@ main (int argc, char *argv[])
    	            hn,
 	    	    launcher_argv[0],
 		    launcher_argv,
-		    argv[3],
+		    argv[5],
 		    daemon_opts,
 		    NULL,
 		    NULL)) 
@@ -289,7 +289,7 @@ main (int argc, char *argv[])
    	            NULL,
 		    launcher_argv[0],
 		    launcher_argv,
-		    argv[3],
+		    argv[5],
 		    daemon_opts,
 		    NULL,
 		    NULL)) 

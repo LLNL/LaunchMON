@@ -26,7 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
- *        Dec 23 2009 DHA: Added explict config.h inclusion 
+ *        Dec  23 2009 DHA: Added explict config.h inclusion 
  *        Feb  09 2008 DHA: Added LLNS Copyright
  *        Dec  29 2006 DHA: Created file.          
  */
@@ -99,6 +99,18 @@ pipe_t::pipe_t ( const pipe_t& dp )
 pipe_t::~pipe_t ()
 {
   // destoying routines?
+}
+
+double gettimeofdayD ()
+{
+  struct timeval ts;
+  double rt;
+
+  gettimeofday (&ts, NULL);
+  rt = (double) (ts.tv_sec);
+  rt += (double) ((double)(ts.tv_usec))/1000000.0;
+
+  return rt;
 }
 
 void 

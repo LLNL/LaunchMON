@@ -164,6 +164,7 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BE_STARTER = @BE_STARTER@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -392,6 +393,8 @@ EXTRA_DIST = test.LE_model_checker_mainthread.in \
 				    test.fe_regStatusCB.in
 
 do_subst = sed -e 's,@LMON@,$(prefix)/bin/launchmon$(EXEEXT),g' \
+	       -e 's,@LMONPREFIX@,$(prefix),g' \
+	       -e 's,@BESTARTER@,$(prefix)/bin/$(BE_STARTER)$(EXEEXT),g' \
                -e 's,@TJLPATH@,$(TARGET_JOB_LAUNCHER_PATH),g' \
                -e 's,@RMTP@,$(RM_TYPE),g' \
 	       -e 's,@SMP@,$(SMPFACTOR),g' \
@@ -411,9 +414,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  test/src/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/src/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  test/src/Makefile
+	  $(AUTOMAKE) --foreign  test/src/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \

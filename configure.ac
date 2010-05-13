@@ -228,6 +228,8 @@ AC_CONFIG_FILES([Makefile
                  tools/cobo/Makefile
 	  	 tools/cobo/src/Makefile
 		 tools/cobo/test/Makefile
+		 tools/alps/Makefile
+		 tools/alps/src/Makefile
                  launchmon/Makefile
 		 launchmon/src/Makefile
 		 launchmon/src/linux/Makefile

@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Apr 27 2010 DHA: Added MEASURE_TRACING_COST support.
  *        Feb 04 2010 DHA: Added LMON_FE_HOSTNAME_TO_CONN support
  *        Dec 23 2009 DHA: Added explict config.h inclusion 
  *        Dec 16 2009 DHA: COBO support
@@ -1315,6 +1316,19 @@ LMON_fe_acceptEngine ( int sessionHandle )
 static lmon_rc_e 
 LMON_assist_ICCL_BE_init (lmon_session_desc_t *mydesc)
 {
+#if MEASURE_TRACING_COST
+   double be_ts;
+   double be_ts_buf;
+   double c_start_ts;
+   double c_end_ts;
+   c_start_ts = gettimeofdayD();
+   be_ts = 0.0f;
+   {
+     LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
+       "LMON_assist_ICCL_BE_init begins");
+   }
+#endif
+
 #if PMGR_BASED || COBO_BASED
   /*
    * The following code is from Adam Moody's 
@@ -1422,7 +1436,7 @@ LMON_assist_ICCL_BE_init (lmon_session_desc_t *mydesc)
       if ( connfd == -2 )
 	{
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-	    "accepting a connection with a BE timed out");
+	    "accepting a connection with a BE (rank=%d) timed out, return code from lmon_timedaccept: %d", i, connfd);
 
 	  return LMON_ETOUT;
 	}
@@ -1444,6 +1458,7 @@ LMON_assist_ICCL_BE_init (lmon_session_desc_t *mydesc)
        * protocol:0
        *  0. read protocol version number
        *  1A. read rank of process (It must be -1 because we want the LAZY_RANK_BINDING support.
+       *  1A' if MEASURE_TRACING_COST, read the timestamp
        *  1B. write rank for LAZY_RANK_BINDING
        *  1C. write size for LAZY_SIZE_BINDING
        *  2. read hostid length
@@ -1462,6 +1477,26 @@ LMON_assist_ICCL_BE_init (lmon_session_desc_t *mydesc)
 	  return LMON_ESYS;
 	}
  
+#if MEASURE_TRACING_COST
+      if ( (nread = lmon_read_raw ( connfd, &be_ts_buf, sizeof(be_ts_buf)) ) < 0 )
+	{
+	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+	    "read on a socket failed.");
+	
+	  return LMON_ESYS;
+	}
+
+      if (be_ts < be_ts_buf) 
+        { 
+          // On being spanwed, back-end daemons take a timestamp
+          // Assuming the clocks are well synchronized across remote nodes, 
+          // the latest timestamp can be the end of the RM daemon launching OP.
+          // Then, the end of this ICCL helper routine - that timestamp
+          // can serve us as the LMON overhead.  
+          be_ts = be_ts_buf; 
+        }
+#endif
+
       if ( version != PMGR_COLLECTIVE) 
 	{ 
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
@@ -1537,8 +1572,43 @@ LMON_assist_ICCL_BE_init (lmon_session_desc_t *mydesc)
 
        return LMON_ESYS;
      }
+
+# if MEASURE_TRACING_COST
+   if ( lmon_read_raw(mydesc->commDesc[fe_be_conn].sessionAcceptSockFd, (void*)&be_ts, sizeof(double)) < 0 )
+     {
+       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+         "read on a socket failed during MEASURE_TRACING_COST.");
+
+       return LMON_ESYS;
+     }
+# endif
+
 #endif /* COBO_BASED */
 #endif /* PMGR_BASED || COBO_BASED */
+
+#if MEASURE_TRACING_COST
+  c_end_ts = gettimeofdayD();
+  {
+    LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
+      "The inclusive LMON overhead of bootstrapping the ICCL layer: %f secs",
+      (c_end_ts - c_start_ts));
+    if (be_ts > (0.0f + 1E-10)) {
+      if (be_ts > c_end_ts) 
+        {
+          LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
+            "The BE time stamp is greater than the end of the ICCL layer bootstrapping!"); 
+          LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
+            "Must be out-of-synch clocks across remote nodes. The exclusive LMON overhead cannot be determined");
+        } 
+      else 
+        {
+          LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
+            "The exclusive LMON overhead of bootstrapping the ICCL layer: %f secs",
+            (c_end_ts - be_ts));
+        }
+    }
+  }
+#endif
 
   return LMON_OK;
 }
@@ -1841,7 +1911,6 @@ LMON_set_options (
   optcontext = opt.get_my_opt();
   optcontext->verbose = verbose;
   optcontext->debugtarget = "";
-  printf("verbose is %d\n",verbose);
 
   if (verbose == 0 )
     ver = quiet;
@@ -4258,11 +4327,8 @@ bld_exec_lmon_launch_str ( bool isLocal,
 
   
   //gettimeofday(&lmon_eng_launch,NULL);
-
   if ( execvp ( myargv[0], myargv) < 0 )
     {
-     
-      printf("myarv[0] is %s\n", myargv[0]);
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "LaunchMON Engine invocation failed, exiting: %s",
 	strerror(errno));
@@ -4468,8 +4534,8 @@ LMON_fe_launchAndSpawnDaemons (
       string lmonOptArgs;
 
       isLocal = (hostname == NULL) ? true : false;
-	
-       if ( (isLocal == false) 
+
+      if ( (isLocal == false) 
 	   && getenv("LMON_DEBUG_FE_ENGINE_RSH") )	  
 	LMON_TotalView_debug ();
 	

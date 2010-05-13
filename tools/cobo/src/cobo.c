@@ -27,7 +27,10 @@
 #define COBO_CONNECT_TIMEOUT (10) /* milliseconds -- wait this long before a connect() call times out*/
 #endif
 #ifndef COBO_CONNECT_BACKOFF
-#define COBO_CONNECT_BACKOFF (10) /* milliseconds -- wait this long before trying a new round of connects() */
+#define COBO_CONNECT_BACKOFF (2) /* exponential backoff factor for timeout */
+#endif
+#ifndef COBO_CONNECT_SLEEP  
+#define COBO_CONNECT_SLEEP   (10) /* milliseconds -- wait this long before trying a new round of connects() */
 #endif
 #ifndef COBO_CONNECT_TIMELIMIT
 #define COBO_CONNECT_TIMELIMIT (120) /* seconds -- wait this long before giving up for good */
@@ -59,7 +62,8 @@ static int cobo_nprocs = -1;
 
 /* connection settings */
 static int cobo_connect_timeout       = COBO_CONNECT_TIMEOUT;   /* milliseconds */
-static int cobo_connect_backoff       = COBO_CONNECT_BACKOFF;   /* milliseconds */
+static int cobo_connect_backoff       = COBO_CONNECT_BACKOFF;   /* exponential backoff factor for connect timeout */
+static int cobo_connect_sleep         = COBO_CONNECT_SLEEP;     /* milliseconds to sleep before rescanning ports */
 static double cobo_connect_timelimit  = COBO_CONNECT_TIMELIMIT; /* seconds */
 
 /* to establish a connection, the service and session ids must match
@@ -91,6 +95,8 @@ static int  cobo_num_child_incl = 0; /* total number of children this node is re
 
 static int cobo_root_fd = -1;
 
+double __cobo_ts = 0.0f;
+
 /* startup time, time between starting cobo_open and finishing cobo_close */
 static struct timeval time_open, time_close;
 static struct timeval tree_start, tree_end;
@@ -110,6 +116,28 @@ static void cobo_error(char *fmt, ...)
     char hostname[256];
     gethostname(hostname, 256);
     fprintf(stderr, "COBO ERROR: ");
+    if (cobo_me >= 0) {
+        fprintf(stderr, "rank %d on %s: ", cobo_me, hostname);
+    } else if (cobo_me == -2) {
+        fprintf(stderr, "server on %s: ", hostname);
+    } else if (cobo_me == -1) {
+        fprintf(stderr, "unitialized client task on %s: ", hostname);
+    } else {
+        fprintf(stderr, "unitialized task (server or client) on %s: ", hostname);
+    }
+    va_start(argp, fmt);
+    vfprintf(stderr, fmt, argp);
+    va_end(argp);
+    fprintf(stderr, "\n");
+}
+
+/* print message to stderr */
+static void cobo_warn(char *fmt, ...)
+{
+    va_list argp;
+    char hostname[256];
+    gethostname(hostname, 256);
+    fprintf(stderr, "COBO WARNING: ");
     if (cobo_me >= 0) {
         fprintf(stderr, "rank %d on %s: ", cobo_me, hostname);
     } else if (cobo_me == -2) {
@@ -432,7 +460,7 @@ done:
  * shall return the connected socket file descriptor.  Otherwise, -1 shall be
  * returned.
  */
-static int cobo_connect(struct in_addr ip, int port)
+static int cobo_connect(struct in_addr ip, int port, int timeout)
 {
     struct sockaddr_in sockaddr;
 
@@ -451,7 +479,7 @@ static int cobo_connect(struct in_addr ip, int port)
     }
 
     /* connect socket to address */
-    if (cobo_connect_w_timeout(s, (struct sockaddr *) &sockaddr, sizeof(sockaddr), cobo_connect_timeout) < 0) {
+    if (cobo_connect_w_timeout(s, (struct sockaddr *) &sockaddr, sizeof(sockaddr), timeout) < 0) {
         close(s);
         return -1;
     }
@@ -486,6 +514,7 @@ static int cobo_connect_hostname(char* hostname, int rank)
     cobo_gettimeofday(&start);
     double secs = 0;
     int connected = 0;
+    int connect_timeout = cobo_connect_timeout;
     int reply_timeout = cobo_connect_timeout * 10;
     while (!connected && secs < cobo_connect_timelimit) {
         /* iterate over our ports trying to find a connection */
@@ -497,7 +526,7 @@ static int cobo_connect_hostname(char* hostname, int rank)
             /* attempt to connect to hostname on this port */
             cobo_debug(1, "Trying rank %d port %d on %s", rank, port, hostname);
             /* s = cobo_connect(*(struct in_addr *) (*he->h_addr_list), htons(port)); */
-            s = cobo_connect(saddr, htons(port));
+            s = cobo_connect(saddr, htons(port), connect_timeout);
             if (s != -1) {
                 /* got a connection, let's test it out */
                 cobo_debug(1, "Connected to rank %d port %d on %s", rank, port, hostname);
@@ -563,10 +592,13 @@ static int cobo_connect_hostname(char* hostname, int rank)
 
         /* sleep for some time before we try another port scan */
         if (!connected) {
-            usleep(cobo_connect_backoff * 1000);
+            usleep(cobo_connect_sleep * 1000);
 
             /* maybe we connected ok, but we were too impatient waiting for a reply, extend the reply timeout for the next attempt */
-            reply_timeout *= 2;
+            if (connect_timeout < 30000) {
+              connect_timeout *= cobo_connect_backoff;
+              reply_timeout   *= cobo_connect_backoff;
+            }
         }
 
         /* compute how many seconds we've spent trying to connect */
@@ -1360,9 +1392,14 @@ int cobo_open(unsigned int sessionid, int* portlist, int num_ports, int* rank, i
         cobo_connect_timeout = atoi(value);
     }
 
-    /* milliseconds */
+    /* exponential backoff factor for connect */
     if ((value = cobo_getenv("COBO_CONNECT_BACKOFF", ENV_OPTIONAL))) {
         cobo_connect_backoff = atoi(value);
+    }
+
+    /* milliseconds to sleep before rescanning ports */
+    if ((value = cobo_getenv("COBO_CONNECT_SLEEP", ENV_OPTIONAL))) {
+        cobo_connect_sleep = atoi(value);
     }
 
     /* seconds */
@@ -1391,8 +1428,8 @@ int cobo_open(unsigned int sessionid, int* portlist, int num_ports, int* rank, i
     }
 
     cobo_debug(3, "In cobo_init():\n" \
-        "COBO_CONNECT_TIMEOUT: %d, COBO_CONNECT_BACKOFF: %d, COBO_CONNECT_TIMELIMIT: %d",
-        cobo_connect_timeout, cobo_connect_backoff, (int) cobo_connect_timelimit
+        "COBO_CONNECT_TIMEOUT: %d, COBO_CONNECT_BACKOFF: %d, COBO_CONNECT_SLEEP: %d, COBO_CONNECT_TIMELIMIT: %d",
+        cobo_connect_timeout, cobo_connect_backoff, cobo_connect_sleep, (int) cobo_connect_timelimit
     );
 
     /* copy port list from user */
