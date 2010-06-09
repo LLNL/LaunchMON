@@ -26,7 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
- *        Apr 27 2010 DHA: Added more ENABLE_TRACING_COST support.
+ *        Apr 27 2010 DHA: Added more MEASURE_TRACING_COST support.
  *        Dec 22 2009 DHA: Added auxilliary vector support to discover 
  *                         the loader's load address accurately. (e.g.,  
  *                         without having to rely on the "_start" symbol exported. 
