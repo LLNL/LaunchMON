@@ -27,6 +27,7 @@
  *					
  *
  *  Update Log:
+ *        Jun 09 2010 DHA: Added RM MAP support
  *        Feb 09 2008 DHA: Added LLNS Copyright
  *        Dec 05  2007 DHA: Added model checker support
  *        Jul 04  2006 DHA: Added self tracing support
@@ -112,7 +113,7 @@ struct opt_struct_t {
 #endif
   std::string lmon_sec_info;    // shared secret:randomID
   pid_t       launcher_pid;     // the pid of a running parallel launcher process
-  char**      remaining;        // options and arguments to be passed 
+  char      **remaining;        // options and arguments to be passed 
   std::map<std::string, std::string> envMap;
 };
 
@@ -126,12 +127,12 @@ class opts_args_t {
 
 public:
   opts_args_t();
-  opts_args_t(const opts_args_t& o);
   ~opts_args_t();  
 
   define_gset(opt_struct_t*, my_opt)
+  define_gset(rc_rm_t*, my_rmconfig)
 
-  bool process_args (int* argc, char*** argv);
+  bool process_args (int *argc, char ***argv);
   void print_usage();
   bool construct_launch_string();
   bool option_sanity_check();
@@ -142,9 +143,14 @@ private:
   bool LEVELCHK(self_trace_verbosity level) 
        { return (self_trace_t::opt_module_trace.verbosity_level >= level); }
  
-  bool check_path(std::string& base, std::string& pth);
+  bool check_path(std::string &base, std::string &pth);
 
-  opt_struct_t* my_opt;
+  // move the copy ctor in the private area preventing an object 
+  // of this class copied
+  opts_args_t(const opts_args_t &o);
+
+  opt_struct_t *my_opt;
+  rc_rm_t *my_rmconfig;
 
   // For self tracing
   //

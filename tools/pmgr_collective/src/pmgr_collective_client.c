@@ -98,7 +98,7 @@ static int mpirun_connect_random   = MPIRUN_CONNECT_RANDOM;
 
 static char* mpirun_hostname;
 static int   mpirun_port;
-static int   mpirun_socket;
+static int   mpirun_socket = -1;
 static int   pmgr_nprocs = -1;
 static int   pmgr_id     = -1;
 

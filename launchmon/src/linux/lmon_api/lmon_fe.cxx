@@ -113,16 +113,6 @@
  *        Dec 15 2006 DHA: Created file.
  */
 
-
-#include <iostream>
-#include <fstream>
-#include <iomanip>
-#include <sstream>
-
-//#define VERBOSE 1
-//#define WATCHDOG_THREAD_DEBUG 1
-
-
 #ifndef HAVE_LAUNCHMON_CONFIG_H
 #include "config.h"
 #endif
@@ -236,6 +226,11 @@
 # error limits.h is required
 #endif
 
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <sstream>
+
 #include "sdbg_self_trace.hxx"
 #include "sdbg_opt.hxx"
 #include "lmon_api/lmon_say_msg.hxx"
@@ -243,7 +238,6 @@
 #include <lmon_api/lmon_proctab.h>
 #include <lmon_api/lmon_lmonp_msg.h>
 #include <lmon_api/lmon_fe.h>
-#include <sys/time.h>
 
 #if PMGR_BASED
 extern  "C" {
@@ -266,10 +260,9 @@ const int   MAX_LMON_SESSION    = 100;
 
 const int   MAX_LMON_STRING     = 4096;
 const int   LMON_INIT           = -1;
-const int   DFLT_FE_ENGINE_TOUT = 6000;
-//const int   DFLT_FE_ENGINE_TOUT = 6000;
-const int   DFLT_FE_BE_TOUT     = 6000;
-const int   DFLT_FE_MW_TOUT     = 6000;
+const int   DFLT_FE_ENGINE_TOUT = 120;
+const int   DFLT_FE_BE_TOUT     = 120;
+const int   DFLT_FE_MW_TOUT     = 120;
 const int   MAX_TIMEOUT         = 6000;
 const char *LMON_FE_MSG_PREFIX  = "<LMON FE API>";
 
@@ -1415,7 +1408,6 @@ LMON_assist_ICCL_BE_init (lmon_session_desc_t *mydesc)
   mydesc->commDesc[fe_be_conn].nDaemons
     = mydesc->proctab_msg->sec_or_stringinfo.exec_and_hn.num_host_name;
   ndmons = mydesc->commDesc[fe_be_conn].nDaemons;
-  //ndmons=2;
 
 #if PMGR_BASED
   for (i = 0; i < ndmons; i++) 
@@ -1714,11 +1706,6 @@ LMON_fe_beHandshakeSequence (
 	   || ( msg.lmon_payload_length != 0 )
 	   || ( msg.lmon_payload_length != 0 ) )
 	{
-//          if(msg.msgclass != lmonp_fetobe)
-//          if (msg.type.fetobe_type != lmonp_febe_security_chk)
-//          if(msg.lmon_payload_length!=0)
-          
-      //    printf("the message type is %d\n", msg.type.fetobe_type); 
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
 			 "received an invalid message ");
       
@@ -2051,31 +2038,13 @@ LMON_openBindAndListen ( int *sfd )
   char hn[MAX_LMON_STRING]; 
   char *hngiven;
 
-  std::ifstream ifs( "/proc/cray_xt/nid" );
-    uint32_t nid;
-    ifs >> nid;
-
-    std::ostringstream nidStr;
-    nidStr << "nid"
-        << std::setw( 5 )
-        << std::setfill( '0' )
-        << nid
-        << std::ends;
-    std::string hostname1=nidStr.str();
-     sprintf(hn,"%s",hostname1.c_str());
-    //printf("hn is %s", hn);
-
-
-/*  if ( (rc = gethostname(hn, MAX_LMON_STRING)) < 0 ) 
+  if ( (rc = gethostname(hn, MAX_LMON_STRING)) < 0 ) 
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
 		     "gethostname call failed");
 
       return LMON_ESYS;
     }
-  */ 
-//  printf("gethostname is  %s\n", hn); 
-
 
 #if RM_BG_MPIRUN
   //
@@ -2089,7 +2058,20 @@ LMON_openBindAndListen ( int *sfd )
   // Changed RM_BGL_MPIRUN to RM_BG_MPIRUN to genericize BlueGene Support
   //
   strcat (hn, "-io");
-#endif  
+#elif RM_ALPS_APRUN
+  //
+  // Cray uses its own way to name a node, so overwriting 
+  // hn with the name generated with their method
+  //
+  std::ifstream ifs( "/proc/cray_xt/nid" );
+  uint32_t nid;
+  ifs >> nid;
+
+  std::ostringstream nidStr;
+  nidStr << "nid" << std::setw( 5 ) << std::setfill( '0' )
+         << nid << std::ends;
+  snprintf(hn, MAX_LMON_STRING, "%s",nidStr.str().c_str());
+#endif
 
   //
   // LMON_FE_HOSTNAME_TO_CONN support to handle a condition where 
@@ -3481,7 +3463,6 @@ extern "C"
 lmon_rc_e 
 LMON_fe_detach ( int sessionHandle )
 {
-
   lmonp_t msg;
   lmon_session_desc_t* mydesc;
   int numbytes;
@@ -4325,14 +4306,11 @@ bld_exec_lmon_launch_str ( bool isLocal,
       myargv[k] = NULL;
     }  // The tool FEN is not co-located with the RM.
 
-  
-  //gettimeofday(&lmon_eng_launch,NULL);
   if ( execvp ( myargv[0], myargv) < 0 )
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "LaunchMON Engine invocation failed, exiting: %s",
 	strerror(errno));
-       
 
       //
       // If execv fails, sink here. 
@@ -4393,7 +4371,7 @@ LMON_fe_launchAndSpawnDaemons (
     }
   pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
   
-  verbosity_level = 3;
+  verbosity_level = 0;
   
   if ( (vb = getenv (LMON_VERBOSE_ENVNAME)) != NULL )
     {	
@@ -4513,7 +4491,6 @@ LMON_fe_launchAndSpawnDaemons (
       // Once you are here, the watchdog thread should have already 
       // updated the mydesc->spawned flag
       //
-//      gettimeofday(&febe_handshake_start,NULL);	
       if ( ( lrc = LMON_fe_beHandshakeSequence (sessionHandle,
 						true,  /* this is launch case */
 						febe_data, 
@@ -4581,7 +4558,6 @@ LMON_fe_launchAndSpawnDaemons (
 	}	  		
     }   
  
-//  gettimeofday(&febe_handshake_end,NULL);
   return lrc;
 }
   
@@ -4634,7 +4610,7 @@ LMON_fe_attachAndSpawnDaemons (
     }
   pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
   
-  verbosity_level = 3;
+  verbosity_level = 0;
   if ( (vb = getenv (LMON_VERBOSE_ENVNAME)) != NULL )
     {	
       /*

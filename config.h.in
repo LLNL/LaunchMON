@@ -13,10 +13,10 @@
 /* Define 1 for COBO_BASED */
 #undef COBO_BASED
 
-/* Define 20101 for COBO_BASED; port range will be 20101 - 20172 */
+/* Define a beginning port for COBO_BASED */
 #undef COBO_BEGIN_PORT
 
-/* Define 72 for COBO_BASED */
+/* Define 32 for COBO_BASED */
 #undef COBO_PORT_RANGE
 
 /* Define DEBUG flag */
@@ -24,6 +24,9 @@
 
 /* env command found */
 #undef ENVCMD
+
+/* Define dot for GLUESYM */
+#undef GLUESYM
 
 /* Define to 1 if you have the <algorithm> header file. */
 #undef HAVE_ALGORITHM
@@ -258,6 +261,9 @@
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
+
+/* "Definition for ALPS/APRUN" */
+#undef RM_ALPS_APRUN
 
 /* Define 1 for RM_BG_MPIRUN */
 #undef RM_BG_MPIRUN

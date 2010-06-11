@@ -109,6 +109,9 @@ overwrites the remote login method that is used to
 spawn an engine remotely (e.g., "/usr/bin/rsh")
 (default: /usr/bin/ssh).
 .TP
+.B LMON_PREFIX
+sets the installation path of the package.
+.TP
 .B LMON_DEBUG_LAUNCHMON_ENGINE
 invokes totalview to aid in debugging of the LaunchMON engine
 running on \fIhostname\fR if set and if this debugging mode is 
@@ -202,6 +205,10 @@ doesn't need to perform \fBA.1.2.\fR
 and the system control system doesn't offer a mechanism to 
 detect a daemon failure, LaunchMON does not currently enforce
 this semantics on this platform.   
+.PP
+\fB[Cray ALPS Note]\fR The ALPS tool helper service doesn't offer a mechanism 
+to detect a daemon failure, LaunchMON  does not currently enforce this 
+semantics on this platform.
 .PP
 \fBD.\fR When the job fails, the basic cleanup semantics of LaunchMON is
 to notify the FEN tool while keeping the daemons running.

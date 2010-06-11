@@ -27,6 +27,7 @@
  *			
  *
  *  Update Log:
+ *        Jun 09 2010 DHA: Use LMON_timestamp to get consistent timestamp format
  *        Feb 09 2008 DHA: Added LLNS Copyright 
  *        Jul 03 2006 DHA: trace method
  *        Mar 30 2006 DHA: File created      
@@ -63,6 +64,7 @@
 # error limits.h is required
 #endif
 
+#include "lmon_api/lmon_say_msg.hxx"
 #include "sdbg_self_trace.hxx"
 
 self_trace_entry_t self_trace_t::launchmon_module_trace 
@@ -93,7 +95,7 @@ self_trace_entry_t self_trace_t::sighandler_module_trace
      = { quiet, "SigHandler", "sighandler"};
 
 
-FILE* self_trace_t::tracefptr = stdout;
+FILE *self_trace_t::tracefptr = stdout;
 
 
 //!  opts_args_t::trace
@@ -102,34 +104,25 @@ FILE* self_trace_t::tracefptr = stdout;
 */
 bool 
 self_trace_t::trace ( bool levelchk,
-		      const std::string& mn, 
+		      const std::string & mn, 
 		      bool error_or_info,
-		      const char* output, ... )
+		      const char *output, ... )
 {
-  using namespace std;
-
-  va_list ap;
-  
-  char timelog[PATH_MAX];
-  char log[PATH_MAX];
-  const char* format = "%b %d %T";
-  //struct timeval tv;  
-  time_t t;
-  
-//  levelchk=3;
-
   if (!levelchk) 
     return false;
 
-  string ei_str = error_or_info ? "ERROR" : "INFO";
+  va_list ap;
+  char log[PATH_MAX];
+  const char *ei_str = error_or_info ? "ERROR" : "INFO";
+  bool rc = false;
 
-  time(&t);
-  strftime ( timelog, PATH_MAX, format, localtime(&t) );
-  sprintf(log, "<%s> %s (%s): %s\n", timelog, mn.c_str(), ei_str.c_str(), output);
+  if (LMON_timestamp(mn.c_str(), ei_str, output, log, PATH_MAX) >= 0)
+    {
+      va_start(ap, output);
+      vfprintf(tracefptr, log, ap);
+      va_end(ap);
+      rc = true;
+    }
 
-  va_start(ap, output);
-  vfprintf(tracefptr, log, ap);
-  va_end(ap);
-
-  return true; 
+  return rc; 
 }

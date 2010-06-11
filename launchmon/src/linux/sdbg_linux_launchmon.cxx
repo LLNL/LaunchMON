@@ -1,7 +1,7 @@
 /*
  * $Header: $
  *--------------------------------------------------------------------------------
- * Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at 
+ * Copyright (c) 2008 - 2010, Lawrence Livermore National Security, LLC. Produced at 
  * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>. 
  * LLNL-CODE-409469. All rights reserved.
  *
@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Jun 10 2010 DHA: Added CRAY XT support and RM MAP support.
  *        Apr 27 2010 DHA: Added more MEASURE_TRACING_COST support.
  *        Dec 22 2009 DHA: Added auxilliary vector support to discover 
  *                         the loader's load address accurately. (e.g.,  
@@ -146,6 +147,7 @@ extern "C" {
 #include "sdbg_base_ttracer.hxx"
 #include "sdbg_base_launchmon.hxx"
 #include "sdbg_base_launchmon_impl.hxx"
+#include "sdbg_rm_map.hxx"
 
 #include "sdbg_linux_std.hxx"
 #include "sdbg_linux_bp.hxx"
@@ -293,6 +295,7 @@ get_auxv ( pid_t pid )
 
   return ret_pc;
 }
+
 ////////////////////////////////////////////////////////////////////
 //
 // PRIVATE METHODS (class linux_launchmon_t<>)
@@ -648,7 +651,6 @@ linux_launchmon_t::acquire_proctable (
       image_base_t<T_VA,elf_wrapper>* main_im;
 
       T_VA proctable_loc;
-      T_VA where_is_rid;
       unsigned long long i, maxcount;   // proctable index can be large!
       int local_pcount;      
 #if MEASURE_TRACING_COST   
@@ -750,45 +752,48 @@ linux_launchmon_t::acquire_proctable (
 	  return LAUNCHMON_FAILED;
 	}
 
+      if (p.get_my_rmconfig()->get_rid_supported())
+        {
+          //
+          //
+          // fetching the resource ID
+          //
+          const symbol_base_t<T_VA>& rid 
+	    = main_im->get_a_symbol (p.get_resource_handler_sym());
 
-      //
-      //
-      // fetching the resource ID
-      //
-      const symbol_base_t<T_VA>& rid 
-	= main_im->get_a_symbol (p.get_resource_handler_sym());
+          T_VA where_is_rid;
 
-#if !RM_BG_MPIRUN
-      //
-      // DHA 3/4/3009, reviewed. Looks fine for BGP
-      // Changed RM_BGL_MPIRUN to RM_BG_MPIRUN to genericize BlueGene Support
-      //
-      get_tracer()->tracer_read ( p, 
-				  rid.get_relocated_address(),
-				  (void*) &where_is_rid,
-				  sizeof(T_VA),
-				  use_cxt);    
+          get_tracer()->tracer_read ( p, 
+				      rid.get_relocated_address(),
+				      (void *) &where_is_rid,
+				      sizeof(T_VA),
+				      use_cxt);    
   
-      get_tracer()->tracer_read_string ( 
-				  p, where_is_rid,
-				  (void*) resource_id,
-				  MAX_STRING_SIZE,
-				  use_cxt);
+          get_tracer()->tracer_read_string ( 
+				      p, where_is_rid,
+				      (void*) resource_id,
+				      MAX_STRING_SIZE,
+				      use_cxt);
 
-      set_resid ( atoi(resource_id) );
-      p.set_rid ( get_resid () );
+          set_resid ( atoi(resource_id) );
+          p.set_rid ( get_resid () );
 
-      // -1 is the init value that SLURM sets internally 
-      // for "totalview_jobid"
-      if ( get_resid() == -1 ) 
-	{
-	  self_trace_t::trace ( LEVELCHK(level1), 
-	     MODULENAME, 1, 
-	     "resource ID is not valid!");  
+          // -1 is the init value that SLURM sets internally 
+          // for "totalview_jobid"
+          if ( get_resid() == -1 ) 
+	   {
+	     self_trace_t::trace ( LEVELCHK(level1), 
+	       MODULENAME, 1, 
+	       "resource ID is not valid!");  
 
-	  return LAUNCHMON_FAILED;
-	}
-#endif
+	     return LAUNCHMON_FAILED;
+	   }
+        }
+      else
+        {
+	  set_resid (p.get_myopts()->get_my_opt()->launcher_pid);
+          p.set_rid (get_resid);
+	} 
 
 #if MEASURE_TRACING_COST
       c_end_ts = gettimeofdayD();
@@ -797,7 +802,7 @@ linux_launchmon_t::acquire_proctable (
  	   MODULENAME,0,
 	   "PROCTAB(%d) Fetching: %f ",
 	   get_pcount(), (c_end_ts - c_start_ts));
-     }
+      }
 #endif
 
       return LAUNCHMON_OK;
@@ -827,20 +832,20 @@ linux_launchmon_t::acquire_proctable (
 */
 bool
 linux_launchmon_t::launch_tool_daemons ( 
-                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p )
+                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p )
 {
   using namespace std;
 
   assert ( !get_proctable_copy().empty() );
 
-#if !RM_BG_MPIRUN
-  //
-  // DHA 3/4/3009, reviewed. Looks fine for BGP. BG mpirun
-  // doesn't implement totalview_jobid
-  // Changed RM_BGL_MPIRUN to RM_BG_MPIRUN to genericize BlueGene Support
-  //
-  assert ( get_resid() > 0 );
-#endif
+  if (p.get_my_rmconfig()->get_has_mpir_coloc())
+    {
+      self_trace_t::trace ( true, /* print always */
+ 	   MODULENAME,0,
+	  "RM with co-location service must not call this method to launch daemons");
+
+      return false;
+    }
 
   if ( !get_API_mode() 
        && !(p.get_myopts()->get_my_opt()->modelchecker))
@@ -869,7 +874,7 @@ linux_launchmon_t::launch_tool_daemons (
 
       map<string, vector<MPIR_PROCDESC_EXT*> >::const_iterator pos;
       vector<MPIR_PROCDESC_EXT*>::const_iterator vpos;
-      char* execname = NULL;
+      char *execname = NULL;
 
       for (pos = get_proctable_copy().begin(); pos != get_proctable_copy().end(); pos++) 
 	{	
@@ -928,21 +933,28 @@ linux_launchmon_t::launch_tool_daemons (
       setenv(envListPos->first.c_str(), envListPos->second.c_str(), 1);	
     }
 
-#if RM_BG_MPIRUN
   //
-  // there isn't much you want to do here,
-  // because BGLRM does co-spawning of daemons as part of
-  // its APAI extension. 
+  // W/ new RM MAP support
   //
-  // TODO: We may not want to release the mpirun process until the 
-  // tool set up is done...
-  //
-  //
-  // DHA 3/4/2009, reviewed and looks fine for BGP
-  // Changed RM_BGL_MPIRUN to RM_BG_MPIRUN to genericize BlueGene Support
-  //
-#else
-
+  if (p.get_myconfig->get_has_mpir_coloc())
+    {
+      //
+      // there isn't much you want to do here,
+      // because RM that supports colocation service 
+      // co-spawns daemons as part of its MPIR APAI extension. 
+      // This includes BGRM
+    
+      //
+      // TODO: We may not want to release the mpirun process until the 
+      // tool set up is done...
+      //
+      //
+      // DHA 3/4/2009, reviewed and looks fine for BGP
+      // Changed RM_BGL_MPIRUN to RM_BG_MPIRUN to genericize BlueGene Support
+      //
+    }
+  else
+    {
 #if MEASURE_TRACING_COST
       {
         self_trace_t::trace ( true, /* print always */
@@ -951,98 +963,95 @@ linux_launchmon_t::launch_tool_daemons (
         self_trace_t::trace ( true, /* print always */ 
            MODULENAME,0,
 	  "COUNT: %d, ACCUM TIME (except for the proctab fetching): %f", countHandler, accum);
-     }
+      } 
 #endif
-  set_toollauncherpid  (fork());
-  if ( !get_toollauncherpid ())
-    {
       //
-      // The child process
-      //
-      char expanded_string[MAX_STRING_SIZE];
-      char *t;
-      char *tmp;
-      int i;
-      int n = 128;
-      char **av = (char**) malloc (n*sizeof(char*));
-
-      if (av == NULL) 
+      // For non-colocation RM, we need to fork/exec
+      // 
+      set_toollauncherpid  (fork());
+      if ( !get_toollauncherpid ())
         {
-          self_trace_t::trace ( true,
-                                MODULENAME,1,
-                                "malloc returned null");
-          perror("");
-          exit(1);
-        }
-
-      t = expanded_string;
-      i=0;
-
-      if (p.get_myopts()) 
-	{
-	  char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
-	  char *sharedsecret = strtok (tokenize2, ":");
-	  char *randomID = strtok (NULL, ":");
+          //
+          // The child process
+          //
+          char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
+          char *sharedsecret = strtok (tokenize2, ":");
+          char *randomID = strtok (NULL, ":");
 #if PMGR_BASED
           char *tokenize = strdup(p.get_myopts()->get_my_opt()->pmgr_info.c_str());
-	  char *mip = strtok ( tokenize, ":" );
-	  char *mport = strtok ( NULL, ":" );
-
-	  sprintf ( expanded_string,
-		p.get_myopts()->get_my_opt()->launchstring.c_str(), 
-		get_resid(),
-		get_proctable_copy().size(),
-		get_proctable_copy().size(),
-		get_proctable_copy().size(),
-		mip,
-		mport,
-		get_resid(),
-		sharedsecret,
-		randomID);
-#else
-	  sprintf ( expanded_string, 
-		p.get_myopts()->get_my_opt()->launchstring.c_str(), 
-		get_resid(),
-		get_proctable_copy().size(),
-		get_proctable_copy().size(),
-		sharedsecret,
-		randomID);
+          char *mip = strtok ( tokenize, ":" );
+          char *mport = strtok ( NULL, ":" );
 #endif
-	}
+
+          p.get_my_rmconfig()->set_paramset(get_proctable_copy().size(),
+				      get_proctable_copy().size(),
+				      sharedsecret,
+				      randomID,
+				      get_resid()
+#if PMGR_BASED
+				      , 
+				      get_proctable_copy().size(),
+				      mip,
+				      mport,
+				      get_resid()
+#endif
+					);	
+
+          std::string expandstr = p.get_my_rmconfig()->expand_coloc_str();
 	
-      {
-	self_trace_t::trace ( LEVELCHK(level1), 
+          {
+	    self_trace_t::trace ( LEVELCHK(level1), 
 			      MODULENAME,0,
 			      "launching daemons with: %s",
-			      expanded_string);
-      }
+			      expand_coloc_str.c_str());
+          }
 
-      while ( ( tmp = strtok ( t, " " )) != NULL  )
-	{
-	  av[i] = strdup ( tmp );
-	  t = NULL;
-	  if ( i > n )
+          char *expanded_string = strdup(expanstr.c_str()); 
+          char *t = expanded_string;
+          char *tmp;
+          int i=0;
+          int n=128;
+          char **av = (char**) malloc (n*sizeof(tmp));
+          if (av == NULL) 
+            {
+              self_trace_t::trace ( true,
+                                MODULENAME,1,
+                                "malloc returned null");
+              perror("");
+              exit(1);
+            }
+
+          while ( ( tmp = strtok ( t, " " )) != NULL  )
 	    {
-	      av = (char**) realloc ( av, 2*n*sizeof(char*));
-	      n += n;
+	      av[i] = strdup ( tmp );
+	      t = NULL;
+	      if ( i > n )
+	        {
+	          av = (char **) realloc ( av, 2*n*sizeof(tmp));
+	          n += n;
+	        }
+	      i++;
 	    }
-	  i++;
-	}
-      av[i] = NULL;
-      i=0;
+          av[i] = NULL;
 
-      if ( execvp ( av[0], av) < 0 )
-	{
-	  self_trace_t::trace ( true, 
-				MODULENAME,1,
-				"execvp to launch tool daemon failed");
-	  perror("");
-	  exit(1);
-	}
-    }
-#endif
+          //
+          // Sink
+          //
+          if ( execvp ( av[0], av) < 0 )
+	    {
+	      self_trace_t::trace ( true, 
+	    			    MODULENAME,1,
+				    "execvp to launch tool daemon failed");
+	      perror("");
+	      exit(1);
+	    }
+        } //Child vs. parent
 
-  return LAUNCHMON_OK;
+      // Only parent reaches here
+
+    } // Co-location vs. traditional daemon launching
+    
+    return LAUNCHMON_OK;
 }
 
 
@@ -1051,6 +1060,7 @@ linux_launchmon_t::launch_tool_daemons (
     The event handler for a launch breakpoint hit event.
     Most RM APAI implementations use MPIR_Breakpoint for this.
 */
+
 launchmon_rc_e 
 linux_launchmon_t::handle_launch_bp_event ( 
                  process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p )
@@ -1342,34 +1352,12 @@ linux_launchmon_t::handle_detach_cmd_event
           say_fetofe_msg ( lmonp_detach_done );	
           break;
         case FE_requested_shutdown_dmon:
-          //
-          // Please hide this "srun" specific code
-          //
-          if ( dt == std::string("srun")
-               || dt == std::string("lt-srun"))
-            {
-              usleep (GracePeriodBNSignals);
-              kill ( get_toollauncherpid(), SIGINT);
-              usleep (GracePeriodBNSignals);
-              kill ( get_toollauncherpid(), SIGINT);
-              usleep (GracePeriodBNSignals);
-            }
+          p.get_my_rmconfig()->graceful_rmkill(get_toollauncherpid());
           say_fetofe_msg ( lmonp_detach_done );	
           break;
         case FE_disconnected:
 	  usleep (GracePeriodFEDisconnection);
-          //
-          // Please hide this "srun" specific code
-          //
-          if ( dt == std::string("srun")
-               || dt == std::string("lt-srun"))
-            {
-              usleep (GracePeriodBNSignals);
-              kill ( get_toollauncherpid(), SIGINT);
-              usleep (GracePeriodBNSignals);
-              kill ( get_toollauncherpid(), SIGINT);
-              usleep (GracePeriodBNSignals);
-            }
+          p.get_my_rmconfig()->graceful_rmkill(get_toollauncherpid());
           break;
         case ENGINE_dying_wsignal:
           say_fetofe_msg (lmonp_stop_tracing);
@@ -1481,42 +1469,12 @@ linux_launchmon_t::handle_kill_cmd_event
          0,
          "detached from the RM process ...");
 
-      std::string dt = basename ( strdup (p.get_myopts()->get_my_opt()->debugtarget.c_str()));
-
       //
-      // Please hide this "srun" specific code
+      // kill both the target RM and tool RM gracefully
       //
-      if ( dt == std::string("srun") 
-              || dt == std::string("lt-srun"))
-        {
-          usleep (GracePeriodBNSignals);
-          kill ( p.get_pid(false), SIGINT);
-          usleep (GracePeriodBNSignals);
-          kill ( p.get_pid(false), SIGINT);
-          usleep (GracePeriodBNSignals);
-
-          kill ( get_toollauncherpid(), SIGINT );
-	  usleep (GracePeriodBNSignals);
-          kill ( get_toollauncherpid(), SIGINT );
-	  usleep (GracePeriodBNSignals);
-         }
-       else if ( dt == std::string ("mpirun32") 
-                    || dt == std::string ("mpirun64") 
-		    || dt == std::string("mpirun") )
-         {
-           //
-           // Please hide this "mpirun" specific code
-           //
-	   //
-	   // NOTE: Coded for BlueGene, so make sure if the
-	   // following "kill support" works for mpiruns on other platforms.
-  	   // If not, conditionals will be needed below.
-	   //	
-           usleep (GracePeriodBNSignals);
-           kill ( p.get_pid(false), SIGINT);
-	   usleep (GracePeriodBNSignals);
-	   std::cout << "SIGINT sent" << std::endl;
-         }
+      p.get_my_rmconfig()->graceful_rmkill(p.get_pid(false));	
+      if (!p.get_my_rmconfig()->get_has_mpir_coloc())
+        p.get_my_rmconfig()->graceful_rmkill(p.get_toollauncherpid());
 
       switch (p.get_reason())
         {
@@ -1715,99 +1673,6 @@ linux_launchmon_t::handle_trap_after_attach_event (
 				   sizeof(bdbg), 
 				   use_cxt );
 
-#if RM_BG_MPIRUN
-      //
-      // Always check correctness of BG_SERVERARG_LENGTH 
-      // and BG_EXECPATH_LENGTH
-      //
-#define BG_SERVERARG_LENGTH 1024
-#define BG_EXECPATH_LENGTH 256
-      //
-      // To deal with BGL's APAI extension
-      //
-      // setting MPIR_executable_path
-      //
-      // DHA 3/4/2009, reviewed and this looks fine for BGP
-      // BGP's mpirun implements: char MPIR_executable_path[256]
-      // and char MPIR_server_arguments[1024] as well.
-      // Chaged the macro to RM_BG_MPIRUN from RM_BGL_MPIRUN to
-      // genericize BlueGene support.
-      //
-#if PMGR_BASED || COBO_BASED
-      char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
-      char *sharedsecret = strtok (tokenize2, ":");
-      char *randomID = strtok (NULL, ":");
-      char serverargstmp[BG_SERVERARG_LENGTH];
-      char serverargs[BG_SERVERARG_LENGTH] = {0};
-      char *curptr = NULL;
-      char *token = NULL;
-#if PMGR_BASED
-      char *tokenize = strdup(p.get_myopts()->get_my_opt()->pmgr_info.c_str());
-      char *mip = strtok ( tokenize, ":" );
-      char *mport = strtok ( NULL, ":" );
-#endif
-
-
-      const symbol_base_t<T_VA>& executablepath
-        = main_im->get_a_symbol (p.get_launch_exec_path ());
-
-      T_VA ep_addr = executablepath.get_relocated_address();
-
-      //
-      // daemon_path length cannot exceed 256
-      //
-      get_tracer()->tracer_write ( p,
-                                   ep_addr,
-                                   p.get_myopts()->get_my_opt()->tool_daemon.c_str(),
-                                   p.get_myopts()->get_my_opt()->tool_daemon.size()+1,
-                                   use_cxt );
-
-      const symbol_base_t<T_VA>& sa
-        = main_im->get_a_symbol (p.get_launch_server_args ());
-
-      T_VA sa_addr = sa.get_relocated_address();
-
-      sprintf ( serverargstmp,
-                p.get_myopts()->get_my_opt()->launchstring.c_str(),
-#if PMGR_BASED
-                mip,
-                mport,
-                24689, /* just a random number for pmgrjobid on BGL */
-#endif
-                sharedsecret,
-                randomID);
-
-      curptr = serverargs;
-      token = strtok (serverargstmp, " ");
-      int tlen = strlen(token);
-      while ( curptr != NULL && ((curptr-serverargs+tlen+1) < BG_SERVERARG_LENGTH))
-        {
-          memcpy ( curptr, token, tlen);
-          *(curptr + tlen) = '\0';
-          curptr += tlen + 1;
-          token = strtok (NULL, " ");
-          if (!token)
-            break;
-          tlen = strlen(token);
-        }
-
-      if ( (curptr - serverargs) > (BG_SERVERARG_LENGTH-1))
-        {
-          self_trace_t::trace ( LEVELCHK(level2),
-                                MODULENAME,1,
-                                "Daemon arg list too long");
-        }
-
-      (*curptr) = '\0';
-      curptr += 1;
-      get_tracer()->tracer_write ( p,
-                                   sa_addr,
-                                   serverargs,
-                                   BG_SERVERARG_LENGTH,
-                                   use_cxt );
-#endif /* PMGR_BASED || COBO_BASED */
-#endif /* RM_BG_MPIRUN */
-
       //	
       // checking to see if the pthread library has been loaded, 
       // and if so, initializing the thread tracing.
@@ -1815,20 +1680,111 @@ linux_launchmon_t::handle_trap_after_attach_event (
       chk_pthread_libc_and_init(p);
       p.set_never_trapped(false); 
 
-#if !RM_BG_MPIRUN
-      acquire_proctable ( p, use_cxt );
-      ship_proctab_msg ( lmonp_proctable_avail );
-      ship_resourcehandle_msg ( lmonp_resourcehandle_avail, get_resid() );
-      say_fetofe_msg ( lmonp_stop_at_first_attach );
-	  
-	  /*
-	   *
-	   * OKAY, we are ready to launch tool daemons for this attach event
-	   *
-	   *
-	   */
-      launch_tool_daemons(p);
+      if (p.get_my_rmconfig()->get_has_mpir_coloc())
+        {
+          //
+          // Always check correctness of BG_SERVERARG_LENGTH 
+          // and BG_EXECPATH_LENGTH
+          //
+          const int BG_SERVERARG_LENGTH = 1024;
+          const int BG_EXECPATH_LENGTH = 256;
+          const symbol_base_t<T_VA>& executablepath
+            = main_im->get_a_symbol (p.get_launch_exec_path ());
+
+          T_VA ep_addr = executablepath.get_relocated_address();
+
+          if (p.get_my_rmconfig()->get_rm_daemon_path().size() >= BG_EXECPATH_LENGTH)
+            {
+	      self_trace_t::trace ( true, 
+			            MODULENAME,1,
+			            "daemon path(%d) exceeds the buffer length: %d", 
+			            p.get_my_rmconfig()->get_rm_daemon_path().size()+1,
+			            BG_EXECPATH_LENGTH);
+			      
+	      return LAUNCHMON_FAILED;
+            }
+
+          get_tracer()->tracer_write ( p,
+                                       ep_addr,
+			               p.get_my_rmconfig()->get_rm_daemon_path().c_str();
+			               p.get_my_rmconfig()->get_rm_daemon_path().size()+1,
+                                       use_cxt );
+
+          char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
+          char *sharedsecret = strtok (tokenize2, ":");
+          char *randomID = strtok (NULL, ":");
+#if PMGR_BASED
+          char *tokenize = strdup(p.get_myopts()->get_my_opt()->pmgr_info.c_str());
+          char *mip = strtok ( tokenize, ":" );
+          char *mport = strtok ( NULL, ":" );
 #endif
+          p.get_my_rmconfig()->set_paramset(0,
+				       0,
+				       sharedsecret,
+				       randomID,
+				       -1
+#if PMGR_BASED
+			               ,
+				       0,
+				       mip,
+				       mport,
+				       24689 /* just a number for pmgrjobid */
+#endif 
+                                       );
+
+          std::string expstr = p.get_my_rmconfig()->expand_coloc_str();
+          char *serverargstmp = strdup(expstr.c_str());
+          char serverargs[BG_SERVERARG_LENGTH] = {0};
+          char *curptr = NULL;
+          char *token = NULL;
+
+          curptr = serverargs;
+          token = strtok (serverargstmp, " ");
+          int tlen = strlen(token);
+          while ( curptr != NULL && ((curptr-serverargs+tlen+1) < BG_SERVERARG_LENGTH))
+            {
+              memcpy ( curptr, token, tlen);
+              *(curptr + tlen) = '\0';
+              curptr += tlen + 1;
+              token = strtok (NULL, " ");
+              if (!token)
+                break;
+              tlen = strlen(token);
+            }
+          if ( (curptr - serverargs) > (BG_SERVERARG_LENGTH-1))
+            {
+              self_trace_t::trace ( LEVELCHK(level2),
+                                    MODULENAME,1,
+                                   "Daemon arg list too long");
+            }
+
+          (*curptr) = '\0';
+          curptr += 1;
+
+          const symbol_base_t<T_VA> &sa
+            = main_im->get_a_symbol (p.get_launch_server_args ());
+
+          T_VA sa_addr = sa.get_relocated_address();
+          get_tracer()->tracer_write ( p,
+                                       sa_addr,
+                                       serverargs,
+                                       BG_SERVERARG_LENGTH,
+                                       use_cxt );
+        } // With MPIR Colocation service
+      else
+        {
+           //
+           // Without MPIR Colocation service, you would have
+           // Proctable available on attach and you would be 
+           // ready to launch daemon at this point
+           // 
+           // 
+           acquire_proctable ( p, use_cxt );
+           ship_proctab_msg ( lmonp_proctable_avail );
+           ship_resourcehandle_msg ( lmonp_resourcehandle_avail, get_resid() );
+           say_fetofe_msg ( lmonp_stop_at_first_attach );
+           launch_tool_daemons(p);
+        }
 
       get_tracer()->tracer_continue (p, use_cxt);
 
@@ -1938,7 +1894,7 @@ linux_launchmon_t::handle_trap_after_exec_event (
       la_bp = new linux_breakpoint_t();
       la_bp->set_address_at(launch_bp_sym.get_relocated_address());
       
-#if RM_BG_MPIRUN
+#if PPC_ARCHITECTURE
       //
       // DHA Mar 05 2009
       // PowerPC Linux has begun to change the linking convention
@@ -1974,85 +1930,99 @@ linux_launchmon_t::handle_trap_after_exec_event (
 				   sizeof(bdbg), 
 				   use_cxt );
  
-#if RM_BG_MPIRUN
-      // DHA 3/4/2009, reviewed and this looks fine for BGP
-      // BGP's mpirun implements: char MPIR_executable_path[256]
-      // and char MPIR_server_arguments[1024] as well.
-      // Chaged the macro to RM_BG_MPIRUN from RM_BGL_MPIRUN to
-      // genericize BlueGene support.
-      //
-#if PMGR_BASED || COBO_BASED
-      char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
-      char *sharedsecret = strtok (tokenize2, ":");
-      char *randomID = strtok (NULL, ":");
-      char serverargstmp[BG_SERVERARG_LENGTH];
-      char serverargs[BG_SERVERARG_LENGTH] = {0};
-      char *curptr = NULL;
-      char *token = NULL;
-#if PMGR_BASED
-      char *tokenize = strdup(p.get_myopts()->get_my_opt()->pmgr_info.c_str());
-      char *mip = strtok ( tokenize, ":" );
-      char *mport = strtok ( NULL, ":" );
-#endif
 
-      const symbol_base_t<T_VA>& executablepath
-	= main_im->get_a_symbol (p.get_launch_exec_path ());
-      T_VA ep_addr = executablepath.get_relocated_address();  
-
-      //
-      // daemon_path length cannot exceed 256
-      //
-      get_tracer()->tracer_write ( p, 
-				   ep_addr, 
-				   p.get_myopts()->get_my_opt()->tool_daemon.c_str(),
-				   p.get_myopts()->get_my_opt()->tool_daemon.size()+1, 
-				   use_cxt );
-
-      const symbol_base_t<T_VA>& sa
-	= main_im->get_a_symbol (p.get_launch_server_args ());
-      T_VA sa_addr = sa.get_relocated_address();  
-
-      sprintf ( serverargstmp,
-                p.get_myopts()->get_my_opt()->launchstring.c_str(),
-#if PMGR_BASED
-                mip,
-                mport,
-                24689, /* just a random number */
-#endif
-                sharedsecret,
-                randomID);
-
-      curptr = serverargs;
-      token = strtok (serverargstmp, " ");
-      int tlen = strlen(token);
-      while ( curptr != NULL && ((curptr-serverargs+tlen+1) < BG_SERVERARG_LENGTH))
+      if (p.get_my_rmconfig()->get_has_mpir_coloc())
         {
-          memcpy ( curptr, token, tlen);
-          *(curptr + tlen) = '\0';
-          curptr += tlen + 1;
-	  token = strtok (NULL, " "); 	
-          if (!token)
-            break;
-	  tlen = strlen(token);
-        }	
+          //
+          // Always check correctness of BG_SERVERARG_LENGTH 
+          // and BG_EXECPATH_LENGTH
+          //
+          const int BG_SERVERARG_LENGTH = 1024;
+          const int BG_EXECPATH_LENGTH = 256;
+          const symbol_base_t<T_VA>& executablepath
+            = main_im->get_a_symbol (p.get_launch_exec_path ());
 
-      if ( (curptr - serverargs) > (BG_SERVERARG_LENGTH-1)) 
-        {
-          self_trace_t::trace ( LEVELCHK(level2),
-                                MODULENAME,1,
-                                "Daemon arg list too long");
-        }
+          T_VA ep_addr = executablepath.get_relocated_address();
 
-      (*curptr) = '\0';
-      curptr += 1; 
-      get_tracer()->tracer_write ( p,
-				   sa_addr,
-				   serverargs,
-				   BG_SERVERARG_LENGTH,
-				   use_cxt );
-#endif /* PMGR_BASED || COBO_BASED */
+          if (p.get_my_rmconfig()->get_rm_daemon_path().size() >= BG_EXECPATH_LENGTH)
+            {
+	      self_trace_t::trace ( true, 
+			            MODULENAME,1,
+			            "daemon path(%d) exceeds the buffer length: %d", 
+			            p.get_my_rmconfig()->get_rm_daemon_path().size()+1,
+			            BG_EXECPATH_LENGTH);
+			      
+	      return LAUNCHMON_FAILED;
+            }
+
+          get_tracer()->tracer_write ( p,
+                                       ep_addr,
+			               p.get_my_rmconfig()->get_rm_daemon_path().c_str();
+			               p.get_my_rmconfig()->get_rm_daemon_path().size()+1,
+                                       use_cxt );
+
+          char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
+          char *sharedsecret = strtok (tokenize2, ":");
+          char *randomID = strtok (NULL, ":");
+#if PMGR_BASED
+          char *tokenize = strdup(p.get_myopts()->get_my_opt()->pmgr_info.c_str());
+          char *mip = strtok ( tokenize, ":" );
+          char *mport = strtok ( NULL, ":" );
 #endif
- 
+          p.get_my_rmconfig()->set_paramset(0,
+				         0,
+				         sharedsecret,
+				         randomID,
+				         -1
+#if PMGR_BASED
+			                 ,
+				         0,
+				         mip,
+				         mport,
+				         24689 /* just a number for pmgrjobid */
+#endif 
+                                         );
+
+          std::string expstr = p.get_my_rmconfig()->expand_coloc_str();
+          char *serverargstmp = strdup(expstr.c_str());
+          char serverargs[BG_SERVERARG_LENGTH] = {0};
+          char *curptr = NULL;
+          char *token = NULL;
+
+          curptr = serverargs;
+          token = strtok (serverargstmp, " ");
+          int tlen = strlen(token);
+          while ( curptr != NULL && ((curptr-serverargs+tlen+1) < BG_SERVERARG_LENGTH))
+            {
+              memcpy ( curptr, token, tlen);
+              *(curptr + tlen) = '\0';
+              curptr += tlen + 1;
+              token = strtok (NULL, " ");
+              if (!token)
+                break;
+              tlen = strlen(token);
+            }
+          if ( (curptr - serverargs) > (BG_SERVERARG_LENGTH-1))
+            {
+              self_trace_t::trace ( LEVELCHK(level2),
+                                    MODULENAME,1,
+                                   "Daemon arg list too long");
+            }
+
+          (*curptr) = '\0';
+          curptr += 1;
+
+          const symbol_base_t<T_VA> &sa
+            = main_im->get_a_symbol (p.get_launch_server_args ());
+
+          T_VA sa_addr = sa.get_relocated_address();
+          get_tracer()->tracer_write ( p,
+                                       sa_addr,
+                                       serverargs,
+                                       BG_SERVERARG_LENGTH,
+                                       use_cxt );
+        } // With MPIR Colocation service
+
       //
       // computing where the dynamic loader was linked and 
       // registering p.loader_hidden_bp 

@@ -28,11 +28,18 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
-##        Jun 13 2010 DHA: Made for alps_be_starter
+##        Jun 10 2010 DHA: Added alps_fe_colocator support
+##        May 13 2010 DHA: Made for alps_be_starter
 ##
 
-bin_PROGRAMS            = alps_be_starter 
-alps_be_starter_SOURCES = alps_be_starter.c 
+bin_PROGRAMS              = alps_be_starter alps_fe_colocator 
+alps_be_starter_SOURCES   = alps_be_starter.c 
+alps_fe_colocator_SOURCES = alps_fe_colocator.cxx
 
 alps_be_starter: alps_be_starter.c Makefile
-	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -o $@ $<   
+	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CFLAGS) $(CFLAGS) -o $@ $<   
+
+alps_fe_colocator: alps_fe_colocator.cxx Makefile
+	$(CPP) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) -o $@ $<   
+
+alps_fe_colocator_LDADD         = @LIBELF@ 

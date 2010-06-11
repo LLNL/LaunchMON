@@ -51,7 +51,7 @@
 #if HAVE_UNISTD_H
 # include <unistd.h>
 #else
-//# error unistd.h is required
+# error unistd.h is required
 #endif
 
 #if HAVE_LIMITS_H
@@ -75,8 +75,7 @@ extern "C" {
 /*
  * OUR PARALLEL JOB LAUNCHER  
  */
-//const char* mylauncher    = TARGET_JOB_LAUNCHER_PATH;
-const char* mylauncher    = "/usr/bin/orig/aprun";
+const char* mylauncher    = TARGET_JOB_LAUNCHER_PATH;
 
 int statusFunc ( int *status )
 {
@@ -140,17 +139,6 @@ main (int argc, char *argv[])
       return EXIT_FAILURE;
     }
 
-#if 0
-   if ( argc < 4 )
-    {
-      fprintf ( stdout,
-        "Usage: fe_launch_smoketest appcode numprocs daemonpath [daemonargs]\n" );
-      fprintf ( stdout,
-        "[LMON FE] FAILED\n" );
-      return EXIT_FAILURE;
-    }
-#endif
-
   if ( access(argv[1], X_OK) < 0 )
     {
       fprintf ( stdout, 
@@ -210,16 +198,8 @@ main (int argc, char *argv[])
   launcher_argv[1] = strdup(numprocs_opt.c_str());
   launcher_argv[2] = strdup(argv[1]);
   launcher_argv[3] = NULL;
-#if 0
-  printf("inside alps aprun from launch smoketest\n");
-  printf("arg0 is %s", launcher_argv[0]);
-  printf("arg1 is %s", launcher_argv[1]);
-  printf("arg2 is %s", launcher_argv[2]);
-  printf("arg3 is %s", launcher_argv[3]);
-#endif
-
 #else
-//# error add support for the RM of your interest here
+# error add support for the RM of your interest here
 #endif
  
   if ( ( rc = LMON_fe_init ( LMON_VERSION ) ) 
@@ -307,14 +287,6 @@ main (int argc, char *argv[])
 
           fprintf ( stdout, "[LMON FE] FAILED\n" );
           return EXIT_FAILURE;
-        }
-        else
-        {   
-        /*   printf("Handshake starts at %ld\n",((febe_handshake_start.tv_sec *1000000) +(febe_handshake_start.tv_usec)) ); 
-           printf("Handshake ends at %ld\n",((febe_handshake_end.tv_sec *1000000) +(febe_handshake_end.tv_usec)) );
-           printf("ICCL init starts  at %ld\n",((lmon_assist_start.tv_sec *1000000) +(lmon_assist_start.tv_usec)) );
-           printf("ICCL init ends at %ld\n",((lmon_assist_end.tv_sec *1000000) +(lmon_assist_end.tv_usec)) );
-        */
         }
     }
 
@@ -415,11 +387,6 @@ main (int argc, char *argv[])
     } 
 
   //sleep (3); /* wait until all BE outputs are printed */
-
-   rc = LMON_fe_detach(aSession);
-  if(rc != LMON_OK)
-     printf("Launchmon failed to detach from launcher... have the daemons exited?\n");
-
 
   if (getenv ("LMON_ADDITIONAL_FE_STALL"))
     {

@@ -58,44 +58,15 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
-am__launchmon_SOURCES_DIST = main.cxx sdbg_linux_launchmon.cxx \
-	lmon_api/lmon_lmonp_msg.cxx sdbg_linux_mach.cxx \
-	lmon_api/lmon_say_msg.cxx sdbg_linux_thr_db.cxx \
-	sdbg_proc_service.cxx ../sdbg_self_trace.cxx ../sdbg_opt.cxx \
-	../sdbg_base_bp.hxx ../sdbg_base_launchmon_impl.hxx \
-	../sdbg_base_tracer.hxx ../sdbg_self_trace.hxx \
-	../sdbg_base_driver.hxx ../sdbg_base_mach.hxx \
-	../sdbg_base_ttracer.hxx ../sdbg_signal_hlr.hxx \
-	../sdbg_base_driver_impl.hxx ../sdbg_base_mach_impl.hxx \
-	../sdbg_event_manager.hxx ../sdbg_signal_hlr_impl.hxx \
-	../sdbg_base_exception.hxx ../sdbg_base_symtab.hxx \
-	../sdbg_event_manager_impl.hxx ../sdbg_std.hxx \
-	../sdbg_base_launchmon.hxx ../sdbg_base_symtab_impl.hxx \
-	../sdbg_opt.hxx sdbg_linux_bp.hxx sdbg_linux_launchmon.hxx \
-	sdbg_linux_ptracer_impl.hxx sdbg_linux_symtab_impl.hxx \
-	sdbg_proc_service.hxx sdbg_linux_driver.hxx \
-	sdbg_linux_mach.hxx sdbg_linux_std.hxx sdbg_linux_ttracer.hxx \
-	sdbg_linux_driver_impl.hxx sdbg_linux_ptracer.hxx \
-	sdbg_linux_symtab.hxx sdbg_linux_ttracer_impl.hxx \
-	sdbg_linux_thr_db.hxx sdbg_linux_launchmon_xt.cxx
-@WITH_ALPS_FALSE@am_launchmon_OBJECTS = launchmon-main.$(OBJEXT) \
-@WITH_ALPS_FALSE@	launchmon-sdbg_linux_launchmon.$(OBJEXT) \
-@WITH_ALPS_FALSE@	launchmon-lmon_lmonp_msg.$(OBJEXT) \
-@WITH_ALPS_FALSE@	launchmon-sdbg_linux_mach.$(OBJEXT) \
-@WITH_ALPS_FALSE@	launchmon-lmon_say_msg.$(OBJEXT) \
-@WITH_ALPS_FALSE@	launchmon-sdbg_linux_thr_db.$(OBJEXT) \
-@WITH_ALPS_FALSE@	launchmon-sdbg_proc_service.$(OBJEXT) \
-@WITH_ALPS_FALSE@	launchmon-sdbg_self_trace.$(OBJEXT) \
-@WITH_ALPS_FALSE@	launchmon-sdbg_opt.$(OBJEXT)
-@WITH_ALPS_TRUE@am_launchmon_OBJECTS = launchmon-main.$(OBJEXT) \
-@WITH_ALPS_TRUE@	launchmon-sdbg_linux_launchmon_xt.$(OBJEXT) \
-@WITH_ALPS_TRUE@	launchmon-lmon_lmonp_msg.$(OBJEXT) \
-@WITH_ALPS_TRUE@	launchmon-sdbg_linux_mach.$(OBJEXT) \
-@WITH_ALPS_TRUE@	launchmon-lmon_say_msg.$(OBJEXT) \
-@WITH_ALPS_TRUE@	launchmon-sdbg_linux_thr_db.$(OBJEXT) \
-@WITH_ALPS_TRUE@	launchmon-sdbg_proc_service.$(OBJEXT) \
-@WITH_ALPS_TRUE@	launchmon-sdbg_self_trace.$(OBJEXT) \
-@WITH_ALPS_TRUE@	launchmon-sdbg_opt.$(OBJEXT)
+am_launchmon_OBJECTS = launchmon-main.$(OBJEXT) \
+	launchmon-sdbg_linux_launchmon.$(OBJEXT) \
+	launchmon-lmon_lmonp_msg.$(OBJEXT) \
+	launchmon-sdbg_linux_mach.$(OBJEXT) \
+	launchmon-lmon_say_msg.$(OBJEXT) \
+	launchmon-sdbg_linux_thr_db.$(OBJEXT) \
+	launchmon-sdbg_proc_service.$(OBJEXT) \
+	launchmon-sdbg_self_trace.$(OBJEXT) \
+	launchmon-sdbg_opt.$(OBJEXT)
 launchmon_OBJECTS = $(am_launchmon_OBJECTS)
 launchmon_DEPENDENCIES =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
@@ -118,7 +89,7 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(launchmon_SOURCES)
-DIST_SOURCES = $(am__launchmon_SOURCES_DIST)
+DIST_SOURCES = $(launchmon_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -141,7 +112,6 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
-BE_STARTER = @BE_STARTER@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -205,7 +175,10 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 RANLIB = @RANLIB@
+RM_BE_STUB_CMD = @RM_BE_STUB_CMD@
+RM_FE_COLOC_CMD = @RM_FE_COLOC_CMD@
 RM_TYPE = @RM_TYPE@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SMPFACTOR = @SMPFACTOR@
@@ -269,101 +242,51 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 tvcmd = @tvcmd@
 SUBDIRS = lmon_api
-@WITH_ALPS_FALSE@INCLUDES = -I.. -I@ARCHHEADER@
-@WITH_ALPS_TRUE@INCLUDES = -I.. -I@ALPS_INC_DIR@ -I@ARCHHEADER@
+INCLUDES = -I.. -I@ARCHHEADER@
+launchmon_SOURCES = main.cxx \
+                          sdbg_linux_launchmon.cxx \
+                          lmon_api/lmon_lmonp_msg.cxx \
+                          sdbg_linux_mach.cxx \
+                          lmon_api/lmon_say_msg.cxx \
+                          sdbg_linux_thr_db.cxx \
+                          sdbg_proc_service.cxx \
+                          ../sdbg_self_trace.cxx \
+                          ../sdbg_opt.cxx \
+                          ../sdbg_base_bp.hxx \
+                          ../sdbg_base_launchmon_impl.hxx  \
+                          ../sdbg_base_tracer.hxx \
+                          ../sdbg_self_trace.hxx \
+                          ../sdbg_base_driver.hxx \
+                          ../sdbg_base_mach.hxx \
+                          ../sdbg_base_ttracer.hxx \
+                          ../sdbg_signal_hlr.hxx \
+                          ../sdbg_base_driver_impl.hxx  \
+                          ../sdbg_base_mach_impl.hxx  \
+                          ../sdbg_event_manager.hxx \
+                          ../sdbg_signal_hlr_impl.hxx \
+                          ../sdbg_base_exception.hxx \
+                          ../sdbg_base_symtab.hxx \
+                          ../sdbg_event_manager_impl.hxx  \
+                          ../sdbg_std.hxx \
+                          ../sdbg_base_launchmon.hxx \
+                          ../sdbg_base_symtab_impl.hxx \
+                          ../sdbg_opt.hxx \
+                          sdbg_linux_bp.hxx \
+                          sdbg_linux_launchmon.hxx  \
+                          sdbg_linux_ptracer_impl.hxx  \
+                          sdbg_linux_symtab_impl.hxx \
+                          sdbg_proc_service.hxx \
+                          sdbg_linux_driver.hxx  \
+                          sdbg_linux_mach.hxx \
+                          sdbg_linux_std.hxx \
+                          sdbg_linux_ttracer.hxx \
+                          sdbg_linux_driver_impl.hxx \
+                          sdbg_linux_ptracer.hxx \
+                          sdbg_linux_symtab.hxx \
+                          sdbg_linux_ttracer_impl.hxx \
+                          sdbg_linux_thr_db.hxx
 
-#INCLUDES                = -I.. -I@ARCHHEADER@
-BITS = @LIBBITSUFFIX@
-@WITH_ALPS_FALSE@launchmon_SOURCES = main.cxx \
-@WITH_ALPS_FALSE@                          sdbg_linux_launchmon.cxx  \
-@WITH_ALPS_FALSE@                          lmon_api/lmon_lmonp_msg.cxx \
-@WITH_ALPS_FALSE@                          sdbg_linux_mach.cxx \
-@WITH_ALPS_FALSE@                          lmon_api/lmon_say_msg.cxx \
-@WITH_ALPS_FALSE@                          sdbg_linux_thr_db.cxx \
-@WITH_ALPS_FALSE@                          sdbg_proc_service.cxx \
-@WITH_ALPS_FALSE@                          ../sdbg_self_trace.cxx \
-@WITH_ALPS_FALSE@                          ../sdbg_opt.cxx \
-@WITH_ALPS_FALSE@                          ../sdbg_base_bp.hxx \
-@WITH_ALPS_FALSE@                          ../sdbg_base_launchmon_impl.hxx  \
-@WITH_ALPS_FALSE@                          ../sdbg_base_tracer.hxx \
-@WITH_ALPS_FALSE@                          ../sdbg_self_trace.hxx \
-@WITH_ALPS_FALSE@                          ../sdbg_base_driver.hxx \
-@WITH_ALPS_FALSE@                          ../sdbg_base_mach.hxx \
-@WITH_ALPS_FALSE@                          ../sdbg_base_ttracer.hxx \
-@WITH_ALPS_FALSE@                          ../sdbg_signal_hlr.hxx \
-@WITH_ALPS_FALSE@                          ../sdbg_base_driver_impl.hxx  \
-@WITH_ALPS_FALSE@                          ../sdbg_base_mach_impl.hxx  \
-@WITH_ALPS_FALSE@                          ../sdbg_event_manager.hxx \
-@WITH_ALPS_FALSE@                          ../sdbg_signal_hlr_impl.hxx \
-@WITH_ALPS_FALSE@                          ../sdbg_base_exception.hxx \
-@WITH_ALPS_FALSE@                          ../sdbg_base_symtab.hxx \
-@WITH_ALPS_FALSE@                          ../sdbg_event_manager_impl.hxx  \
-@WITH_ALPS_FALSE@                          ../sdbg_std.hxx \
-@WITH_ALPS_FALSE@                          ../sdbg_base_launchmon.hxx \
-@WITH_ALPS_FALSE@                          ../sdbg_base_symtab_impl.hxx \
-@WITH_ALPS_FALSE@                          ../sdbg_opt.hxx \
-@WITH_ALPS_FALSE@                          sdbg_linux_bp.hxx \
-@WITH_ALPS_FALSE@                          sdbg_linux_launchmon.hxx  \
-@WITH_ALPS_FALSE@                          sdbg_linux_ptracer_impl.hxx  \
-@WITH_ALPS_FALSE@                          sdbg_linux_symtab_impl.hxx \
-@WITH_ALPS_FALSE@                          sdbg_proc_service.hxx \
-@WITH_ALPS_FALSE@                          sdbg_linux_driver.hxx  \
-@WITH_ALPS_FALSE@                          sdbg_linux_mach.hxx \
-@WITH_ALPS_FALSE@                          sdbg_linux_std.hxx \
-@WITH_ALPS_FALSE@                          sdbg_linux_ttracer.hxx \
-@WITH_ALPS_FALSE@                          sdbg_linux_driver_impl.hxx \
-@WITH_ALPS_FALSE@                          sdbg_linux_ptracer.hxx \
-@WITH_ALPS_FALSE@                          sdbg_linux_symtab.hxx \
-@WITH_ALPS_FALSE@                          sdbg_linux_ttracer_impl.hxx \
-@WITH_ALPS_FALSE@                          sdbg_linux_thr_db.hxx
-
-@WITH_ALPS_TRUE@launchmon_SOURCES = main.cxx \
-@WITH_ALPS_TRUE@	                  sdbg_linux_launchmon_xt.cxx \
-@WITH_ALPS_TRUE@	                  lmon_api/lmon_lmonp_msg.cxx \
-@WITH_ALPS_TRUE@	                  sdbg_linux_mach.cxx \
-@WITH_ALPS_TRUE@	                  lmon_api/lmon_say_msg.cxx \
-@WITH_ALPS_TRUE@			  sdbg_linux_thr_db.cxx \
-@WITH_ALPS_TRUE@			  sdbg_proc_service.cxx \
-@WITH_ALPS_TRUE@			  ../sdbg_self_trace.cxx \
-@WITH_ALPS_TRUE@			  ../sdbg_opt.cxx \
-@WITH_ALPS_TRUE@			  ../sdbg_base_bp.hxx \
-@WITH_ALPS_TRUE@		          ../sdbg_base_launchmon_impl.hxx  \
-@WITH_ALPS_TRUE@			  ../sdbg_base_tracer.hxx \
-@WITH_ALPS_TRUE@		          ../sdbg_self_trace.hxx \
-@WITH_ALPS_TRUE@			  ../sdbg_base_driver.hxx \
-@WITH_ALPS_TRUE@		          ../sdbg_base_mach.hxx \
-@WITH_ALPS_TRUE@		          ../sdbg_base_ttracer.hxx \
-@WITH_ALPS_TRUE@		          ../sdbg_signal_hlr.hxx \
-@WITH_ALPS_TRUE@			  ../sdbg_base_driver_impl.hxx  \
-@WITH_ALPS_TRUE@			  ../sdbg_base_mach_impl.hxx  \
-@WITH_ALPS_TRUE@		          ../sdbg_event_manager.hxx \
-@WITH_ALPS_TRUE@		          ../sdbg_signal_hlr_impl.hxx \
-@WITH_ALPS_TRUE@		          ../sdbg_base_exception.hxx \
-@WITH_ALPS_TRUE@			  ../sdbg_base_symtab.hxx \
-@WITH_ALPS_TRUE@		          ../sdbg_event_manager_impl.hxx  \
-@WITH_ALPS_TRUE@			  ../sdbg_std.hxx \
-@WITH_ALPS_TRUE@		          ../sdbg_base_launchmon.hxx \
-@WITH_ALPS_TRUE@   			  ../sdbg_base_symtab_impl.hxx \
-@WITH_ALPS_TRUE@		          ../sdbg_opt.hxx \
-@WITH_ALPS_TRUE@			  sdbg_linux_bp.hxx \
-@WITH_ALPS_TRUE@	          	  sdbg_linux_launchmon.hxx  \
-@WITH_ALPS_TRUE@			  sdbg_linux_ptracer_impl.hxx  \
-@WITH_ALPS_TRUE@			  sdbg_linux_symtab_impl.hxx \
-@WITH_ALPS_TRUE@			  sdbg_proc_service.hxx \
-@WITH_ALPS_TRUE@			  sdbg_linux_driver.hxx  \
-@WITH_ALPS_TRUE@			  sdbg_linux_mach.hxx \
-@WITH_ALPS_TRUE@		          sdbg_linux_std.hxx \
-@WITH_ALPS_TRUE@		          sdbg_linux_ttracer.hxx \
-@WITH_ALPS_TRUE@			  sdbg_linux_driver_impl.hxx \
-@WITH_ALPS_TRUE@			  sdbg_linux_ptracer.hxx \
-@WITH_ALPS_TRUE@			  sdbg_linux_symtab.hxx \
-@WITH_ALPS_TRUE@		          sdbg_linux_ttracer_impl.hxx \
-@WITH_ALPS_TRUE@			  sdbg_linux_thr_db.hxx 
-
-@WITH_ALPS_FALSE@launchmon_LDADD = @LIBELF@ @LIBDL@
-@WITH_ALPS_TRUE@launchmon_LDADD = @LIBELF@ @LIBALPS@ @LIBDL@
-
-#launchmon_LDADD         = @LIBELF@ @LIBDL@
+launchmon_LDADD = @LIBELF@ @LIBDL@
 launchmon_CFLAGS = @LNCHR_BIT_FLAGS@ #$(AM_CFLAGS) 
 launchmon_CXXFLAGS = @LNCHR_BIT_FLAGS@ #$(AM_CXXFLAGS)
 launchmon_LDFLAGS = -rdynamic @LNCHR_BIT_FLAGS@ $(AM_LDFLAGS) 
@@ -442,7 +365,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-lmon_say_msg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-sdbg_linux_launchmon.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-sdbg_linux_launchmon_xt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-sdbg_linux_mach.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-sdbg_linux_thr_db.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-sdbg_opt.Po@am__quote@
@@ -595,20 +517,6 @@ launchmon-sdbg_opt.obj: ../sdbg_opt.cxx
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../sdbg_opt.cxx' object='launchmon-sdbg_opt.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(launchmon_CXXFLAGS) $(CXXFLAGS) -c -o launchmon-sdbg_opt.obj `if test -f '../sdbg_opt.cxx'; then $(CYGPATH_W) '../sdbg_opt.cxx'; else $(CYGPATH_W) '$(srcdir)/../sdbg_opt.cxx'; fi`
-
-launchmon-sdbg_linux_launchmon_xt.o: sdbg_linux_launchmon_xt.cxx
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(launchmon_CXXFLAGS) $(CXXFLAGS) -MT launchmon-sdbg_linux_launchmon_xt.o -MD -MP -MF "$(DEPDIR)/launchmon-sdbg_linux_launchmon_xt.Tpo" -c -o launchmon-sdbg_linux_launchmon_xt.o `test -f 'sdbg_linux_launchmon_xt.cxx' || echo '$(srcdir)/'`sdbg_linux_launchmon_xt.cxx; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/launchmon-sdbg_linux_launchmon_xt.Tpo" "$(DEPDIR)/launchmon-sdbg_linux_launchmon_xt.Po"; else rm -f "$(DEPDIR)/launchmon-sdbg_linux_launchmon_xt.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sdbg_linux_launchmon_xt.cxx' object='launchmon-sdbg_linux_launchmon_xt.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(launchmon_CXXFLAGS) $(CXXFLAGS) -c -o launchmon-sdbg_linux_launchmon_xt.o `test -f 'sdbg_linux_launchmon_xt.cxx' || echo '$(srcdir)/'`sdbg_linux_launchmon_xt.cxx
-
-launchmon-sdbg_linux_launchmon_xt.obj: sdbg_linux_launchmon_xt.cxx
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(launchmon_CXXFLAGS) $(CXXFLAGS) -MT launchmon-sdbg_linux_launchmon_xt.obj -MD -MP -MF "$(DEPDIR)/launchmon-sdbg_linux_launchmon_xt.Tpo" -c -o launchmon-sdbg_linux_launchmon_xt.obj `if test -f 'sdbg_linux_launchmon_xt.cxx'; then $(CYGPATH_W) 'sdbg_linux_launchmon_xt.cxx'; else $(CYGPATH_W) '$(srcdir)/sdbg_linux_launchmon_xt.cxx'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/launchmon-sdbg_linux_launchmon_xt.Tpo" "$(DEPDIR)/launchmon-sdbg_linux_launchmon_xt.Po"; else rm -f "$(DEPDIR)/launchmon-sdbg_linux_launchmon_xt.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sdbg_linux_launchmon_xt.cxx' object='launchmon-sdbg_linux_launchmon_xt.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(launchmon_CXXFLAGS) $(CXXFLAGS) -c -o launchmon-sdbg_linux_launchmon_xt.obj `if test -f 'sdbg_linux_launchmon_xt.cxx'; then $(CYGPATH_W) 'sdbg_linux_launchmon_xt.cxx'; else $(CYGPATH_W) '$(srcdir)/sdbg_linux_launchmon_xt.cxx'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

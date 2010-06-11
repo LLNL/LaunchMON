@@ -26,7 +26,7 @@
  *--------------------------------------------------------------------------------                      
  *
  *  Update Log:
- *        Jun 12 2010 DHA: Created based on UW's daemon_launcher. Credit to 
+ *        May 12 2010 DHA: Created based on UW's daemon_launcher. Credit to 
  *                         Ramya Olichandran 
  */
 

@@ -74,7 +74,6 @@ template <LINUX_DRIVER_TEMPLATELIST>
 linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::~linux_driver_t ()
 {
   // destroy
-   
 }
 
 

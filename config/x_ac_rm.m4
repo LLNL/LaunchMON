@@ -231,7 +231,7 @@ AC_DEFUN([X_AC_RM], [
         ac_job_launcher_bits="unknown"
       fi # test $bits = "32-bit"
       AC_MSG_RESULT($ac_job_launcher_bits)
-	    fi # test "x$rm_found" = "xyes"; 	
+    fi # test "x$rm_found" = "xyes"; 	
   elif test "x$with_rm_name" = "xalps" ; then
     #
     # Configure for CrayXT/ALPS
@@ -276,7 +276,14 @@ AC_DEFUN([X_AC_RM], [
 
       SMPFACTOR=12
       AC_SUBST(SMPFACTOR)
-      AC_SUBST(BE_STARTER, "alps_be_starter")
+      #
+      # ALPS requires a be stub process that spawns the actual daemon
+      #
+      AC_SUBST(RM_BE_STUB_CMD, "alps_be_starter")
+      #
+      # ALPS requires a colocation command built on tool helper service
+      #
+      AC_SUBST(RM_FE_COLOC_CMD, "alps_fe_colocator")
       AC_SUBST(RM_TYPE, alps)
       AC_DEFINE(GLUESYM,[""], [Define dot for GLUESYM])
       AC_DEFINE(BIT64,1,[Define 1 for BIT64])

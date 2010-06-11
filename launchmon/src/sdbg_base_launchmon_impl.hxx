@@ -189,7 +189,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::request_detach
       if (get_tracer()->status(p, true) == SDBG_TRACE_RUNNING)
         {
           get_tracer()->tracer_stop(p, true);
-          //usleep (GracePeriodBNSignals);
+          usleep (GracePeriodBNSignals);
         }
       p.check_and_undo_context ( p.thr_iter->first );
     }

@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Jun  11 1010 DHA: Remove pipe_t
  *        Dec  23 2009 DHA: Added explict config.h inclusion 
  *        Feb  09 2008 DHA: Added LLNS Copyright
  *        Dec  29 2006 DHA: Created file.          
@@ -74,32 +75,7 @@
 
 #include <lmon_api/lmon_say_msg.hxx>
 
-const int pipe_t::uninitializedFileDescriptor = -1;
 int (*errorCB) (const char *format, va_list ap) = NULL;
-
-pipe_t::pipe_t () 
-  : readingFd (uninitializedFileDescriptor), 
-    writingFd (uninitializedFileDescriptor)
-{
-  // other init?
-}
-
-pipe_t::pipe_t ( const int rfd, const int wfd ) 
-{
-  readingFd = rfd;
-  writingFd = wfd;
-}
-
-pipe_t::pipe_t ( const pipe_t& dp )
-{
-  readingFd = dp.readingFd;
-  writingFd = dp.writingFd;
-}
-
-pipe_t::~pipe_t ()
-{
-  // destoying routines?
-}
 
 double gettimeofdayD ()
 {
@@ -113,34 +89,40 @@ double gettimeofdayD ()
   return rt;
 }
 
-void 
-LMON_say_msg ( const char* m, bool error_or_info, const char* output, ... )
+int
+LMON_timestamp ( const char *m, const char *ei, const char *fstr, char *obuf, uint32_t len)
 {
-  using namespace std;
-
-  va_list ap;
-
   char timelog[PATH_MAX];
-  char log[PATH_MAX];
   const char *format = "%b %d %T";
-  time_t t;            
-  string ei_str = error_or_info ? "ERROR" : "INFO";
- 
-  time(&t);
-  strftime ( timelog, PATH_MAX, format, localtime(&t) );
-  sprintf(log, "<%s> %s (%s): %s\n", timelog, m, ei_str.c_str(), output);
+  time_t t;
 
-  va_start(ap, output);
-  if (errorCB)
+  time(&t);
+  strftime (timelog, PATH_MAX, format, localtime(&t));
+  return (snprintf(obuf, len, "<%s> %s (%s): %s\n", timelog, m, ei, fstr));
+
+}
+
+void 
+LMON_say_msg ( const char *m, bool error_or_info, const char *output, ... )
+{
+  va_list ap;
+  char log[PATH_MAX];
+  const char *ei_str = error_or_info ? "ERROR" : "INFO";
+ 
+  if (LMON_timestamp(m, ei_str, output, log, PATH_MAX) >= 0)
     {
-      errorCB (log, ap);
+      va_start(ap, output);
+      if (errorCB)
+        {
+          errorCB (log, ap);
+        }
+      else
+        {
+          vfprintf(stdout, log, ap);
+          fflush(stdout);	
+        }
+      va_end(ap);
     }
-  else
-    {
-      vfprintf(stdout, log, ap);
-      fflush(stdout);	
-    }
-  va_end(ap);
 }
 
 void
@@ -169,3 +151,23 @@ LMON_TotalView_debug ()
   // 	
   while (!stuck);
 }
+
+int
+LMON_get_execpath( int pid, std::string &opath )
+{
+  char path[PATH_MAX];
+  char tar[PATH_MAX];
+  int cnt;
+
+  sprintf(path, "/proc/%d/exe", pid);   
+  cnt = readlink(path, tar, PATH_MAX);
+  if ( cnt >= 0 )
+    {
+      tar[cnt] = '\0';
+      cnt++;
+      opath = tar;
+    }
+
+  return cnt;
+}
+

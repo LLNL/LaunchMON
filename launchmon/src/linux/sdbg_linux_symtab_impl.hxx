@@ -619,7 +619,7 @@ throw(symtab_exception_t)
 template <LINUX_IMAGE_TEMPLATELIST>
 symtab_error_e 
 linux_image_t<LINUX_IMAGE_TEMPLPARAM>::fetch_DSO_info
-( std::string& where_is_interpreter, bool& found_interp )
+( std::string &where_is_interpreter, bool &found_interp )
   throw(symtab_exception_t)
 {
   using namespace std;
@@ -634,8 +634,8 @@ linux_image_t<LINUX_IMAGE_TEMPLPARAM>::fetch_DSO_info
   Elf_Data *elf_data = NULL;
   Elf_Data *elf_data_dso = NULL;
   Elf_Data *interp_sect = NULL;
-  char* strtab = NULL;
-  char* sh_strtab = NULL;
+  char *strtab = NULL;
+  char *sh_strtab = NULL;
   int strtab_size;
   int sh_strtab_size;
   Elf_Scn* sect;

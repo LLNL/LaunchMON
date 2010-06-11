@@ -249,9 +249,16 @@ main (int argc, char* argv[])
   launcher_argv[6] = strdup(argv[1]);
   launcher_argv[7] = NULL;
   fprintf (stdout, "[LMON FE] launching the job/daemons via %s\n", mylauncher);
+#elif RM_ALPS_APRUN
+  numprocs_opt     = string("-n") + string(argv[2]);
+  launcher_argv    = (char**) malloc(4*sizeof(char*));
+  launcher_argv[0] = strdup(mylauncher);
+  launcher_argv[1] = strdup(numprocs_opt.c_str());
+  launcher_argv[2] = strdup(argv[1]);
+  launcher_argv[3] = NULL;
 #else
-//# error add support for the RM of your interest here
-#endif  
+# error add support for the RM of your interest here
+#endif
 
   if ( ( rc = LMON_fe_init ( LMON_VERSION ) ) 
               != LMON_OK )

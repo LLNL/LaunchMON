@@ -34,7 +34,7 @@
 */
 int pmgr_me = -3;
 
-int pmgr_echo_debug = 3;
+int pmgr_echo_debug = 0;
 
 /* Return the number of secs as a double between two timeval structs (tv2-tv1) */
 double pmgr_getsecs(struct timeval* tv2, struct timeval* tv1)

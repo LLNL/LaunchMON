@@ -52,6 +52,10 @@ B.  FE  API  extension to be able to communciate a session's status to the to-
        failure,  LaunchMON  does not currently enforce this semantics on this
        platform.
 
+       [Cray ALPS Note] The ALPS tool helper service doesn't offer a mechanism 
+       to detect a daemon failure, LaunchMON  does not currently enforce this 
+       semantics on this platform.
+
 D. When the job fails, the basic cleanup semantics of LaunchMON is  to notify 
    the FEN tool while keeping the daemons running.
 
