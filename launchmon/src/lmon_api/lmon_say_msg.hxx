@@ -49,6 +49,7 @@
 extern int (*errorCB) (const char *format, va_list ap);
 extern double gettimeofdayD ();
 extern void LMON_say_msg (const char* m, bool error_or_info, const char* output, ...);
-extern void LMON_TotalView_debug ( );
-extern int LMON_timestamp (const char *m, const char *ei, const char *fstr, char *obuf, uint32_t len)
+extern void LMON_TotalView_debug ();
+extern int LMON_timestamp (const char *m, const char *ei, const char *fstr, char *obuf, uint32_t len);
+extern int LMON_get_execpath( int pid, std::string &opath );
 #endif // LMON_API_LMON_SAY_MSG_HXX

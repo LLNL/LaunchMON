@@ -91,6 +91,7 @@ extern "C" {
 #endif
 
 #include "sdbg_std.hxx"
+#include "sdbg_rm_map.hxx"
 #include "sdbg_self_trace.hxx"
 
 //! struct opt_struct_t

@@ -35,6 +35,12 @@
 #include "sdbg_std.hxx"
 
 #include <cstdio>
+#if HAVE_SIGNAL_H
+# include <signal.h>
+#else
+# error signal.h is required
+#endif
+
 #include <string>
 
 typedef enum _rm_catalogue_e
@@ -71,16 +77,16 @@ public:
   // ctor
   rc_rm_t()
    {
-     rc_type = RC_none; 	
-     paramset.nnodes = -1;
-     paramset.ndaemons = -1;
-     paramset.sharedsec = NULL;
-     paramset.randomid = -1; 
-     paramset.resourceidi = -1; 
-     paramset.pmgrsizei = -1;
-     paramset.pmgrip = NULL;
-     paramset.pmgrport = NULL;
-     paramset.pmgrjobid = -1;       
+     rm_type             = RC_none; 	
+     paramset.nnodes     = -1;
+     paramset.ndaemons   = -1;
+     paramset.sharedsec  = NULL;
+     paramset.randomid   = NULL; 
+     paramset.resourceid = -1; 
+     paramset.pmgrsize   = -1;
+     paramset.pmgrip     = NULL;
+     paramset.pmgrport   = NULL;
+     paramset.pmgrjobid  = -1;       
    }
 
   // don't use operations requiring a copy ctor
@@ -93,7 +99,7 @@ public:
       if (paramset.randomid)
         free(paramset.randomid);
       if (paramset.pmgrip)
-        free(paramset.pmgrid);
+        free(paramset.pmgrip);
       if (paramset.pmgrport)
 	free(paramset.pmgrport);
     }
@@ -107,7 +113,7 @@ public:
     {
       using std::string;
 
-      if (!lnchrpath || !set_rmtype_on_lncher(lnchrpath.c_str())) 
+      if (!set_rmtype_on_lncher(lnchrpath.c_str())) 
         return false;
 
       bool rc = true;
@@ -131,19 +137,17 @@ public:
 	  rm_daemon_path = tdpath;
           rm_daemon_stub = bestubpath; 
   	  rm_coloc_cmd = lnchrpath;
-          rm_coloc_str = rm_coloc_cmd;
 #ifdef TVCMD
           if ( getenv("LMON_DEBUG_BES") != NULL)
-            rm_coloc_str = TVCMD + std::string(" -a ") + lnchrpath;        
+            rm_coloc_cmd = TVCMD + std::string(" ") + rm_coloc_cmd + std::string(" -a");        
 #endif
+          rm_coloc_str = rm_coloc_cmd;
 	  rm_coloc_str += std::string(" --input=none --jobid=%d --nodes=%d --ntasks=%d ")
             + rm_daemon_path + std::string(" ") + tdopts
 #if PMGR_BASED 
             + std::string(" --pmgrsize=%d --pmgrip=%s --pmgrport=%s --pmgrjobid=%d --pmgrlazyrank=1 --pmgrlazysize=1")
 #endif
             + std::string(" --lmonsharedsec=%s --lmonsecchk=%s");
-
-          }
           break;
 
         case RC_bglrm:
@@ -161,7 +165,6 @@ public:
             + std::string(" --pmgrip=%s --pmgrport=%s --pmgrjobid=%d --pmgrlazyrank=1 --pmgrlazysize=1")
 #endif
 	    + std::string(" --lmonsharedsec=%s --lmonsecchk=%s");
-          }
           break;
 
         case RC_alps:
@@ -177,7 +180,7 @@ public:
 #if PMGR_BASED 
             + std::string(" --pmgrip=%s --pmgrport=%s --pmgrjobid=%d --pmgrlazyrank=1 --pmgrlazysize=1" )
 #endif
-	    std::string(" --lmonsharedsec=%s --lmonsecchk=%s") + string("\"")
+	    + std::string(" --lmonsharedsec=%s --lmonsecchk=%s") + string("\"");
           break;
 
 	case RC_orte:
@@ -231,10 +234,10 @@ public:
       if (!set_paramset (nn, nd, ss, ri, rid))
         return false;
 
-      pmgrsize = pmsize;
-      pmgrip = strdup(pmip);
-      pmgrport = strdup(pmport);
-      pmgrjobid = pmjid; 
+      paramset.pmgrsize = pmsize;
+      paramset.pmgrip = strdup(pmip);
+      paramset.pmgrport = strdup(pmport);
+      paramset.pmgrjobid = pmjid; 
 
       return true;
     }
@@ -245,7 +248,7 @@ public:
   std::string expand_coloc_str()
     {
       bool rc = true;
-      char expanded_string[MAX_STRING_SIZE];
+      char expanded_string[PATH_MAX];
       rm_coloc_exp_str = "";
 
       switch (rm_type) 
@@ -256,7 +259,8 @@ public:
  
         case RC_slurm:
 	  snprintf(expanded_string, 
-		   MAX_STRING_SIZE,
+		   PATH_MAX,
+		   rm_coloc_str.c_str(),
 		   paramset.resourceid,
 		   paramset.nnodes,
 		   paramset.ndaemons,
@@ -269,7 +273,7 @@ public:
 		   paramset.sharedsec,
 		   paramset.randomid);	
 
-          rm_coloc_exp_str = std::string(expanded_string);
+          rm_coloc_exp_str = expanded_string;
           break;
 
         case RC_bglrm:
@@ -277,7 +281,8 @@ public:
         case RC_bgqrm:
 	case RC_bgrm:
 	  snprintf(expanded_string, 
-		   MAX_STRING_SIZE,
+		   PATH_MAX,
+		   rm_coloc_str.c_str(),
 #if PMGR_BASED 
 		   paramset.pmgrip,
 		   paramset.pmgrport,
@@ -286,12 +291,13 @@ public:
 		   paramset.sharedsec,
 		   paramset.randomid);	
 
-          rm_coloc_exp_str = std::string(expanded_string);
+          rm_coloc_exp_str = expanded_string;
           break;
 
         case RC_alps:
 	  snprintf(expanded_string, 
-		   MAX_STRING_SIZE,
+		   PATH_MAX,
+		   rm_coloc_str.c_str(),
 		   paramset.resourceid,
 #if PMGR_BASED 
 		   paramset.pmgrip,
@@ -301,12 +307,13 @@ public:
 		   paramset.sharedsec,
 		   paramset.randomid);	
 
-          rm_coloc_exp_str = std::string(expanded_string);
+          rm_coloc_exp_str = expanded_string;
           break;
 
 	case RC_orte:
 	  snprintf(expanded_string, 
-		   MAX_STRING_SIZE,
+		   PATH_MAX,
+		   rm_coloc_str.c_str(),
 #if PMGR_BASED 
 		   paramset.pmgrip,
 		   paramset.pmgrport,
@@ -315,7 +322,7 @@ public:
 		   paramset.sharedsec,
 		   paramset.randomid);	
 
-          rm_coloc_exp_str = std::string(expanded_string);
+          rm_coloc_exp_str = expanded_string;
           break;
 
 	case RC_none:
@@ -385,6 +392,8 @@ private:
 
   bool set_rmtype_on_lncher(const char *lnchrpath)
     {
+      using std::string;
+
       bool rc = true;	
 
       // dt must not null  

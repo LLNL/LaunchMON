@@ -60,6 +60,7 @@
 
 #include "sdbg_opt.hxx"
 #include "sdbg_rm_map.hxx"
+#include "lmon_api/lmon_say_msg.hxx"
 #include "sdbg_self_trace.hxx"
 
 const std::string software_name 
@@ -428,7 +429,7 @@ opts_args_t::construct_launch_string ()
 
   if ( my_opt->attach ) 
     {
-      if ( LMON_get_execpath(my_opt->launcher_pid) < 0 )
+      if ( LMON_get_execpath(my_opt->launcher_pid, my_opt->debugtarget) < 0 )
         {
 	self_trace_t::trace ( true, 
 	  MODULENAME,
@@ -455,7 +456,7 @@ opts_args_t::construct_launch_string ()
   
   bool initc = my_rmconfig->init( bulklauncher,
 				  my_opt->tool_daemon,
-				  myopt->tool_daemon_opts
+				  my_opt->tool_daemon_opts
 #ifdef RM_BE_STUB_CMD
                                 , besub
 #endif

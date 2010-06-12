@@ -752,7 +752,7 @@ linux_launchmon_t::acquire_proctable (
 	  return LAUNCHMON_FAILED;
 	}
 
-      if (p.get_my_rmconfig()->get_rid_supported())
+      if (p.get_myopts()->get_my_rmconfig()->get_rid_supported())
         {
           //
           //
@@ -792,7 +792,7 @@ linux_launchmon_t::acquire_proctable (
       else
         {
 	  set_resid (p.get_myopts()->get_my_opt()->launcher_pid);
-          p.set_rid (get_resid);
+          p.set_rid (get_resid());
 	} 
 
 #if MEASURE_TRACING_COST
@@ -838,7 +838,7 @@ linux_launchmon_t::launch_tool_daemons (
 
   assert ( !get_proctable_copy().empty() );
 
-  if (p.get_my_rmconfig()->get_has_mpir_coloc())
+  if (p.get_myopts()->get_my_rmconfig()->get_has_mpir_coloc())
     {
       self_trace_t::trace ( true, /* print always */
  	   MODULENAME,0,
@@ -936,7 +936,7 @@ linux_launchmon_t::launch_tool_daemons (
   //
   // W/ new RM MAP support
   //
-  if (p.get_myconfig->get_has_mpir_coloc())
+  if (p.get_myopts()->get_my_rmconfig()->get_has_mpir_coloc())
     {
       //
       // there isn't much you want to do here,
@@ -983,30 +983,31 @@ linux_launchmon_t::launch_tool_daemons (
           char *mport = strtok ( NULL, ":" );
 #endif
 
-          p.get_my_rmconfig()->set_paramset(get_proctable_copy().size(),
-				      get_proctable_copy().size(),
-				      sharedsecret,
-				      randomID,
-				      get_resid()
+          p.get_myopts()->get_my_rmconfig()->set_paramset(
+	    get_proctable_copy().size(),
+	    get_proctable_copy().size(),
+	    sharedsecret,
+	    randomID,
+	    get_resid()
 #if PMGR_BASED
-				      , 
-				      get_proctable_copy().size(),
-				      mip,
-				      mport,
-				      get_resid()
+	    , 
+	    get_proctable_copy().size(),
+	    mip,
+	    mport,
+	    get_resid()
 #endif
-					);	
+	  );	
 
-          std::string expandstr = p.get_my_rmconfig()->expand_coloc_str();
+          std::string expandstr = p.get_myopts()->get_my_rmconfig()->expand_coloc_str();
 	
           {
 	    self_trace_t::trace ( LEVELCHK(level1), 
 			      MODULENAME,0,
 			      "launching daemons with: %s",
-			      expand_coloc_str.c_str());
+			      expandstr.c_str());
           }
 
-          char *expanded_string = strdup(expanstr.c_str()); 
+          char *expanded_string = strdup(expandstr.c_str()); 
           char *t = expanded_string;
           char *tmp;
           int i=0;
@@ -1352,12 +1353,12 @@ linux_launchmon_t::handle_detach_cmd_event
           say_fetofe_msg ( lmonp_detach_done );	
           break;
         case FE_requested_shutdown_dmon:
-          p.get_my_rmconfig()->graceful_rmkill(get_toollauncherpid());
+          p.get_myopts()->get_my_rmconfig()->graceful_rmkill(get_toollauncherpid());
           say_fetofe_msg ( lmonp_detach_done );	
           break;
         case FE_disconnected:
 	  usleep (GracePeriodFEDisconnection);
-          p.get_my_rmconfig()->graceful_rmkill(get_toollauncherpid());
+          p.get_myopts()->get_my_rmconfig()->graceful_rmkill(get_toollauncherpid());
           break;
         case ENGINE_dying_wsignal:
           say_fetofe_msg (lmonp_stop_tracing);
@@ -1472,9 +1473,9 @@ linux_launchmon_t::handle_kill_cmd_event
       //
       // kill both the target RM and tool RM gracefully
       //
-      p.get_my_rmconfig()->graceful_rmkill(p.get_pid(false));	
-      if (!p.get_my_rmconfig()->get_has_mpir_coloc())
-        p.get_my_rmconfig()->graceful_rmkill(p.get_toollauncherpid());
+      p.get_myopts()->get_my_rmconfig()->graceful_rmkill(p.get_pid(false));	
+      if (!p.get_myopts()->get_my_rmconfig()->get_has_mpir_coloc())
+        p.get_myopts()->get_my_rmconfig()->graceful_rmkill(get_toollauncherpid());
 
       switch (p.get_reason())
         {
@@ -1680,7 +1681,7 @@ linux_launchmon_t::handle_trap_after_attach_event (
       chk_pthread_libc_and_init(p);
       p.set_never_trapped(false); 
 
-      if (p.get_my_rmconfig()->get_has_mpir_coloc())
+      if (p.get_myopts()->get_my_rmconfig()->get_has_mpir_coloc())
         {
           //
           // Always check correctness of BG_SERVERARG_LENGTH 
@@ -1692,47 +1693,52 @@ linux_launchmon_t::handle_trap_after_attach_event (
             = main_im->get_a_symbol (p.get_launch_exec_path ());
 
           T_VA ep_addr = executablepath.get_relocated_address();
-
-          if (p.get_my_rmconfig()->get_rm_daemon_path().size() >= BG_EXECPATH_LENGTH)
+          int dpsize = p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size();
+          if (dpsize >= BG_EXECPATH_LENGTH)
             {
 	      self_trace_t::trace ( true, 
-			            MODULENAME,1,
-			            "daemon path(%d) exceeds the buffer length: %d", 
-			            p.get_my_rmconfig()->get_rm_daemon_path().size()+1,
-			            BG_EXECPATH_LENGTH);
+		MODULENAME,1,
+		"daemon path(%d) exceeds the buffer length: %d", 
+		p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size()+1,
+		BG_EXECPATH_LENGTH);
 			      
 	      return LAUNCHMON_FAILED;
             }
 
-          get_tracer()->tracer_write ( p,
-                                       ep_addr,
-			               p.get_my_rmconfig()->get_rm_daemon_path().c_str();
-			               p.get_my_rmconfig()->get_rm_daemon_path().size()+1,
-                                       use_cxt );
+          get_tracer()->tracer_write ( 
+	    p,
+            ep_addr,
+	    p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().c_str(),
+	    p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size()+1,
+            use_cxt 
+	  );
 
-          char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
+          char *tokenize2 
+            = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
           char *sharedsecret = strtok (tokenize2, ":");
           char *randomID = strtok (NULL, ":");
 #if PMGR_BASED
-          char *tokenize = strdup(p.get_myopts()->get_my_opt()->pmgr_info.c_str());
+          char *tokenize 
+            = strdup(p.get_myopts()->get_my_opt()->pmgr_info.c_str());
           char *mip = strtok ( tokenize, ":" );
           char *mport = strtok ( NULL, ":" );
 #endif
-          p.get_my_rmconfig()->set_paramset(0,
-				       0,
-				       sharedsecret,
-				       randomID,
-				       -1
+          p.get_myopts()->get_my_rmconfig()->set_paramset(
+            0,
+	    0,
+	    sharedsecret,
+	    randomID,
+	    -1
 #if PMGR_BASED
-			               ,
-				       0,
-				       mip,
-				       mport,
-				       24689 /* just a number for pmgrjobid */
+	  , 0,
+	    mip,
+	    mport,
+	    24689 /* just a number for pmgrjobid */
 #endif 
-                                       );
+          );
 
-          std::string expstr = p.get_my_rmconfig()->expand_coloc_str();
+          std::string expstr 
+	    = p.get_myopts()->get_my_rmconfig()->expand_coloc_str();
           char *serverargstmp = strdup(expstr.c_str());
           char serverargs[BG_SERVERARG_LENGTH] = {0};
           char *curptr = NULL;
@@ -1741,7 +1747,8 @@ linux_launchmon_t::handle_trap_after_attach_event (
           curptr = serverargs;
           token = strtok (serverargstmp, " ");
           int tlen = strlen(token);
-          while ( curptr != NULL && ((curptr-serverargs+tlen+1) < BG_SERVERARG_LENGTH))
+          while ( curptr != NULL 
+                  && ((curptr-serverargs+tlen+1) < BG_SERVERARG_LENGTH))
             {
               memcpy ( curptr, token, tlen);
               *(curptr + tlen) = '\0';
@@ -1931,7 +1938,7 @@ linux_launchmon_t::handle_trap_after_exec_event (
 				   use_cxt );
  
 
-      if (p.get_my_rmconfig()->get_has_mpir_coloc())
+      if (p.get_myopts()->get_my_rmconfig()->get_has_mpir_coloc())
         {
           //
           // Always check correctness of BG_SERVERARG_LENGTH 
@@ -1944,22 +1951,25 @@ linux_launchmon_t::handle_trap_after_exec_event (
 
           T_VA ep_addr = executablepath.get_relocated_address();
 
-          if (p.get_my_rmconfig()->get_rm_daemon_path().size() >= BG_EXECPATH_LENGTH)
+          int dpsize = p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size(); 
+          if (dpsize >= BG_EXECPATH_LENGTH)
             {
 	      self_trace_t::trace ( true, 
-			            MODULENAME,1,
-			            "daemon path(%d) exceeds the buffer length: %d", 
-			            p.get_my_rmconfig()->get_rm_daemon_path().size()+1,
-			            BG_EXECPATH_LENGTH);
+	        MODULENAME,1,
+		"daemon path(%d) exceeds the buffer length: %d", 
+		p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size()+1,
+		BG_EXECPATH_LENGTH);
 			      
 	      return LAUNCHMON_FAILED;
             }
 
-          get_tracer()->tracer_write ( p,
-                                       ep_addr,
-			               p.get_my_rmconfig()->get_rm_daemon_path().c_str();
-			               p.get_my_rmconfig()->get_rm_daemon_path().size()+1,
-                                       use_cxt );
+          get_tracer()->tracer_write ( 
+	    p,
+            ep_addr,
+	    p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().c_str(),
+            p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size()+1,
+            use_cxt 
+ 	  );
 
           char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
           char *sharedsecret = strtok (tokenize2, ":");
@@ -1969,21 +1979,22 @@ linux_launchmon_t::handle_trap_after_exec_event (
           char *mip = strtok ( tokenize, ":" );
           char *mport = strtok ( NULL, ":" );
 #endif
-          p.get_my_rmconfig()->set_paramset(0,
-				         0,
-				         sharedsecret,
-				         randomID,
-				         -1
+          p.get_myopts()->get_my_rmconfig()->set_paramset(
+	    0,
+	    0,
+	    sharedsecret,
+	    randomID,
+	   -1
 #if PMGR_BASED
-			                 ,
-				         0,
-				         mip,
-				         mport,
-				         24689 /* just a number for pmgrjobid */
+	  , 0,
+	    mip,
+	    mport,
+	    24689 /* just a number for pmgrjobid */
 #endif 
-                                         );
+          );
 
-          std::string expstr = p.get_my_rmconfig()->expand_coloc_str();
+          std::string expstr 
+	    = p.get_myopts()->get_my_rmconfig()->expand_coloc_str();
           char *serverargstmp = strdup(expstr.c_str());
           char serverargs[BG_SERVERARG_LENGTH] = {0};
           char *curptr = NULL;
@@ -1992,7 +2003,8 @@ linux_launchmon_t::handle_trap_after_exec_event (
           curptr = serverargs;
           token = strtok (serverargstmp, " ");
           int tlen = strlen(token);
-          while ( curptr != NULL && ((curptr-serverargs+tlen+1) < BG_SERVERARG_LENGTH))
+          while ( curptr != NULL 
+		  && ((curptr-serverargs+tlen+1) < BG_SERVERARG_LENGTH))
             {
               memcpy ( curptr, token, tlen);
               *(curptr + tlen) = '\0';
