@@ -2531,6 +2531,7 @@ LMON_fetofe_watchdog_thread ( void *arg )
 	case lmonp_mwdmon_exited:
 	  pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
 	  mydesc->detached = LMON_TRUE;
+	  mydesc->spawned = LMON_FALSE;
           fe_getStatus (mydesc, &status); 
           if (mydesc->statusCB != NULL)
             {
