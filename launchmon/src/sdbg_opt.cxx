@@ -431,12 +431,14 @@ opts_args_t::construct_launch_string ()
     {
       if ( LMON_get_execpath(my_opt->launcher_pid, my_opt->debugtarget) < 0 )
         {
-	self_trace_t::trace ( true, 
-	  MODULENAME,
-	  1,
-	  "Can't determine the executable path of the pid (%d).", my_opt->launcher_pid);
+          {
+	    self_trace_t::trace ( true, 
+	      MODULENAME,
+	      1,
+	      "Can't determine the executable path of the pid (%d).", my_opt->launcher_pid);
+          }
+          return false;
         }
-        return false;
     }
 
 #ifdef RM_BE_STUB_CMD

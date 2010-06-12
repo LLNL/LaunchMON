@@ -60,12 +60,52 @@
 # error signal.h is required
 #endif
                                                                   
-#define COMM_TAG    1000
-#define MAX_BUF_LEN 1024
+#define COMM_TAG              1000
+#define MAX_BUF_LEN           1024
+#define COMPUTE_UNIT          20
+#define SLEEP_FOR_COMPUTE_SEC 3
+
+#if HAVE_STDARG_H
+# include <stdarg.h>
+#else
+# error stdarg.h is required
+#endif
+
+#if HAVE_LIMITS_H
+# include <limits.h>
+#else
+# error limits.h is required 
+#endif
+
+#if TIME_WITH_SYS_TIME
+# include <time.h>
+# include <sys/time.h>
+#else
+# error time.h and sys/time.h are required
+#endif
+
 
 static int global_stall = 1;
 static int global_rank = -1;
 
+static void
+LMON_say_msg ( const char* m, const char* output, ... )
+{
+  va_list ap;
+  char timelog[PATH_MAX];
+  char log[PATH_MAX];
+  const char* format = "%b %d %T";
+  time_t t;
+  const char ei_str[] = "INFO";
+
+  time(&t);
+  strftime ( timelog, PATH_MAX, format, localtime(&t));
+  snprintf(log, PATH_MAX, "<%s> %s (%s): %s\n", timelog, m, "INFO", output);
+
+  va_start(ap, output);
+  vfprintf(stdout, log, ap);
+  va_end(ap);
+}
 
 void 
 sighandler (int sig) 
@@ -113,25 +153,26 @@ main(int argc, char* argv[])
  
   while(global_stall == 1 ) {
     if (rank == 0)
-      fprintf(stdout, "[LMON APP] stall for a sec\n"); 
-    sleep(1);
+      LMON_say_msg ( "APP", "stall for %d secs", SLEEP_FOR_COMPUTE_SEC );  
+    sleep(SLEEP_FOR_COMPUTE_SEC);
   }
 
   if (rank == 0)
     fprintf(stdout, "The hang unlocked\n");
 
   pass_its_neighbor(rank, size, &buf);
-  i=0;
-  while (i < 30) 
+
+  int remain = COMPUTE_UNIT * SLEEP_FOR_COMPUTE_SEC;
+  for (i=0; i < COMPUTE_UNIT; i++)
     {
+      sleep(SLEEP_FOR_COMPUTE_SEC);
+      remain -= SLEEP_FOR_COMPUTE_SEC;
       if (rank == 0)
-        fprintf(stdout, "computing...\n");
-      sleep (1); // inserting a stall to emulate some computation latency
-      i++;
+        LMON_say_msg ( "APP", "%d secs remain", remain);
     }
 
-  if (rank == 0) 
-    fprintf(stdout, "[LMON APP] The program size is %d\n", size); 
+  if (rank == 0)
+    LMON_say_msg ( "APP", "size of this program is %d\n", size);
 
   MPI_Finalize();
   return EXIT_SUCCESS;
