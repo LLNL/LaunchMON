@@ -836,19 +836,17 @@ linux_launchmon_t::launch_tool_daemons (
 {
   using namespace std;
 
-  assert ( !get_proctable_copy().empty() );
-
-  if (p.get_myopts()->get_my_rmconfig()->get_has_mpir_coloc())
+  if (get_proctable_copy().empty())
     {
-      self_trace_t::trace ( true, /* print always */
+      self_trace_t::trace ( true, 
  	   MODULENAME,0,
-	  "RM with co-location service must not call this method to launch daemons");
+	  "Proctab is empty!");
 
       return false;
     }
 
   if ( !get_API_mode() 
-       && !(p.get_myopts()->get_my_opt()->modelchecker))
+       && (p.get_myopts()->get_my_rmconfig()->get_rm_type() != RC_mchecker_rm) )
     {
       //
       // Standalone launchmon. The launchmon session is not
@@ -900,7 +898,7 @@ linux_launchmon_t::launch_tool_daemons (
 	}
     }
  
-  if ( p.get_myopts()->get_my_opt()->modelchecker )
+  if ( p.get_myopts()->get_my_rmconfig()->get_rm_type() == RC_mchecker_rm )
     {
       //
       // mpirun model checker support
@@ -1737,41 +1735,44 @@ linux_launchmon_t::handle_trap_after_attach_event (
 #endif 
           );
 
-          std::string expstr 
-	    = p.get_myopts()->get_my_rmconfig()->expand_coloc_str();
-          char *serverargstmp = strdup(expstr.c_str());
+          std::string expstr
+            = p.get_myopts()->get_my_rmconfig()->expand_coloc_str();
           char serverargs[BG_SERVERARG_LENGTH] = {0};
-          char *curptr = NULL;
-          char *token = NULL;
+          const symbol_base_t<T_VA> &sa 
+            = main_im->get_a_symbol (p.get_launch_server_args ());
+          T_VA sa_addr = sa.get_relocated_address();
 
-          curptr = serverargs;
-          token = strtok (serverargstmp, " ");
-          int tlen = strlen(token);
-          while ( curptr != NULL 
-                  && ((curptr-serverargs+tlen+1) < BG_SERVERARG_LENGTH))
+          if (expstr != "")
             {
-              memcpy ( curptr, token, tlen);
-              *(curptr + tlen) = '\0';
-              curptr += tlen + 1;
-              token = strtok (NULL, " ");
-              if (!token)
-                break;
-              tlen = strlen(token);
-            }
-          if ( (curptr - serverargs) > (BG_SERVERARG_LENGTH-1))
-            {
-              self_trace_t::trace ( LEVELCHK(level2),
+              char *serverargstmp = strdup(expstr.c_str());
+              char *curptr = NULL;
+              char *token = NULL;
+
+              curptr = serverargs;
+              token = strtok (serverargstmp, " ");
+              int tlen = strlen(token);
+              while ( curptr != NULL
+                          && ((curptr-serverargs+tlen+1) < BG_SERVERARG_LENGTH))
+                {
+                  memcpy ( curptr, token, tlen);
+                  *(curptr + tlen) = '\0';
+                  curptr += tlen + 1;
+                  token = strtok (NULL, " ");
+                  if (!token)
+                    break;
+                  tlen = strlen(token);
+                }
+              if ( (curptr - serverargs) > (BG_SERVERARG_LENGTH-1))
+                {
+                  self_trace_t::trace ( LEVELCHK(level2),
                                     MODULENAME,1,
                                    "Daemon arg list too long");
+                }
+
+              (*curptr) = '\0';
+              curptr += 1;
             }
 
-          (*curptr) = '\0';
-          curptr += 1;
-
-          const symbol_base_t<T_VA> &sa
-            = main_im->get_a_symbol (p.get_launch_server_args ());
-
-          T_VA sa_addr = sa.get_relocated_address();
           get_tracer()->tracer_write ( p,
                                        sa_addr,
                                        serverargs,
@@ -1995,44 +1996,48 @@ linux_launchmon_t::handle_trap_after_exec_event (
 
           std::string expstr 
 	    = p.get_myopts()->get_my_rmconfig()->expand_coloc_str();
-          char *serverargstmp = strdup(expstr.c_str());
           char serverargs[BG_SERVERARG_LENGTH] = {0};
-          char *curptr = NULL;
-          char *token = NULL;
-
-          curptr = serverargs;
-          token = strtok (serverargstmp, " ");
-          int tlen = strlen(token);
-          while ( curptr != NULL 
-		  && ((curptr-serverargs+tlen+1) < BG_SERVERARG_LENGTH))
-            {
-              memcpy ( curptr, token, tlen);
-              *(curptr + tlen) = '\0';
-              curptr += tlen + 1;
-              token = strtok (NULL, " ");
-              if (!token)
-                break;
-              tlen = strlen(token);
-            }
-          if ( (curptr - serverargs) > (BG_SERVERARG_LENGTH-1))
-            {
-              self_trace_t::trace ( LEVELCHK(level2),
-                                    MODULENAME,1,
-                                   "Daemon arg list too long");
-            }
-
-          (*curptr) = '\0';
-          curptr += 1;
-
           const symbol_base_t<T_VA> &sa
             = main_im->get_a_symbol (p.get_launch_server_args ());
-
           T_VA sa_addr = sa.get_relocated_address();
+
+          if (expstr != "")
+            {
+              char *serverargstmp = strdup(expstr.c_str());
+              char *curptr = NULL;
+              char *token = NULL;
+
+              curptr = serverargs;
+              token = strtok (serverargstmp, " ");
+              int tlen = strlen(token);
+              while ( curptr != NULL 
+	            	  && ((curptr-serverargs+tlen+1) < BG_SERVERARG_LENGTH))
+                {
+                  memcpy ( curptr, token, tlen);
+                  *(curptr + tlen) = '\0';
+                  curptr += tlen + 1;
+                  token = strtok (NULL, " ");
+                  if (!token)
+                    break;
+                  tlen = strlen(token);
+                }
+              if ( (curptr - serverargs) > (BG_SERVERARG_LENGTH-1))
+                {
+                  self_trace_t::trace ( LEVELCHK(level2),
+                                    MODULENAME,1,
+                                   "Daemon arg list too long");
+                }
+
+              (*curptr) = '\0';
+              curptr += 1;
+            }  
+
           get_tracer()->tracer_write ( p,
                                        sa_addr,
                                        serverargs,
                                        BG_SERVERARG_LENGTH,
                                        use_cxt );
+
         } // With MPIR Colocation service
 
       //

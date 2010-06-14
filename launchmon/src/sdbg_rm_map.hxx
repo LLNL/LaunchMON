@@ -387,6 +387,7 @@ public:
   define_gset(bool, has_mpir_coloc)
   define_gset(bool, rid_supported)
   define_gset(std::string, rm_daemon_path)
+  define_gset(rm_catalogue_e, rm_type)
 
 private:
 
