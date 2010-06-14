@@ -44,7 +44,6 @@
 # error ctime and sys_time.h is required
 #endif
 
-
 static struct timeval st, et;
 
 int 
