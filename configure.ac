@@ -182,7 +182,7 @@ AC_LANG_PUSH([C++])
 AC_CHECK_HEADERS([stack vector map list iostream string algorithm fstream sstream cxxabi.h])
 AC_LANG_POP([C++])
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([sys/time.h stdio.h syscall.h unistd.h libelf.h libelf/libelf.h poll.h signal.h errno.h sys/user.h libgen.h assert.h link.h thread_db.h netdb.h arpa/inet.h sys/socket.h netinet/in.h limits.h sys/ptrace.h execinfo.h fcntl.h sys/procfs.h pthread.h sys/resource.h stdarg.h dlfcn.h stddef.h])
+AC_CHECK_HEADERS([sys/time.h stdio.h stdint.h syscall.h unistd.h libelf.h libelf/libelf.h poll.h signal.h errno.h sys/user.h libgen.h assert.h link.h thread_db.h netdb.h arpa/inet.h sys/socket.h netinet/in.h limits.h sys/ptrace.h execinfo.h fcntl.h sys/procfs.h pthread.h sys/resource.h stdarg.h dlfcn.h stddef.h])
 
 if test "$ac_cv_header_libelf_h" = "yes" ; then
      AC_DEFINE(LOCATION_OF_LIBELFHEADER, [<libelf.h>],
