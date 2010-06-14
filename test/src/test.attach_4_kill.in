@@ -68,7 +68,7 @@ PID=`echo $!`
  
 sleep $WAITAMOUNT #wait until the job gets stalled 
  
-fe_attach_smoketest@EXE@ $PID `pwd`/be_kicker@EXE@ $SIGNUM 1
+fe_attach_smoketest@EXE@ $PID `pwd`/be_kicker@EXE@ $SIGNUM 60
  
 sleep $WAITAMOUNT
 

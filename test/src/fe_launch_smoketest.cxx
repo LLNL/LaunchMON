@@ -89,22 +89,22 @@ int statusFunc ( int *status )
   if (WIFBESPAWNED(stcp))
     fprintf(stdout, "* BE daemons spawned\n");
   else
-    fprintf(stdout, "* BE daemons have not spawned or exited\n");
+    fprintf(stdout, "* BE daemons not spawned or exited\n");
 
   if (WIFMWSPAWNED(stcp))
     fprintf(stdout, "* MW daemons spawned\n");
   else
-    fprintf(stdout, "* MW daemons have not spawned or exited\n");
+    fprintf(stdout, "* MW daemons not spawned or exited\n");
 
   if (WIFDETACHED(stcp))
     fprintf(stdout, "* the job is detached\n");
   else
-    fprintf(stdout, "* the job has not been detached\n");
-
-  if (WIFKILLED(stcp))
-    fprintf(stdout, "* the job is killed\n");
-  else
-    fprintf(stdout, "* the job has not been killed\n");
+    {
+      if (WIFKILLED(stcp))
+        fprintf(stdout, "* the job is killed\n");
+      else
+        fprintf(stdout, "* the job has not been killed\n");
+    }
 
   return 0;
 }

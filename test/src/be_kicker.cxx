@@ -75,6 +75,16 @@
   using namespace DebuggerInterface;
 #endif 
 
+/*
+ * Multipurpose kicker daemon
+ *
+ * Usage: be_kicker signumber waittime
+ *
+ * argv[1]: specify if a non-continue-signal should be delivered to the job
+ * argv[2]: specify the number of seconds this daemon must wait before exit 
+ *
+ */
+
 int 
 main( int argc, char* argv[] )
 {
@@ -109,7 +119,7 @@ main( int argc, char* argv[] )
 
   if ( argc > 2 )
     {
-      kill_detach_shutdown_test = 1;
+      kill_detach_shutdown_test = atoi(argv[2]);
     } 
 
   LMON_be_getMyRank(&rank);
@@ -265,14 +275,15 @@ main( int argc, char* argv[] )
     }
 #endif
 
-  if ( kill_detach_shutdown_test == 1)
-    sleep (60);
+  sleep(1);
+
+  if ( kill_detach_shutdown_test != 0)
+    sleep (kill_detach_shutdown_test);
 
   free (proctab);
 
   // sending this to mark the end of the BE session 
   // This should be used to determine PASS/FAIL criteria 
-  sleep(1);
   if ( (( lrc = LMON_be_sendUsrData ( NULL )) == LMON_EBDARG)
        || ( lrc == LMON_EINVAL ) 
        || ( lrc == LMON_ENOMEM )
