@@ -181,6 +181,7 @@ public:
             + std::string(" --pmgrip=%s --pmgrport=%s --pmgrjobid=%d --pmgrlazyrank=1 --pmgrlazysize=1" )
 #endif
 	    + std::string(" --lmonsharedsec=%s --lmonsecchk=%s") + string("\"");
+          std::cout << rm_coloc_str << std::endl;
           break;
 
 	case RC_orte:

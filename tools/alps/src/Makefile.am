@@ -32,6 +32,12 @@
 ##        May 13 2010 DHA: Made for alps_be_starter
 ##
 
+
+INCLUDES                          = -I$(top_srcdir) \
+				    -I$(top_srcdir)/launchmon/src \
+				    -I$(top_srcdir)/@LMONAPILOC@ \
+				    -I@ALPS_INC_DIR@
+
 bin_PROGRAMS              = alps_be_starter alps_fe_colocator 
 alps_be_starter_SOURCES   = alps_be_starter.c 
 alps_fe_colocator_SOURCES = alps_fe_colocator.cxx
@@ -39,7 +45,9 @@ alps_fe_colocator_SOURCES = alps_fe_colocator.cxx
 alps_be_starter: alps_be_starter.c Makefile
 	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CFLAGS) $(CFLAGS) -o $@ $<   
 
-alps_fe_colocator: alps_fe_colocator.cxx Makefile
-	$(CPP) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) -o $@ $<   
+#alps_fe_colocator: alps_fe_colocator.cxx Makefile
+#	$(CPP) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) -o $@ $<   
 
-alps_fe_colocator_LDADD         = @LIBELF@ 
+alps_fe_colocator_CXXFLAGS      = @LNCHR_BIT_FLAGS@
+alps_fe_colocator_LDADD         = @LIBELF@ @LIBALPS@
+

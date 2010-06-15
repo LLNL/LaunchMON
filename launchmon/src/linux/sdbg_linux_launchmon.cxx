@@ -887,14 +887,11 @@ linux_launchmon_t::launch_tool_daemons (
 		execname = strdup((*vpos)->pd.executable_name);
 	}				
 
-	  if ( !(p.get_myopts()->get_my_opt()->modelchecker) )
-	    {
-	      // 
-	      // envVar looks like LAUNCHMON_alc0=12376:23452
-	      //
-	      string envname = string("LAUNCHMON_") + string(pos->first);
-	      setenv(envname.c_str(), pidlist.c_str(), 1);
-	    }
+	// 
+	// envVar looks like LAUNCHMON_alc0=12376:23452
+	//
+	string envname = string("LAUNCHMON_") + string(pos->first);
+	setenv(envname.c_str(), pidlist.c_str(), 1);
 	}
     }
  

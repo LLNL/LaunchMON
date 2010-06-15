@@ -279,11 +279,11 @@ AC_DEFUN([X_AC_RM], [
       #
       # ALPS requires a be stub process that spawns the actual daemon
       #
-      AC_SUBST(RM_BE_STUB_CMD, "alps_be_starter")
+      AC_DEFINE(RM_BE_STUB_CMD, "alps_be_starter", [be starter stub location])
       #
       # ALPS requires a colocation command built on tool helper service
       #
-      AC_SUBST(RM_FE_COLOC_CMD, "alps_fe_colocator")
+      AC_DEFINE(RM_FE_COLOC_CMD, "alps_fe_colocator", [bulk launcher location])
       AC_SUBST(RM_TYPE, alps)
       AC_DEFINE(GLUESYM,[""], [Define dot for GLUESYM])
       AC_DEFINE(BIT64,1,[Define 1 for BIT64])

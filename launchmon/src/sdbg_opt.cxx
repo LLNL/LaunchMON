@@ -91,7 +91,6 @@ opts_args_t::opts_args_t ()
 {
   my_opt = new opt_struct_t();
   my_opt->verbose = 0;
-  my_opt->modelchecker=0;
   my_opt->attach = false;
   my_opt->remote = false;
   my_opt->remaining = NULL;
@@ -161,7 +160,6 @@ opts_args_t::process_args ( int *argc, char ***argv )
     }
 
   my_opt->remote = false;
-  my_opt->modelchecker = false;
 
   for (i=1; (i < (*argc)) && !fin_parsing ; i++) 
     {    
@@ -636,7 +634,6 @@ opts_args_t::opts_args_t ( const opts_args_t& o )
   if (o.my_opt != NULL) {
     my_opt = new opt_struct_t();
     my_opt->verbose = o.my_opt->verbose;
-    my_opt->modelchecker = o.my_opt->modelchecker;
     my_opt->attach = o.my_opt->attach;
     my_opt->remote = o.my_opt->remote;
     my_opt->remaining = o.my_opt->remaining;

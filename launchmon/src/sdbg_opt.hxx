@@ -100,7 +100,6 @@ extern "C" {
 */
 struct opt_struct_t {
   int         verbose;          // verbose level
-  bool        modelchecker;     // modelchecker support
   bool        attach;           // is this attach-to-a-running job case?
   bool        remote;           // is this remote case? 
   std::string tool_daemon;      // path to the lightweight debug engine
