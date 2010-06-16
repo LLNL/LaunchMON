@@ -323,8 +323,12 @@ LMON_be_internal_init ( int* argc, char*** argv, char *myhn )
 
             return LMON_EINVAL;
           } 
+#  if VERBOSE
+      LMON_say_msg(LMON_BE_MSG_PREFIX, false,
+        "sending maxts: %f", maxts);
+#  endif
 
-       if (write(parentfd, &maxts, sizeof(double)) < 0 )
+       if (lmon_write_raw(parentfd, &maxts, sizeof(maxts)) < 0 )
          {
             LMON_say_msg(LMON_BE_MSG_PREFIX, true,
 	      "write failed during MEASURE_TRACING_COST");
