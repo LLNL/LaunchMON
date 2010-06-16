@@ -100,7 +100,35 @@ AC_DEFUN([X_AC_BOOTFABRIC], [
       AC_MSG_ERROR([--with-bootfabric=cobo is given, but tools/cobo not found])
     fi
   else
-    AC_MSG_ERROR([--with-bootfabric is a required option])
+    #
+    # Making COBO default
+    #  
+    if test -d tools/cobo; then
+      #
+      # Following defines macroes to pick up the customization 
+      # added to the original COBO implementation.
+      #
+      with_fab="cobo"
+      commfab_found="yes"
+      AC_DEFINE(COBO_BASED, 1, [Define 1 for COBO_BASED])
+      AC_DEFINE(TEST_MORE_COLL, 1, [Define test more coll support])
+      AC_DEFINE(TOOL_HOST_ENV, "LMON_FE_WHERETOCONNECT_ADDR", [Define TOOL_HOST_ENV])
+      AC_DEFINE(TOOL_PORT_ENV, "LMON_FE_WHERETOCONNECT_PORT", [Define TOOL_PORT_ENV] )
+      AC_DEFINE(TOOL_SS_ENV, "LMON_SHARED_SECRET", [Define TOOL_SS_ENV])
+      AC_DEFINE(TOOL_SCH_ENV, "LMON_SEC_CHK", [Define TOOL_SCH_ENV])
+      AC_SUBST(COMMLOC, tools/cobo/src)
+      AC_SUBST(LIBCOMM, -lcobo)
+
+      if test "x$with_cobo_port" != "xcheck" -a "x$with_cobo_port" != "xyes"; then
+        AC_DEFINE(COBO_BEGIN_PORT, $with_cobo_port, [Define a beginning port for COBO_BASED])
+      else
+        AC_DEFINE(COBO_BEGIN_PORT, 20101, [Define a beginning port for COBO_BASED])
+      fi
+        AC_DEFINE(COBO_PORT_RANGE, 32, [Define 32 for COBO_BASED])
+    else
+      commfab_found="no"
+      AC_MSG_ERROR([--with-bootfabric=cobo is given, but tools/cobo not found])
+    fi
   fi
 
   AM_CONDITIONAL([WITH_PMGR_COLLECTIVE], [test "x$commfab_found" = "xyes" -a "x$with_fab" = "xpmgr"])
