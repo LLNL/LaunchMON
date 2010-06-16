@@ -42,24 +42,29 @@ extern "C" {
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <fcntl.h>
+# include <time.h>
+# include <sys/time.h>
+# include <stdarg.h>
+# ifndef _GNU_SOURCE
+#  define _GNU_SOURCE
+# endif
+# include <getopt.h>
+# if HAVE_LIBELF_H
+#  include LOCATION_OF_LIBELFHEADER
+# else
+#  error libelf.h is required
+#endif
 # include "apInfo.h"
 # include "libalps.h"
-#if HAVE_LIBELF_H
-# include LOCATION_OF_LIBELFHEADER
-#else
-# error libelf.h is required
-#endif
-extern char *alpsGetMyNid (int *nid);
+extern char *alpsGetMyNid(int *nid);
 }
 
-#ifndef _GNU_SOURCE
-# define _GNU_SOURCE
-#endif
-
-#include <getopt.h>
 #include <iostream>
 #include <vector>
 #include <string>
+#include <fstream>
+#include <iomanip>
+#include <sstream>
 
 #if BIT64
 typedef Elf64_Shdr myElf_Shdr;
@@ -75,20 +80,42 @@ const char *DFLT_LIB_PATH = "/lib:/usr/lib";
 # define myelf_getshdr elf32_getshdr
 #endif
 
+#define ALPS_STRING_MAX 1024
+
 struct option lopts[] = {
   {"apid", 1, 0, 'a'},
-  {"bestarter", 1, 0, 'b'},
+  {"be_starter", 1, 0, 'b'},
   {"daemon", 1, 0, 'p'},
-  {"dargs", 1, 0, 'g'},
   {0, 0, 0, 0}
 };
+
+const char MSGPREFIX[] = "ALPS FE COLOCATOR";
+static void
+ALPS_say_msg ( const char* m, bool is_err, const char* output, ... )
+{
+  va_list ap;
+  char timelog[PATH_MAX];
+  char log[PATH_MAX];
+  const char* format = "%b %d %T";
+  time_t t;
+  const char *ei_str = is_err ? "ERROR" : "INFO";
+
+  time(&t);
+  strftime ( timelog, PATH_MAX, format, localtime(&t));
+  snprintf(log, PATH_MAX, "<%s> %s (%s): %s\n", timelog, m, "INFO", output);
+
+  va_start(ap, output);
+  vfprintf(stdout, log, ap);
+  va_end(ap);
+}
+
 
 static void 
 sighandler (int sig)
 {
   if (sig == SIGINT)
     {
-      std::cout << "SIGINT received" << std::endl; 
+      ALPS_say_msg(MSGPREFIX, false, "SIGINT received, exiting..." );
       exit(EXIT_SUCCESS);
     }
 
@@ -101,22 +128,17 @@ sighandler (int sig)
 //
 //
 static int
-launch_daemons(int apid, std::vector<std::string> &dlibs, std::string &launchcmd)
+launch_daemons(int apid, 
+  std::vector<std::string> &dlibs, std::string &bestarter,
+  std::string &daemonpath, std::string &dargs)
 {
   int rc = 0;
   int my_nid;
   const char *err_str = NULL;
 
-  if ( (err_str = alpsGetMyNid(&my_nid)) != NULL ); 
+  if ( (err_str = alpsGetMyNid(&my_nid)) )
     {
-      std::cerr << "alpsGetMyNid: " << err_str << std::endl;
-      return -1;
-    }
-
-  int my_apid;
-  if ( (my_apid = alps_get_apid(my_nid, apid)) != 0)
-    {
-      std::cerr << "alps_get_apid error" << std::endl;
+      ALPS_say_msg(MSGPREFIX, true, "error in alpsGetMyNid %s", err_str);
       return -1;
     }
 
@@ -124,9 +146,16 @@ launch_daemons(int apid, std::vector<std::string> &dlibs, std::string &launchcmd
   cmdDetail_t *cmdDetail;
   placeList_t *places;
 
+  int my_apid = alps_get_apid(my_nid, apid);
+  if (!my_apid)
+  {
+     ALPS_say_msg(MSGPREFIX, true, "error in alps_get_apid");
+     return -1;
+  }
+
   if (alps_get_appinfo(my_apid, &appinfo, &cmdDetail, &places) < 0) 
     {	
-      std::cerr << "alps_get_appinfo error" << std::endl;
+      ALPS_say_msg(MSGPREFIX, true, "error in alps_get_appinfo");
       return -1;
     }
 
@@ -140,30 +169,44 @@ launch_daemons(int apid, std::vector<std::string> &dlibs, std::string &launchcmd
     {
       if (access((*iter).c_str(), R_OK | X_OK) < 0)
         {
-	  std::cerr << "Can't access " << (*iter) << std::endl;
+          ALPS_say_msg(MSGPREFIX, true, "Can't access %s", (*iter).c_str());
 	  rc = -1;
+          // we will still try to launch daemons even if a library trasfer fails
           continue;
         }
 
       char *libname = strdup((*iter).c_str());
+
+      //
+      // Transfering a shared library here
+      // 
       err_str = alps_launch_tool_helper(my_apid,pe0Node,true,false,1,&libname);
       if (err_str)
         {
-	  std::cerr << "alps_launch_tool_helper error" << err_str << std::endl;
+          ALPS_say_msg(MSGPREFIX, true, "error in alps_launch_tool_helper: %s", err_str);
           rc = -1;
           if (libname)
 	    free(libname);
+
+          // we will still try to launch daemons even if a library trasfer fails
           continue;
 	}
       if (libname)
         free(libname);
     }
 
-  char *lcmd = strdup(launchcmd.c_str());
+  char lcmdtmp[ALPS_STRING_MAX];
+  snprintf(lcmdtmp, ALPS_STRING_MAX, "%s %d %s %s", 
+    bestarter.c_str(), my_apid, daemonpath.c_str(), dargs.c_str());  
+  char *lcmd = lcmdtmp;
+  //
+  // Launching backend daemons here 
+  // 
+  //ALPS_say_msg(MSGPREFIX, false, "%s", lcmd );
   err_str = alps_launch_tool_helper(my_apid, pe0Node,true, true, 1, &lcmd);
   if (err_str)
     {
-      std::cerr << "alps_launch_tool_helper error" << err_str << std::endl;
+      ALPS_say_msg(MSGPREFIX, true, "error in alps_launch_tool_helper: %s", err_str);
       rc = -1;	
     }
 
@@ -184,31 +227,31 @@ get_dep_DSO (const std::string &daemonpath, std::vector<std::string> &dlibs)
 
   if ( elf_version(EV_CURRENT) == EV_NONE ) 
     {
-      std::cerr << "error in elf_version " << std::endl;
+      ALPS_say_msg(MSGPREFIX, true, "error in elf_version");
       return -1; 
     }
 
   if ( ( fd = open (daemonpath.c_str(), O_RDONLY)) == -1 ) 
     {
-      std::cerr << "error openning " << daemonpath << std::endl;
+      ALPS_say_msg(MSGPREFIX, true, "error in openning %s", daemonpath.c_str());
       return -1; 
     }
 
   if ( ( arf = elf_begin (fd, ELF_C_READ, NULL)) == NULL ) 
     {
-      std::cerr << "error elf_begin" << std::endl;
+      ALPS_say_msg(MSGPREFIX, true, "error in elf_begin");
       return -1; 
     }
 
   if ( ( kind = elf_kind (arf)) != ELF_K_ELF )
     {
-      std::cerr << "error elf_kind" << std::endl;
+      ALPS_say_msg(MSGPREFIX, true, "error in elf_kind");
       return -1; 
     }
 
   if ( ( elf_handler = elf_begin (fd, ELF_C_READ, arf)) == NULL )
     {
-      std::cerr << "error elf_begin" << std::endl;
+      ALPS_say_msg(MSGPREFIX, true, "error in elf_begin");
       return -1; 
     }
 
@@ -226,11 +269,18 @@ get_dep_DSO (const std::string &daemonpath, std::vector<std::string> &dlibs)
 
       if ( shdr->sh_type == SHT_DYNAMIC ) 
         {
-	  Elf_Data *dynsectdata = elf_getdata ( sect, dynsectdata );
           int ix;
+          Elf_Data *sectdata;
+	  if (!(sectdata = elf_getdata ( sect, NULL)) )
+    	    {
+              ALPS_say_msg(MSGPREFIX, true, "elf_data returned null");
+              return -1; 
+            }
+
           for (ix=0; ix < (shdr->sh_size/shdr->sh_entsize); ++ix) 
             {
-              myElf_Dyn *dyndata = (myElf_Dyn *) (((myElf_Dyn *)(dynsectdata->d_buf)) + ix); 
+              myElf_Dyn *dyndata = (myElf_Dyn *) sectdata->d_buf;
+              dyndata += ix;
               switch (dyndata->d_tag) 
                 {
                 case DT_NEEDED:
@@ -250,16 +300,24 @@ get_dep_DSO (const std::string &daemonpath, std::vector<std::string> &dlibs)
 		}
 	     }
          }
-       else if ( shdr->sh_type == SHT_STRTAB && shdr->sh_addr == 0 )
+       else if ( shdr->sh_type == SHT_STRTAB && shdr->sh_flags == 0)
          {
-           Elf_Data *sectdata = elf_getdata ( sect, sectdata );
-           sh_strtab = (char*) sectdata->d_buf;
+	   Elf_Data *strsectd;
+	   if (!(strsectd = elf_getdata (sect, NULL)))
+             {
+               ALPS_say_msg(MSGPREFIX, true, "elf_data returned null");
+               return -1;
+             }
+
+	   std::string shname((char*)strsectd->d_buf+shdr->sh_name); 
+	   if (std::string(".shstrtab") == shname)
+            sh_strtab = (char*) strsectd->d_buf;
          }
     }
 
   if (!sh_strtab) 
     {
-      std::cerr << "section header string table is not found" << std::endl;
+      ALPS_say_msg(MSGPREFIX, true, "section header string table is not found");
       //
       // This is just outright wrong returning -1
       //
@@ -278,21 +336,45 @@ get_dep_DSO (const std::string &daemonpath, std::vector<std::string> &dlibs)
         {
           if (std::string(".interp") == std::string(sh_strtab + shdr->sh_name)) 
             {
-              Elf_Data *elfdata = elf_getdata(sect, elfdata);
+              Elf_Data *elfdata;
+	      if (!(elfdata = elf_getdata(sect, NULL)))
+                {
+                  ALPS_say_msg(MSGPREFIX, true, "elf_data returned null");
+                  return -1;
+                }
+
               std::string interppath ((char *) elfdata->d_buf);
               if (access (interppath.c_str(), R_OK | X_OK) >= 0 )
                 dlibs.push_back(interppath);
-              break; 
             }            
+         }
+       else if (shdr->sh_type == SHT_STRTAB && shdr->sh_flags == SHF_ALLOC)
+         {
+	   //
+	   // Looking for the dynamic symbol table that is loaded into
+	   // memory so sh_addr != 0 check
+           //
+	   Elf_Data *strsectd;
+	   if (!(strsectd = elf_getdata (sect, NULL)))
+             {
+               ALPS_say_msg(MSGPREFIX, true, "elf_data returned null");
+               return -1;
+             }
+
+	   std::string shname((char*)sh_strtab+shdr->sh_name); 
+	   if (std::string(".dynstr") == shname)
+            {
+              dynstrtab = (char*) strsectd->d_buf;
+            }
          }
     }
 
   //
   // No interpreter? No dynamic string table? No DT_NEEDED entries?
   //
-  if (dlibs.empty() || !dynstrtab || dynstrtab_offsets_libs.empty() )
+  if ( !dynstrtab || dynstrtab_offsets_libs.empty() )
     {
-      std::cerr << "no dynamic library dependency?" << std::endl;
+      ALPS_say_msg(MSGPREFIX, true, "no dynamic library dependency?");
       //
       // Maybe no libraries need to be shipped returning 0 
       //
@@ -307,18 +389,25 @@ get_dep_DSO (const std::string &daemonpath, std::vector<std::string> &dlibs)
   //
   // So RPATH
   //
+  char *llp, *tllp, *t, *tok; 
   std::vector<myElf_Addr>::iterator iter;
   for (iter = dynstrtab_offsets_rpaths.begin(); iter != dynstrtab_offsets_rpaths.end(); ++iter)
     {
-       std::string apath((char *)dynstrtab + (*iter));  
-       if (std::find(ld_lib_path.begin(), ld_lib_path.end(), apath) == ld_lib_path.end())
-         ld_lib_path.push_back(apath);
+      tllp = strdup((char *)dynstrtab + (*iter)); 
+      t = tllp;
+      while ( (tok = strtok(t, ":")) != NULL )
+        {
+          std::string apath((char *)tok);  
+          if (std::find(ld_lib_path.begin(), ld_lib_path.end(), apath) == ld_lib_path.end())
+            ld_lib_path.push_back(apath);
+	  t = NULL;
+        }
+      free(tllp); 
     }
   
   //
   // So LD_LIBRARY_PATH
   //
-  char *llp, *tllp, *t, *tok; 
   if ( (llp = getenv("LD_LIBRARY_PATH")) != NULL) 
     {
       tllp = strdup(llp);
@@ -355,7 +444,7 @@ get_dep_DSO (const std::string &daemonpath, std::vector<std::string> &dlibs)
     {
       bool resolved = false;
       std::string alib(dynstrtab + (*iter));   
-      if (alib.find('/') != alib.npos)
+      if (alib.find('/') == alib.npos)
         {
           //
           // Base name only
@@ -385,13 +474,13 @@ get_dep_DSO (const std::string &daemonpath, std::vector<std::string> &dlibs)
 
       if (!resolved)
         {
-          std::cerr << "Couldn't resolve " << alib << std::endl;
+          ALPS_say_msg(MSGPREFIX, true, "Couldn't resolve %s", alib.c_str());
         }
     }
 
   if (elf_end(elf_handler) < 0 )
     {
-      std::cerr << "Failed to close elf " << std::endl;
+      ALPS_say_msg(MSGPREFIX, true, "error in close");
       return -1;
     }
 
@@ -411,8 +500,10 @@ main (int argc, char *argv[])
   std::string daemonpath = "";
   std::string dargs = "";
   std::vector<std::string> dlibs;
-
-  while ( (c=getopt_long(argc, argv, NULL, lopts, &optix)) != -1)
+  char optstring[] = "";
+   
+  opterr = 0; 
+  while ( (c=getopt_long(argc, argv, optstring, lopts, &optix)) != -1)
     {
       switch (c)
         {
@@ -429,53 +520,40 @@ main (int argc, char *argv[])
             daemonpath = optarg;
             break;
 
-          case 'g':
-            dargs = optarg;
-            break;
-
           case '?':
           default:
-	    std::cerr << "Unknown option: " << c << std::endl;
-	    fprintf(stderr, "Unknown option: %c, continue parsing", c);
+            dargs += std::string(argv[optind-1]) + std::string(" "); 
             break;
         }
     }
 
+  int ix;
+  for (ix=optind; ix < argc; ix++)
+    {
+      dargs = argv[ix] + std::string(" ") + dargs;
+    } 
+
   if (access(bestarter.c_str(), R_OK | X_OK) < 0)
     {
-      std::cerr << "Can't access " << bestarter << std::endl;
+      ALPS_say_msg(MSGPREFIX, true, "Can't access %s", bestarter.c_str());
       return EXIT_FAILURE; 
     }
+
   if (access(daemonpath.c_str(), R_OK | X_OK) < 0)
     {
-      std::cerr << "Can't access " << daemonpath << std::endl;
+      ALPS_say_msg(MSGPREFIX, true, "Can't access %s", daemonpath.c_str());
       return EXIT_FAILURE; 
     }
 
   if (get_dep_DSO (daemonpath, dlibs) < 0)
     {
-      std::cerr << "Error returned from get_dep_dso" << std::endl;
+      ALPS_say_msg(MSGPREFIX, true, "Error in get_dep_DSO");
       return EXIT_FAILURE; 
     }
 
-  std::cout << "size of dlibs" << dlibs.size() << std::endl;
-  std::vector<std::string>::iterator itera;
-  for(itera = dlibs.begin(); itera != dlibs.end(); itera++)
+  if (launch_daemons(apid, dlibs, bestarter, daemonpath, dargs) != 0)
     {
-      std::cout << (*itera) << std::endl;
-    }
-
-  std::string launchcmd = bestarter 
-    + std::string(" ") 
-    + apidstr 
-    + std::string(" ") 
-    + daemonpath 
-    + std::string(" ") 
-    + dargs;
-
-  if (launch_daemons(apid, dlibs, launchcmd) != 0)
-    {
-      std::cerr << "Error occurred during launch_daemons " << std::endl;
+      ALPS_say_msg(MSGPREFIX, true, "Error in launch_daemons");
       return EXIT_FAILURE; 
     }
 

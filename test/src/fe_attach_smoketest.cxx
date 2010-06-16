@@ -371,7 +371,7 @@ main (int argc, char* argv[])
           fprintf ( stdout,
             "\n[LMON FE] Please check the correctness of the following resource handle\n");
           fprintf ( stdout,
-            "[LMON FE] resource handle[slurm jobid]: %s\n", jobid);
+            "[LMON FE] resource handle[jobid or job launcher's pid]: %s\n", jobid);
           fprintf ( stdout,
             "[LMON FE]");
        }

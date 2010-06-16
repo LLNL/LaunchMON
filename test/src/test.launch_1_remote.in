@@ -47,6 +47,10 @@ if test "x$RM_TYPE" = "xbgrm" ; then
   NOHUP=nohup
   rm -f nohup.out
 fi
+if test "x$RM_TYPE" = "xalps" ; then
+  echo "[LMON FE] this test is disabled on CRAY ALPS"
+  exit 1
+fi
 
 NUMTASKS=`expr $NUMNODES \* @SMP@`
 

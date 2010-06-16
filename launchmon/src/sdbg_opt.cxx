@@ -458,7 +458,7 @@ opts_args_t::construct_launch_string ()
 				  my_opt->tool_daemon,
 				  my_opt->tool_daemon_opts
 #ifdef RM_BE_STUB_CMD
-                                , besub
+                                , bestub
 #endif
 				 );
 

@@ -70,7 +70,7 @@ int main(int argc,char **argv)
     sprintf(add_lib_path, "%s", reloc_ld_lib_path);
   }  
   
-  if ( setenv("LD_LIBRARY_PATH", (const char*) add_lib_path, 1) < 0 ) {
+  if ( setenv("LD_LIBRARY_PATH", (const char *) add_lib_path, 1) < 0 ) {
     fprintf(stderr, "setenv return neg");
     exit(1);
   } 

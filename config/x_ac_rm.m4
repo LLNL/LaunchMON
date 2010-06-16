@@ -250,15 +250,15 @@ AC_DEFUN([X_AC_RM], [
       fi
     else
       #
-      # Try the default MPIRUN path
+      # Try the default APRUN path
       #
       for rm_dir in $rm_default_dirs; do
         if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
           continue;
         fi
 
-        if test ! -z "$rm_dir/aprun" -a -f "$rm_dir/aprun"; then
-          pth=`config/ap $rm_dir/aprun`
+        if test ! -z "$rm_dir/orig/aprun" -a -f "$rm_dir/orig/aprun"; then
+          pth=`config/ap $rm_dir/orig/aprun`
           ac_job_launcher_path=$pth
           rm_found="yes"
           break

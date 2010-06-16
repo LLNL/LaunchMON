@@ -174,14 +174,12 @@ public:
 	  rm_daemon_path = tdpath;
 	  rm_daemon_stub = bestubpath;
   	  rm_coloc_cmd = lnchrpath;
-          rm_coloc_str = std::string("--be_starter=") + rm_daemon_stub
-            + (" --apid=%d --daemon=") + rm_daemon_path
-            + (" --dargs=\"") + std::string(tdopts)  
+          rm_coloc_str = rm_coloc_cmd + std::string(" --be_starter=") + rm_daemon_stub
+            + (" --apid=%d --daemon=") + rm_daemon_path + std::string(" ") + tdopts 
 #if PMGR_BASED 
-            + std::string(" --pmgrip=%s --pmgrport=%s --pmgrjobid=%d --pmgrlazyrank=1 --pmgrlazysize=1" )
+            + std::string(" --pmgrip=%s --pmgrport=%s --pmgrjobid=%d --pmgrlazyrank=1 --pmgrlazysize=1")
 #endif
-	    + std::string(" --lmonsharedsec=%s --lmonsecchk=%s") + string("\"");
-          std::cout << rm_coloc_str << std::endl;
+	    + std::string(" --lmonsharedsec=%s --lmonsecchk=%s ");
           break;
 
 	case RC_orte:
@@ -409,7 +407,7 @@ private:
         {
           rm_type = RC_slurm;
         }
-      else if (dt == string ("aprun"))
+      else if (dt == string (RM_FE_COLOC_CMD))
         {
 #if RM_ALPS_APRUN 
           rm_type = RC_alps;

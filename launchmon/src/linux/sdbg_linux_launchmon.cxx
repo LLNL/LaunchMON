@@ -791,7 +791,7 @@ linux_launchmon_t::acquire_proctable (
         }
       else
         {
-	  set_resid (p.get_myopts()->get_my_opt()->launcher_pid);
+	  set_resid (p.get_pid(false));
           p.set_rid (get_resid());
 	} 
 
@@ -994,7 +994,6 @@ linux_launchmon_t::launch_tool_daemons (
 	  );	
 
           std::string expandstr = p.get_myopts()->get_my_rmconfig()->expand_coloc_str();
-	
           {
 	    self_trace_t::trace ( LEVELCHK(level1), 
 			      MODULENAME,0,

@@ -122,7 +122,6 @@ linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::create_process (
 		 pid_t pid, 
 		 const std::string &mi )
 {
-  
   process_base_t<LINUX_DRIVER_TEMPLPARAM,td_thrinfo_t,elf_wrapper> *return_proc;
 
   //
