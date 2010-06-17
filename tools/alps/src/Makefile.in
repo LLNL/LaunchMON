@@ -61,7 +61,8 @@ PROGRAMS = $(bin_PROGRAMS)
 am_alps_be_starter_OBJECTS = alps_be_starter.$(OBJEXT)
 alps_be_starter_OBJECTS = $(am_alps_be_starter_OBJECTS)
 alps_be_starter_LDADD = $(LDADD)
-am_alps_fe_colocator_OBJECTS = alps_fe_colocator.$(OBJEXT)
+am_alps_fe_colocator_OBJECTS =  \
+	alps_fe_colocator-alps_fe_colocator.$(OBJEXT)
 alps_fe_colocator_OBJECTS = $(am_alps_fe_colocator_OBJECTS)
 alps_fe_colocator_DEPENDENCIES =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
@@ -163,10 +164,7 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 RANLIB = @RANLIB@
-RM_BE_STUB_CMD = @RM_BE_STUB_CMD@
-RM_FE_COLOC_CMD = @RM_FE_COLOC_CMD@
 RM_TYPE = @RM_TYPE@
-SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SMPFACTOR = @SMPFACTOR@
@@ -229,9 +227,18 @@ subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 tvcmd = @tvcmd@
+INCLUDES = -I$(top_srcdir) \
+				    -I$(top_srcdir)/launchmon/src \
+				    -I$(top_srcdir)/@LMONAPILOC@ \
+				    -I@ALPS_INC_DIR@
+
 alps_be_starter_SOURCES = alps_be_starter.c 
 alps_fe_colocator_SOURCES = alps_fe_colocator.cxx
-alps_fe_colocator_LDADD = @LIBELF@ 
+
+#alps_fe_colocator: alps_fe_colocator.cxx Makefile
+#	$(CPP) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) -o $@ $<   
+alps_fe_colocator_CXXFLAGS = @LNCHR_BIT_FLAGS@
+alps_fe_colocator_LDADD = @LIBELF@ @LIBALPS@
 all: all-am
 
 .SUFFIXES:
@@ -293,6 +300,9 @@ clean-binPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
+alps_fe_colocator$(EXEEXT): $(alps_fe_colocator_OBJECTS) $(alps_fe_colocator_DEPENDENCIES) 
+	@rm -f alps_fe_colocator$(EXEEXT)
+	$(CXXLINK) $(alps_fe_colocator_LDFLAGS) $(alps_fe_colocator_OBJECTS) $(alps_fe_colocator_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -301,7 +311,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alps_be_starter.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alps_fe_colocator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alps_fe_colocator-alps_fe_colocator.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -344,6 +354,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
+
+alps_fe_colocator-alps_fe_colocator.o: alps_fe_colocator.cxx
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(alps_fe_colocator_CXXFLAGS) $(CXXFLAGS) -MT alps_fe_colocator-alps_fe_colocator.o -MD -MP -MF "$(DEPDIR)/alps_fe_colocator-alps_fe_colocator.Tpo" -c -o alps_fe_colocator-alps_fe_colocator.o `test -f 'alps_fe_colocator.cxx' || echo '$(srcdir)/'`alps_fe_colocator.cxx; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/alps_fe_colocator-alps_fe_colocator.Tpo" "$(DEPDIR)/alps_fe_colocator-alps_fe_colocator.Po"; else rm -f "$(DEPDIR)/alps_fe_colocator-alps_fe_colocator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='alps_fe_colocator.cxx' object='alps_fe_colocator-alps_fe_colocator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(alps_fe_colocator_CXXFLAGS) $(CXXFLAGS) -c -o alps_fe_colocator-alps_fe_colocator.o `test -f 'alps_fe_colocator.cxx' || echo '$(srcdir)/'`alps_fe_colocator.cxx
+
+alps_fe_colocator-alps_fe_colocator.obj: alps_fe_colocator.cxx
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(alps_fe_colocator_CXXFLAGS) $(CXXFLAGS) -MT alps_fe_colocator-alps_fe_colocator.obj -MD -MP -MF "$(DEPDIR)/alps_fe_colocator-alps_fe_colocator.Tpo" -c -o alps_fe_colocator-alps_fe_colocator.obj `if test -f 'alps_fe_colocator.cxx'; then $(CYGPATH_W) 'alps_fe_colocator.cxx'; else $(CYGPATH_W) '$(srcdir)/alps_fe_colocator.cxx'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/alps_fe_colocator-alps_fe_colocator.Tpo" "$(DEPDIR)/alps_fe_colocator-alps_fe_colocator.Po"; else rm -f "$(DEPDIR)/alps_fe_colocator-alps_fe_colocator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='alps_fe_colocator.cxx' object='alps_fe_colocator-alps_fe_colocator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(alps_fe_colocator_CXXFLAGS) $(CXXFLAGS) -c -o alps_fe_colocator-alps_fe_colocator.obj `if test -f 'alps_fe_colocator.cxx'; then $(CYGPATH_W) 'alps_fe_colocator.cxx'; else $(CYGPATH_W) '$(srcdir)/alps_fe_colocator.cxx'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -526,9 +550,6 @@ uninstall-am: uninstall-binPROGRAMS uninstall-info-am
 
 alps_be_starter: alps_be_starter.c Makefile
 	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CFLAGS) $(CFLAGS) -o $@ $<   
-
-alps_fe_colocator: alps_fe_colocator.cxx Makefile
-	$(CPP) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) -o $@ $<   
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

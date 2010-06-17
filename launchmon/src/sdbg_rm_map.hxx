@@ -407,7 +407,11 @@ private:
         {
           rm_type = RC_slurm;
         }
+#ifdef RM_FE_COLOC_CMD
       else if (dt == string (RM_FE_COLOC_CMD))
+#else
+      else if (dt == string ("alps_fe_colocator"))
+#endif
         {
 #if RM_ALPS_APRUN 
           rm_type = RC_alps;
