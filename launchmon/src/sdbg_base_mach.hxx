@@ -256,6 +256,8 @@ public:
   // accessors
   // 
   NT& get_thread_info();
+  void copy_thread_info(const NT& ct);  
+
   define_gset(bool,master_thread)
   define_gset(pid_t,master_pid)
   define_gset(lwp_state_e,state)
@@ -325,6 +327,7 @@ public:
   bool check_and_undo_context (const int key);
   register_set_base_t<GRS,VA,WT>* get_gprset(bool context_sensitive);
   register_set_base_t<FRS,VA,WT>* get_fprset(bool context_sensitive);
+  void debug_iter_thrlist ();
 
   //
   // accessors

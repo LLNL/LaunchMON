@@ -33,12 +33,22 @@
  *        Aug 06 2007 DHA: Created file   
  */
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
+
 #include <lmon_api/common.h>
                                                                                                                                           
 #if HAVE_UNISTD_H
 # include <unistd.h>
 #else
 # error unistd.h is required
+#endif
+
+#if HAVE_LIMITS_H
+# include <limits.h>
+#else
+# error limits.h is required 
 #endif
                                                                                                                                           
 #include <string>
@@ -239,9 +249,16 @@ main (int argc, char* argv[])
   launcher_argv[6] = strdup(argv[1]);
   launcher_argv[7] = NULL;
   fprintf (stdout, "[LMON FE] launching the job/daemons via %s\n", mylauncher);
+#elif RM_ALPS_APRUN
+  numprocs_opt     = string("-n") + string(argv[2]);
+  launcher_argv    = (char**) malloc(4*sizeof(char*));
+  launcher_argv[0] = strdup(mylauncher);
+  launcher_argv[1] = strdup(numprocs_opt.c_str());
+  launcher_argv[2] = strdup(argv[1]);
+  launcher_argv[3] = NULL;
 #else
 # error add support for the RM of your interest here
-#endif  
+#endif
 
   if ( ( rc = LMON_fe_init ( LMON_VERSION ) ) 
               != LMON_OK )
@@ -357,7 +374,7 @@ main (int argc, char* argv[])
           fprintf ( stdout,
             "\n[LMON FE] Please check the correctness of the following resource handle\n");
           fprintf ( stdout,
-            "[LMON FE] resource handle[slurm jobid]: %s\n", jobid);
+            "[LMON FE] resource handle[jobid or job launcher's pid]: %s\n", jobid);
           fprintf ( stdout,
             "[LMON FE]");
        }

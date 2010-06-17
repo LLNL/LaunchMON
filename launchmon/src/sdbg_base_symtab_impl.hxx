@@ -34,6 +34,10 @@
 #ifndef SDBG_BASE_SYMTAB_IMPL_HXX
 #define SDBG_BASE_SYMTAB_IMPL_HXX 1
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
+
 extern "C" {
 #if HAVE_LIBGEN_H
 # include <libgen.h>
@@ -58,6 +62,12 @@ extern "C" {
 # include <string>
 #else
 # error string is required
+#endif
+
+#if HAVE_LIMITS_H
+# include <limits.h>
+#else
+# error limits.h is required
 #endif
 
 #include "sdbg_base_symtab.hxx"

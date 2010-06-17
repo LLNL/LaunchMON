@@ -48,7 +48,7 @@ AC_DEFUN([X_AC_ENABLE_DEBUG], [
           ;;
       esac
       CFLAGS="-g $CFLAGS"
-      CXXFLAGS="-g $CFLAGS"
+      CXXFLAGS="-g $CXXFLAGS"
       AC_MSG_RESULT([yes])
     else
       AC_MSG_RESULT([no])

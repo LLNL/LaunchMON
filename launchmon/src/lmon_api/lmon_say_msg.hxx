@@ -27,6 +27,8 @@
  *
  *
  *  Update Log:
+ *        Jun 09 2010 DHA: Added LMON_timestamp 
+ *        May 11 2010 DHA: Moved gettimeofdayD here
  *        May 19 2008 DHA: Added errorCB support
  *        Feb 09 2008 DHA: Added LLNS Copyright 
  *        Mar 13 2006 DHA: Added duplex pipe class a simple
@@ -38,40 +40,18 @@
 #ifndef LMON_API_LMON_SAY_MSG_HXX
 #define LMON_API_LMON_SAY_MSG_HXX 1
 
-#if LAUNCHMON_HAVE_STDARG_H
+#if HAVE_STDARG_H
 # include <cstdarg>
 #else
 # error stdarg.h is required
 #endif
 
-class pipe_t
-{
-public:
-  pipe_t ();  
-  pipe_t ( const int rfd, const int wfd );
-  pipe_t ( const pipe_t& dp );
-  ~pipe_t ();
-
-  const int getReadingFd() const  { return readingFd; }
-  const int getWritingFd() const  { return writingFd; }
-  void setReadingFd(int fd)  { readingFd = fd;   }
-  void setWritingFd(int fd)  { writingFd = fd;   }
-  bool isReadingfdValid()  const  
-       { return (readingFd == uninitializedFileDescriptor)? false : true; }
-  bool isWritingfdValid()  const
-       { return (writingFd == uninitializedFileDescriptor)? false : true; }
-  bool isPipeValid() const
-       { return (writingFd == uninitializedFileDescriptor
-	      && readingFd == uninitializedFileDescriptor)? false : true; }
-
-private:
-  int readingFd;
-  int writingFd;
-  static const int uninitializedFileDescriptor;
-};
+#include <stdint.h>
 
 extern int (*errorCB) (const char *format, va_list ap);
-extern void LMON_say_msg ( const char* m, bool error_or_info, const char* output, ... );
-extern void LMON_TotalView_debug ( );
-
+extern double gettimeofdayD ();
+extern void LMON_say_msg (const char* m, bool error_or_info, const char* output, ...);
+extern void LMON_TotalView_debug ();
+extern int LMON_timestamp (const char *m, const char *ei, const char *fstr, char *obuf, uint32_t len);
+extern int LMON_get_execpath( int pid, std::string &opath );
 #endif // LMON_API_LMON_SAY_MSG_HXX

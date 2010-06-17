@@ -64,7 +64,6 @@ AC_DEFUN([X_AC_GCRYPT], [
   else
       AC_MSG_ERROR([--with-gcrypt is now mandatory])
   fi # with_gcrypt
-  AM_CONDITIONAL([WITH_GCRYPT], [test "x$gcrypt_configured" = "xyes"])
   AC_MSG_RESULT($gcrypt_configured)
 ])
 

@@ -46,7 +46,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/x_ac_bootfabric.m4 \
 	$(top_srcdir)/config/x_ac_gcrypt.m4 \
 	$(top_srcdir)/config/x_ac_mpicc.m4 \
 	$(top_srcdir)/config/x_ac_os_isa.m4 \
-	$(top_srcdir)/config/x_ac_prefix_config_h.m4 \
 	$(top_srcdir)/config/x_ac_rm.m4 \
 	$(top_srcdir)/config/x_ac_testnnodes.m4 \
 	$(top_srcdir)/config/x_ac_tracing_cost.m4 \
@@ -102,6 +101,7 @@ CTAGS = ctags
 DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ALPS_INC_DIR = @ALPS_INC_DIR@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
@@ -112,7 +112,6 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
-BUILD_FLAGS = @BUILD_FLAGS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -141,9 +140,10 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+LD = @LD@
 LDFLAGS = @LDFLAGS@
+LIBALPS = @LIBALPS@
 LIBBITSUFFIX = @LIBBITSUFFIX@
-LIBCIOD = @LIBCIOD@
 LIBCOMM = @LIBCOMM@
 LIBDL = @LIBDL@
 LIBELF = @LIBELF@
@@ -175,7 +175,10 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 RANLIB = @RANLIB@
+RM_BE_STUB_CMD = @RM_BE_STUB_CMD@
+RM_FE_COLOC_CMD = @RM_FE_COLOC_CMD@
 RM_TYPE = @RM_TYPE@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SMPFACTOR = @SMPFACTOR@
@@ -183,10 +186,12 @@ STRIP = @STRIP@
 TARGET_JOB_LAUNCHER_PATH = @TARGET_JOB_LAUNCHER_PATH@
 TESTNNODES = @TESTNNODES@
 VERSION = @VERSION@
+WITH_ALPS_FALSE = @WITH_ALPS_FALSE@
+WITH_ALPS_TRUE = @WITH_ALPS_TRUE@
 WITH_CIOD_FALSE = @WITH_CIOD_FALSE@
 WITH_CIOD_TRUE = @WITH_CIOD_TRUE@
-WITH_GCRYPT_FALSE = @WITH_GCRYPT_FALSE@
-WITH_GCRYPT_TRUE = @WITH_GCRYPT_TRUE@
+WITH_COBO_FALSE = @WITH_COBO_FALSE@
+WITH_COBO_TRUE = @WITH_COBO_TRUE@
 WITH_PMGR_COLLECTIVE_FALSE = @WITH_PMGR_COLLECTIVE_FALSE@
 WITH_PMGR_COLLECTIVE_TRUE = @WITH_PMGR_COLLECTIVE_TRUE@
 ac_ct_AR = @ac_ct_AR@
@@ -239,51 +244,51 @@ tvcmd = @tvcmd@
 SUBDIRS = lmon_api
 INCLUDES = -I.. -I@ARCHHEADER@
 launchmon_SOURCES = main.cxx \
-	                  sdbg_linux_launchmon.cxx \
-	                  lmon_api/lmon_lmonp_msg.cxx \
-	                  sdbg_linux_mach.cxx \
-	                  lmon_api/lmon_say_msg.cxx \
-			  sdbg_linux_thr_db.cxx \
-			  sdbg_proc_service.cxx \
-			  ../sdbg_self_trace.cxx \
-			  ../sdbg_opt.cxx \
-			  ../sdbg_base_bp.hxx \
-		          ../sdbg_base_launchmon_impl.hxx  \
-			  ../sdbg_base_tracer.hxx \
-		          ../sdbg_self_trace.hxx \
-			  ../sdbg_base_driver.hxx \
-		          ../sdbg_base_mach.hxx \
-		          ../sdbg_base_ttracer.hxx \
-		          ../sdbg_signal_hlr.hxx \
-			  ../sdbg_base_driver_impl.hxx  \
-			  ../sdbg_base_mach_impl.hxx  \
-		          ../sdbg_event_manager.hxx \
-		          ../sdbg_signal_hlr_impl.hxx \
-		          ../sdbg_base_exception.hxx \
-			  ../sdbg_base_symtab.hxx \
-		          ../sdbg_event_manager_impl.hxx  \
-			  ../sdbg_std.hxx \
-		          ../sdbg_base_launchmon.hxx \
-   			  ../sdbg_base_symtab_impl.hxx \
-		          ../sdbg_opt.hxx \
-			  sdbg_linux_bp.hxx \
-	          	  sdbg_linux_launchmon.hxx  \
-			  sdbg_linux_ptracer_impl.hxx  \
-			  sdbg_linux_symtab_impl.hxx \
-			  sdbg_proc_service.hxx \
-			  sdbg_linux_driver.hxx  \
-			  sdbg_linux_mach.hxx \
-		          sdbg_linux_std.hxx \
-		          sdbg_linux_ttracer.hxx \
-			  sdbg_linux_driver_impl.hxx \
-			  sdbg_linux_ptracer.hxx \
-			  sdbg_linux_symtab.hxx \
-		          sdbg_linux_ttracer_impl.hxx \
-			  sdbg_linux_thr_db.hxx
+                          sdbg_linux_launchmon.cxx \
+                          lmon_api/lmon_lmonp_msg.cxx \
+                          sdbg_linux_mach.cxx \
+                          lmon_api/lmon_say_msg.cxx \
+                          sdbg_linux_thr_db.cxx \
+                          sdbg_proc_service.cxx \
+                          ../sdbg_self_trace.cxx \
+                          ../sdbg_opt.cxx \
+                          ../sdbg_base_bp.hxx \
+                          ../sdbg_base_launchmon_impl.hxx  \
+                          ../sdbg_base_tracer.hxx \
+                          ../sdbg_self_trace.hxx \
+                          ../sdbg_base_driver.hxx \
+                          ../sdbg_base_mach.hxx \
+                          ../sdbg_base_ttracer.hxx \
+                          ../sdbg_signal_hlr.hxx \
+                          ../sdbg_base_driver_impl.hxx  \
+                          ../sdbg_base_mach_impl.hxx  \
+                          ../sdbg_event_manager.hxx \
+                          ../sdbg_signal_hlr_impl.hxx \
+                          ../sdbg_base_exception.hxx \
+                          ../sdbg_base_symtab.hxx \
+                          ../sdbg_event_manager_impl.hxx  \
+                          ../sdbg_std.hxx \
+                          ../sdbg_base_launchmon.hxx \
+                          ../sdbg_base_symtab_impl.hxx \
+                          ../sdbg_opt.hxx \
+                          sdbg_linux_bp.hxx \
+                          sdbg_linux_launchmon.hxx  \
+                          sdbg_linux_ptracer_impl.hxx  \
+                          sdbg_linux_symtab_impl.hxx \
+                          sdbg_proc_service.hxx \
+                          sdbg_linux_driver.hxx  \
+                          sdbg_linux_mach.hxx \
+                          sdbg_linux_std.hxx \
+                          sdbg_linux_ttracer.hxx \
+                          sdbg_linux_driver_impl.hxx \
+                          sdbg_linux_ptracer.hxx \
+                          sdbg_linux_symtab.hxx \
+                          sdbg_linux_ttracer_impl.hxx \
+                          sdbg_linux_thr_db.hxx
 
 launchmon_LDADD = @LIBELF@ @LIBDL@
-launchmon_CFLAGS = @BUILD_FLAGS@ @LNCHR_BIT_FLAGS@ #$(AM_CFLAGS) 
-launchmon_CXXFLAGS = @BUILD_FLAGS@ @LNCHR_BIT_FLAGS@ #$(AM_CXXFLAGS)
+launchmon_CFLAGS = @LNCHR_BIT_FLAGS@ #$(AM_CFLAGS) 
+launchmon_CXXFLAGS = @LNCHR_BIT_FLAGS@ #$(AM_CXXFLAGS)
 launchmon_LDFLAGS = -rdynamic @LNCHR_BIT_FLAGS@ $(AM_LDFLAGS) 
 all: all-recursive
 

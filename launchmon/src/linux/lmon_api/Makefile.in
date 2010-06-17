@@ -45,7 +45,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/x_ac_bootfabric.m4 \
 	$(top_srcdir)/config/x_ac_gcrypt.m4 \
 	$(top_srcdir)/config/x_ac_mpicc.m4 \
 	$(top_srcdir)/config/x_ac_os_isa.m4 \
-	$(top_srcdir)/config/x_ac_prefix_config_h.m4 \
 	$(top_srcdir)/config/x_ac_rm.m4 \
 	$(top_srcdir)/config/x_ac_testnnodes.m4 \
 	$(top_srcdir)/config/x_ac_tracing_cost.m4 \
@@ -101,6 +100,7 @@ ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ALPS_INC_DIR = @ALPS_INC_DIR@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
@@ -111,7 +111,6 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
-BUILD_FLAGS = @BUILD_FLAGS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -140,9 +139,10 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+LD = @LD@
 LDFLAGS = @LDFLAGS@
+LIBALPS = @LIBALPS@
 LIBBITSUFFIX = @LIBBITSUFFIX@
-LIBCIOD = @LIBCIOD@
 LIBCOMM = @LIBCOMM@
 LIBDL = @LIBDL@
 LIBELF = @LIBELF@
@@ -174,7 +174,10 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 RANLIB = @RANLIB@
+RM_BE_STUB_CMD = @RM_BE_STUB_CMD@
+RM_FE_COLOC_CMD = @RM_FE_COLOC_CMD@
 RM_TYPE = @RM_TYPE@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SMPFACTOR = @SMPFACTOR@
@@ -182,10 +185,12 @@ STRIP = @STRIP@
 TARGET_JOB_LAUNCHER_PATH = @TARGET_JOB_LAUNCHER_PATH@
 TESTNNODES = @TESTNNODES@
 VERSION = @VERSION@
+WITH_ALPS_FALSE = @WITH_ALPS_FALSE@
+WITH_ALPS_TRUE = @WITH_ALPS_TRUE@
 WITH_CIOD_FALSE = @WITH_CIOD_FALSE@
 WITH_CIOD_TRUE = @WITH_CIOD_TRUE@
-WITH_GCRYPT_FALSE = @WITH_GCRYPT_FALSE@
-WITH_GCRYPT_TRUE = @WITH_GCRYPT_TRUE@
+WITH_COBO_FALSE = @WITH_COBO_FALSE@
+WITH_COBO_TRUE = @WITH_COBO_TRUE@
 WITH_PMGR_COLLECTIVE_FALSE = @WITH_PMGR_COLLECTIVE_FALSE@
 WITH_PMGR_COLLECTIVE_TRUE = @WITH_PMGR_COLLECTIVE_TRUE@
 ac_ct_AR = @ac_ct_AR@
@@ -236,7 +241,7 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 tvcmd = @tvcmd@
 @WITH_CIOD_TRUE@OPT_CIOD = -I$(top_srcdir)/@CIODLOC@ 
-@WITH_GCRYPT_TRUE@OPT_GCRYPT = -I$(top_srcdir)/@GCRYPTLOC@ -I$(top_srcdir)/@GPGERRLOC@ 
+OPT_GCRYPT = -I$(top_srcdir)/@GCRYPTLOC@ -I$(top_srcdir)/@GPGERRLOC@ 
 INCLUDES = -I@ARCHHEADER@ $(OPT_CIOD) $(OPT_GCRYPT) -I.. -I../.. -I$(top_srcdir)/@COMMLOC@ 
 BITS = @LIBBITSUFFIX@
 lib_LTLIBRARIES = libmonbeapi.la libmonfeapi.la
@@ -251,8 +256,8 @@ libmonfeapi_la_SOURCES = lmon_fe.cxx \
                                ../../sdbg_opt.hxx \
 			       ../../lmon_api/lmon_say_msg.hxx	
 
-libmonfeapi_la_CFLAGS = @BUILD_FLAGS@ $(AM_CFLAGS)
-libmonfeapi_la_CXXFLAGS = @BUILD_FLAGS@ $(AM_CXXFLAGS)
+libmonfeapi_la_CFLAGS = $(AM_CFLAGS)
+libmonfeapi_la_CXXFLAGS = $(AM_CXXFLAGS)
 libmonfeapi_la_LDFLAGS = -L$(top_srcdir)/@COMMLOC@ \
 			       -L$(top_srcdir)/@GCRYPTLOC@ \
 			       -L$(top_srcdir)/@GPGERRLOC@ \
@@ -265,8 +270,8 @@ libmonbeapi_la_SOURCES = lmon_be.cxx \
 			       lmon_lmonp_msg.cxx \
 		               lmon_say_msg.cxx
 
-libmonbeapi_la_CFLAGS = @BUILD_FLAGS@ $(AM_CFLAGS)
-libmonbeapi_la_CXXFLAGS = @BUILD_FLAGS@ $(AM_CXXFLAGS)
+libmonbeapi_la_CFLAGS = $(AM_CFLAGS)
+libmonbeapi_la_CXXFLAGS = $(AM_CXXFLAGS)
 libmonbeapi_la_LDFLAGS = -L$(top_srcdir)/@COMMLOC@ \
 			       -L$(top_srcdir)/@GCRYPTLOC@ \
 			       -L$(top_srcdir)/@GPGERRLOC@ \

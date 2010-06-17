@@ -26,6 +26,21 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Apr 06 2010 DHA: It turned out the /etc/hosts trick works partially because
+ *                         the entry returned by gethostname isn't unique on Eugene!
+ *                         Added a new parser to parse /proc/personality.sh to 
+ *                         fully work around the problem described below  
+ *        Feb 04 2010 DHA: Added /etc/hosts parser to work around a problem of 
+ *                         systems that are not capable of resolving the hostname 
+ *                         returned by gethostname into an IP. 
+ *        Feb 04 2010 DHA: Moved RM_BG_MPIRUN && VERBOSE && USE_VERBOSE_LOGDIR support
+ *                         to an earlier execution point within LMON_be_init. The change 
+ *                         is to capture as much error messages into files as possible 
+ *                         Also, genericized this support by removing RM_BG_MPIRUN
+ *        Dec 23 2009 DHA: Added explict config.h inclusion 
+ *        Dec 11 2009 DHA: Deprecate the static LMON_be_parse_raw_RPDTAB_msg
+ *                         function in favor of parse_raw_RPDTAB_msg designed 
+ *                         to used broadly.
  *        May 19 2009 DHA: Added errorCB support (ID2787962).
  *        May 06 2009 DHA: Bug fix for ID2787959: LMON_be_recvUsrData not returning
  *                         a correct error code.
@@ -49,6 +64,10 @@
  *                         lmon_be_comm.cxx
  *        Dec 20 2006 DHA: File created
  */
+
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
 
 #include <lmon_api/lmon_api_std.h>
 
@@ -78,6 +97,12 @@
 # include <iostream>
 #else
 # error iostream is required
+#endif
+
+#if HAVE_FSTREAM
+# include <fstream>
+#else
+# error fstream is required
 #endif
 
 #if HAVE_SIGNAL_H
@@ -128,6 +153,12 @@
 # include <assert.h>
 #else
 # error assert.h is required
+#endif
+
+#if HAVE_LIMITS_H
+# include <limits.h>
+#else
+# error limits.h is required
 #endif
 
 #include "lmon_api/lmon_proctab.h"
@@ -215,10 +246,10 @@ LMON_be_getWhereToConnect ( struct sockaddr_in *servaddr )
 {
   char *portinfo;
   char *ipinfo;
-  
+
   if (servaddr == NULL)
     {
-      LMON_say_msg (LMON_BE_MSG_PREFIX, true, 
+      LMON_say_msg (LMON_BE_MSG_PREFIX, true,
         "servaddr is NULL");
 
       return LMON_EBDARG;
@@ -229,12 +260,12 @@ LMON_be_getWhereToConnect ( struct sockaddr_in *servaddr )
   // LMON_FE_WHERETOCONNECT_PORT
   // envVar which should have been sent by FE 
   //
-  if ( (portinfo = getenv (LMON_FE_PORT_ENVNAME)) == NULL )    
+  if ( (portinfo = getenv (LMON_FE_PORT_ENVNAME)) == NULL )
     {
       LMON_say_msg (LMON_BE_MSG_PREFIX, true, 
         "LMON_FE_PORT_ENVNAME envVar not found");
 
-      return LMON_EINVAL;    
+      return LMON_EINVAL;
     }
 
   //
@@ -282,132 +313,168 @@ LMON_be_getSharedKeyAndID ( char *shared_key, int *id )
 
   if ( shared_key == NULL )
     {
-      LMON_say_msg (LMON_BE_MSG_PREFIX, true, 
+      LMON_say_msg (LMON_BE_MSG_PREFIX, true,
         "one of the arguments is NULL" );
 
       return LMON_EBDARG;
     }
 
-  if ( (sk = getenv (LMON_SHRD_SEC_ENVNAME)) == NULL )    
+  if ( (sk = getenv (LMON_SHRD_SEC_ENVNAME)) == NULL )
     {
       LMON_say_msg (LMON_BE_MSG_PREFIX, true, 
         "LMON_SHRD_SEC_ENVNAME envVar not found");
 
-      return LMON_EINVAL;    
+      return LMON_EINVAL;
     }
 
   sprintf (shared_key, "%s", sk);
-  if ( (char_id = getenv (LMON_SEC_CHK_ENVNAME)) == NULL )    
+  if ( (char_id = getenv (LMON_SEC_CHK_ENVNAME)) == NULL )
     {
-      LMON_say_msg (LMON_BE_MSG_PREFIX, true, 
+      LMON_say_msg (LMON_BE_MSG_PREFIX, true,
         "LMON_SEC_CHK_ENVNAME envVar not found");
 
-      return LMON_EINVAL;    
+      return LMON_EINVAL;
     } 
-  
+
   (*id) = atoi (char_id);
-  
+
   return LMON_OK;
 }
 
-
-static lmon_rc_e 
-LMON_be_parse_raw_RPDTAB_msg ( )
+//! bool getPersonalityField ()
+static bool
+getPersonalityField ( std::string& pFilePath, std::string &fieldName, std::string &value)
 {
-  using namespace std;
-
-  char *mpirent;
-  char *strtab;
-  int i;
-  unsigned int ntasks;
-  
-  if ( proctab_cache.size () != 0 )
+  try
     {
-      LMON_say_msg (LMON_BE_MSG_PREFIX, false, 
-        "don't need to call parse_raw_RPDTAB_msg more than once");
+      using namespace std;
+      char line[PATH_MAX];
+      ifstream ifs(pFilePath.c_str());
+      string delim = "=";
+      bool found = false;
 
-      return LMON_EINVAL;
-    }  
- 
-  mpirent = get_lmonpayload_begin ( bedata.proctab_msg );
-  if ( mpirent == NULL )
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-        "bedata.proctab_msg doesn't contain the lmon payload! ");
+      //
+      // checking if pFilePath is valid 
+      //
+      if ( access(pFilePath.c_str(), R_OK) < 0)
+        {
+          LMON_say_msg (LMON_BE_MSG_PREFIX, true,
+            "%s doesn't exist", pFilePath.c_str());
+          return found;
+        }
 
-      return LMON_EINVAL;
+      //
+      // ios_base::failure exception can be thrown
+      //
+      while (!ifs.getline (line, PATH_MAX).eof())
+        {
+          string strLine (line);
+          string::size_type lastPos = strLine.find_first_not_of(delim, 0);
+          string::size_type pos = strLine.find_first_of(delim, lastPos);
+
+          if (pos != string::npos || lastPos != string::npos)
+            {
+              if ( fieldName == strLine.substr(lastPos, pos - lastPos)) 
+                {
+                  lastPos = strLine.find_first_not_of(delim, pos);
+	          pos = strLine.find_first_of(delim, lastPos);
+                  value = strLine.substr(lastPos, pos - lastPos);
+                  found = true;
+                  break;
+                }
+             } 
+          }
+
+      ifs.close();
+      return found;
     }
-
-  strtab  = get_strtab_begin ( bedata.proctab_msg );
-  if ( strtab  == NULL )
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-        "bedata.proctab_msg doesn't contain the string table! ");
-
-      return LMON_EINVAL;
-    }
-
-    if (bedata.proctab_msg->sec_or_jobsizeinfo.num_tasks < LMON_NTASKS_THRE)
-      {
-        ntasks = bedata.proctab_msg->sec_or_jobsizeinfo.num_tasks;
-      }
-    else
-      {
-        ntasks = bedata.proctab_msg->long_num_tasks;
-      }
-
-#if VERBOSE
-    LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-      "entered the loop that populates RPDTAB, numtasks: %d", ntasks);
-#endif
-
-
-  for ( i=0; i < ntasks; i++ )
-    {
-      unsigned int *hn_ix_ptr = (unsigned int*) mpirent;
-      unsigned int *exec_ix_ptr = (unsigned int*) (mpirent + sizeof (int));
-      int *pid_ptr = (int *) (mpirent + 2*sizeof(int));
-      int *rank_ptr = (int *) (mpirent + 3*sizeof(int));
-      mpirent += 4*sizeof (int);
-      string hntmpstr( strtab + (*hn_ix_ptr) );
-      char *exeptr = ( strtab + (*exec_ix_ptr) );      
-
-      MPIR_PROCDESC_EXT *anentry = (MPIR_PROCDESC_EXT *) 
-	malloc (sizeof (MPIR_PROCDESC_EXT) );
-	  
-      if ( anentry == NULL )
-	{
-	  LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-            "malloc returned null ");
-
-	  return LMON_ENOMEM;
-	}
-
-      anentry->pd.executable_name = strdup ( exeptr );
-      anentry->pd.host_name = strdup ( hntmpstr.c_str () );
-      anentry->pd.pid = (*pid_ptr);
-      anentry->mpirank = (*rank_ptr);
-	
-      if ( proctab_cache.find (hntmpstr) == proctab_cache.end() )
-	{
-	  vector<MPIR_PROCDESC_EXT *> avec;
-	  avec.push_back (anentry);
-	  proctab_cache[hntmpstr] = avec;
-	}
-      else
-	{
-	  proctab_cache[hntmpstr].push_back (anentry);	  
-	}      
-    }
-
-#if VERBOSE
-    LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-      "exited the loop that populated RPDTAB"); 
-#endif
-
-  return LMON_OK;
+  catch (std::ios_base::failure f)
+   {
+     LMON_say_msg (LMON_BE_MSG_PREFIX, true,
+       "ios_base::failure exception thrown while parsing the personality file");
+     return false;
+   }
 }
 
+
+//! bool resolvHNAlias
+/*
+    Resolves an alias to an IP using the hosts file 
+    whose path is given by the first argument. 
+    This function can throw ios_base::failure
+*/
+static bool
+resolvHNAlias ( std::string& hostsFilePath, std::string &alias, std::string &IP)
+{
+  try
+    {
+      using namespace std;
+      char line[PATH_MAX];
+      ifstream ifs(hostsFilePath.c_str());
+      string delim = "\t ";
+      bool found = false;
+
+      //
+      // checking if hostsFilePath is valid 
+      //
+      if ( access(hostsFilePath.c_str(), R_OK) < 0)
+        {
+          LMON_say_msg (LMON_BE_MSG_PREFIX, true,
+            "%s doesn't exist", hostsFilePath.c_str()); 
+
+          return found;
+        }
+
+      //
+      // ios_base::failure exception can be thrown
+      //
+      while (!ifs.getline (line, PATH_MAX).eof())
+        {
+          string strLine (line);
+          string::size_type lastPos = strLine.find_first_not_of(delim, 0);
+
+          //
+          // assuming a comment always occupies whole lines
+          //
+          //
+          if (strLine[lastPos] == '#')
+            continue;
+
+          string::size_type pos = strLine.find_first_of(delim, lastPos);
+          vector<string> tokens;
+          vector<string>::const_iterator iter;
+
+          while (pos != string::npos || lastPos != string::npos)
+            {
+              tokens.push_back(strLine.substr(lastPos, pos - lastPos));
+              lastPos = strLine.find_first_not_of(delim, pos);
+              // Find next "non-delimiter"
+              pos = strLine.find_first_of(delim, lastPos);
+              // Found a token, add it to the vector.
+              //tokens.push_back(strLine.substr(lastPos, pos - lastPos));
+            }
+
+          for (iter = tokens.begin(); iter != tokens.end(); iter++)
+            {
+              if (*iter == alias)
+                {
+                  IP = tokens[0];
+                  found = true;
+                  break;
+                }
+            }
+        }
+
+      ifs.close();
+      return found;
+    }
+  catch (std::ios_base::failure f)
+   {
+     LMON_say_msg (LMON_BE_MSG_PREFIX, true,
+       "ios_base::failure exception thrown while parsing lines in the hosts file");
+     return false;
+   }
+}
 
 //////////////////////////////////////////////////////////////////////////////////
 //
@@ -423,45 +490,23 @@ LMON_be_parse_raw_RPDTAB_msg ( )
 /*!
     Please refer to the header file: lmon_be.h
 */
-extern "C" lmon_rc_e 
+extern "C" lmon_rc_e
 LMON_be_init ( int ver, int *argc, char ***argv )
-{  
-  int rc;  
+{
+  int rc;
   lmon_rc_e lrc;
   struct sockaddr_in servaddr;
 
-  if ( ver != LMON_return_ver() ) 
-    {
-      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-        "LMON BE API version mismatch" );
-
-      return LMON_EINVAL;
-    }
-
-  set_client_name(LMON_BE_MSG_PREFIX);
-
-  if ( LMON_be_internal_init ( argc, argv ) != LMON_OK )
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true,
-        "LMON_be_mpibased_init failed");
-
-      return LMON_ESUBCOM;
-    }
- 
-  if ( LMON_be_getMyRank ( &(bedata.myrank) ) != LMON_OK )
-    {
-      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-        "LMON BE getMyRank failed" );
-
-      return LMON_ESUBCOM;
-    }
-
-#if RM_BG_MPIRUN && VERBOSE && USE_VERBOSE_LOGDIR
+#if VERBOSE && USE_VERBOSE_LOGDIR
   //
-  // DHA 3/4/3009, reviewed. Looks fine for BGP as well.
+  // DHA 3/4/2009, reviewed. Looks fine for BGP as well.
   //
   // Changed RM_BGL_MPIRUN to RM_BG_MPIRUN to genericize 
   // BlueGene Support
+  //
+  // DHA 02/04/2010 Moved this up within this LMON_be_init
+  // call. Removed RM_BG_MPIRUN genericizing this support 
+  // further
 
   char debugfn[PATH_MAX];
   char local_hostname[PATH_MAX];
@@ -480,7 +525,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
     }
 
   snprintf(debugfn, PATH_MAX, "%s/stdout.%d.%s", 
-	VERBOSE_LOGDIR,bedata.myrank,local_hostname);
+	VERBOSE_LOGDIR,getpid(),local_hostname);
   if ( freopen (debugfn, "w", stdout) == NULL )
     {
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
@@ -490,7 +535,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
     }
 
   snprintf(debugfn, PATH_MAX, "%s/stderr.%d.%s", 
-	VERBOSE_LOGDIR,bedata.myrank,local_hostname);
+	VERBOSE_LOGDIR,getpid(),local_hostname);
   if ( freopen (debugfn, "w", stderr) == NULL )
     {
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
@@ -499,6 +544,109 @@ LMON_be_init ( int ver, int *argc, char ***argv )
       return LMON_EINVAL;
     }
 #endif
+
+  if ( ver != LMON_return_ver() ) 
+    {
+      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+        "LMON BE API version mismatch" );
+
+      return LMON_EINVAL;
+    }
+
+  set_client_name(LMON_BE_MSG_PREFIX);
+
+  //
+  // Registering bedata.my_hostname and bedata.my_ip
+  //
+#if RM_BG_MPIRUN
+  //
+  // BLUEGENE/L's RPDTAB contains raw IPs instead of hostnames.
+  // 
+  // DHA 3/4/3009, reviewed. Looks fine for the DAWN configuration
+  // /etc/hosts shows that I/O network is detnoted as FENname-io
+  // following the same convention. 
+  //
+  // Changed RM_BGL_MPIRUN to RM_BG_MPIRUN to genericize BlueGene Support
+  //
+  memset ( bedata.my_hostname, 0, LMON_BE_HN_MAX );
+  memset ( bedata.my_ip, 0, LMON_BE_HN_MAX );
+    
+  if ( gethostname ( bedata.my_hostname, LMON_BE_HN_MAX ) < 0 )
+    {
+      LMON_say_msg(LMON_BE_MSG_PREFIX, true,
+        "gethostname failed");
+    
+      return LMON_ESYS;
+    }
+    
+  struct hostent *hent = gethostbyname(bedata.my_hostname);
+  if ( hent == NULL )
+    { 
+      std::string resIP;
+      std::string pFile("/proc/personality.sh");
+      std::string fieldStr("BG_IP");
+
+      LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+        "BES: this machine does not know how to resolve %s into an IP",
+        bedata.my_hostname);
+      LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+        "BES: parsing /proc/personality.sh to try to resolve");
+     
+      if (!getPersonalityField (pFile, fieldStr, resIP))
+        {
+          LMON_say_msg ( LMON_BE_MSG_PREFIX, true,  
+            "BES: getPersonalityField also failed to resolve %s through %s", 
+	    bedata.my_hostname, fieldStr.c_str());
+
+          return LMON_ESYS;
+        }
+      snprintf(bedata.my_ip, LMON_BE_HN_MAX, "%s", 
+        resIP.c_str());
+      snprintf(bedata.my_hostname, LMON_BE_HN_MAX, "%s", 
+        resIP.c_str());
+
+    }
+  else
+    {
+      if ( inet_ntop (AF_INET, (void *)hent->h_addr, bedata.my_hostname, LMON_BE_HN_MAX-1 ) == NULL )
+        {
+          LMON_say_msg(LMON_BE_MSG_PREFIX, true,
+          "inet_ntop failed");
+
+          return LMON_ESYS;
+        }
+    }
+
+# if VERBOSE
+  LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+    "BES: inet_ntop converted host name representation from binary to text: %s", bedata.my_hostname);
+# endif
+#else /* RM_BG_MPIRUN */
+  memset ( bedata.my_hostname, 0, LMON_BE_HN_MAX );
+  if ( gethostname ( bedata.my_hostname, LMON_BE_HN_MAX ) < 0 )
+    {
+      LMON_say_msg(LMON_BE_MSG_PREFIX, true,
+        "gethostname failed");
+
+      return LMON_ESYS;
+    }
+#endif /* RM_BG_MPIRUN */
+
+  if ( LMON_be_internal_init ( argc, argv, bedata.my_hostname ) != LMON_OK )
+    {
+      LMON_say_msg(LMON_BE_MSG_PREFIX, true,
+        "LMON_be_internal_init failed");
+     
+      return LMON_ESUBCOM;
+    }
+
+  if ( LMON_be_getMyRank ( &(bedata.myrank) ) != LMON_OK )
+    {
+      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+        "LMON BE getMyRank failed" );
+
+      return LMON_ESUBCOM;
+    }
 
   if ( LMON_be_getSize ( &(bedata.width ) ) != LMON_OK )
     {
@@ -515,10 +663,10 @@ LMON_be_init ( int ver, int *argc, char ***argv )
  
   BEGIN_MASTER_ONLY
     /*
-     *      
+     *
      * The backend master initiates a handshake with FE
      *
-     */    
+     */
     int i;
     lmonp_t initmsg;   
     char shared_key[LMON_KEY_LENGTH];
@@ -532,19 +680,18 @@ LMON_be_init ( int ver, int *argc, char ***argv )
       {
 	/*
 	 * Establishing a connection with the FE
-	 * if no connection has yet been made.
+	 * if the master has not established a connection
 	 */
 	if ( ( servsockfd = socket ( AF_INET, SOCK_STREAM, 0 )) < 0 )
 	  {
 	    LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
 	      "socket failed ");
-
 	    return LMON_ESYS;
-	  }     
+	  }
 
 #if VERBOSE
-    LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-      "BE master: socket created" );
+      LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+        "BE master: socket created" );
 #endif
 	/*
 	 * Where does the master be connect to?
@@ -569,7 +716,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
 	  {
 	    LMON_say_msg ( LMON_BE_MSG_PREFIX, true, 
               "connect failed " );
-	    
+
 	    return LMON_ESYS;
 	  }
       }
@@ -578,13 +725,13 @@ LMON_be_init ( int ver, int *argc, char ***argv )
     LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
       "BE master: got an actual connection" );
 #endif
-    
+
     bzero ( shared_key, LMON_KEY_LENGTH );
     /*
      * getting shared key and session ID that will be used 
      * to securely connect to the front-end.
      */
-    if ( (lrc = LMON_be_getSharedKeyAndID ( shared_key, 
+    if ( (lrc = LMON_be_getSharedKeyAndID ( shared_key,
 		  &intsessID) ) != LMON_OK)
       {
 	LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
@@ -684,7 +831,6 @@ LMON_be_init ( int ver, int *argc, char ***argv )
 			 0,                    /* security_key1 */
 			 (unsigned int)tmpSK,  /* security_key2 */
 			 0,0,0,0,0 );   
-
 	if ( ( write_lmonp_long_msg ( servsockfd, 
 				      &initmsg, 
 				      sizeof (initmsg) )) < 0 )
@@ -887,55 +1033,8 @@ LMON_be_handshake ( void *udata )
   // to piggyback to FE
   //
   int i;
-  char hn[LMON_BE_HN_MAX];  
-  char hntmp[LMON_BE_HN_MAX];
   char *hngatherbuf = NULL;
 
-#if RM_BG_MPIRUN
-  //
-  // BLUEGENE/L's RPDTAB contains raw IPs instead of hostnames.
-  // 
-  // DHA 3/4/3009, reviewed. Looks fine for the DAWN configuration
-  // /etc/hosts shows that I/O network is detnoted as FENname-io
-  // following the same convention. 
-  //
-  // Changed RM_BGL_MPIRUN to RM_BG_MPIRUN to genericize BlueGene Support
-  //
-  memset ( hn, 0, LMON_BE_HN_MAX );
-  memset ( hntmp, 0, LMON_BE_HN_MAX );
-
-  if ( gethostname ( hntmp, LMON_BE_HN_MAX ) < 0 )
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-      	"gethostname failed");
-
-      return LMON_ESYS;
-    }
-
-  struct hostent *hent = gethostbyname(hntmp);
-  struct in_addr *a = (struct in_addr *)hent->h_addr;
-  if ( inet_ntop (AF_INET, a, hn, LMON_BE_HN_MAX-1 ) == NULL )
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-      	"inet_ntop failed");
-
-      return LMON_ESYS;
-    }
-
-# if VERBOSE
-  LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-    "BES: inet_ntop converted host name representation from binary to text");
-# endif
-#else /* RM_BG_MPIRUN */
-  memset ( hn, 0, LMON_BE_HN_MAX );
-  if ( gethostname ( hn, LMON_BE_HN_MAX ) < 0 )
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-      	"gethostname failed");
-
-      return LMON_ESYS;
-    }
-#endif /* RM_BG_MPIRUN */
 
   BEGIN_MASTER_ONLY
     hngatherbuf = (char *) malloc ( LMON_BE_HN_MAX*bedata.width );
@@ -957,7 +1056,7 @@ LMON_be_handshake ( void *udata )
   // once be_gather is performed, hngatherbuf 
   // should hold all the hostnames
   //
-  if ( LMON_be_gather ( hn, LMON_BE_HN_MAX, hngatherbuf ) != LMON_OK )
+  if ( LMON_be_gather ( bedata.my_hostname, LMON_BE_HN_MAX, hngatherbuf ) != LMON_OK )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
         "gather failed");
@@ -1062,7 +1161,7 @@ LMON_be_handshake ( void *udata )
 
 #if VERBOSE
     LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-      "BE master: set a msg header of lmonp_befe_hostname type");
+      "BE master: about to write the hosts list to the FE");
 #endif
     
     //
@@ -1073,6 +1172,11 @@ LMON_be_handshake ( void *udata )
     		sendbuf, 
     		sendbufsize );
     free (sendbuf);      
+
+#if VERBOSE
+    LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+      "BE master: the hosts list written to the FE");
+#endif
 
     //
     // receiving the PROCTAB stream from the front-end 
@@ -1394,7 +1498,7 @@ LMON_be_ready ( void *udata )
                     (int) lmonp_befe_usrdata,
                     0,0,0,0,0,0,
                     LMON_MAX_USRPAYLOAD);
-                 
+
     	uoffset = get_usrpayload_begin ( readymsg );
     	bedata.pack ( udata,  
     		      uoffset, 
@@ -1442,70 +1546,36 @@ LMON_be_getMyProctab (
   using namespace std;
 
   unsigned int i;
-  char hn[LMON_BE_HN_MAX];
-  char hntmp[LMON_BE_HN_MAX];
+  char *key;
   lmon_rc_e lrc;
 
   if ( bedata.proctab_msg == NULL )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
         "bedata.proctab_msg is null!  ");
-      
+
       return LMON_EINVAL;
     }
 
   if ( proctab_cache.size () == 0 )
     {
-      lrc = LMON_be_parse_raw_RPDTAB_msg ();
-      if ( lrc != LMON_OK ) 
-	return lrc;
+      if ( parse_raw_RPDTAB_msg ( bedata.proctab_msg, &proctab_cache) < 0 )
+        {
+          LMON_say_msg (LMON_BE_MSG_PREFIX, false,
+            "parse_raw_RPDTAB_msg failed to parse RPDTAB");
+
+          return LMON_EINVAL;
+        }
+
     }
 
-#if RM_BG_MPIRUN
-  /*
-   * BLUEGENE's RPDTAB contains raw IPs instead of hostnames.
-   */
-  //	
-  // DHA 3/4/3009, reviewed. 
-  //
-  // Changed RM_BGL_MPIRUN to RM_BG_MPIRUN to genericize 
-  // BlueGene Support
-  //
-  memset ( hn, 0, LMON_BE_HN_MAX );
-  memset ( hntmp, 0, LMON_BE_HN_MAX );
+  key = bedata.my_hostname;
 
-  if ( gethostname ( hntmp, LMON_BE_HN_MAX ) < 0 )
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true,
-        "gethostname failed");
-
-      return LMON_ESYS;
-    }
-
-  struct hostent *hent = gethostbyname(hntmp);
-  struct in_addr *a = (struct in_addr *)hent->h_addr;
-  if ( inet_ntop (AF_INET, a, hn, LMON_BE_HN_MAX-1 ) == NULL )
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true,
-        "inet_ntop failed");
-
-      return LMON_ESYS;
-    }
-#else
-  if ( gethostname(hn, LMON_BE_HN_MAX) < 0 )
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-        "gethostname failed ");
-
-      return LMON_ESYS;
-    }
-#endif
-
-  string myhostname (hn);
+  string myhostname (key);
   (*size) = (int) proctab_cache[myhostname].size ();
   map<string, vector<MPIR_PROCDESC_EXT* > >::const_iterator viter 
     = proctab_cache.find (myhostname);  
-  
+
   for ( i=0; (i < (*size)) && (i < proctab_num_elem); ++i )
     {
       proctabbuf[i].pd.executable_name = strdup ((*viter).second[i]->pd.executable_name);
@@ -1516,7 +1586,7 @@ LMON_be_getMyProctab (
 
   if ( ( i == proctab_num_elem ) && ( proctab_num_elem < (*size) ) )
     return LMON_EINVAL;
-    
+
   return LMON_OK;
 }  
 
@@ -1530,8 +1600,7 @@ LMON_be_getMyProctabSize ( int *size )
 { 
   using namespace std;
 
-  char hn[LMON_BE_HN_MAX];
-  char hntmp[LMON_BE_HN_MAX];
+  char *key=NULL;
   lmon_rc_e lrc;
   
   if ( bedata.proctab_msg == NULL )
@@ -1544,45 +1613,18 @@ LMON_be_getMyProctabSize ( int *size )
 
   if ( proctab_cache.size () == 0 )
     {
-      lrc = LMON_be_parse_raw_RPDTAB_msg ();
-      if ( lrc != LMON_OK ) 
-	return lrc;
-    }
-#if RM_BG_MPIRUN
-  /*
-   * BLUEGENE's RPDTAB contains raw IPs instead of hostnames.
-   */
-  memset ( hn, 0, LMON_BE_HN_MAX );
-  memset ( hntmp, 0, LMON_BE_HN_MAX );
+      if ( parse_raw_RPDTAB_msg ( bedata.proctab_msg, &proctab_cache) < 0 )
+        {
+          LMON_say_msg (LMON_BE_MSG_PREFIX, false,
+            "parse_raw_RPDTAB_msg failed to parse RPDTAB");
 
-  if ( gethostname ( hntmp, LMON_BE_HN_MAX ) < 0 )
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true,
-        "gethostname failed");
-
-      return LMON_ESYS;
+          return LMON_EINVAL;
+        }
     }
 
-  struct hostent *hent = gethostbyname(hntmp);
-  struct in_addr *a = (struct in_addr *)hent->h_addr;
-  if ( inet_ntop (AF_INET, a, hn, LMON_BE_HN_MAX-1 ) == NULL )
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true,
-        "inet_ntop failed");
+  key = bedata.my_hostname;
 
-      return LMON_ESYS;
-    }
-#else
-  if ( gethostname(hn, LMON_BE_HN_MAX) < 0 )
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
-	"gethostname failed ");
-      
-      return LMON_ESYS;
-    }
-#endif
-
-  string myhostname (hn);
+  string myhostname (key);
   (*size) = (int) proctab_cache[myhostname].size ();
 
   return LMON_OK;  
@@ -1769,7 +1811,7 @@ LMON_be_sendUsrData ( void* udata )
                     (int) lmonp_befe_usrdata,
                     0,0,0,0,0,0,
                     LMON_MAX_USRPAYLOAD);
-                 
+
     	uoffset = get_usrpayload_begin ( usrmsg );
         if ( bedata.pack ( udata, uoffset, LMON_MAX_USRPAYLOAD, &upl_leng ) < 0 )
           {

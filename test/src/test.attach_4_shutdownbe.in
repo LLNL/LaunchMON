@@ -56,6 +56,9 @@ if test "x$RM_TYPE" = "xslurm" ; then
   $MPI_JOB_LAUNCHER_PATH -n$NUMTASKS -N$NUMNODES -ppdebug `pwd`/hang_on_SIGUSR1@EXE@ &
 elif test "x$RM_TYPE" = "xbgrm" ; then 
   $MPI_JOB_LAUNCHER_PATH -verbose 0 -np $NUMTASKS -exe `pwd`/hang_on_SIGUSR1@EXE@ -cwd `pwd` &
+elif test "x$RM_TYPE" = "xalps" ; then
+  WAITAMOUNT=`expr $WAITAMOUNT`
+  $MPI_JOB_LAUNCHER_PATH -n $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
 else
   echo "This RM is not supported yet" 
 fi
@@ -64,6 +67,6 @@ PID=`echo $!`
  
 sleep $WAITAMOUNT #wait until the job gets stalled 
  
-fe_attach_smoketest@EXE@ $PID `pwd`/be_kicker@EXE@ $SIGNUM 1
+fe_attach_smoketest@EXE@ $PID `pwd`/be_kicker@EXE@ $SIGNUM 60
  
 sleep $WAITAMOUNT

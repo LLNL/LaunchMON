@@ -28,6 +28,9 @@
  *
  *
  *  Update Log:
+ *        Dec  23 2009 DHA: Removed header file macroes for header files that
+ *                          would exit on almost all UNIX based platforms,
+ *                               facilitaing binary distribution.
  *        Aug  26 2009 DHA: lmon-config.h support
  *        Jun  01 2009 DHA: Added macros to support status checking
  *        May  19 2008 DHA: Added LMON_fe_regErrorCB ( int (*func) (char *msg))
@@ -58,23 +61,9 @@
 #ifndef LMON_API_LMON_FE_H
 #define LMON_API_LMON_FE_H
 
-#if LAUNCHMON_HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#else
-# error sys/types.h is required
-#endif
-
-#if LAUNCHMON_HAVE_UNISTD_H
-# include <unistd.h>
-#else
-# error unistd.h is required
-#endif
-
-#if LAUNCHMON_HAVE_NETDB_H
-# include <netdb.h>
-#else
-# error netdb.h is required
-#endif
+#include <sys/types.h>
+#include <unistd.h>
+#include <netdb.h>
 
 #include <lmon_api/lmon_api_std.h>
 

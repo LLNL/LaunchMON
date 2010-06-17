@@ -38,6 +38,10 @@
 #ifndef SDBG_BASE_MACH_IMPL_HXX 
 #define SDBG_BASE_MACH_IMPL_HXX 1
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
+
 extern "C" {
 #if HAVE_SYS_TYPES_H
 # include <sys/types.h>
@@ -288,6 +292,13 @@ thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_thread_info()
 }
 
 
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+void
+thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::copy_thread_info(const NT &ct)
+{
+  memcpy(&thread_info, &ct, sizeof(ct)); 
+}
+
 //! PUBLIC: check_transition:
 /*!
     It checks the validity of the state transition: is valid to 
@@ -490,6 +501,35 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_master_thread_pid()
   //
   return -1;
 }
+
+
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+void
+process_base_t<SDBG_DEFAULT_TEMPLPARAM>::debug_iter_thrlist()
+{
+  using namespace std;
+  int i=0;
+  typename
+    map<int,thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*,ltstr>::const_iterator
+      tpos;
+  cout << "+++++++++++++++debug_iter_thrlist called" << endl; 
+  for (tpos=thrlist.begin(); tpos!=thrlist.end(); tpos++)
+    {
+      cout << "(" << i << ")" << endl;
+      if (tpos->second->is_master_thread())
+        {
+          cout << "Main thread" << endl; 
+        }
+      cout << "ti_lid: " << tpos->second->get_thread_info().ti_lid << "| ";
+      cout << "ti_pri: " << tpos->second->get_thread_info().ti_pri << "| ";
+      cout << "ti_ta_p: " << tpos->second->get_thread_info().ti_ta_p << "| ";
+      cout << "ti_tid: " << tpos->second->get_thread_info().ti_tid << "| ";
+      cout << "+++++++++++++++" << endl; 
+      i++;
+    }
+
+}
+
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 image_base_t<VA,EXECHANDLER>* 

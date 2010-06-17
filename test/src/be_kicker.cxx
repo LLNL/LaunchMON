@@ -36,6 +36,10 @@
  *        Dec 20 2006 DHA: Created file.          
  */
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
+
 #include <lmon_api/common.h>
 
 #if HAVE_UNISTD_H
@@ -71,6 +75,16 @@
   using namespace DebuggerInterface;
 #endif 
 
+/*
+ * Multipurpose kicker daemon
+ *
+ * Usage: be_kicker signumber waittime
+ *
+ * argv[1]: specify if a non-continue-signal should be delivered to the job
+ * argv[2]: specify the number of seconds this daemon must wait before exit 
+ *
+ */
+
 int 
 main( int argc, char* argv[] )
 {
@@ -97,6 +111,7 @@ main( int argc, char* argv[] )
       return EXIT_FAILURE;
     }
 
+  printf("argc is %d\n", argc);
   if (argc > 1) 
     {
      signum = atoi(argv[1]);
@@ -105,7 +120,7 @@ main( int argc, char* argv[] )
 
   if ( argc > 2 )
     {
-      kill_detach_shutdown_test = 1;
+      kill_detach_shutdown_test = atoi(argv[2]);
     } 
 
   LMON_be_getMyRank(&rank);
@@ -171,7 +186,7 @@ main( int argc, char* argv[] )
     }
 
 #if RM_BG_MPIRUN
-  /* the tool wants to send a signal other than the default */
+  // the tool wants to send a signal other than the default 
   if (signum != 0)  
     {
       for (i=0; i < proctab_size; i++)
@@ -215,10 +230,10 @@ main( int argc, char* argv[] )
 	      return EXIT_FAILURE;
 	    }
         }
-      }
+    } 
 
-      for (i=0; i < proctab_size; i++)
-        {
+    for (i=0; i < proctab_size; i++)
+      {
           BG_Debugger_Msg dbgmsg(CONTINUE,proctab[i].pd.pid,0,0,0);
           BG_Debugger_Msg ackmsg;	  
           dbgmsg.dataArea.CONTINUE.signal = signum;
@@ -249,7 +264,7 @@ main( int argc, char* argv[] )
           	  "[LMON BE(%d)] FAILED: the CONTINUE_ACK msg contains a wrong nodeNumber.\n", rank);
               return EXIT_FAILURE;
             }   
-         }
+      }
 
 #else
   for(i=0; i < proctab_size; i++)
@@ -261,13 +276,15 @@ main( int argc, char* argv[] )
     }
 #endif
 
-  if ( kill_detach_shutdown_test == 1)
-    sleep (60);
+  sleep(1);
+
+  if ( kill_detach_shutdown_test != 0)
+    sleep (kill_detach_shutdown_test);
 
   free (proctab);
 
-  /* sending this to mark the end of the BE session */
-  /* This should be used to determine PASS/FAIL criteria */
+  // sending this to mark the end of the BE session 
+  // This should be used to determine PASS/FAIL criteria 
   if ( (( lrc = LMON_be_sendUsrData ( NULL )) == LMON_EBDARG)
        || ( lrc == LMON_EINVAL ) 
        || ( lrc == LMON_ENOMEM )

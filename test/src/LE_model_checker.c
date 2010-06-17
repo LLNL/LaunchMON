@@ -40,6 +40,10 @@
  *                         TODO: populate a wide range of error cases.  
  */
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
+
 #include <lmon_api/common.h>
 
 #if HAVE_PTHREAD_H

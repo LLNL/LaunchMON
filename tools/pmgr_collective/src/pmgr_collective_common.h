@@ -20,7 +20,7 @@
 #ifndef PMGR_COLLECTIVE_COMMON_H
 #define PMGR_COLLECTIVE_COMMON_H
 
-#include "config.h"
+# include "config.h"
 
 #if defined(_IA64_)
 #undef htons

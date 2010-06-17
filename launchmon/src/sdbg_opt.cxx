@@ -27,6 +27,10 @@
  *						
  *
  *  Update Log:
+ *        Jun 10 2010 DHA: Added RM MAP support. Removed Linux-specific getexec 
+ *                         from here
+ *        Mar 16 2009 DHA: Added COBO support
+ *                         Added 2010 to copyright 
  *        Mar 11 2009 DHA: Added 2009 to copyright
  *        Mar 17 2008 DHA: Added PMGR Collective support.
  *        Feb 09 2008 DHA: Added LLNS Copyright.
@@ -42,8 +46,21 @@
  *        Jun 06 2006 DHA: File created
  */ 
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
+
 #include <lmon_api/common.h>
+
+#if HAVE_LIMITS_H
+# include <limits.h>
+#else
+# error limits.h is required
+#endif
+
 #include "sdbg_opt.hxx"
+#include "sdbg_rm_map.hxx"
+#include "lmon_api/lmon_say_msg.hxx"
 #include "sdbg_self_trace.hxx"
 
 const std::string software_name 
@@ -51,13 +68,19 @@ const std::string software_name
 const std::string version 
    = PACKAGE_VERSION;
 const std::string copyright 
-   = "Copyright (C) 2008-2009, Lawrence Livermore National Security, LLC.";
+   = "Copyright (C) 2008-2010, Lawrence Livermore National Security, LLC.";
 const std::string produced 
    = "Produced at Lawrence Livermore National Laboratory.";
 const std::string right 
    = "LLNL-CODE-409469 All rights reserved.";
 const std::string LAUNCHMON_COPYRIGHT 
    = software_name + " " +  version + "\n" + copyright + "\n" + produced + "\n" + right + "\n";
+
+///////////////////////////////////////////////////////////////////
+//
+// PUBLIC METHODS of the opts_args_t class
+//
+///////////////////////////////////////////////////////////////////
 
 //!
 /*!  opt_args_t constructor
@@ -68,61 +91,31 @@ opts_args_t::opts_args_t ()
 {
   my_opt = new opt_struct_t();
   my_opt->verbose = 0;
-  my_opt->modelchecker=0;
   my_opt->attach = false;
   my_opt->remote = false;
   my_opt->remaining = NULL;
   my_opt->tool_daemon = "";
   my_opt->tool_daemon_opts = "";
   my_opt->remote_info = "";
-#if PMGR_BASED
+#if PMGR_BASED 
   my_opt->pmgr_info = "";
-  my_opt->pmgr_sec_info = "";
 #endif
+  my_opt->lmon_sec_info = "";
   my_opt->debugtarget = "";
   my_opt->launchstring = "";
   my_opt->copyright = LAUNCHMON_COPYRIGHT;
   my_opt->launcher_pid = -1;
+
+  my_rmconfig = new rc_rm_t();
 
   MODULENAME = self_trace_t::opt_module_trace.module_name;
 }
 
 
 //!
-/*!  opt_args_t copy constructor
-     the only member it doesn't do the deep copy is "remaining"
-    
-*/
-opts_args_t::opts_args_t ( const opts_args_t& o )
-{
-  if (o.my_opt != NULL) {
-    my_opt = new opt_struct_t();
-    my_opt->verbose = o.my_opt->verbose;
-    my_opt->modelchecker = o.my_opt->modelchecker;
-    my_opt->attach = o.my_opt->attach;
-    my_opt->remote = o.my_opt->remote;
-    my_opt->remaining = o.my_opt->remaining;
-    my_opt->tool_daemon = o.my_opt->tool_daemon;
-    my_opt->tool_daemon_opts = o.my_opt->tool_daemon_opts;
-    my_opt->remote_info = o.my_opt->remote_info;
-#if PMGR_BASED
-    my_opt->pmgr_info = o.my_opt->pmgr_info;
-    my_opt->pmgr_sec_info = o.my_opt->pmgr_sec_info;
-#endif
-    my_opt->debugtarget = o.my_opt->debugtarget;
-    my_opt->launchstring = o.my_opt->launchstring;
-    my_opt->copyright = o.my_opt->copyright;
-    my_opt->launcher_pid = o.my_opt->launcher_pid;
-
-    MODULENAME = o.MODULENAME;
-  }  
-}
-
-
-//!
 /*!  opt_args_t destructor
-      
-    
+
+
 */
 opts_args_t::~opts_args_t()
 {
@@ -130,24 +123,29 @@ opts_args_t::~opts_args_t()
     delete my_opt;
   }
   my_opt = NULL;
+
+  if (my_rmconfig) {
+    delete my_rmconfig;
+  }
+ my_rmconfig = NULL;
 }
 
 
 //!
 /*!  opt_args_t::process_args
-      
-    
+
+
 */
 bool 
-opts_args_t::process_args ( int* argc, char*** argv )
+opts_args_t::process_args ( int *argc, char ***argv )
 { 
-  using namespace std;
+  using std::string;
 
   bool fin_parsing = false;
   bool rv = true;
-  char* debugtarget = NULL;
-  char** nargv = *argv;
-  char* tracingmodule;
+  char *debugtarget = NULL;
+  char **nargv = *argv;
+  char *tracingmodule;
   char c;
   string modulename;
   string bspth;
@@ -162,7 +160,6 @@ opts_args_t::process_args ( int* argc, char*** argv )
     }
 
   my_opt->remote = false;
-  my_opt->modelchecker = false;
 
   for (i=1; (i < (*argc)) && !fin_parsing ; i++) 
     {    
@@ -187,36 +184,36 @@ opts_args_t::process_args ( int* argc, char*** argv )
 		c = 'o';
 	      else if ( string(&nargv[i][2]) == string("remote"))
 		c = 'r';
-#if PMGR_BASED
+#if PMGR_BASED 
 	      else if ( string(&nargv[i][2]) == string("pmgr"))
-	        c = 'm';  	
-	      else if ( string(&nargv[i][2]) == string("pmgrsec"))	
-	        c = 's';
+	        c = 'm';
 #endif
+	      else if ( string(&nargv[i][2]) == string("lmonsec"))	
+	        c = 's';
 	    }
-            
+
 	  switch (c) 
 	    {
-      
+
 	    case 'a':  
 	      if(debugtarget)
-		nargv[i] = debugtarget;	      
+		nargv[i] = debugtarget;
 	      else
 		exit(1);  
 
 	      my_opt->remaining = &(nargv[i]);
 	      fin_parsing = true;
 	      break;
-	      
+
 	    case 'o':
-	      self_trace_t::tracefptr = fopen (nargv[i+1], "w+");	     
+	      self_trace_t::tracefptr = fopen (nargv[i+1], "w+");
 	      assert ( self_trace_t::tracefptr != NULL);
 	      i++;
 	      break;
 
 	    case 'v':
 	      my_opt->verbose = atoi(nargv[i+1]);
-	      
+
 	      if (my_opt->verbose == 0)
 		ver = quiet;
 	      else if (my_opt->verbose == 1 )
@@ -225,7 +222,7 @@ opts_args_t::process_args ( int* argc, char*** argv )
 		ver = level2;	   
 	      else 
 		my_opt->verbose = 1;	  
-	
+
 	      self_trace_t::launchmon_module_trace.verbosity_level = ver;
 	      self_trace_t::tracer_module_trace.verbosity_level = ver;
 	      self_trace_t::symtab_module_trace.verbosity_level = ver;
@@ -234,20 +231,20 @@ opts_args_t::process_args ( int* argc, char*** argv )
 	      self_trace_t::driver_module_trace.verbosity_level = ver;
 	      self_trace_t::machine_module_trace.verbosity_level = ver;
 	      self_trace_t::opt_module_trace.verbosity_level = ver;
-	      
+
 	      i++;
 	      break;
-	      
+
 	    case 'h':
 	      print_usage();
 	      break;
-       
-	    case 'd':	     	
+
+	    case 'd':
 	      my_opt->tool_daemon =  nargv[i+1];
 	      bspth = nargv[i+1];
 	      if (!check_path(bspth, my_opt->tool_daemon))
   	        exit(1);
-	   
+
 	      i++;
 	      break;
 	
@@ -258,10 +255,10 @@ opts_args_t::process_args ( int* argc, char*** argv )
 
 	    case 'p':
 	      my_opt->launcher_pid = (pid_t)atoi(nargv[i+1]);
-	      my_opt->attach = true;	   
+	      my_opt->attach = true;
 	      i++;
 	      break;
-	      
+
 	    case 'r':
 	      my_opt->remote = true;
 	      my_opt->remote_info = nargv[i+1]; // it should have hostname:port 
@@ -273,13 +270,13 @@ opts_args_t::process_args ( int* argc, char*** argv )
 	      my_opt->pmgr_info = nargv[i+1]; // should also be hostname:port	
 	      i++;
 	      break;	
+#endif
 
  	    case 's':
-	      my_opt->pmgr_sec_info = nargv[i+1]; 	
+	      my_opt->lmon_sec_info = nargv[i+1];
 	      i++;
 	      break;	
 
-#endif
 	    case 'x':
 	      //
 	      // this is a hidden option for self-tracing
@@ -330,7 +327,7 @@ opts_args_t::process_args ( int* argc, char*** argv )
 
 	      i++;
 	      break;
-	      
+
 	    default:
 	      print_usage();
 	      rv = false;
@@ -343,10 +340,13 @@ opts_args_t::process_args ( int* argc, char*** argv )
 	  my_opt->debugtarget = nargv[i];
 	  bspth = debugtarget;
 	  if (!check_path(bspth, my_opt->debugtarget))
-	    exit(1);     
+	    exit(1);
 	}
     }
 
+  //
+  // alternative way to set the engine's verbose level 
+  //
   char *l = getenv("LMON_ENGINE_VERBOSE_LEVEL");
   if (l) 
     {
@@ -370,7 +370,7 @@ opts_args_t::process_args ( int* argc, char*** argv )
         default:
           verbo = quiet;
           break;
-          
+
         }
 
       self_trace_t::launchmon_module_trace.verbosity_level = verbo;
@@ -395,7 +395,7 @@ opts_args_t::process_args ( int* argc, char*** argv )
     {
       if ( my_opt->remote && (my_opt->verbose == 0 ))
         exit (1);
-    
+
       print_usage();
     }
 
@@ -407,132 +407,72 @@ opts_args_t::process_args ( int* argc, char*** argv )
 
 
 //!  opts_args_t::construct_launchstring()
-/*!        
-    
+/*!
+ 
 */
 bool 
 opts_args_t::construct_launch_string ()
 {
-  using namespace std;
-
-  string dt;
-  bool rc = true;;
-  char tar[PATH_MAX];
-  char path[PATH_MAX];  
-  int cnt;
-
   if (!my_opt) 
     {
       {
-	self_trace_t::trace ( LEVELCHK(quiet), 
+	self_trace_t::trace ( true, 
 	  MODULENAME,
 	  1,
-	  "options and arguments haven't been parsed ");
+	  "options and arguments have not been parsed ");
       }
 
       return false;
     }
-  
+
   if ( my_opt->attach ) 
-    {    
-      sprintf(path, "/proc/%d/exe", my_opt->launcher_pid);   
-      cnt = readlink(path, tar, PATH_MAX);
-      if ( cnt < 0 )
-	{
-	  {
-	    self_trace_t::trace ( LEVELCHK(quiet), 
-	    MODULENAME,
-	    1,
-	    "pid[%d] isn't valid.",
-	    my_opt->launcher_pid);
-	  }	  
-	  return false;
-	}
-      tar[cnt] = '\0';
-      my_opt->debugtarget = tar;
-    }
-  
-  char *bnbuf = strdup(my_opt->debugtarget.c_str()); 
-  dt = basename(bnbuf);
-  if ( dt == string("srun") || dt == string("lt-srun")) 
     {
-      my_opt->launchstring 
-	= my_opt->debugtarget + string(" --input=none --jobid=%d --nodes=%d --ntasks=%d ")
-	+ my_opt->tool_daemon + string(" ")
-	+ my_opt->tool_daemon_opts
-#if PMGR_BASED
-	+ string (" --pmgrsize=%d --pmgrip=%s --pmgrport=%s --pmgrjobid=%d --pmgrsharedsec=%s --pmgrsecchk=%s --pmgrlazyrank=1 --pmgrlazysize=1") 
-#endif	
-	;
+      if ( LMON_get_execpath(my_opt->launcher_pid, my_opt->debugtarget) < 0 )
+        {
+          {
+	    self_trace_t::trace ( true, 
+	      MODULENAME,
+	      1,
+	      "Can't determine the executable path of the pid (%d).", my_opt->launcher_pid);
+          }
+          return false;
+        }
+    }
 
-      if ( getenv("LMON_DEBUG_BES") != NULL)
-	{
-	  my_opt->launchstring = string("totalview ") + my_opt->debugtarget +string(" -a ") 
-	    + string(" --input=none --jobid=%d --nodes=%d --ntasks=%d ")	   
-	    + my_opt->tool_daemon + string(" ")
-	    + my_opt->tool_daemon_opts
-#if PMGR_BASED
-            + string (" --pmgrsize=%d --pmgrip=%s --pmgrport=%s --pmgrjobid=%d --pmgrsharedsec=%s --pmgrsecchk=%s --pmgrlazyrank=1 --pmgrlazysize=1")
+#ifdef RM_BE_STUB_CMD
+  char *pref;
+  std::string bestub(RM_BE_STUB_CMD);
+  if (pref = getenv("LMON_PREFIX")) 
+    bestub = std::string(pref) + std::string("/bin/") + bestub;
 #endif
-            ;
-	}
 
-      //cout << my_opt->launchstring << endl;
-      
-      {
-	self_trace_t::trace ( LEVELCHK(level2), 
-	  MODULENAME,
-	  0,
-	  "constructed launchstring: %s",
-	  my_opt->launchstring.c_str() );
-      }	  
-    }
-  else if ( (dt == string ("mpirun")) 
-            || (dt == string ("mpirun32"))
-            || (dt == string("mpirun64")))
+  std::string bulklauncher = my_opt->debugtarget;
+#ifdef RM_FE_COLOC_CMD
+  char *pref2; 
+  bulklauncher = RM_FE_COLOC_CMD;
+  if (pref2 = getenv("LMON_PREFIX")) 
+    bulklauncher = std::string(pref) + std::string("/bin/") + bulklauncher;
+#endif
+  
+  bool initc = my_rmconfig->init( bulklauncher,
+				  my_opt->tool_daemon,
+				  my_opt->tool_daemon_opts
+#ifdef RM_BE_STUB_CMD
+                                , bestub
+#endif
+				 );
+
+  if(!initc)
     {
-      my_opt->launchstring 
-        = my_opt->tool_daemon_opts  
-#if PMGR_BASED
-        + string (" --pmgrip=%s --pmgrport=%s --pmgrjobid=%d --pmgrsharedsec=%s --pmgrsecchk=%s --pmgrlazyrank=1 --pmgrlazysize=1")
-#endif     
-      ;
-    } 
-  else if ( (dt == string ("LE_model_checker.debug") )
-	    || (dt == string ("LE_model_checker")) )
-    {
-      // 
-      // mpirun model checker support
-      //
+      self_trace_t::trace ( true, 
+        MODULENAME,
+	1,
+	"unable to initialize the RM map object for launching string construction.");
 
-      my_opt->launchstring 
-        = my_opt->tool_daemon_opts  
-#if PMGR_BASED
-        + string (" --pmgrip=%s --pmgrport=%s --pmgrlazyrank=1 --pmgrlazysize=1")
-#endif     
-      ;
-      my_opt->modelchecker = true;
-
-    }
-  else 
-    {    
-      {
-	self_trace_t::trace ( LEVELCHK(quiet), 
-			      MODULENAME,
-			      1,
-			      "unknown launcher: %s ",
-			      dt.c_str());
-      }
-      
-      rc = false;    
+      return false;
     }
 
-  //
-  // NOTE: are there any platforms that free on bnbuf is dangerous?
-  //
-  free (bnbuf);
-
-  return rc;
+  return true;
 }
 
 
@@ -543,7 +483,8 @@ opts_args_t::construct_launch_string ()
 void 
 opts_args_t::print_usage()
 {
-  using namespace std;
+  using std::cerr;
+  using std::endl;
 
   cerr << "Usage: " << endl;
   cerr << "  launchmon <options> srun -a <srun options>" << endl; 
@@ -573,13 +514,12 @@ opts_args_t::print_usage()
 
 
 //!  opts_args_t::print_copyright()
-/*!  
+/*!
      print the copyright
 */
 void 
 opts_args_t::print_copyright()
 {
-  using namespace std;
   {
      self_trace_t::trace ( LEVELCHK(level1),
         MODULENAME,
@@ -597,7 +537,6 @@ opts_args_t::print_copyright()
 bool
 opts_args_t::option_sanity_check()
 { 
-
   if (!my_opt) 
     {
       {
@@ -626,24 +565,34 @@ opts_args_t::option_sanity_check()
 }
 
 
+///////////////////////////////////////////////////////////////////
+//
+// PRIVATE METHODS of the opts_args_t class
+//
+///////////////////////////////////////////////////////////////////
+
+
 //!  opts_args_t::check_path
 /*!  
           
 */
 bool 
-opts_args_t::check_path ( std::string& base, std::string& path )
+opts_args_t::check_path ( std::string &base, std::string &path )
 {
   using namespace std;
 
-  char* pth = NULL;
-  char* mypath = NULL;
-  char* mypathstart = NULL;
+  char *pth = NULL;
+  char *mypath = NULL;
+  char *mypathstart = NULL;
   bool rc = true;
   struct stat pathchk;
 
   mypath = strdup(getenv("PATH"));
   mypathstart = mypath;
 
+  //
+  // TODO: stat is OS-specific, move it this to OS-dependent layer  
+  //
   while ( stat( path.c_str(), &pathchk ) != 0 ) 
     {		  
       pth = strtok(mypath, ":");
@@ -670,4 +619,36 @@ opts_args_t::check_path ( std::string& base, std::string& path )
   free(mypathstart);
 
   return rc;
+}
+
+
+//!
+/*!  opt_args_t copy constructor
+     the only member it doesn't do the deep copy is "remaining"
+
+     Jun 09 2010, move this copy ctor to the private area to 
+     prevent this object from being copied	 
+*/
+opts_args_t::opts_args_t ( const opts_args_t& o )
+{
+  if (o.my_opt != NULL) {
+    my_opt = new opt_struct_t();
+    my_opt->verbose = o.my_opt->verbose;
+    my_opt->attach = o.my_opt->attach;
+    my_opt->remote = o.my_opt->remote;
+    my_opt->remaining = o.my_opt->remaining;
+    my_opt->tool_daemon = o.my_opt->tool_daemon;
+    my_opt->tool_daemon_opts = o.my_opt->tool_daemon_opts;
+    my_opt->remote_info = o.my_opt->remote_info;
+#if PMGR_BASED 
+    my_opt->pmgr_info = o.my_opt->pmgr_info;
+#endif
+    my_opt->lmon_sec_info = o.my_opt->lmon_sec_info;
+    my_opt->debugtarget = o.my_opt->debugtarget;
+    my_opt->launchstring = o.my_opt->launchstring;
+    my_opt->copyright = o.my_opt->copyright;
+    my_opt->launcher_pid = o.my_opt->launcher_pid;
+
+    MODULENAME = o.MODULENAME;
+  }  
 }

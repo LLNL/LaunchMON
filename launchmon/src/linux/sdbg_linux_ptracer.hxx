@@ -26,6 +26,9 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Dec 16 2009 DHA: Added demangling support for C++ function names
+ *                         and moved get_backtrace into sdbg_linux_ptracer.hxx
+ *                         to use it for all other modules in the linux layer.
  *        Feb 09 2008 DHA: Added LLNS Copyright
  *        Aug 16 2007 DHA: backtrace support for linux tracer exception
  *        Jul 03 2006 DHA: Added self tracing support
@@ -42,18 +45,12 @@ extern "C" {
 #else
 # error sys/ptrace.h is required 
 #endif
-
-#if HAVE_EXECINFO_H
-# include <execinfo.h>
-#else
-#error execinfo.h is required 
-#endif
 }
 
 #include "sdbg_base_tracer.hxx"
 #include "sdbg_self_trace.hxx"
 
-const int BPCHAINMAX     = 128;
+
 //! class linux_tracer_exception_t : public tracer_exception_t
 /*!
  
@@ -85,29 +82,10 @@ public:
   virtual ~linux_tracer_exception_t()                  { }
   bool get_backtrace () 
                      {
-                        void *pcchain_array[BPCHAINMAX] = {0};
-                        char **stacksymbols;
-  			int size;
-  			int i;
-
-  			size = backtrace (pcchain_array, BPCHAINMAX);
-			if (size <= 0)
-    			  return false;
-
-
-  			if (size > BPCHAINMAX)
-    			  size = BPCHAINMAX;
-
-  			stacksymbols = backtrace_symbols(pcchain_array, BPCHAINMAX);
-                        std::string mybt;
-                        mybt = "BACKTRACE: ";  
-                        for( i=0 ; i < size ; ++i)
-                        {
-                          mybt += stacksymbols[i]; 
-                          mybt += "\n";
-                        }
-                        set_bt (mybt);
-                        return true;
+		       std::string mybt;
+		       bool rc = glic_backtrace_wrapper(mybt);
+		       set_bt(mybt);		       
+		       return rc;
                      }
 };
 

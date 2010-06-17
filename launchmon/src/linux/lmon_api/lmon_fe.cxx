@@ -23,9 +23,15 @@
  * You should have received a copy of the GNU Lesser General Public License along 
  * with this program; if not, write to the Free Software Foundation, Inc., 59 Temple 
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *--------------------------------------------------------------------------------			
+ *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Apr 27 2010 DHA: Added MEASURE_TRACING_COST support.
+ *        Feb 04 2010 DHA: Added LMON_FE_HOSTNAME_TO_CONN support
+ *        Dec 23 2009 DHA: Added explict config.h inclusion 
+ *        Dec 16 2009 DHA: COBO support
+ *        Dec 11 2009 DHA: BE hostname list generation in preparation for 
+ *                         scalable PMGR Collective bootstrapping
  *        Jun 01 2009 DHA: Changed LMON_fe_regStatusCB to be aware of 
  *                         a target session.
  *        May 19 2009 DHA: Changed static int (*statusCB) (void *status) 
@@ -33,7 +39,7 @@
  *                         the argument type for the status callback function
  *                         is now a pointer to an interger. 
  *        May 19 2009 DHA: Added LMON_fe_regErrorCB ( int (*errorCB)(char *msg) )
- *                         support. 
+ *                         support.
  *        Mar 13 2009 DHA: Added large nTasks support
  *        Mar 11 2009 DHA: Bug fix in the pthread_cond_timedwait
  *                         return code checking logic for launchmon engine 
@@ -104,9 +110,12 @@
  *                         test.stress_sess_descriptor.sh test case.
  *        Dec 27 2006 DHA: Polishing up the data types
  *        Dec 22 2006 DHA: proctab communication sequence done
- *        Dec 15 2006 DHA: Created file. 
+ *        Dec 15 2006 DHA: Created file.
  */
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
 #include <lmon_api/lmon_api_std.h>
 
 #ifndef LINUX_CODE_REQUIRED
@@ -129,6 +138,12 @@
 # include <map>
 #else
 # error map.h is required
+#endif
+
+#if HAVE_VECTOR
+# include <vector>
+#else
+# error vector is required
 #endif
 
 #if HAVE_STDLIB_H
@@ -205,6 +220,17 @@
 # error fcntl.h is required
 #endif
 
+#if HAVE_LIMITS_H
+# include <limits.h>
+#else
+# error limits.h is required
+#endif
+
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <sstream>
+
 #include "sdbg_self_trace.hxx"
 #include "sdbg_opt.hxx"
 #include "lmon_api/lmon_say_msg.hxx"
@@ -213,10 +239,13 @@
 #include <lmon_api/lmon_lmonp_msg.h>
 #include <lmon_api/lmon_fe.h>
 
-
 #if PMGR_BASED
 extern  "C" {
 #include <pmgr_collective_mpirun.h>
+}
+#elif COBO_BASED
+extern "C" {
+#include <cobo.h>
 }
 #endif
 
@@ -264,6 +293,14 @@ const int conn_size = 3;
 
 typedef int lmon_reshandle_t;
 
+class lexGraphCmp
+{
+public:
+  bool operator() (const std::string &s1, const std::string &s2)
+    {
+      return ( s1 < s2 );
+    }
+};
 
 //! lmon_session_comm_desc_t
 /*!  
@@ -435,13 +472,13 @@ typedef struct _lmon_session_desc_t {
   /*
    * watchdog thread descriptors
    */
-  lmon_thr_desc_t watchdogThr;   
+  lmon_thr_desc_t watchdogThr;
 
 
   /* 
    * resource handle such as "totalview_jobid": type is int for now 
    */
-  lmon_reshandle_t resourceHandle;  
+  lmon_reshandle_t resourceHandle;
 
  
   /* 
@@ -450,8 +487,8 @@ typedef struct _lmon_session_desc_t {
    * daemonEnvList[0]: for backends
    * daemonEnvList[1]: for middleware
    */
-  lmon_daemon_env_t* daemonEnvList[2];  
-  
+  lmon_daemon_env_t* daemonEnvList[2];
+
 
   /* 
    * the raw RPDTAB msg received from launchmon engine 
@@ -463,6 +500,11 @@ typedef struct _lmon_session_desc_t {
    * the raw hostname table msg received from the master BE daemon
    */
   lmonp_t *hntab_msg;
+
+  /* 
+   * the host list constructed from proctab_msg
+   */
+  std::map<std::string,std::vector<MPIR_PROCDESC_EXT *>,lexGraphCmp> pMap;
 
   /*
    * status check callback for this function 
@@ -647,11 +689,11 @@ LMON_fe_putToDaemonEnv ( lmon_daemon_env_t **sessEnv,
 
 
 //! LMON_init_sess ( lmon_session_desc_t* s )
-/*!           
+/*!
   Initialize a session
   return 0 on success; -1 on failure
 */
-static int 
+static int
 LMON_init_sess ( lmon_session_desc_t* s )
 {
   if ( s == NULL )
@@ -711,6 +753,11 @@ LMON_init_sess ( lmon_session_desc_t* s )
 
   s->proctab_msg = NULL; 
   s->hntab_msg = NULL;
+
+  if (s->pMap.size() != 0) {
+    s->pMap.clear();
+  }
+
   s->resourceHandle = LMON_INIT;
 
   s->statusCB = NULL;
@@ -774,6 +821,10 @@ LMON_destroy_sess ( lmon_session_desc_t* s )
   free(s->hntab_msg);
   s->hntab_msg = NULL; 
   s->resourceHandle = LMON_INIT;
+
+  if (s->pMap.size() != 0) {
+    s->pMap.clear();
+  }
 
   s->statusCB = NULL;
 
@@ -1258,18 +1309,38 @@ LMON_fe_acceptEngine ( int sessionHandle )
 static lmon_rc_e 
 LMON_assist_ICCL_BE_init (lmon_session_desc_t *mydesc)
 {
-#if PMGR_BASED
+#if MEASURE_TRACING_COST
+   double be_ts;
+   double be_ts_buf;
+   double c_start_ts;
+   double c_end_ts;
+   c_start_ts = gettimeofdayD();
+   be_ts = 0.0f;
+   {
+     LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
+       "LMON_assist_ICCL_BE_init begins");
+   }
+#endif
+
+#if PMGR_BASED || COBO_BASED
   /*
    * The following code is from Adam Moody's 
    * PMGR Collective package, implementing
    * the communication protocol that allows talking 
    * with the PMGR Collective's clients.  
    *
+   * And his COBO support
+   *
    */
   int i      = 0;
   int tosec  = 0;
-  int ndmons   = 0;
+  int ndmons = 0;
   char *tout = NULL;
+#if COBO_BASED
+  unsigned int hcnt   =0;
+  const char **hostlist = NULL;
+  int *portlist = NULL;
+#endif
   struct sockaddr_in sockaddr;
   unsigned int sockaddr_len = sizeof(sockaddr);
 
@@ -1282,35 +1353,83 @@ LMON_assist_ICCL_BE_init (lmon_session_desc_t *mydesc)
   if (!mydesc->proctab_msg)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-	  "proctab msg has not yet arrived! A race condition?");
-	
+        "proctab msg has not yet arrived! A race condition?");
+
       return LMON_EBUG;
     }
+#if COBO_BASED
+  else
+    {
+      if ( parse_raw_RPDTAB_msg (mydesc->proctab_msg, &(mydesc->pMap)) < 0 )
+        {
+          LMON_say_msg (LMON_FE_MSG_PREFIX, false,
+            "parse_raw_RPDTAB_msg failed to parse RPDTAB");
 
-  mydesc->commDesc[fe_be_conn].nDaemons 
+          return LMON_ESYS;
+        }
+
+      if ( (mydesc->pMap.size()) != 0 )
+        {
+          int j;
+          std::map<std::string, std::vector<MPIR_PROCDESC_EXT *> >::const_iterator iter;
+          hostlist = (const char **) malloc (mydesc->pMap.size() * sizeof(const char *));
+          if (hostlist == NULL)
+            {
+              LMON_say_msg (LMON_FE_MSG_PREFIX, false,
+                "malloc returned NULL");
+
+              return LMON_ENOMEM;
+            }
+
+          for (iter = mydesc->pMap.begin(); iter != mydesc->pMap.end(); iter++)
+            {
+              // Unless mydesc->pMap destroyed strings that hostlist points
+              // to should be valid
+              hostlist[hcnt] = iter->first.c_str();
+              hcnt++;
+            }
+
+           /* This is only for testing */
+           portlist = (int *) malloc (COBO_PORT_RANGE * sizeof(int));
+	   if (portlist == NULL)
+	     {
+               LMON_say_msg (LMON_FE_MSG_PREFIX, false,
+                 "malloc returned NULL");
+
+               return LMON_ENOMEM;
+	     }
+
+           for (j=0; j < COBO_PORT_RANGE; ++j)
+             portlist[j] = COBO_BEGIN_PORT+j;
+         }
+    }
+#endif
+
+  mydesc->commDesc[fe_be_conn].nDaemons
     = mydesc->proctab_msg->sec_or_stringinfo.exec_and_hn.num_host_name;
   ndmons = mydesc->commDesc[fe_be_conn].nDaemons;
 
+#if PMGR_BASED
   for (i = 0; i < ndmons; i++) 
     {
       int rank;
       int nread;
       int connfd;
-      int nwrite;    
+      int nwrite;
       int version;
 
       sockaddr_len = sizeof(sockaddr);
-          
+
       connfd = lmon_timedaccept ( mydesc->commDesc[fe_be_conn].sessionListenSockFd,
 				  (struct sockaddr *) &sockaddr,
 				  &sockaddr_len,
-				  tosec);
-    
+				  tosec );
+
       if ( connfd == -2 )
 	{
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-	    "accepting a connection with a BE timed out");
-                                                                                         
+	    "accepting a connection with a BE (rank=%d) timed out, return code from lmon_timedaccept: %d", i, connfd);
+
 	  return LMON_ETOUT;
 	}
       else if ( connfd < 0 )
@@ -1324,13 +1443,14 @@ LMON_assist_ICCL_BE_init (lmon_session_desc_t *mydesc)
       if ( i == 0 )
 	{
 	  /* with the master ... */
-	  mydesc->commDesc[fe_be_conn].sessionAcceptSockFd = connfd;	  
+	  mydesc->commDesc[fe_be_conn].sessionAcceptSockFd = connfd;
 	}
 
       /*
        * protocol:0
        *  0. read protocol version number
        *  1A. read rank of process (It must be -1 because we want the LAZY_RANK_BINDING support.
+       *  1A' if MEASURE_TRACING_COST, read the timestamp
        *  1B. write rank for LAZY_RANK_BINDING
        *  1C. write size for LAZY_SIZE_BINDING
        *  2. read hostid length
@@ -1344,48 +1464,68 @@ LMON_assist_ICCL_BE_init (lmon_session_desc_t *mydesc)
       if ( (nread = lmon_read_raw ( connfd, &version, sizeof(version)) ) < 0 )
 	{
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-			 "read on a socket failed.");
+	    "read on a socket failed.");
 	
 	  return LMON_ESYS;
 	}
  
+#if MEASURE_TRACING_COST
+      if ( (nread = lmon_read_raw ( connfd, &be_ts_buf, sizeof(be_ts_buf)) ) < 0 )
+	{
+	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+	    "read on a socket failed.");
+	
+	  return LMON_ESYS;
+	}
+
+      if (be_ts < be_ts_buf) 
+        { 
+          // On being spanwed, back-end daemons take a timestamp
+          // Assuming the clocks are well synchronized across remote nodes, 
+          // the latest timestamp can be the end of the RM daemon launching OP.
+          // Then, the end of this ICCL helper routine - that timestamp
+          // can serve us as the LMON overhead.  
+          be_ts = be_ts_buf; 
+        }
+#endif
+
       if ( version != PMGR_COLLECTIVE) 
 	{ 
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-			 "PMGR Collective protocol is inconsistent.");
-	  
-	  return LMON_ESYS;         
+	    "PMGR Collective protocol is inconsistent.");
+
+	  return LMON_ESYS;
 	}
 
       if ( ( nread = lmon_read_raw ( connfd, &rank, sizeof(rank)) ) < 0 )
 	{
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-			 "read on a socket failed.");
-	    
+	    "read on a socket failed.");
+
 	  return LMON_ESYS;
 	}
 	
       if ( rank != -1 )
 	{
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-			 "rank already determined.");
-	    
+	    "rank already determined.");
+
 	  return LMON_ESYS;
 	}
 
       if ( ( nwrite = lmon_write_raw ( connfd, &i, sizeof(i)) ) < 0 )
 	{
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-			 "write to a socket failed.");
-	    
+	    "write to a socket failed.");
+
 	  return LMON_ESYS;
 	}
-            
+
       if ( ( nwrite = lmon_write_raw ( connfd, &ndmons, sizeof(ndmons)) ) < 0 )
 	{
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-			 "write to a socket failed.");
-	    
+	    "write to a socket failed.");
+
 	  return LMON_ESYS;
 	}
 
@@ -1400,9 +1540,66 @@ LMON_assist_ICCL_BE_init (lmon_session_desc_t *mydesc)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
 			 "pmgr_process_singleop failed.");
-	    
+
       return LMON_ESYS;
     }
+#elif COBO_BASED
+  /*
+   * Now taking advantage of COBO's new scalable bootstrapping
+   * Session id=10 for now.
+   */
+  if ( cobo_server_open (10, (char **) hostlist, hcnt, portlist, COBO_PORT_RANGE)
+       != COBO_SUCCESS )
+    {
+       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+         "cobo_server_open failed.");
+
+      return LMON_ESYS;
+    }
+
+   if ( cobo_server_get_root_socket (&(mydesc->commDesc[fe_be_conn].sessionAcceptSockFd)) != COBO_SUCCESS)
+     {
+        LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+          "cobo_server_get_rootsocket failed.");
+
+       return LMON_ESYS;
+     }
+
+# if MEASURE_TRACING_COST
+   if ( lmon_read_raw(mydesc->commDesc[fe_be_conn].sessionAcceptSockFd, (void*)&be_ts, sizeof(double)) < 0 )
+     {
+       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+         "read on a socket failed during MEASURE_TRACING_COST.");
+
+       return LMON_ESYS;
+     }
+# endif
+
+#endif /* COBO_BASED */
+#endif /* PMGR_BASED || COBO_BASED */
+
+#if MEASURE_TRACING_COST
+  c_end_ts = gettimeofdayD();
+  {
+    LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
+      "The inclusive LMON overhead of bootstrapping the ICCL layer: %f secs",
+      (c_end_ts - c_start_ts));
+    if (be_ts > (0.0f + 1E-10)) {
+      if (be_ts > c_end_ts) 
+        {
+          LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
+            "The BE time stamp is greater than the end of the ICCL layer bootstrapping!"); 
+          LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
+            "Must be out-of-synch clocks across remote nodes. The exclusive LMON overhead cannot be determined");
+        } 
+      else 
+        {
+          LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
+            "The exclusive LMON overhead of bootstrapping the ICCL layer: %f secs",
+            (c_end_ts - be_ts));
+        }
+    }
+  }
 #endif
 
   return LMON_OK;
@@ -1578,16 +1775,16 @@ LMON_fe_beHandshakeSequence (
 
       return LMON_ESYS;
     }
-			     
+
 
   if ( ( msg.msgclass != lmonp_fetobe )
        || ( msg.type.fetobe_type != lmonp_befe_hostname )
-       || ( (msg.lmon_payload_length + msg.usr_payload_length) < 0 ) )      
+       || ( (msg.lmon_payload_length + msg.usr_payload_length) < 0 ) )
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
 	"received an invalid message ");
-      
-      return LMON_EBDMSG;      
+
+      return LMON_EBDMSG;
     }
 
   len = msg.lmon_payload_length + msg.usr_payload_length;  
@@ -1607,7 +1804,7 @@ LMON_fe_beHandshakeSequence (
 		   "read_lmonp_payloads failed");
 
     return LMON_ESYS;
-  }       
+  }
   
   if ( mydesc->proctab_msg == NULL )
     return LMON_EBUG;
@@ -1616,7 +1813,7 @@ LMON_fe_beHandshakeSequence (
   // PROCTAB MSG
   //   -- We simply flip some bits to convert this message to 
   //      "lmonp_febe_proctab" type
-  //      
+  //
   mydesc->proctab_msg->msgclass = lmonp_fetobe;
   mydesc->proctab_msg->type.fetobe_type = lmonp_febe_proctab;
   if ( write_lmonp_long_msg ( mydesc->commDesc[fe_be_conn].sessionAcceptSockFd,
@@ -1675,7 +1872,7 @@ LMON_fe_beHandshakeSequence (
 
 
 //! LMON_set_options
-/*!           
+/*!
   sets the given options in a way that the main launchmon 
   engine understands
 */
@@ -1685,7 +1882,7 @@ LMON_set_options (
 		opts_args_t& opt,
 		int verbose,
 		bool attach,
-		const char *launcher,			    
+		const char *launcher,
 		char *launcher_argv[],
 		int launcherPid,
 		const char *toolDaemon,
@@ -1721,19 +1918,18 @@ LMON_set_options (
   self_trace_t::driver_module_trace.verbosity_level        = ver;
   self_trace_t::machine_module_trace.verbosity_level       = ver;
   self_trace_t::opt_module_trace.verbosity_level           = ver;
-    
+
   sprintf ( portinfo, 
 	      "%d", 
 	      (unsigned short) 
 	      ntohs (mydesc->commDesc[fe_engine_conn].servAddr.sin_port) );
-      
+
   optcontext->remote = true;
   optcontext->remote_info = mydesc->commDesc[fe_engine_conn].ipInfo;
   optcontext->remote_info += ":";
   optcontext->remote_info += portinfo;
 #if PMGR_BASED
   char portinfo_pmgr[16];
-  char tmprandomID[128];
 
   sprintf ( portinfo_pmgr, 
 	      "%d", 
@@ -1742,15 +1938,17 @@ LMON_set_options (
   optcontext->pmgr_info = mydesc->commDesc[fe_be_conn].ipInfo;
   optcontext->pmgr_info += ":";
   optcontext->pmgr_info += portinfo_pmgr;
+#endif
+
+  char tmprandomID[128];
 
   sprintf (tmprandomID, 
 	     "%d",
 	     mydesc->randomID);
 
-  optcontext->pmgr_sec_info = mydesc->shared_key;
-  optcontext->pmgr_sec_info += ":";
-  optcontext->pmgr_sec_info += tmprandomID;	
-#endif
+  optcontext->lmon_sec_info = mydesc->shared_key;
+  optcontext->lmon_sec_info += ":";
+  optcontext->lmon_sec_info += tmprandomID;	
   optcontext->attach = attach;
   optcontext->tool_daemon = toolDaemon;
 
@@ -1779,7 +1977,7 @@ LMON_set_options (
 	    {
 	      if ( i != 0 )
                 {
-		  optcontext->tool_daemon_opts += " ";	      
+		  optcontext->tool_daemon_opts += " ";
                 }
 	      optcontext->tool_daemon_opts += string(daemon_argopts[i]);
 
@@ -1794,7 +1992,7 @@ LMON_set_options (
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
 		     "opt.option_sanity_check failed ");
-      
+
       return LMON_EBDARG;
     }
  
@@ -1805,7 +2003,7 @@ LMON_set_options (
       return LMON_EINVAL;
     }
 
-  opt.print_copyright();   
+  opt.print_copyright();
 #endif  
 
   lmon_daemon_env_t *trav = mydesc->daemonEnvList[0];
@@ -1823,7 +2021,7 @@ LMON_set_options (
 
 
 //! LMON_openBindAndListen
-/*!           
+/*!
   opens up a TCP socket, binding it with a random port and listening in 
   on it. This is per-session server socket. 
 
@@ -1834,15 +2032,16 @@ static lmon_rc_e
 LMON_openBindAndListen ( int *sfd )
 {
   int rc;
-  struct sockaddr_in servaddr;      
+  struct sockaddr_in servaddr;
   struct hostent *hp;
   struct in_addr **addr; 
   char hn[MAX_LMON_STRING]; 
+  char *hngiven;
 
   if ( (rc = gethostname(hn, MAX_LMON_STRING)) < 0 ) 
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-		     "gethostname call failed");    
+		     "gethostname call failed");
 
       return LMON_ESYS;
     }
@@ -1859,12 +2058,38 @@ LMON_openBindAndListen ( int *sfd )
   // Changed RM_BGL_MPIRUN to RM_BG_MPIRUN to genericize BlueGene Support
   //
   strcat (hn, "-io");
-#endif  
+#elif RM_ALPS_APRUN
+  //
+  // Cray uses its own way to name a node, so overwriting 
+  // hn with the name generated with their method
+  //
+  std::ifstream ifs( "/proc/cray_xt/nid" );
+  uint32_t nid;
+  ifs >> nid;
+
+  std::ostringstream nidStr;
+  nidStr << "nid" << std::setw( 5 ) << std::setfill( '0' )
+         << nid << std::ends;
+  snprintf(hn, MAX_LMON_STRING, "%s",nidStr.str().c_str());
+#endif
+
+  //
+  // LMON_FE_HOSTNAME_TO_CONN support to handle a condition where 
+  // the hostname returned by gethostname doesn't represent a 
+  // hostname for remote tool daemons to connect to 
+  //
+  if ( (hngiven = getenv ("LMON_FE_HOSTNAME_TO_CONN")) != NULL)
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
+		     "front-end hostname that remote daemons use is given");	
+      memset (hn, '\0', MAX_LMON_STRING);
+      snprintf(hn, MAX_LMON_STRING, "%s", hngiven);
+    } 
 
   if ( (hp = gethostbyname(hn)) == NULL ) 
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-		     "gethostbyname call failed");     
+		     "gethostbyname call failed");
 
       return LMON_ESYS;
     }
@@ -1873,7 +2098,7 @@ LMON_openBindAndListen ( int *sfd )
   if ( ((*sfd) = socket ( AF_INET, SOCK_STREAM, 0 )) < 0 )
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-		     "socket call failed");        
+		     "socket call failed");
 
       return LMON_ESYS;
     }
@@ -2144,7 +2369,7 @@ LMON_fetofe_watchdog_thread ( void *arg )
       // per-session watchdog thread's main event loop ...
       //
       //
-      if ( ( rc = read_lmonp_msgheader ( readingFd, &msg )) < 0 )       
+      if ( ( rc = read_lmonp_msgheader ( readingFd, &msg )) < 0 )
 	{
 	  //
 	  // If "read a message" fails, we should loop over
@@ -2154,8 +2379,8 @@ LMON_fetofe_watchdog_thread ( void *arg )
 	     "read_lmonp_msg returned a negative return code");
 
 	  break;	  
-	}           
-      
+	}
+
       switch ( msg.type.fetofe_type )
 	{
 	case lmonp_stop_at_launch_bp_spawned:
@@ -2306,6 +2531,7 @@ LMON_fetofe_watchdog_thread ( void *arg )
 	case lmonp_mwdmon_exited:
 	  pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
 	  mydesc->detached = LMON_TRUE;
+	  mydesc->spawned = LMON_FALSE;
           fe_getStatus (mydesc, &status); 
           if (mydesc->statusCB != NULL)
             {
@@ -2443,37 +2669,7 @@ LMON_fe_init ( int ver )
   if ( ( pthread_atfork ( NULL, NULL, LMON_child_fork_handler ) ) != 0 )
     return LMON_ESYS;
 
-#if 0
-  //
-  // installing signal handlers
-  //
-  struct sigaction act;
-  struct sigaction oact;
-  act.sa_handler = LMON_handle_signals;
-
-  if ( sigemptyset(&act.sa_mask) < 0 )
-    return LMON_ESYS;
-
-  if ( sigaction(SIGFPE, &act, &oact) < 0 )
-    return LMON_ESYS;
-
-  if ( sigaction(SIGINT, &act, NULL) < 0 )
-    return LMON_ESYS;
-
-  if ( sigaction(SIGBUS, &act, NULL) < 0 )
-    return LMON_ESYS;
-
-  if ( sigaction(SIGTERM, &act, NULL) < 0 )
-    return LMON_ESYS;
-
-  if ( sigaction(SIGSEGV, &act, NULL) < 0 )
-    return LMON_ESYS;
-
-  if ( sigaction(SIGILL, &act, NULL) < 0 )
-    return LMON_ESYS;
-#endif
-
-  return LMON_OK;  
+  return LMON_OK;
 }
 
 
@@ -2483,8 +2679,8 @@ LMON_fe_init ( int ver )
     Please refer to the header file: lmon_fe.h
 
 */
-extern "C" 
-lmon_rc_e 
+extern "C"
+lmon_rc_e
 LMON_fe_createSession ( int *sessionHandle )
 { 
   char portinfo[10];
@@ -2505,7 +2701,7 @@ LMON_fe_createSession ( int *sessionHandle )
       int i;
 
       for ( i = 0; i < 3; i++ )
-	{	        
+	{
 	  //
 	  // opens up a TCP socket, binding it with a random port and listening 
 	  // in on it. This is per-session server socket.
@@ -2534,10 +2730,10 @@ LMON_fe_createSession ( int *sessionHandle )
                 "getsockname call failed");
 
 	      pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
-	      
+
 	      return LMON_ESYS;
 	    }
-      
+
 	  if ( ( inet_ntop(AF_INET, &(mydesc->commDesc[i].servAddr.sin_addr), 
 			   mydesc->commDesc[i].ipInfo, MAX_LMON_STRING)) == NULL )
 	    {
@@ -2545,16 +2741,16 @@ LMON_fe_createSession ( int *sessionHandle )
                 "inet_ntop call failed");
 
 	      pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
-	      
+
 	      return LMON_ESYS;
 	    }
-	}  // for ( i = 0; i < 3; i++ )     
+	}  // for ( i = 0; i < 3; i++ )
 
       //
       // a random seed for the random number generator
       //
       srand (time(NULL));
-      
+
       //
       // randomID is a random number and shared_key is a encryption key,
       // both of which get propagated to daemons via an environment variable: 
@@ -2563,7 +2759,7 @@ LMON_fe_createSession ( int *sessionHandle )
       mydesc->randomID = rand ();
       bzero ( (void *) mydesc->shared_key, LMON_KEY_LENGTH );
       sprintf ( mydesc->shared_key, "%d", rand ());
-      
+
       //
       // open a cipher: BLOWFISH Algorithm on 128 bit key
       //
@@ -2577,10 +2773,10 @@ LMON_fe_createSession ( int *sessionHandle )
             gcry_strerror (gcrc));
 
 	  pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
-	  
+
 	  return LMON_ESYS;
 	}
-      
+
       //
       // setting a 128 bit key 
       //
@@ -2592,7 +2788,7 @@ LMON_fe_createSession ( int *sessionHandle )
 	    "gcry_cipher_setkey call failed: %s", gcry_strerror(gcrc));
 
 	  pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
-	      
+
 	  return LMON_ESYS;
 	}
 
@@ -2610,17 +2806,17 @@ LMON_fe_createSession ( int *sessionHandle )
       //
       // turn on a flag saying "session occupied"
       //
-      mydesc->registered = LMON_TRUE;      
+      mydesc->registered = LMON_TRUE;
 
       // 
       // envVar to communicate neccessary info to the BE master
       // and the MW master      
       // LMON_FE_ADDR_ENVNAME="LMON_FE_WHERETOCONNECT_ADDR"
-      // LMON_FE_PORT_ENVNAME="LMON_FE_WHERETOCONNECT_PORT"     
+      // LMON_FE_PORT_ENVNAME="LMON_FE_WHERETOCONNECT_PORT"
       // LMON_SHRD_SEC_ENVNAME="LMON_SHARED_SECRET"
       // LMON_SEC_CHK_ENVNAME="LMON_SEC_CHK" 
-      //      
-               
+      //
+
       //
       // Front-end's IP information
       //
@@ -2629,12 +2825,12 @@ LMON_fe_createSession ( int *sessionHandle )
       fe_listensock_info_secchk[0].envValue 
 	= strdup (mydesc->commDesc[fe_be_conn].ipInfo);
       fe_listensock_info_secchk[0].next = NULL;
-    
+
       //
       // Front-end's Port information
       //
       fe_listensock_info_secchk[1].envName 
-	= strdup(LMON_FE_PORT_ENVNAME);            
+	= strdup(LMON_FE_PORT_ENVNAME);
       sprintf ( portinfo, 
 		"%d", 
 		(unsigned short) 
@@ -2642,11 +2838,11 @@ LMON_fe_createSession ( int *sessionHandle )
       fe_listensock_info_secchk[1].envValue 
 	= strdup (portinfo);
       fe_listensock_info_secchk[1].next 
-	= NULL;      
+	= NULL;
 
       //
       // Front-end's random session ID for secure connection
-      //      
+      //
       fe_listensock_info_secchk[2].envName 
 	= strdup (LMON_SEC_CHK_ENVNAME);
       sprintf ( rannum, "%d", mydesc->randomID );
@@ -2655,9 +2851,9 @@ LMON_fe_createSession ( int *sessionHandle )
 
       //
       // Shared Key for secure connection
-      //      
+      //
       fe_listensock_info_secchk[3].envName 
-	= strdup (LMON_SHRD_SEC_ENVNAME);      
+	= strdup (LMON_SHRD_SEC_ENVNAME);
       fe_listensock_info_secchk[3].envValue 
 	= strdup (mydesc->shared_key);
       fe_listensock_info_secchk[3].next = NULL;
@@ -2693,7 +2889,7 @@ LMON_fe_createSession ( int *sessionHandle )
 
 
       fe_listensock_info_secchk_mw[1].envName 
-	= strdup (LMON_FE_PORT_ENVNAME);            
+	= strdup (LMON_FE_PORT_ENVNAME);
       sprintf ( portinfo, 
 		"%d", 
 		(unsigned short) 
@@ -2701,7 +2897,7 @@ LMON_fe_createSession ( int *sessionHandle )
       fe_listensock_info_secchk_mw[1].envValue 
 	= strdup (portinfo);
       fe_listensock_info_secchk_mw[1].next = NULL; 
-     
+
 
       fe_listensock_info_secchk_mw[2].envName 
 	= strdup (LMON_SEC_CHK_ENVNAME);
@@ -2710,7 +2906,7 @@ LMON_fe_createSession ( int *sessionHandle )
       fe_listensock_info_secchk_mw[2].next = NULL; 
 
       fe_listensock_info_secchk_mw[3].envName 
-	= strdup (LMON_SHRD_SEC_ENVNAME);      
+	= strdup (LMON_SHRD_SEC_ENVNAME);
       fe_listensock_info_secchk_mw[3].envValue 
 	= strdup (mydesc->shared_key);
       fe_listensock_info_secchk_mw[3].next = NULL;
@@ -2739,7 +2935,7 @@ LMON_fe_createSession ( int *sessionHandle )
 
       sess.sessionPtrIndex++;     // increment sessionPtrIndex to point to the next
                                   // available session resource element
-      
+
       if ( ( sess.sessionPtrIndex / MAX_LMON_SESSION) == 1 )
 	{
 	  //
@@ -2757,7 +2953,7 @@ LMON_fe_createSession ( int *sessionHandle )
                 "Too many active sessions going on?");
 	      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
                 "the next call must wait until one of the active session descriptors is freed");
-	      
+
 	      lrc = LMON_EINVAL;
 	    }
 	}
@@ -2771,7 +2967,7 @@ LMON_fe_createSession ( int *sessionHandle )
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
          "the session descriptor has already been registered");
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-         "Too many active sessions going on?");   
+         "Too many active sessions going on?");
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
          "a new session request cannot be granted until one of the active sessions is freed");
 
@@ -2801,17 +2997,17 @@ LMON_fe_regPackForFeToBe (
   lmon_rc_e rc = LMON_OK;
 
   if ( (sessionHandle < 0) 
-       || (sessionHandle > MAX_LMON_SESSION) )    
+       || (sessionHandle > MAX_LMON_SESSION) )
     { 
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
          "session is invalid");
 
-      return LMON_EBDARG;    
+      return LMON_EBDARG;
     }
 
   if ( packFebe == NULL ) 
     {
-      LMON_say_msg ( LMON_FE_MSG_PREFIX, true, 
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
          "packFebe is null!");
       return LMON_EBDARG;
     }
@@ -2830,15 +3026,15 @@ LMON_fe_regPackForFeToBe (
   
   if ( ( mydesc->registered == LMON_TRUE ) 
 	   && ( mydesc->spawned == LMON_FALSE ) ) 
-    {      
+    {
 
       if ( mydesc->pack != NULL )
 	{
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
 	    "pack was already registered. replacing it with the new func...");
 	}
-      
-      mydesc->pack = packFebe;         
+
+      mydesc->pack = packFebe;
     }
   else
     {
@@ -2866,12 +3062,12 @@ LMON_fe_regUnpackForBeToFe (
   lmon_session_desc_t* mydesc;
   lmon_rc_e rc = LMON_OK; 
 
-  if ( (sessionHandle < 0) || (sessionHandle > MAX_LMON_SESSION) )   
+  if ( (sessionHandle < 0) || (sessionHandle > MAX_LMON_SESSION) )
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "session is invalid");
 
-      return LMON_EBDARG;    
+      return LMON_EBDARG;
     }
   
   if ( unpackBefe == NULL ) 
@@ -2895,13 +3091,13 @@ LMON_fe_regUnpackForBeToFe (
   
   if ( ( mydesc->registered == LMON_TRUE ) 
        && ( mydesc->spawned == LMON_FALSE )) 
-    {      
+    {
       if ( mydesc->unpack != NULL )
 	{
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
 	    "unpack was already registered. replacing it with the new func...");
 	}
-      mydesc->unpack= unpackBefe;      
+      mydesc->unpack= unpackBefe;
     }
   else
     {
@@ -2958,15 +3154,15 @@ LMON_fe_regPackForFeToMw (
   
   if ( ( mydesc->registered == LMON_TRUE ) 
 	   && ( mydesc->spawned == LMON_FALSE ) ) 
-    {      
+    {
 
       if ( mydesc->mw_pack != NULL )
 	{
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
 	    "middleware pack was already registered. replacing it with the new func...");
 	}
-      
-      mydesc->pack = packFemw;         
+
+      mydesc->pack = packFemw;
     }
   else
     {
@@ -2998,7 +3194,7 @@ LMON_fe_regUnpackForMwToFe (
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "session is invalid");
 
-      return LMON_EBDARG;    
+      return LMON_EBDARG;
     }
   
   if ( unpackMwfe == NULL ) 
@@ -3015,20 +3211,20 @@ LMON_fe_regUnpackForMwToFe (
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "session is invalid, the job killed?");
-      
+
       pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
       return LMON_EBDARG;
     }
   
   if ( ( mydesc->registered == LMON_TRUE ) 
        && ( mydesc->spawned == LMON_FALSE )) 
-    {      
+    {
       if ( mydesc->mw_unpack != NULL )
 	{
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
 	    "middleware unpack was already registered. replacing it with the new func...");
 	}
-      mydesc->mw_unpack= unpackMwfe;      
+      mydesc->mw_unpack= unpackMwfe;
     }
   else
     {
@@ -3062,9 +3258,9 @@ LMON_fe_putToBeDaemonEnv (
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
          "session is invalid" );
-      return LMON_EBDARG;    
+      return LMON_EBDARG;
     }
-  
+
   rc = LMON_OK;
   mydesc = &(sess.sessionDescArray[(sessionHandle)]); 
   pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
@@ -3076,7 +3272,7 @@ LMON_fe_putToBeDaemonEnv (
       pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
       return LMON_EBDARG;
     }
-  
+
   if ( ( mydesc->registered == LMON_TRUE ) 
        && ( mydesc->spawned == LMON_FALSE )) 
     { 
@@ -3376,7 +3572,7 @@ LMON_fe_kill ( int sessionHandle )
   lmon_rc_e lrc = LMON_OK;
 
   if ( (sessionHandle < 0) 
-       || (sessionHandle > MAX_LMON_SESSION) )    
+       || (sessionHandle > MAX_LMON_SESSION) )
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "the given session is invalid" );
@@ -4295,7 +4491,7 @@ LMON_fe_launchAndSpawnDaemons (
       //	    
       // Once you are here, the watchdog thread should have already 
       // updated the mydesc->spawned flag
-      //	
+      //
       if ( ( lrc = LMON_fe_beHandshakeSequence (sessionHandle,
 						true,  /* this is launch case */
 						febe_data, 
@@ -4316,8 +4512,8 @@ LMON_fe_launchAndSpawnDaemons (
       string lmonOptArgs;
 
       isLocal = (hostname == NULL) ? true : false;
-	
-       if ( (isLocal == false) 
+
+      if ( (isLocal == false) 
 	   && getenv("LMON_DEBUG_FE_ENGINE_RSH") )	  
 	LMON_TotalView_debug ();
 	
@@ -4326,9 +4522,9 @@ LMON_fe_launchAndSpawnDaemons (
 #if PMGR_BASED
       lmonOptArgs += " --pmgr ";
       lmonOptArgs += opt.get_my_opt()->pmgr_info;
-      lmonOptArgs += " --pmgrsec ";
-      lmonOptArgs += opt.get_my_opt()->pmgr_sec_info;
 #endif
+      lmonOptArgs += " --lmonsec ";
+      lmonOptArgs += opt.get_my_opt()->lmon_sec_info;
       lmonOptArgs += " --daemonpath ";
       lmonOptArgs += opt.get_my_opt()->tool_daemon;
       lmonOptArgs += " ";
@@ -4362,7 +4558,7 @@ LMON_fe_launchAndSpawnDaemons (
 	  exit(1);
 	}	  		
     }   
-  
+ 
   return lrc;
 }
   
@@ -4562,9 +4758,9 @@ LMON_fe_attachAndSpawnDaemons (
 #if PMGR_BASED
       lmonOptArgs += " --pmgr ";
       lmonOptArgs += opt.get_my_opt()->pmgr_info;
-      lmonOptArgs += " --pmgrsec ";
-      lmonOptArgs += opt.get_my_opt()->pmgr_sec_info;
 #endif
+      lmonOptArgs += " --lmonsec ";
+      lmonOptArgs += opt.get_my_opt()->lmon_sec_info;
       lmonOptArgs += " --daemonpath ";
       lmonOptArgs += opt.get_my_opt()->tool_daemon;
       lmonOptArgs += " ";

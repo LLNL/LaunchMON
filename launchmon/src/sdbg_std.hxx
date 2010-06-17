@@ -38,6 +38,9 @@
 #ifndef SDBG_STD_HXX
 #define SDBG_STD_HXX 1
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
 #include <lmon_api/common.h>
 
 #define CONCATENATE(A,B) A##B
@@ -62,6 +65,7 @@
 
 #define SDBG_DEFAULT_TEMPLPARAM VA,WT,IT,GRS,FRS,NT,EXECHANDLER
 
+const unsigned int GracePeriodForZombieThread = 10000;
 const unsigned int GracePeriodBNSignals       = 100000; // 100 millisecs
 const unsigned int GracePeriodFEDisconnection = 2000000; // 2 secs
 const double DefaultWarmPeriods               = 10.0;

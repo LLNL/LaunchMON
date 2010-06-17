@@ -10,8 +10,14 @@
 /* Define 1 for BIT64 */
 #undef BIT64
 
-/* Define command line support */
-#undef COMMLINE_SUPPORT
+/* Define 1 for COBO_BASED */
+#undef COBO_BASED
+
+/* Define a beginning port for COBO_BASED */
+#undef COBO_BEGIN_PORT
+
+/* Define 32 for COBO_BASED */
+#undef COBO_PORT_RANGE
 
 /* Define DEBUG flag */
 #undef DEBUG
@@ -19,8 +25,8 @@
 /* env command found */
 #undef ENVCMD
 
-/* Define fine grain mpirun interface support */
-#undef FINEGRAIN_MPIRUN_INTERFACE
+/* Define dot for GLUESYM */
+#undef GLUESYM
 
 /* Define to 1 if you have the <algorithm> header file. */
 #undef HAVE_ALGORITHM
@@ -30,6 +36,9 @@
 
 /* Define to 1 if you have the <assert.h> header file. */
 #undef HAVE_ASSERT_H
+
+/* Define to 1 if you have the <cxxabi.h> header file. */
+#undef HAVE_CXXABI_H
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
@@ -123,6 +132,9 @@
 /* Define to 1 if stdbool.h conforms to C99. */
 #undef HAVE_STDBOOL_H
 
+/* Define to 1 if you have the <stddef.h> header file. */
+#undef HAVE_STDDEF_H
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
@@ -204,9 +216,6 @@
 /* Define to 1 if the system has the type `_Bool'. */
 #undef HAVE__BOOL
 
-/* Define lazy binding support */
-#undef LAZY_BINDING
-
 /* Define 1 for LINUX_CODE_REQUIRED */
 #undef LINUX_CODE_REQUIRED
 
@@ -252,6 +261,9 @@
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
+
+/* "Definition for ALPS/APRUN" */
+#undef RM_ALPS_APRUN
 
 /* Define 1 for RM_BG_MPIRUN */
 #undef RM_BG_MPIRUN

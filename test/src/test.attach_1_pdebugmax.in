@@ -40,6 +40,7 @@ WAITAMOUNT=$NUMNODES
 SIGNUM=10
 MPI_JOB_LAUNCHER_PATH=@TJLPATH@
 RM_TYPE=@RMTP@
+export LMON_PREFIX=@LMONPREFIX@
 export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
 
 if test "x$RM_TYPE" = "xbgrm" ; then
@@ -51,6 +52,9 @@ if test "x$RM_TYPE" = "xslurm" ; then
   $MPI_JOB_LAUNCHER_PATH -n$NUMTASKS -N$NUMNODES -ppdebug `pwd`/hang_on_SIGUSR1@EXE@ &
 elif test "x$RM_TYPE" = "xbgrm" ; then 
   $MPI_JOB_LAUNCHER_PATH -verbose 0 -np $NUMTASKS -exe `pwd`/hang_on_SIGUSR1@EXE@ -cwd `pwd` &
+elif test "x$RM_TYPE" = "xalps" ; then
+  WAITAMOUNT=`expr $WAITAMOUNT`
+  $MPI_JOB_LAUNCHER_PATH -n $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
 else
   echo "This RM is not supported yet" 
 fi

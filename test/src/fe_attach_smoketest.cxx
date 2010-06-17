@@ -39,6 +39,10 @@
  *        Dec  27 2006 DHA: Created file.
  */
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
+
 #include <lmon_api/common.h>
 
 #if HAVE_UNISTD_H
@@ -51,6 +55,12 @@
 # include <cstdarg>
 #else
 # error stdarg.h is required
+#endif
+
+#if HAVE_LIMITS_H
+# include <limits.h>
+#else
+# error limits.h is required 
 #endif
 
 #include <lmon_api/lmon_proctab.h>
@@ -170,7 +180,7 @@ main (int argc, char* argv[])
       return EXIT_FAILURE;
     }
 
-  if ( getenv ("LMON_STATUS_CB_TEST"))
+  if (getenv ("LMON_STATUS_CB_TEST"))
     {
        if ( LMON_fe_regStatusCB(aSession, statusFunc) != LMON_OK )
          {
@@ -361,7 +371,7 @@ main (int argc, char* argv[])
           fprintf ( stdout,
             "\n[LMON FE] Please check the correctness of the following resource handle\n");
           fprintf ( stdout,
-            "[LMON FE] resource handle[slurm jobid]: %s\n", jobid);
+            "[LMON FE] resource handle[jobid or job launcher's pid]: %s\n", jobid);
           fprintf ( stdout,
             "[LMON FE]");
        }

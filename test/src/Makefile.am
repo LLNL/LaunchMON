@@ -40,9 +40,7 @@ TARGET_JOB_LAUNCHER_PATH          = @TARGET_JOB_LAUNCHER_PATH@
 RM_TYPE                           = @RM_TYPE@
 
 INCLUDES                          = -I$(top_srcdir)/launchmon/src -I$(top_srcdir)/@LMONAPILOC@
-if WITH_GCRYPT
 INCLUDES                          += -I$(top_srcdir)/@GCRYPTLOC@ -I$(top_srcdir)/@GPGERRLOC@
-endif
 if WITH_CIOD
 INCLUDES                          += -I@ARCHHEADER@ -I$(top_srcdir)/@CIODLOC@
 endif
@@ -61,20 +59,20 @@ bin_PROGRAMS                      = fe_jobsnap \
 				    simple_MPI 
 
 LE_model_checker_SOURCES          = LE_model_checker.c
-LE_model_checker_CFLAGS           = @BUILD_FLAGS@ @LNCHR_BIT_FLAGS@ $(AM_CFLAGS)
-LE_model_checker_CXXFLAGS         = @BUILD_FLAGS@ @LNCHR_BIT_FLAGS@ $(AM_CXXFLAGS)
+LE_model_checker_CFLAGS           = @LNCHR_BIT_FLAGS@ $(AM_CFLAGS)
+LE_model_checker_CXXFLAGS         = @LNCHR_BIT_FLAGS@ $(AM_CXXFLAGS)
 LE_model_checker_LDADD            = @LIBPTHREAD@
 LE_model_checker_LDFLAGS          = @LNCHR_BIT_FLAGS@ @LIBPTHREAD@ $(AM_LDFLAGS)
 
 fe_launch_smoketest_SOURCES       = fe_launch_smoketest.cxx util.c
-fe_launch_smoketest_CFLAGS        = @BUILD_FLAGS@ $(AM_CFLAGS)
-fe_launch_smoketest_CXXFLAGS      = @BUILD_FLAGS@ $(AM_CXXFLAGS)
+fe_launch_smoketest_CFLAGS        = $(AM_CFLAGS)
+fe_launch_smoketest_CXXFLAGS      = $(AM_CXXFLAGS)
 fe_launch_smoketest_LDFLAGS       = -L$(top_srcdir)/@LMONAPILOC@ 
 fe_launch_smoketest_LDADD         = -lmonfeapi 
 
 fe_launch_usrpayload_test_SOURCES = fe_launch_usrpayload_test.cxx util.c
-fe_launch_usrpayload_test_CFLAGS   = @BUILD_FLAGS@ $(AM_CFLAGS)
-fe_launch_usrpayload_test_CXXFLAGS = @BUILD_FLAGS@ $(AM_CXXFLAGS)
+fe_launch_usrpayload_test_CFLAGS   = $(AM_CFLAGS)
+fe_launch_usrpayload_test_CXXFLAGS = $(AM_CXXFLAGS)
 fe_launch_usrpayload_test_LDFLAGS = -L$(top_srcdir)/@LMONAPILOC@ 
 fe_launch_usrpayload_test_LDADD   = -lmonfeapi 
 
@@ -83,37 +81,37 @@ fe_launch_usrpayload_test_LDADD   = -lmonfeapi
 #fe_multisession_launch_LDADD      = -lmonfeapi 
 
 fe_attach_smoketest_SOURCES       = fe_attach_smoketest.cxx util.c
-fe_attach_smoketest_CFLAGS        = @BUILD_FLAGS@ $(AM_CFLAGS)
-fe_attach_smoketest_CXXFLAGS      = @BUILD_FLAGS@ $(AM_CXXFLAGS)
+fe_attach_smoketest_CFLAGS        = $(AM_CFLAGS)
+fe_attach_smoketest_CXXFLAGS      = $(AM_CXXFLAGS)
 fe_attach_smoketest_LDFLAGS       = -L$(top_srcdir)/@LMONAPILOC@
 fe_attach_smoketest_LDADD         = -lmonfeapi
 
 be_kicker_SOURCES                 = be_kicker.cxx util.c
-be_kicker_CFLAGS                  = @BUILD_FLAGS@ $(AM_CFLAGS)
-be_kicker_CXXFLAGS                = @BUILD_FLAGS@ $(AM_CXXFLAGS)
+be_kicker_CFLAGS                  = $(AM_CFLAGS)
+be_kicker_CXXFLAGS                = $(AM_CXXFLAGS)
 be_kicker_LDFLAGS    	          = -L$(top_srcdir)/@LMONAPILOC@ 
 be_kicker_LDADD                   = -lmonbeapi 
 
 be_kicker_usrpayload_test_SOURCES = be_kicker_usrpayload_test.cxx
-be_kicker_usrpayload_test_CFLAGS   = @BUILD_FLAGS@ $(AM_CFLAGS)
-be_kicker_usrpayload_test_CXXFLAGS = @BUILD_FLAGS@ $(AM_CXXFLAGS)
+be_kicker_usrpayload_test_CFLAGS   = $(AM_CFLAGS)
+be_kicker_usrpayload_test_CXXFLAGS = $(AM_CXXFLAGS)
 be_kicker_usrpayload_test_LDFLAGS = -L$(top_srcdir)/@LMONAPILOC@ 
 be_kicker_usrpayload_test_LDADD   = -lmonbeapi
 
 be_standalone_kicker_SOURCES      = be_standalone_kicker.cxx
-be_standalone_kicker_CFLAGS       = @BUILD_FLAGS@ $(AM_CFLAGS)
-be_standalone_kicker_CXXFLAGS     = @BUILD_FLAGS@ $(AM_CXXFLAGS)
+be_standalone_kicker_CFLAGS       = $(AM_CFLAGS)
+be_standalone_kicker_CXXFLAGS     = $(AM_CXXFLAGS)
 be_standalone_kicker_LDFLAGS      = -L$(top_srcdir)/@LMONAPILOC@ 
 be_standalone_kicker_LDADD        = -lmonbeapi
 
 fe_jobsnap_SOURCES                = fe_jobsnap.cxx util.c
-fe_jobsnap_CFLAGS                 = @BUILD_FLAGS@ $(AM_CFLAGS)
-fe_jobsnap_CXXFLAGS               = @BUILD_FLAGS@ $(AM_CXXFLAGS)
+fe_jobsnap_CFLAGS                 = $(AM_CFLAGS)
+fe_jobsnap_CXXFLAGS               = $(AM_CXXFLAGS)
 fe_jobsnap_LDFLAGS                = -L$(top_srcdir)/@LMONAPILOC@
 fe_jobsnap_LDADD                  = -lmonfeapi 
 be_jobsnap_SOURCES                = be_jobsnap.cxx util.c
-be_jobsnap_CFLAGS                 = @BUILD_FLAGS@ $(AM_CFLAGS)
-be_jobsnap_CXXFLAGS               = @BUILD_FLAGS@ $(AM_CXXFLAGS)
+be_jobsnap_CFLAGS                 = $(AM_CFLAGS)
+be_jobsnap_CXXFLAGS               = $(AM_CXXFLAGS)
 be_jobsnap_LDFLAGS                = -L$(top_srcdir)/@LMONAPILOC@
 be_jobsnap_LDADD                  = -lmonbeapi
 
@@ -169,6 +167,7 @@ EXTRA_DIST                        = test.LE_model_checker_mainthread.in \
 
 
 do_subst = sed -e 's,@LMON@,$(prefix)/bin/launchmon$(EXEEXT),g' \
+	       -e 's,@LMONPREFIX@,$(prefix),g' \
                -e 's,@TJLPATH@,$(TARGET_JOB_LAUNCHER_PATH),g' \
                -e 's,@RMTP@,$(RM_TYPE),g' \
 	       -e 's,@SMP@,$(SMPFACTOR),g' \
@@ -246,11 +245,11 @@ test.fe_regStatusCB: test.fe_regStatusCB.in Makefile
 	chmod +x test.fe_regStatusCB
 
 run_3mins: run_3mins.c Makefile
-	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) @BUILD_FLAGS@ -I$(top_srcdir)/launchmon/src $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -o $@ $<	
+	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) -I$(top_srcdir)/launchmon/src $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -o $@ $<	
 hang_on_SIGUSR1: hang_on_SIGUSR1.c Makefile
-	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) @BUILD_FLAGS@ -I$(top_srcdir)/launchmon/src $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -o $@ $<	
+	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) -I$(top_srcdir)/launchmon/src $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -o $@ $<	
 simple_MPI: simple_MPI.c Makefile
-	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) @BUILD_FLAGS@ -I$(top_srcdir)/launchmon/src $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -o $@ $<	
+	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) -I$(top_srcdir)/launchmon/src $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -o $@ $<	
 #LMBench: LMBench.cxx Makefile
 #	/bin/sh $(top_srcdir)/libtool --tag=CXX --mode=link $(MPICXX) $(DEFS) $(DEFAULT_INCLUDES) -I$(top_srcdir)/launchmon/src -I$(top_srcdir)/@LMONAPILOC@ $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -o $@ $< $(top_srcdir)/@LMONAPILOC@/lmon_be_comm.o  $(top_srcdir)/@LMONAPILOC@/lmon_say_msg.o -L$(top_srcdir)/@LMONAPILOC@ -lmonbeapi 
 

@@ -26,10 +26,11 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Feb  05 2010 DHA: Changed the LMON_be_internal_init prototype and
+ *                          augmented the per_be_data_t data structure to
+ *                          support registering the local host name into 
+ *                          lower layers if needed.
  *        Feb  09 2008 DHA: Added LLNS Copyright
- * 
- *
- *  Update Log:
  *        Jul  25 2007 DHA: Data structure change to deal with
  *                          slightly modified lmonp protocol
  *        Dec  29 2006 DHA: Created file. 
@@ -83,11 +84,17 @@ typedef struct _per_be_data_t {
    * user unpack function 
    */
   int (*unpack) (void*,int, void*);
+
+  /*
+   * my_hostname and my_ip
+   */
+  char my_hostname[LMON_BE_HN_MAX];
+  char my_ip[LMON_BE_HN_MAX]; 
   
 } per_be_data_t;
 
 
-extern lmon_rc_e LMON_be_internal_init ( int* argc, char*** argv);
+extern lmon_rc_e LMON_be_internal_init ( int* argc, char*** argv, char *myhn);
 
 extern lmon_rc_e LMON_be_internal_getConnFd ( int* fd );
 

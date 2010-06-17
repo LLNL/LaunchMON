@@ -28,6 +28,8 @@ dnl  Place, Suite 330, Boston, MA 02111-1307 USA
 dnl --------------------------------------------------------------------------------
 dnl 
 dnl   Update Log:
+dnl         Dec 28 2009 DHA: Deprecated X_AC_PREFIX_CONFIG_H to better support
+dnl                          binary distribution
 dnl         Mar 20 2009 DHA: Increase LMON_CURRENT by one as we've added 
 dnl                          a few more API calls. Similarly, increase
 dnl                          LMON_AGE as this still supports 0th interface. 
@@ -54,8 +56,8 @@ dnl per Todd Gamblin's suggestion... the following
 dnl allows you to export config.h without conflicting
 dnl other dependent packages 
 dnl -----------------------------------------------
-X_AC_PREFIX_CONFIG_H([lmon-config.h])
-AC_SUBST(BUILD_FLAGS, -DFOR_LAUNCHMON_BUILD=1)
+dnl X_AC_PREFIX_CONFIG_H([lmon-config.h])
+dnl AC_SUBST(BUILD_FLAGS, -DFOR_LAUNCHMON_BUILD=1)
 
 
 dnl -----------------------------------------------
@@ -177,10 +179,10 @@ dnl -----------------------------------------------
 dnl Checks for header files.
 dnl -----------------------------------------------
 AC_LANG_PUSH([C++])
-AC_CHECK_HEADERS([stack vector map list iostream string algorithm fstream sstream])
+AC_CHECK_HEADERS([stack vector map list iostream string algorithm fstream sstream cxxabi.h])
 AC_LANG_POP([C++])
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([sys/time.h stdio.h syscall.h unistd.h libelf.h libelf/libelf.h poll.h signal.h errno.h sys/user.h libgen.h assert.h link.h thread_db.h netdb.h arpa/inet.h sys/socket.h netinet/in.h limits.h sys/ptrace.h execinfo.h fcntl.h sys/procfs.h pthread.h sys/resource.h stdarg.h dlfcn.h])
+AC_CHECK_HEADERS([sys/time.h stdio.h stdint.h syscall.h unistd.h libelf.h libelf/libelf.h poll.h signal.h errno.h sys/user.h libgen.h assert.h link.h thread_db.h netdb.h arpa/inet.h sys/socket.h netinet/in.h limits.h sys/ptrace.h execinfo.h fcntl.h sys/procfs.h pthread.h sys/resource.h stdarg.h dlfcn.h stddef.h])
 
 if test "$ac_cv_header_libelf_h" = "yes" ; then
      AC_DEFINE(LOCATION_OF_LIBELFHEADER, [<libelf.h>],
@@ -223,6 +225,11 @@ AC_CONFIG_FILES([Makefile
                  tools/pmgr_collective/Makefile
 	  	 tools/pmgr_collective/src/Makefile
 		 tools/pmgr_collective/test/Makefile
+                 tools/cobo/Makefile
+	  	 tools/cobo/src/Makefile
+		 tools/cobo/test/Makefile
+		 tools/alps/Makefile
+		 tools/alps/src/Makefile
                  launchmon/Makefile
 		 launchmon/src/Makefile
 		 launchmon/src/linux/Makefile

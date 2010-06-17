@@ -27,6 +27,7 @@
  *			
  *
  *  Update Log:
+ *        May 11 2010 DHA: Removed gettimeofdayD from this file
  *        Sep 24 2008 DHA: Added handle_daemon_exit_event to support
  *                         better error handling 
  *        Sep 22 2008 DHA: Added the last_seen and warm_period members 
@@ -90,18 +91,6 @@ extern "C" {
     the set of actions when and an important debugging
     event occurs.
 */
-
-inline double gettimeofdayD ()
-{
-  struct timeval ts;
-  double rt;
-
-  gettimeofday (&ts, NULL);
-  rt = (double) (ts.tv_sec);
-  rt += (double) ((double)(ts.tv_usec))/1000000.0;
-
-  return rt;
-}
 
 //! enumerator launchmon_rc_e 
 /*!
