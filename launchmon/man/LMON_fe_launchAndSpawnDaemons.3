@@ -36,11 +36,19 @@ for that launcher. Similarly,
 \fId_argv\fR is the tool daemon argument list. Both \fIl_argv\fR
 and \fId_argv\fR must be NULL-terminated. 
 .PP
+On successful return, the \fBLMON_fe_launchAndSpawnDaemons()\fR function  
+leaves the launched application processes in a stopped state unless
+the \fBLMON_DONT_STOP_APP\fR environment variable is set to 1.
+.PP
 On the other hand, the \fBLMON_fe_attachAndSpawnDaemons()\fR function 
 attaches to an existing MPI job launcher process, and launches 
 tool daemons specified by \fItoolDaemon\fR and \fId_argv\fR
 into the remote nodes in which the associated job's 
 tasks are running. 
+.PP
+On successful return, the \fBLMON_fe_attachAndSpawnDaemons()\fR function  
+leaves the attached application processes running unless
+the \fBLMON_DONT_STOP_APP\fR environment variable is set to 0.
 .PP
 For both functions, the caller must provide a valid tool session
 handle, \fIsessionHandle\fR, which should have been
@@ -140,6 +148,10 @@ On BlueGene, it uses hostname-io to indicate a network
 that has I/O nodes connectivity. In general, the name is  
 site-specific. Thus, should the name be different from default,
 it needs to be be specified through this environment variable. 
+.TP
+.B LMON_DONT_STOP_APP
+causes the launched application processes to continue running (if set to 1)
+or the attached application processes to stop (if set to 0). 
 
 .SH ERROR HANDLING SEMANTICS 
 \fBA.\fR When the LaunchMON engine fails, the cleanup semantics 

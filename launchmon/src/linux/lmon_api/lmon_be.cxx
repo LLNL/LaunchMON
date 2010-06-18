@@ -1035,7 +1035,6 @@ LMON_be_handshake ( void *udata )
   int i;
   char *hngatherbuf = NULL;
 
-
   BEGIN_MASTER_ONLY
     hngatherbuf = (char *) malloc ( LMON_BE_HN_MAX*bedata.width );
     if ( hngatherbuf == NULL )
@@ -1235,11 +1234,31 @@ LMON_be_handshake ( void *udata )
     // receiving a launch or attach message
     //
     read_lmonp_msgheader ( servsockfd, &recvmsg );
-    assert (recvmsg.type.fetobe_type == lmonp_febe_launch 
-                || recvmsg.type.fetobe_type == lmonp_febe_attach );
-    
-    bedata.is_launch = (recvmsg.type.fetobe_type == lmonp_febe_launch)
-                       ? 1 : 0;
+    switch (recvmsg.type.fetobe_type )
+      {
+      case lmonp_febe_attach:
+        bedata.is_launch = trm_attach;
+        break;
+
+      case lmonp_febe_launch:
+        bedata.is_launch = trm_launch;
+        break;
+
+      case lmonp_febe_launch_dontstop:
+        bedata.is_launch = trm_launch_dontstop;
+        break;
+
+      case lmonp_febe_attach_stop:
+        bedata.is_launch = trm_attach_stop;
+        break;
+
+      default:
+        {
+          LMON_say_msg(LMON_BE_MSG_PREFIX, true,
+            "Wrong msg type: expected a febe launch or attach mode"); 
+	  return LMON_EBDMSG;
+        }
+      }
 
 #if VERBOSE
     LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
@@ -1250,11 +1269,16 @@ LMON_be_handshake ( void *udata )
     // receiving the USRDATA stream from the front-end
     //     
     read_lmonp_msgheader ( servsockfd, &recvmsg );
-    assert ( recvmsg.type.fetobe_type == lmonp_febe_usrdata );
+    if ( recvmsg.type.fetobe_type != lmonp_febe_usrdata )
+      {
+        LMON_say_msg(LMON_BE_MSG_PREFIX, true,
+          "Wrong msg type: expected a febe user data"); 
+        return LMON_EBDMSG; 
+      }
     int usrpayloadlen = recvmsg.usr_payload_length;
     if ( usrpayloadlen > 0 )
       {
-    	char* usrpl = (char *) malloc ( recvmsg.usr_payload_length );
+    	char *usrpl = (char *) malloc ( recvmsg.usr_payload_length );
     	bytesread = read_lmonp_payloads (
     			servsockfd,
     			usrpl,
@@ -1369,7 +1393,21 @@ LMON_be_handshake ( void *udata )
       return LMON_EDUNAV;
     }
 
-#if RM_BG_MPIRUN
+#if RM_SLURM_SRUN || RM_ALPS_APRUN || RM_ORTE_ORTERUN
+  //
+  // trm_launch and trm_attach are noop
+  //
+  if (bedata.is_launch == trm_launch_dontstop)
+    {
+      for (i=0; i < proctab_size; i++)
+        kill(proctab[i].pd.pid, SIGCONT);
+    }
+  else if (bedata.is_launch == trm_attach_stop)
+    {
+      for (i=0; i < proctab_size; i++)
+        kill(proctab[i].pd.pid, SIGSTOP);
+    }
+#elif RM_BG_MPIRUN
   /*
    * In the case of BlueGene, we want to register ATTACH msgs here
    * so that the job will stop when loaded. This can minimize the
@@ -1414,6 +1452,7 @@ LMON_be_handshake ( void *udata )
 
           return LMON_EINVAL;
         }
+
       if ( ackmsg.header.nodeNumber != (unsigned int) proctab[i].pd.pid )
         {
           LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
@@ -1423,10 +1462,14 @@ LMON_be_handshake ( void *udata )
         }
     }
     
-  if (bedata.is_launch)
+  if (bedata.is_launch == trm_launch 
+      || bedata.is_launch == trm_launch_dontstop)
     {
       for (i=0; i < proctab_size; i++)
         {
+          //
+          // For plain launch case, we leave app processes in a stopped state
+          //
           BG_Debugger_Msg ackmsg;
 
           if ( !BG_Debugger_Msg::readFromFd (BG_DEBUGGER_READ_PIPE, ackmsg) )
@@ -1445,6 +1488,105 @@ LMON_be_handshake ( void *udata )
               return LMON_EINVAL;
             }
         }
+# if VERBOSE
+      LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+        "BES: trm_launch case is handled"); 
+# endif
+      if (bedata.is_launch == trm_launch_dontstop)
+        {
+          //
+          // continue
+          //  
+          for (i=0; i < proctab_size; i++)
+           {
+             BG_Debugger_Msg dbgmsg(CONTINUE,proctab[i].pd.pid,0,0,0);
+             BG_Debugger_Msg ackmsg;
+             dbgmsg.dataArea.CONTINUE.signal = SIGCONT;
+             dbgmsg.header.dataLength = sizeof(dbgmsg.dataArea.CONTINUE);
+
+             if ( !BG_Debugger_Msg::writeOnFd (BG_DEBUGGER_WRITE_PIPE, dbgmsg ))
+               {
+                 LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+                  "writeOnFd for CONTINUE.\n");
+
+                 return LMON_EINVAL;
+               }
+             if ( !BG_Debugger_Msg::readFromFd (BG_DEBUGGER_READ_PIPE, ackmsg ))
+               {
+                 LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+                   "readFromFd for CONTINUE ACK.\n");
+
+                 return LMON_EINVAL;
+               }
+             if ( ackmsg.header.messageType != CONTINUE_ACK)
+               {
+                 LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+                   "msg type isn't CONTINUE ACK.\n");
+
+                 return LMON_EINVAL;
+               }
+             if ( ackmsg.header.nodeNumber != (unsigned int) proctab[i].pd.pid )
+               {
+                 LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+                   "Incorrect pid in the returned debug msg.\n");
+
+                 return LMON_EINVAL;
+               } 
+           }
+# if VERBOSE
+         LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+           "BES: trm_launch_dontstop case is handled");
+# endif
+        }
+    }
+  else if (bedata.is_launch == trm_attach_stop)
+    {
+      //
+      // For attach_stop, we attach and leave those processes in a stopped state
+      //
+      for (i=0; i < proctab_size; i++)
+        {
+          BG_Debugger_Msg dbgmsg(KILL,proctab[i].pd.pid,0,0,0);
+          dbgmsg.dataArea.KILL.signal = SIGSTOP;
+          dbgmsg.header.dataLength = sizeof(dbgmsg.dataArea.KILL);
+          BG_Debugger_Msg ackmsg;
+          BG_Debugger_Msg ackmsg2;
+
+          if ( !BG_Debugger_Msg::writeOnFd (BG_DEBUGGER_WRITE_PIPE, dbgmsg ))
+            {
+              LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+                "writeOnFd for KILL.\n");
+              return LMON_EINVAL;
+            }
+          if ( !BG_Debugger_Msg::readFromFd (BG_DEBUGGER_READ_PIPE, ackmsg ))
+            {
+              LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+                "readFromFd for KILL ACK.\n");
+              return LMON_EINVAL;
+            }
+          if ( ackmsg.header.messageType != KILL_ACK)
+            {
+              LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+                "msg type isn't KILL ACK.\n");
+              return LMON_EINVAL;
+            }
+          if ( !BG_Debugger_Msg::readFromFd (BG_DEBUGGER_READ_PIPE, ackmsg2 ))
+            {
+              LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+                "readFromFd for SINGANL ENCOUNTERED ACK.\n");
+              return LMON_EINVAL;
+            }
+          if ( ackmsg2.header.messageType != SIGNAL_ENCOUNTERED)
+            {
+              LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+                "msg type isn't KILL ACK.\n");
+              return LMON_EINVAL;
+            }
+	}
+# if VERBOSE
+      LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+        "BES: trm_attach_stop case is handled"); 
+# endif
      }
 
 # if VERBOSE

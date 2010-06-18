@@ -196,24 +196,34 @@ typedef enum _lmonp_fe_to_be_msg_e {
   lmonp_febe_launch                    = 3,
 
   /*
+   * FE->BE: launch
+   */
+  lmonp_febe_launch_dontstop           = 4,
+
+  /*
    * FE->BE: attach 
    */
-  lmonp_febe_attach                    = 4,
+  lmonp_febe_attach                    = 5,
+
+  /*
+   * FE->BE: attach 
+   */
+  lmonp_febe_attach_stop               = 6,
 
   /*
    * BE->FE: BE hostnames message
    */
-  lmonp_befe_hostname                  = 5,
+  lmonp_befe_hostname                  = 7,
 
   /*
    * BE->FE: usrdata message
    */
-  lmonp_befe_usrdata                   = 6,
+  lmonp_befe_usrdata                   = 8,
 
   /*
    * BE->FE: BE ready message
    */
-  lmonp_be_ready                       = 7,
+  lmonp_be_ready                       = 9,
 
 } lmonp_fe_to_be_msg_e;
 

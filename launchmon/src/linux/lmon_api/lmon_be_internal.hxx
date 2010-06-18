@@ -48,6 +48,13 @@
 #define BEGIN_SLAVE_ONLY    if ( bedata.myrank != LMON_BE_MASTER ) {
 #define END_SLAVE_ONLY      }
 
+typedef enum _tracingmode_e {
+  trm_attach = 0,
+  trm_launch,
+  trm_launch_dontstop,
+  trm_attach_stop
+} tracingmode_e;
+
 typedef struct _per_be_data_t {
 	
   /*
@@ -73,7 +80,7 @@ typedef struct _per_be_data_t {
   /*
    * is this launch case or attach case? 
    */
-  int is_launch; /*  1 for launch 0 for attach */
+  int is_launch; /*  1: launch, 2: launch and dontstop, 0: attach, 3: attach and stop */
   
   /* 
    * user pack function 

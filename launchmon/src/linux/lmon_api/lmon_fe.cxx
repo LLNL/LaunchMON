@@ -1834,16 +1834,35 @@ LMON_fe_beHandshakeSequence (
   lmonp_t use_type_msg;
   if (is_launch)
     {
+      lmonp_fe_to_be_msg_e tracemode = lmonp_febe_launch;
+      const char *dontstop;
+      if (dontstop = getenv("LMON_DONT_STOP_APP") )
+        {
+          if (atoi(dontstop) == 1)
+            {
+              tracemode = lmonp_febe_launch_dontstop;
+            }      
+        }
       set_msg_header ( &use_type_msg,
                       lmonp_fetobe,
-                      lmonp_febe_launch,
+                      tracemode,
                       0, 0, 0, 0, 0, 0, 0 );
     }
   else
     {
+      lmonp_fe_to_be_msg_e tracemode = lmonp_febe_attach;
+      const char *dontstop;
+      if (dontstop = getenv("LMON_DONT_STOP_APP") )
+        {
+          if (atoi(dontstop) == 0)
+            {
+              tracemode = lmonp_febe_attach_stop;
+            }
+        }
+
       set_msg_header ( &use_type_msg,
                       lmonp_fetobe,
-                      lmonp_febe_attach,
+                      tracemode,
                       0, 0, 0, 0, 0, 0, 0 );
     }
     
