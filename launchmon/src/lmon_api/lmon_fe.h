@@ -66,6 +66,7 @@
 #include <netdb.h>
 
 #include <lmon_api/lmon_api_std.h>
+#include <lmon_api/lmon_proctab.h>
 
 #define WIFREGISTERED(status) (status & 0x00000001)? 1:0  
 #define WIFBESPAWNED(status) (status & 0x00000002)? 1:0
