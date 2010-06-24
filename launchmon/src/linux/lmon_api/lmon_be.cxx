@@ -1393,14 +1393,33 @@ LMON_be_handshake ( void *udata )
       return LMON_EDUNAV;
     }
 
-#if RM_SLURM_SRUN || RM_ALPS_APRUN || RM_ORTE_ORTERUN
+#if RM_SLURM_SRUN 
   //
+  // SLURM leaves the app processes in the SIGSTOP'ed STATE
   // trm_launch and trm_attach are noop
   //
   if (bedata.is_launch == trm_launch_dontstop)
     {
       for (i=0; i < proctab_size; i++)
         kill(proctab[i].pd.pid, SIGCONT);
+    }
+  else if (bedata.is_launch == trm_attach_stop)
+    {
+      for (i=0; i < proctab_size; i++)
+        kill(proctab[i].pd.pid, SIGSTOP);
+    }
+#elif RM_ORTE_ORTERUN || RM_ALPS_APRUN
+  //
+  // ORTE and ALPS don't not leave the app processes
+  // in the SIGSTOP'ed state It uses a barrier mechanism 
+  // to prevent the app from running away. So we explicit send
+  // a SIGSTOP on trm_launch. And NOOP on trm_launch_dontstop 
+  // 
+  if (bedata.is_launch == trm_launch)
+    {
+      //std::cout << proctab[i].pd.pid << std::endl;
+      for (i=0; i < proctab_size; i++)
+        kill(proctab[i].pd.pid, SIGSTOP);
     }
   else if (bedata.is_launch == trm_attach_stop)
     {

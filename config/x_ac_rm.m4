@@ -28,6 +28,7 @@
 # --------------------------------------------------------------------------------
 # 
 #   Update Log:
+#         Jun 23 2010 DHA: Added OpenRTE support
 #         Jun 12 2010 DHA: Added alps_be_starter support
 #         Mar 11 2009 DHA: Added ARCHHEADER, ARCHLIB in anticipation of 
 #                          ports on more RM variants.
@@ -55,7 +56,7 @@ AC_DEFUN([X_AC_RM], [
   AC_MSG_CHECKING([resource manager type])
 
   AC_ARG_WITH([rm], 
-    AS_HELP_STRING(--with-rm@<:@=RMTYPE@:>@,specify a system Resource Manager @<:@slurm bgrm alps@:>@ @<:@default=slurm@:>@),
+    AS_HELP_STRING(--with-rm@<:@=RMTYPE@:>@,specify a system Resource Manager @<:@slurm bgrm alps orte@:>@),
     [with_rm_name=$withval],
     [with_rm_name="check"]
   )
@@ -66,16 +67,16 @@ AC_DEFUN([X_AC_RM], [
     [with_launcher="check"]
   )
 
-  AC_ARG_WITH([alps-lib],
-     AS_HELP_STRING(--with-alps-lib@<:@=ALPSLIBS@:>@,specify the directory containing ALPS libraries @<:@default=/usr/lib@:>@),
-     [with_alpslib=$withval],
-     [with_alpslib="/usr/lib"]
+  AC_ARG_WITH([rm-lib],
+     AS_HELP_STRING(--with-rm-lib@<:@=RMLIBDIR@:>@,specify the directory containing RM libraries @<:@default=/usr/lib@:>@),
+     [with_rmlib=$withval],
+     [with_rmlib="/usr/lib"]
     )
 
-    AC_ARG_WITH([alps-inc],
-     AS_HELP_STRING(--with-alps-inc@<:@=ALPSINC@:>@,specify the directory containing ALPS include files @<:@default=/usr/include@:>@),
-     [with_alpsinc=$withval],
-     [with_alpsinc="/usr/include"]
+    AC_ARG_WITH([rm-inc],
+     AS_HELP_STRING(--with-rm-inc@<:@=RMINCDIR@:>@,specify the directory containing RM include files @<:@default=/usr/include@:>@),
+     [with_rminc=$withval],
+     [with_rminc="/usr/include"]
     )
  
   rm_default_dirs="/usr/bin /usr/local/bin /bgl/BlueLight/ppcfloor/bglsys/bin /bgsys/drivers/ppcfloor/bin" 
@@ -232,6 +233,72 @@ AC_DEFUN([X_AC_RM], [
       fi # test $bits = "32-bit"
       AC_MSG_RESULT($ac_job_launcher_bits)
     fi # test "x$rm_found" = "xyes"; 	
+
+  elif test "x$with_rm_name" = "xorte" ; then
+    #
+    # Configure for OpenRTE/OpenMPI
+    #
+    if test "x$with_launcher" != "xcheck" -a "x$with_launcher" != "xyes"; then
+      #
+      # The ORTERUN path is given
+      #
+      pth=""
+      if test -f $with_launcher; then
+        pth=`config/ap $with_launcher`
+        if test -f $pth ; then
+          ac_job_launcher_path=$pth
+          rm_found="yes"
+        fi
+      fi
+    else
+      #
+      # Try the default ORTERUN path
+      #
+      for rm_dir in $rm_default_dirs; do
+        if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
+          continue;
+        fi
+
+        if test ! -z "$rm_dir/orterun" -a -f "$rm_dir/orterun"; then
+          pth=`config/ap $rm_dir/orterun`
+          ac_job_launcher_path=$pth
+          rm_found="yes"
+          break
+        fi
+      done
+    fi   
+
+    AC_MSG_RESULT($with_rm_name:$rm_found)
+
+    if test "x$rm_found" = "xyes"; then  
+      #default SMPFACTOR	 
+      SMPFACTOR=8
+      AC_SUBST(SMPFACTOR)
+      AC_DEFINE(RM_ORTE_ORTERUN,1,[Define 1 for RM_ORTE_ORTERUN])
+      AC_SUBST(RM_TYPE, orte) 
+      AC_MSG_CHECKING([whether orterun is 32 bit 64 bit]) 
+      #check if job launcher is 32 bit or 64 bit.
+      #TODO: the use of file | gawk isn't portable
+      bits=`file $ac_job_launcher_path | gawk '{print @S|@3}'`
+      if test $bits = "32-bit"; then
+        ac_job_launcher_bits="32"
+	AC_SUBST(LNCHR_BIT_FLAGS, -m32)
+      elif test $bits = "64-bit"; then
+        ac_job_launcher_bits="64"
+	AC_SUBST(LNCHR_BIT_FLAGS, -m64)
+        AC_SUBST(ARCHHEADER,"/") 
+        AC_DEFINE(BIT64,1,[Define 1 for BIT64])
+        if test "x$ac_have_known_os" = "xyes"; then
+          if test "$ac_target_os" = "linux" && test "$ac_target_isa" = "x86_64"; then
+	    AC_SUBST(LIBBITSUFFIX,64)
+          fi
+        fi 
+      else
+        ac_job_launcher_bits="unknown"
+      fi # test $bits = "32-bit"
+      AC_MSG_RESULT($ac_job_launcher_bits)
+    fi # test "x$rm_found" = "xyes"; 	
+
   elif test "x$with_rm_name" = "xalps" ; then
     #
     # Configure for CrayXT/ALPS
@@ -285,31 +352,50 @@ AC_DEFUN([X_AC_RM], [
       #
       AC_DEFINE(RM_FE_COLOC_CMD, "alps_fe_colocator", [bulk launcher location])
       AC_SUBST(RM_TYPE, alps)
-      AC_DEFINE(GLUESYM,[""], [Define dot for GLUESYM])
-      AC_DEFINE(BIT64,1,[Define 1 for BIT64])
-      ac_job_launcher_bits="64"
-      if test -z "$with_alpslib" -o ! -d "$with_alpslib" ; then
-        AC_MSG_ERROR([ALPS directory $with_alpslib is not a directory])
+      AC_MSG_CHECKING([whether aprunn is 32 bit 64 bit]) 
+      #check if job launcher is 32 bit or 64 bit.
+      #TODO: the use of file | gawk isn't portable
+      bits=`file $ac_job_launcher_path | gawk '{print @S|@3}'`
+      if test $bits = "32-bit"; then
+        ac_job_launcher_bits="32"
+	AC_SUBST(LNCHR_BIT_FLAGS, -m32)
+      elif test $bits = "64-bit"; then
+        ac_job_launcher_bits="64"
+	AC_SUBST(LNCHR_BIT_FLAGS, -m64)
+        AC_SUBST(ARCHHEADER,"/") 
+        AC_DEFINE(BIT64,1,[Define 1 for BIT64])
+        if test "x$ac_have_known_os" = "xyes"; then
+          if test "$ac_target_os" = "linux" && test "$ac_target_isa" = "x86_64"; then
+	    AC_SUBST(LIBBITSUFFIX,64)
+          fi
+        fi 
+      else
+        ac_job_launcher_bits="unknown"
+      fi # test $bits = "32-bit"
+      AC_MSG_RESULT($ac_job_launcher_bits)
+
+      if test -z "$with_rmlib" -o ! -d "$with_rmlib" ; then
+        AC_MSG_ERROR([ALPS directory $with_rmlib is not a directory])
       fi
-      if test ! -z "$with_alpslib" -a -d "$with_alpslib/alps" ; then
-        ALPSLIB_SEARCH="-L$with_alpslib/alps"
+      if test ! -z "$with_rmlib" -a -d "$with_rmlib/alps" ; then
+        ALPSLIB_SEARCH="-L$with_rmlib/alps"
       fi
-      if test ! -z "$with_alpslib" -a -d "$with_alpslib/alpsutil" ; then
-        ALPSLIB_SEARCH="$ALPSLIB_SEARCH -L$with_alpslib/alpsutil"
+      if test ! -z "$with_rmlib" -a -d "$with_rmlib/alpsutil" ; then
+        ALPSLIB_SEARCH="$ALPSLIB_SEARCH -L$with_rmlib/alpsutil"
       fi
-      if test ! -z "$with_alpslib" -a -d "$with_alpslib/xmlrpc" ; then
-           ALPSLIB_SEARCH="$ALPSLIB_SEARCH -L$with_alpslib/xmlrpc"
+      if test ! -z "$with_rmlib" -a -d "$with_rmlib/xmlrpc" ; then
+           ALPSLIB_SEARCH="$ALPSLIB_SEARCH -L$with_rmlib/xmlrpc"
       fi
-      ALPSLIB_SEARCH="$ALPSLIB_SEARCH -L$with_alpslib"
+      ALPSLIB_SEARCH="$ALPSLIB_SEARCH -L$with_rmlib"
       LDFLAGS="$LDFLAGS $ALPSLIB_SEARCH"
 
-      if test -z "$with_alpsinc" -o ! -d "$with_alpsinc" ; then
+      if test -z "$with_rminc" -o ! -d "$with_rminc" ; then
         AC_MSG_ERROR([ALPS directory $with_alpsinc is not a directory])
       fi
-      CFLAGS="$CFLAGS -I$with_alpsinc"
+      CFLAGS="$CFLAGS -I$with_rminc"
       AC_CHECK_HEADER(apInfo.h,
-      AC_SUBST(ALPS_INC_DIR, $with_alpsinc),
-      AC_ERROR("apInfo.h not found in $with_alpsinc"))
+      AC_SUBST(ALPS_INC_DIR, $with_rminc),
+      AC_ERROR("apInfo.h not found in $with_rminc"))
 
       AC_DEFINE(RM_ALPS_APRUN,1, ["Definition for ALPS/APRUN]")
 
@@ -322,9 +408,12 @@ AC_DEFUN([X_AC_RM], [
          AC_MSG_ERROR([libalps not found])
       fi
     fi
-   
 
   else
+    #
+    # TODO: find a way to dynamically configure LaunchMON without having
+    # to configure for *one* RM at config time.
+    #
     AC_MSG_ERROR([--with-rm is a required option])
   fi
   AM_CONDITIONAL([WITH_ALPS], [test "x$with_rm_name" = "xalps" -a "x$rm_found" = "xyes"])
