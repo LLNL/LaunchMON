@@ -486,6 +486,10 @@ resolvHNAlias ( std::string& hostsFilePath, std::string &alias, std::string &IP)
 //
 
 
+      #include <sys/types.h>
+       #include <sys/stat.h>
+       #include <fcntl.h>
+
 //! lmon_rc_e LMON_be_init
 /*!
     Please refer to the header file: lmon_be.h
@@ -497,7 +501,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
   lmon_rc_e lrc;
   struct sockaddr_in servaddr;
 
-#if VERBOSE && USE_VERBOSE_LOGDIR
+#if VERBOSE && USE_VERBOSE_LOGDIR  
   //
   // DHA 3/4/2009, reviewed. Looks fine for BGP as well.
   //
@@ -540,6 +544,25 @@ LMON_be_init ( int ver, int *argc, char ***argv )
     {
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
         "LMON BE fails to reopen stderr: %s", debugfn );
+
+      return LMON_EINVAL;
+    }
+#elif RM_ALPS_APRUN
+  //
+  // Without this, the no-verbose build will hang under ALPS 
+  //
+  if ( freopen ("/dev/null", "w", stdout) == NULL )
+    {
+      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+        "LMON BE fails to reopen stdouts");
+
+      return LMON_EINVAL;
+    }
+
+  if ( freopen ("/dev/null", "w", stderr) == NULL )
+    {
+      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+        "LMON BE fails to reopen stderr");
 
       return LMON_EINVAL;
     }
@@ -1417,7 +1440,6 @@ LMON_be_handshake ( void *udata )
   // 
   if (bedata.is_launch == trm_launch)
     {
-      //std::cout << proctab[i].pd.pid << std::endl;
       for (i=0; i < proctab_size; i++)
         kill(proctab[i].pd.pid, SIGSTOP);
     }
