@@ -47,14 +47,19 @@ B.  FE  API  extension to be able to communciate a session's status to the to-
        trouble, it will perform A.1; obviously in this case, it doesn't  need
        to perform A.1.2.
 
-       [BlueGene  Note]  As RM_daemon is equal to RM_job on BlueGene, and
-       the system control system doesn't offer a mechanism to detect a daemon
-       failure,  LaunchMON  does not currently enforce this semantics on this
-       platform.
+       [IBM BlueGene Note] As RM_daemon is equal to RM_job on BlueGene,
+       and the system control system does not offer a mechanism to
+       detect failures that occurred in the back-end daemons, LaunchMON does not
+       currently enforce this semantics on this platform.
 
-       [Cray ALPS Note] The ALPS tool helper service doesn't offer a mechanism 
-       to detect a daemon failure, LaunchMON  does not currently enforce this 
-       semantics on this platform.
+       [OpenRTE Note] Identical to the IBM BlueGene, RM_daemon is equal to RM_job
+       on OpenRTE and the system control system does not offer a mechanism to
+       detect failures that occurred in the back-end daemons. Hence, LaunchMON 
+       does not currently enforce this semantics on this platform.
+
+       [Cray ALPS Note] The ALPS tool helper service currently does not offer
+       a mechanism to detect failures in the daemons; LaunchMON does not enforce 
+       this semantics on this platform.
 
 D. When the job fails, the basic cleanup semantics of LaunchMON is  to notify 
    the FEN tool while keeping the daemons running.

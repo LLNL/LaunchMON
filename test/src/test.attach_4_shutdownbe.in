@@ -39,7 +39,7 @@
 RM_TYPE=@RMTP@
 NUMNODES=@NNODES@
 
-if test "x$RM_TYPE" = "xbgrm" ; then
+if test "x$RM_TYPE" = "xbgrm" -o  "x$RM_TYPE" = "xorte" -o "x$RM_TYPE" = "xalps" ; then
   rm -f nohup.out
   echo "[LMON FE] Test Not Implemented Yet"
   exit 1
@@ -61,7 +61,7 @@ elif test "x$RM_TYPE" = "xalps" ; then
   $MPI_JOB_LAUNCHER_PATH -n $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
 elif test "x$RM_TYPE" = "xorte" ; then
   WAITAMOUNT=`expr $WAITAMOUNT`
-  $MPI_JOB_LAUNCHER_PATH -np $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
+  $MPI_JOB_LAUNCHER_PATH -gmca orte_enable_debug_cospawn_while_running 1 -np $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
 else
   echo "This RM is not supported yet" 
 fi

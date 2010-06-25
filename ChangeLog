@@ -1,3 +1,17 @@
+2010-06-25 Dong H. Ahn <ahn1@llnl.gov>
+	* ChangeLog
+	README.ERROR_HANDLING
+	test/src/test.attach_1_remote.in
+	test/src/test.fe_regStatusCB.in
+	test/src/test.attach_4_shutdownbe.in
+	test/src/test.attach_4_kill.in
+	test/src/test.attach_2_uneven.in
+	test/src/test.attach_1_pdebugmax.in
+	test/src/test.attach_1.in:
+	Added OpenRTE suport and tested it under ORTE on SLURM 
+	environment. 
+
+
 2010-06-12 Dong H. Ahn <ahn1@llnl.gov>
 	* test/src/simple_MPI.c
 	test/src/Makefile.in

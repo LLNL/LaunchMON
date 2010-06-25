@@ -52,6 +52,9 @@ if test "x$RM_TYPE" = "xslurm" ; then
 elif test "x$RM_TYPE" = "xbgrm" ; then 
   WAITAMOUNT=`expr $WAITAMOUNT`
   nohup $MPI_JOB_LAUNCHER_PATH -verbose 1 -np $NUMTASKS -exe `pwd`/hang_on_SIGUSR1@EXE@ -cwd `pwd` &
+elif test "x$RM_TYPE" = "xorte" ; then
+  WAITAMOUNT=`expr $WAITAMOUNT`
+  $MPI_JOB_LAUNCHER_PATH -gmca orte_enable_debug_cospawn_while_running 1 -np $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ 
 else
   echo "This RM is not supported yet" 
 fi
