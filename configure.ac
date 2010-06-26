@@ -40,14 +40,14 @@ dnl         Jun 06 2008 DHA: File created.
 dnl
 
 AC_PREREQ(2.59)
-AC_INIT(LaunchMON, 0.7.0, ahn1@llnl.gov)
+AC_INIT(LaunchMON, 0.7.2, ahn1@llnl.gov)
 AC_SUBST(LMON_CURRENT, 1)
 AC_SUBST(LMON_REVISION, 0)
 AC_SUBST(LMON_AGE, 1)
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_HEADER([config.h])
-AM_INIT_AUTOMAKE(launchmon, 0.7.0)
+AM_INIT_AUTOMAKE(launchmon, 0.7.2)
 AC_CANONICAL_HOST
 
 
