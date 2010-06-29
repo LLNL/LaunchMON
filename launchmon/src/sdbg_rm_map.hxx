@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------                      
  *
  *  Update Log:
+ *        Jun 28 2010 DHA: Moved the rm_catalogue_e defintition into the
+ *                         LMON API standard header. 
  *        Jun 09 2010 DHA: Created file.
  */
 
@@ -42,20 +44,7 @@
 #endif
 
 #include <string>
-
-typedef enum _rm_catalogue_e
-{
-  RC_mchecker_rm,
-  RC_slurm,
-  RC_bglrm,
-  RC_bgprm,
-  RC_bgqrm,
-  RC_bgrm,
-  RC_alps,
-  RC_orte,
-  RC_none
-  // new RMs here
-} rm_catalogue_e;
+#include <lmon_api/lmon_api_std.h>
 
 struct coloc_str_param_t
 {
@@ -383,6 +372,21 @@ public:
       return rc;
     }
 
+  static rm_catalogue_e get_configured_rmtype ()
+    {
+      rm_catalogue_e rc = RC_none;
+#ifdef RM_SLURM_SRUN
+      rc = RC_slurm;
+#elif RM_ORTE_ORTERUN
+      rc = RC_orte;
+#elif RM_BG_MPIRUN
+      rc = RC_bgrm;
+#elif RM_ALPS_APRUN
+      rc = RC_alps;
+#endif
+      return rc;
+    }
+
   define_gset(bool, has_mpir_coloc)
   define_gset(bool, rid_supported)
   define_gset(std::string, rm_daemon_path)
@@ -413,30 +417,15 @@ private:
       else if (dt == string ("alps_fe_colocator"))
 #endif
         {
-#if RM_ALPS_APRUN 
           rm_type = RC_alps;
-#else
-	  rm_type = RC_none;
-	  rc = false;
-#endif
         }
       else if (dt == string ("mpirun") || dt == string ("mpirun32") || dt == string("mpirun64"))
         {
-#if RM_BG_MPIRUN
           rm_type = RC_bgrm;
-#else
-	  rm_type = RC_none;
-	  rc = false;
-#endif
         }
       else if (dt == string("orterun"))
         {
-#if RM_ORTE_ORTERUN
           rm_type = RC_orte;
-#else
-	  rm_type = RC_none;
-	  rc = false;
-#endif
         }
       else if (dt == string ("LE_model_checker.debug") || dt == string ("LE_model_checker"))
 	{

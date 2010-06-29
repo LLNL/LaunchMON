@@ -27,6 +27,9 @@
  *	
  *
  *  Update Log:
+ *        Jun 28 2010 DHA: Added LMON_fe_getRMInfo support;
+ *                         moved rm_catalogue_e to here and added
+ *                         lmon_rm_info_t here
  *        May 20 2009 DHA: Change LMON_VERSION 
  *        Jun 06 2008 DHA: Change C++ compiler support style  
  *                         (GNU). 
@@ -43,7 +46,7 @@
 BEGIN_C_DECLS
 
 #undef  LMON_VERSION
-#define LMON_VERSION          90007 /* version 0.7 */
+#define LMON_VERSION          900072 /* version 0.7.2beta */
 
 #define LMON_FE_ADDR_ENVNAME  "LMON_FE_WHERETOCONNECT_ADDR"
 #define LMON_FE_PORT_ENVNAME  "LMON_FE_WHERETOCONNECT_PORT"
@@ -83,6 +86,31 @@ typedef enum _lmon_rc_e {
   LMON_NO
 } lmon_rc_e;
 
+typedef enum _rm_catalogue_e
+{
+  RC_mchecker_rm = 0,
+  RC_slurm,
+  RC_bglrm,
+  RC_bgprm,
+  RC_bgqrm,
+  RC_bgrm,
+  RC_alps,
+  RC_orte,
+  RC_none
+  /* 
+    new RMs should be added here as LaunchMON is ported 
+    on other RMs	
+  */
+} rm_catalogue_e;
+
+typedef struct _lmon_rm_info_t {
+  rm_catalogue_e rm_type;
+  pid_t rm_launcher_pid;
+  /* 
+    Other RMs info fields should be added here 
+    as other use cases come along.
+  */ 
+} lmon_rm_info_t;
 
 typedef struct _lmon_daemon_env_t {
   char *envName;
@@ -94,8 +122,8 @@ typedef struct _lmon_daemon_env_t {
 typedef struct _lmon_daemon_local_t {
   pid_t pid;
   int pidMPIRank;
-  const char* exename;
-  struct _lmon_daemon_local_t* next;
+  const char *exename;
+  struct _lmon_daemon_local_t *next;
 } lmon_daemon_local_t;
 
 END_C_DECLS

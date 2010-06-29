@@ -66,6 +66,7 @@ man_MANS = LMON_be_getMyProctabSize.3 \
 	   LMON_fe_detach.3 \
 	   LMON_fe_putToBeDaemonEnv.3 \
 	   LMON_fe_regErrorCB.3 \
-	   LMON_fe_regStatusCB.3
+	   LMON_fe_regStatusCB.3 \
+	   LMON_fe_getRMInfo.3
 
 EXTRA_DIST = $(man_MANS)

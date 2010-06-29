@@ -285,8 +285,14 @@ public:
   // ships the resource handle to the FE API client
   //
   launchmon_rc_e ship_resourcehandle_msg ( 
-                lmonp_fe_to_fe_msg_e t, int );
+                lmonp_fe_to_fe_msg_e, int );
   
+  //
+  // ships the rminfo to the FE API client
+  //
+  launchmon_rc_e ship_rminfo_msg ( 
+                lmonp_fe_to_fe_msg_e, int, rm_catalogue_e);
+
   //
   // handle a message received from the FE API client
   //

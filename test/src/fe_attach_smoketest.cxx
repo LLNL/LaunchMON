@@ -376,6 +376,21 @@ main (int argc, char* argv[])
             "[LMON FE]");
        }
     }
+
+  lmon_rm_info_t rminfo;
+  rc = LMON_fe_getRMInfo ( aSession, &rminfo);
+  if (rc != LMON_OK)
+    {
+      fprintf ( stdout, "[LMON FE] FAILED\n");
+      return EXIT_FAILURE;
+    }
+  else
+   {
+      fprintf ( stdout,
+         "\n[LMON FE] RM type is %d\n", rminfo.rm_type);
+      fprintf ( stdout,
+         "\n[LMON FE] RM launcher's pid is %d\n", rminfo.rm_launcher_pid);
+   }
   
   if ( (getenv ("LMON_FE_SHUTDOWNBE_TEST")) != NULL )
     {

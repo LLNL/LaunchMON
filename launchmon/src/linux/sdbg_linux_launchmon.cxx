@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Jun 28 2010 DHA: Added support to implement LMON_fe_getRMInfo
  *        Jun 10 2010 DHA: Added CRAY XT support and RM MAP support.
  *        Apr 27 2010 DHA: Added more MEASURE_TRACING_COST support.
  *        Dec 22 2009 DHA: Added auxilliary vector support to discover 
@@ -1136,6 +1137,9 @@ linux_launchmon_t::handle_launch_bp_event (
 	    acquire_proctable ( p, use_cxt );
 	    ship_proctab_msg ( lmonp_proctable_avail );
 	    ship_resourcehandle_msg ( lmonp_resourcehandle_avail, get_resid() );
+	    ship_rminfo_msg ( lmonp_rminfo, 
+			      (int) p.get_pid(false), 
+			      p.get_myopts()->get_my_rmconfig()->get_rm_type());
 	    say_fetofe_msg ( lmonp_stop_at_launch_bp_spawned );
 
     	    launch_tool_daemons(p);
@@ -1786,6 +1790,9 @@ linux_launchmon_t::handle_trap_after_attach_event (
            acquire_proctable ( p, use_cxt );
            ship_proctab_msg ( lmonp_proctable_avail );
            ship_resourcehandle_msg ( lmonp_resourcehandle_avail, get_resid() );
+	   ship_rminfo_msg ( lmonp_rminfo, 
+			     (int) p.get_pid(false), 
+			      p.get_myopts()->get_my_rmconfig()->get_rm_type());
            say_fetofe_msg ( lmonp_stop_at_first_attach );
            launch_tool_daemons(p);
         }

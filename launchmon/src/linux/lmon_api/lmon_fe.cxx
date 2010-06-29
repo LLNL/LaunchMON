@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Jun 28 2010 DHA: Added LMON_fe_getRMInfo support
  *        Apr 27 2010 DHA: Added MEASURE_TRACING_COST support.
  *        Feb 04 2010 DHA: Added LMON_FE_HOSTNAME_TO_CONN support
  *        Dec 23 2009 DHA: Added explict config.h inclusion 
@@ -233,6 +234,7 @@
 
 #include "sdbg_self_trace.hxx"
 #include "sdbg_opt.hxx"
+#include "sdbg_rm_map.hxx"
 #include "lmon_api/lmon_say_msg.hxx"
 
 #include <lmon_api/lmon_proctab.h>
@@ -415,6 +417,18 @@ typedef struct _lmon_session_desc_t {
    * the pid of the launchmon engine process
    */
   pid_t le_pid;
+
+
+  /*
+   * the pid of the job launcher process 
+   */
+  pid_t rm_launcher_pid;
+
+
+  /*
+   * the RM type that the launchmon engine is handling
+   */
+  rm_catalogue_e rm_type;
 
 
   /*
@@ -718,6 +732,8 @@ LMON_init_sess ( lmon_session_desc_t* s )
   s->detached = LMON_FALSE;
   s->killed = LMON_FALSE;      
   s->le_pid = LMON_FALSE;
+  s->rm_launcher_pid = LMON_FALSE;
+  s->rm_type = rc_rm_t::get_configured_rmtype(); 
   
   bzero (s->shared_key, LMON_KEY_LENGTH);
   s->randomID = LMON_FALSE;
@@ -790,6 +806,8 @@ LMON_destroy_sess ( lmon_session_desc_t* s )
   s->detached = LMON_FALSE;
   s->killed = LMON_FALSE;
   s->le_pid = LMON_FALSE;
+  s->rm_launcher_pid = LMON_FALSE;
+  s->rm_type = rc_rm_t::get_configured_rmtype();
 
   bzero (s->shared_key, LMON_KEY_LENGTH);
   s->randomID = LMON_FALSE;
@@ -2216,11 +2234,15 @@ LMON_handle_resourcehandle_event (
 		lmon_session_desc_t *mydesc, 
 		lmonp_t *msg )
 {
-  int rid;
+  uint32_t rid;
   int bytesread;
 
   if ( (msg->lmon_payload_length+msg->usr_payload_length) != sizeof(int) )
-    return -1;
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true, 
+        "payload size mismatch detected during LMON_handle_resourcehandle_event" );
+      return -1;
+    }
   
   bytesread 
     = read_lmonp_payloads(readingFd, 
@@ -2230,12 +2252,51 @@ LMON_handle_resourcehandle_event (
   if ( bytesread != (int) (msg->lmon_payload_length+msg->usr_payload_length))
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true, 
-		     "read_lmonp_payloads returned a bad return code" );
+        "read_lmonp_payloads returned a bad return code" );
 
       return -1;
     }
   
   mydesc->resourceHandle = rid;
+
+  return 0;
+}
+
+
+static int
+LMON_handle_rminfo_event (
+		int readingFd, 
+		lmon_session_desc_t *mydesc, 
+		lmonp_t *msg )
+{
+  uint32_t pid_rm_pair[2];
+  int bytesread;
+
+  /*
+   * lmonp_payload: launcherpid (4bytes) rm_type (4bytes) 
+   */
+  if ( (msg->lmon_payload_length+msg->usr_payload_length) != sizeof(pid_rm_pair))
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true, 
+        "payload size mismatch detected during LMON_handle_rminfo_event" );
+      return -1;
+    }
+  
+  bytesread 
+    = read_lmonp_payloads(readingFd, 
+			  pid_rm_pair, 
+			  msg->lmon_payload_length+msg->usr_payload_length);
+
+  if ( bytesread != (int) (msg->lmon_payload_length+msg->usr_payload_length))
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true, 
+        "read_lmonp_payloads returned a bad return code" );
+
+      return -1;
+    }
+  
+  mydesc->rm_launcher_pid = (pid_t) pid_rm_pair[0]; 
+  mydesc->rm_type = (rm_catalogue_e) pid_rm_pair[1];
 
   return 0;
 }
@@ -2476,6 +2537,26 @@ LMON_fetofe_watchdog_thread ( void *arg )
 	  pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
 	  break;
 
+        case lmonp_rminfo:
+	  //
+	  // The event indicating RMInfo is available.
+	  // 
+	  //
+	  pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
+	  if ( LMON_handle_rminfo_event(readingFd, mydesc, &msg) != 0 )
+	    {	     
+	      LMON_say_msg ( LMON_FE_MSG_PREFIX, true, 
+                 "LMON_handle_rminfo_event failed");
+	      pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
+	      goto watchdog_done;
+	    }
+#if VERBOSE 
+	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
+	     "rminfo event received...");
+#endif
+	  pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
+	  break;
+
 	case lmonp_detach_done:
           //
 	  // Synchronous detach event  
@@ -2618,6 +2699,205 @@ LMON_fetofe_watchdog_thread ( void *arg )
 }
 
 
+static int
+tokenize ( const std::string& str,
+           char **myargv,
+           int myargvMax )
+{
+  char *first = (char *)str.c_str();
+  char *last = NULL;
+  int i=0;
+  int quote=0; 
+
+  if (!first)
+    return -1;
+
+  for (i=0;i < myargvMax ; ++i)
+    {
+      while ( *first != '\0' && ((*first == ' ') || (*first) == '"')) 
+        {
+          if ( (*first) == '"' )
+            quote=1;
+          first++;
+        }
+
+      last = first;
+
+      if ( quote ) 
+        {
+          while ( *last != '\0' && *last != '"' )
+            last++;
+
+          if (*last == '\0' )
+            return -1;
+        } 
+      else
+        {
+          while ( *last != '\0' && *last != ' ' )
+            last++; 
+        }
+
+    if ( first == last )
+      break;
+     
+    myargv[i] = (char *) malloc (last - first + 1);
+    memcpy ( myargv[i], first, last-first );
+    myargv[i][last-first] = '\0';
+
+    if ( quote )
+      last++;
+
+    quote = 0;
+    first = last;
+  }
+
+  return i; 
+}
+
+
+static lmon_rc_e 
+bld_exec_lmon_launch_str ( bool isLocal, 
+			   const char *hostname,
+			   std::string lmonOptArgs, 
+			   opts_args_t &opt )
+{
+  using namespace std;
+
+  const int maxargv = 1024;
+  string cmd;
+  string cmdstring;
+  char *rm;
+  char *lmonpath;
+  char *debugflag;
+  char **myargv;
+  int k=0;
+
+  if ( ( myargv = (char **) malloc (maxargv*sizeof (char *)) ) == NULL )
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+		     "malloc returned NULL, exiting... ");
+
+      return LMON_ENOMEM;
+    }
+
+  if ( isLocal ) 
+    {
+
+      map<string, string>::const_iterator envListPos;		
+      for (envListPos = opt.get_my_opt()->envMap.begin(); 
+	   envListPos !=  opt.get_my_opt()->envMap.end(); envListPos++)
+	{ 
+ 	  setenv ( envListPos->first.c_str (), envListPos->second.c_str (), 1 );
+	}
+
+      if ( getenv("LMON_DEBUG_LAUNCHMON_ENGINE") )
+	{
+	  cmdstring += TVCMD;
+	  cmdstring += " ";
+	}
+
+      if ( ( lmonpath = getenv ("LMON_LAUNCHMON_ENGINE_PATH")) != NULL )
+	{
+	  cmdstring += lmonpath;
+	  cmdstring += " ";
+	}
+      else
+	{
+	  cmd = "launchmon";
+	  cmdstring += cmd;
+	  cmdstring += " ";
+	}
+
+      if ( getenv("LMON_DEBUG_LAUNCHMON_ENGINE") )
+	{
+	  cmdstring += "-a";
+	  cmdstring += " ";
+	}
+
+      cmdstring += lmonOptArgs;
+      k = tokenize ( cmdstring, myargv, maxargv );
+
+      if ( k < 0 )
+        return LMON_EINVAL;
+
+      myargv[k] = NULL;
+    }  // The tool FEN is already co-located with the RM.
+  else
+    {
+      // LMON_REMOTE_LOGIN (default=ssh)
+      if ( ( rm = getenv ("LMON_REMOTE_LOGIN")) != NULL )	  
+	myargv[k] = strdup(rm);	  
+      else	  
+	myargv[k] = strdup(SSHCMD);
+      k++;
+	
+      myargv[k] = strdup(hostname);
+      k++;
+
+      string cmdstring = ENVCMD;
+      cmdstring += " ";
+
+      map<string, string>::const_iterator envListPos;		
+      for (envListPos = opt.get_my_opt()->envMap.begin(); 
+	   envListPos !=  opt.get_my_opt()->envMap.end(); envListPos++)
+	{ 
+	  string lstring = envListPos->first + "=" + envListPos->second;
+	  cmdstring += lstring;
+	  cmdstring += " ";
+	}
+
+      if ( getenv("LMON_DEBUG_LAUNCHMON_ENGINE") )
+	{
+	  cmdstring += TVCMD;
+	  cmdstring += " ";
+	}
+
+      if ( ( lmonpath = getenv ("LMON_LAUNCHMON_ENGINE_PATH")) != NULL )
+	{
+	  cmdstring += lmonpath;
+	  cmdstring += " ";
+
+	  //
+	  // perform a sanity check here of the given path
+	  //
+	}
+      else
+	{		    
+	  cmd = "launchmon";
+	  cmdstring += cmd;
+	  cmdstring += " ";
+	  
+	  //
+	  // perform a sanity check if this is in the user's PATH
+	  //
+	}
+
+      if ( getenv("LMON_DEBUG_LAUNCHMON_ENGINE") )
+	{
+	  cmdstring += "-a";
+	  cmdstring += " ";
+	}
+
+      cmdstring += lmonOptArgs;
+      myargv[k] = strdup(cmdstring.c_str());
+      k++;
+      myargv[k] = NULL;
+    }  // The tool FEN is not co-located with the RM.
+
+  if ( execvp ( myargv[0], myargv) < 0 )
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "LaunchMON Engine invocation failed, exiting: %s",
+	strerror(errno));
+
+      //
+      // If execv fails, sink here. 
+      //
+      exit(1);
+    } 
+
+  return LMON_EINVAL;
+}
 
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -2631,7 +2911,7 @@ LMON_fetofe_watchdog_thread ( void *arg )
 //! lmon_rc_e LMON_fe_init ( int LMON_VERSION )
 /*!
 
-    Please refer to the header file: lmon_fe.h
+    Please refer to the manpage
 
 */
 extern "C" 
@@ -2695,7 +2975,7 @@ LMON_fe_init ( int ver )
 //! lmon_rc_e LMON_fe_createsession(int* sessionHandle)
 /*! 
 
-    Please refer to the header file: lmon_fe.h
+    Please refer to the manpage
 
 */
 extern "C"
@@ -3002,7 +3282,7 @@ LMON_fe_createSession ( int *sessionHandle )
 //! lmon_rc_e LMON_fe_regPackForFeToBe 
 /*!
 
-    Please refer to the header file: lmon_fe.h
+    Please refer to the manpage
  
 */
 extern "C"
@@ -3068,7 +3348,7 @@ LMON_fe_regPackForFeToBe (
 //! lmon_rc_e LMON_fe_regUnpackForBeToFe
 /*!
 
-    Please refer to the header file: lmon_fe.h  
+    Please refer to the manpage  
 
 */
 extern "C" 
@@ -3131,7 +3411,7 @@ LMON_fe_regUnpackForBeToFe (
 //! lmon_rc_e LMON_fe_regPackForFeToMw
 /*!
 
-    Please refer to the header file: lmon_fe.h  
+    Please refer to the manpage  
 
 */
 lmon_rc_e 
@@ -3196,7 +3476,7 @@ LMON_fe_regPackForFeToMw (
 //! lmon_rc_e LMON_fe_regUnpackForMwToFe
 /*!
 
-    Please refer to the header file: lmon_fe.h  
+    Please refer to the manpage  
 
 */  
 lmon_rc_e 
@@ -3259,7 +3539,7 @@ LMON_fe_regUnpackForMwToFe (
 //! lmon_rc_e LMON_fe_putToBeDaemonEnv
 /*!
 
-    Please refer to the header file: lmon_fe.h    
+    Please refer to the manpage    
 
 */
 extern "C" 
@@ -3312,7 +3592,7 @@ LMON_fe_putToBeDaemonEnv (
 //! lmon_rc_e LMON_fe_putToMwDaemonEnv
 /*!
 
-    Please refer to the header file: lmon_fe.h    
+    Please refer to the manpage    
 
 */
 lmon_rc_e 
@@ -3365,7 +3645,7 @@ LMON_fe_putToMwDaemonEnv (
 //! lmon_rc_e LMON_fe_sendUsrData
 /*!
 
-    Please refer to the header file: lmon_fe.h    
+    Please refer to the manpage    
 
 */
 lmon_rc_e LMON_fe_sendUsrDataBe ( int sessionHandle, void* febe_data )
@@ -3392,7 +3672,7 @@ lmon_rc_e LMON_fe_sendUsrDataBe ( int sessionHandle, void* febe_data )
 //! lmon_rc_e LMON_fe_recvUsrDataBE
 /*!
 
-    Please refer to the header file: lmon_fe.h    
+    Please refer to the manpage    
 
 */
 lmon_rc_e LMON_fe_recvUsrDataBe ( int sessionHandle, void* befe_data )
@@ -3419,7 +3699,7 @@ lmon_rc_e LMON_fe_recvUsrDataBe ( int sessionHandle, void* befe_data )
 //! lmon_rc_e LMON_fe_sendUsrData
 /*!
 
-    Please refer to the header file: lmon_fe.h    
+    Please refer to the manpage    
 
 */
 lmon_rc_e 
@@ -3447,7 +3727,7 @@ LMON_fe_sendUsrDataMw ( int sessionHandle, void* femw_data )
 //! lmon_rc_e LMON_fe_recvUsrDataBE
 /*!
 
-    Please refer to the header file: lmon_fe.h    
+    Please refer to the manpage    
 
 */
 lmon_rc_e 
@@ -3476,7 +3756,7 @@ LMON_fe_recvUsrDataMw ( int sessionHandle, void* mwfe_data )
 //! lmon_rc_e LMON_fe_detach
 /*!
 
-    Please refer to the header file: lmon_fe.h    
+    Please refer to the manpage    
 
 */
 extern "C" 
@@ -3576,7 +3856,7 @@ LMON_fe_detach ( int sessionHandle )
 //! lmon_rc_e LMON_fe_kill
 /*!
 
-    Please refer to the header file: lmon_fe.h    
+    Please refer to the manpage    
 
 */
 lmon_rc_e 
@@ -3674,7 +3954,7 @@ LMON_fe_kill ( int sessionHandle )
 //! lmon_rc_e LMON_fe_shutdownDaemons
 /*!
 
-    Please refer to the header file: lmon_fe.h    
+    Please refer to the manpage    
 
 */
 lmon_rc_e 
@@ -3767,7 +4047,7 @@ LMON_fe_shutdownDaemons ( int sessionHandle )
 //! lmon_rc_e LMON_fe_getProctableSize
 /*!
   
-    Please refer to the header file: lmon_fe.h    
+    Please refer to the manpage    
 
 */
 extern "C"
@@ -3835,7 +4115,7 @@ LMON_fe_getProctableSize (
 //! lmon_rc_e LMON_fe_getProctable
 /*!
   
-    Please refer to the header file: lmon_fe.h    
+    Please refer to the manpage    
 
 */
 extern "C" 
@@ -4141,211 +4421,56 @@ LMON_fe_getResourceHandle (
   return LMON_OK;
 }
 
-static int
-tokenize ( const std::string& str,
-           char **myargv,
-           int myargvMax )
+
+//! lmon_rc_e LMON_fe_getRMInfo ( int sessionHandle, lmon_rm_info_t *info)
+/*!
+    Please refer to the manpage
+*/
+extern "C" 
+lmon_rc_e 
+LMON_fe_getRMInfo (int sessionHandle, lmon_rm_info_t *info)
 {
-  char *first = (char *)str.c_str();
-  char *last = NULL;
-  int i=0;
-  int quote=0; 
-
-  if (!first)
-    return -1;
-
-  for (i=0;i < myargvMax ; ++i)
-    {
-      while ( *first != '\0' && ((*first == ' ') || (*first) == '"')) 
-        {
-          if ( (*first) == '"' )
-            quote=1;
-          first++;
-        }
-
-      last = first;
-
-      if ( quote ) 
-        {
-          while ( *last != '\0' && *last != '"' )
-            last++;
-
-          if (*last == '\0' )
-            return -1;
-        } 
-      else
-        {
-          while ( *last != '\0' && *last != ' ' )
-            last++; 
-        }
-
-    if ( first == last )
-      break;
-     
-    myargv[i] = (char *) malloc (last - first + 1);
-    memcpy ( myargv[i], first, last-first );
-    myargv[i][last-first] = '\0';
-
-    if ( quote )
-      last++;
-
-    quote = 0;
-    first = last;
-  }
-
-  return i; 
-}
-
-
-static lmon_rc_e 
-bld_exec_lmon_launch_str ( bool isLocal, 
-			   const char* hostname,
-			   std::string lmonOptArgs, 
-			   opts_args_t& opt )
-{
-  using namespace std;
-
-  const int maxargv = 1024;
-  string cmd;
-  string cmdstring;
-  char *rm;
-  char *lmonpath;
-  char *debugflag;
-  char **myargv;
-  int k=0;
-
-  if ( ( myargv = (char **) malloc (maxargv*sizeof (char *)) ) == NULL )
+  if ( (sessionHandle < 0) 
+       || (sessionHandle > MAX_LMON_SESSION) )
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-		     "malloc returned NULL, exiting... ");
+		     "the sessionHandle argument is invalid" );
 
-      return LMON_ENOMEM;
+      return LMON_EBDARG;    
     }
 
-  if ( isLocal ) 
-    {
-
-      map<string, string>::const_iterator envListPos;		
-      for (envListPos = opt.get_my_opt()->envMap.begin(); 
-	   envListPos !=  opt.get_my_opt()->envMap.end(); envListPos++)
-	{ 
- 	  setenv ( envListPos->first.c_str (), envListPos->second.c_str (), 1 );
-	}
-
-      if ( getenv("LMON_DEBUG_LAUNCHMON_ENGINE") )
-	{
-	  cmdstring += TVCMD;
-	  cmdstring += " ";
-	}
-
-      if ( ( lmonpath = getenv ("LMON_LAUNCHMON_ENGINE_PATH")) != NULL )
-	{
-	  cmdstring += lmonpath;
-	  cmdstring += " ";
-	}
-      else
-	{
-	  cmd = "launchmon";
-	  cmdstring += cmd;
-	  cmdstring += " ";
-	}
-
-      if ( getenv("LMON_DEBUG_LAUNCHMON_ENGINE") )
-	{
-	  cmdstring += "-a";
-	  cmdstring += " ";
-	}
-
-      cmdstring += lmonOptArgs;
-      k = tokenize ( cmdstring, myargv, maxargv );
-
-      if ( k < 0 )
-        return LMON_EINVAL;
-
-      myargv[k] = NULL;
-    }  // The tool FEN is already co-located with the RM.
-  else
-    {
-      // LMON_REMOTE_LOGIN (default=ssh)
-      if ( ( rm = getenv ("LMON_REMOTE_LOGIN")) != NULL )	  
-	myargv[k] = strdup(rm);	  
-      else	  
-	myargv[k] = strdup(SSHCMD);
-      k++;
-	
-      myargv[k] = strdup(hostname);
-      k++;
-
-      string cmdstring = ENVCMD;
-      cmdstring += " ";
-
-      map<string, string>::const_iterator envListPos;		
-      for (envListPos = opt.get_my_opt()->envMap.begin(); 
-	   envListPos !=  opt.get_my_opt()->envMap.end(); envListPos++)
-	{ 
-	  string lstring = envListPos->first + "=" + envListPos->second;
-	  cmdstring += lstring;
-	  cmdstring += " ";
-	}
-
-      if ( getenv("LMON_DEBUG_LAUNCHMON_ENGINE") )
-	{
-	  cmdstring += TVCMD;
-	  cmdstring += " ";
-	}
-
-      if ( ( lmonpath = getenv ("LMON_LAUNCHMON_ENGINE_PATH")) != NULL )
-	{
-	  cmdstring += lmonpath;
-	  cmdstring += " ";
-
-	  //
-	  // perform a sanity check here of the given path
-	  //
-	}
-      else
-	{		    
-	  cmd = "launchmon";
-	  cmdstring += cmd;
-	  cmdstring += " ";
-	  
-	  //
-	  // perform a sanity check if this is in the user's PATH
-	  //
-	}
-
-      if ( getenv("LMON_DEBUG_LAUNCHMON_ENGINE") )
-	{
-	  cmdstring += "-a";
-	  cmdstring += " ";
-	}
-
-      cmdstring += lmonOptArgs;
-      myargv[k] = strdup(cmdstring.c_str());
-      k++;
-      myargv[k] = NULL;
-    }  // The tool FEN is not co-located with the RM.
-
-  if ( execvp ( myargv[0], myargv) < 0 )
+  if ( !info )
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-        "LaunchMON Engine invocation failed, exiting: %s",
-	strerror(errno));
+		     "the info argument is null" );
 
-      //
-      // If execv fails, sink here. 
-      //
-      exit(1);
-    } 
+      return LMON_EBDARG;    
+    }
 
-  return LMON_EINVAL;
+  lmon_session_desc_t *mydesc = &(sess.sessionDescArray[sessionHandle]);
+  pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
+  if (mydesc->registered == LMON_FALSE) 
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "the session is invalid, the job killed or uninitialized session?");
+
+      pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
+      return LMON_EINVAL;
+    }
+
+  info->rm_type = mydesc->rm_type;
+  info->rm_launcher_pid = mydesc->rm_launcher_pid;
+
+  pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
+
+  return (info->rm_launcher_pid != LMON_FALSE)? LMON_OK : LMON_EDUNAV;
 }
 
 
 //! lmon_rc_e LMON_fe_launchAndSpawnDaemons
 /*!
 
-    Please refer to the header file.
+    Please refer to the manpage.
 
 */
 extern "C" 
@@ -4585,7 +4710,7 @@ LMON_fe_launchAndSpawnDaemons (
 //! lmon_rc_e LMON_fe_attachAndSpawnDaemons
 /*!
   
-    Please refer to the header file.
+    Please refer to the manpage.
 
 
 */

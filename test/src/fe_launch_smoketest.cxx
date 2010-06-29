@@ -227,6 +227,19 @@ main (int argc, char *argv[])
       return EXIT_FAILURE;
     }
 
+  lmon_rm_info_t rminfo;
+  rc = LMON_fe_getRMInfo ( aSession, &rminfo);
+  if (rc != LMON_EDUNAV)
+    {
+      fprintf ( stdout, "[LMON FE] FAILED, rc: %d\n", rc);
+      return EXIT_FAILURE;
+    }
+  else
+   {
+      fprintf ( stdout, 
+         "\n[LMON FE] RM type is %d\n", rminfo.rm_type);
+   }
+
   if ( getenv ("LMON_STATUS_CB_TEST"))
     {
        if ( LMON_fe_regStatusCB(aSession, statusFunc) != LMON_OK )
@@ -386,6 +399,20 @@ main (int argc, char *argv[])
             "[LMON FE]");
        }
     }
+
+  rc = LMON_fe_getRMInfo ( aSession, &rminfo);
+  if (rc != LMON_OK)
+    {
+      fprintf ( stdout, "[LMON FE] FAILED\n");
+      return EXIT_FAILURE;
+    }
+  else
+   {
+      fprintf ( stdout, 
+         "\n[LMON FE] RM type is %d\n", rminfo.rm_type);
+      fprintf ( stdout, 
+         "\n[LMON FE] RM launcher's pid is %d\n", rminfo.rm_launcher_pid);
+   }
 
   rc = LMON_fe_recvUsrDataBe ( aSession, NULL );
 

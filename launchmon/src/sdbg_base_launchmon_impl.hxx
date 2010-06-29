@@ -1,7 +1,7 @@
 /*
  * $Header: /usr/gapps/asde/cvs-vault/sdb/launchmon/src/sdbg_base_launchmon_impl.hxx,v 1.15.2.2 2008/02/20 17:37:56 dahn Exp $
  *--------------------------------------------------------------------------------
- * Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at 
+ * Copyright (c) 2008~2010, Lawrence Livermore National Security, LLC. Produced at 
  * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>. 
  * LLNL-CODE-409469. All rights reserved.
  *
@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Jun 28 2010 DHA: Added ship_rminfo_msg 
  *        Aug 07 2009 DHA: Added p.set_lwp_state tracking to decipher_an_event
  *                         method.
  *        Feb 09 2008 DHA: Added LLNS Copyright 
@@ -784,6 +785,68 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_resourcehandle_msg (
   free(sendbuf);  
 
   return LAUNCHMON_OK;
+}
+
+
+//! ship_resourcehandle_msg
+/*!
+    sends an lmonp_t packet with { msgclass=lmonp_fetofe, 
+    type.fetofe_type=lmonp_febe_proctab,
+    lmon_payload_length=size of the proctable }
+    to the FE API stub.  
+*/
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+launchmon_rc_e 
+launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_rminfo_msg ( 
+                lmonp_fe_to_fe_msg_e t, int rmpid, rm_catalogue_e rmtype)
+{
+  lmonp_t msg;
+  int msgsize;
+  uint32_t rminfo_pair[2];
+  char *sendbuf;
+  char *payload_cp_ptr;  
+
+  //
+  // If the engine is not driven via the FE API, this method
+  // returns LAUNCHMON_FAILED
+  //  
+  if ( !get_API_mode() )
+    {    
+      self_trace_t::trace ( LEVELCHK(level3), 
+	     MODULENAME, 0, 
+	     "standalone mode does not ship resource handle via LMONP");
+      return LAUNCHMON_FAILED;
+    }
+
+  rminfo_pair[0] = (uint32_t) rmpid;
+  rminfo_pair[1] = (uint32_t) rmtype;
+
+  init_msg_header (&msg);
+  msg.msgclass = lmonp_fetofe;
+  msg.type.fetofe_type = t;
+  msg.lmon_payload_length = sizeof(rminfo_pair);
+  msgsize = sizeof(msg) + msg.lmon_payload_length + msg.usr_payload_length; 
+  sendbuf = (char*) malloc (msgsize); 
+  
+  payload_cp_ptr = sendbuf;
+  memcpy (payload_cp_ptr, &msg, sizeof(msg));  
+  payload_cp_ptr += sizeof(msg);
+  memcpy(payload_cp_ptr, rminfo_pair, sizeof(rminfo_pair));
+  
+  write_lmonp_long_msg ( get_FE_sockfd(),
+			 (lmonp_t *)sendbuf,
+			 msgsize );  
+
+  {    
+    self_trace_t::trace ( LEVELCHK(level2), 
+			  MODULENAME, 0, 
+     "a reshandle message shipped out"); 
+  }
+
+  free(sendbuf);  
+
+  return LAUNCHMON_OK;
+
 }
 
 

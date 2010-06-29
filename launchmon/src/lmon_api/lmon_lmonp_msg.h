@@ -27,7 +27,10 @@
  *
  *
  *  Update Log:
- *        Dec  23 2009 DHA: Removed header file macroes for header files that
+ *        Jun 28 2010 DHA: Added lmonp_rminfo OP to the lmon_fetofe message class
+ *        Jun 22 2010 DHA: Added lmonp_febe_launch_dontstop and lmonp_febe_attach_stop
+ *                          OP to the lmon_fetobe class.
+ *        Dec 23 2009 DHA: Removed header file macroes for header files that
  *                          would exit on almost all UNIX based platforms,
  *                          facilitaing binary distribution.
  *        Mar 13 2009 DHA: Added large nTasks support
@@ -72,6 +75,7 @@ typedef enum _lmonp_msg_class_e {
  * msg types defined here for FE-launchmon engine comm 
  */ 
 typedef enum _lmonp_fe_to_fe_msg_e {
+
   /*
    * engine->FE: a job launcher hits the launch function with 
    * MPIR_DEBUG_SPAWNED state 
@@ -79,93 +83,98 @@ typedef enum _lmonp_fe_to_fe_msg_e {
   lmonp_stop_at_launch_bp_spawned      = 0, 
 
   /*
+   * engine->FE: rminfo filled  
+   */
+  lmonp_rminfo,
+
+  /*
    * engine->FE: A job launcher hits the launch function with 
    * MPIR_DEBUG_ABORTING state 
    * Semantics is defined in README.ERROR_HANDLE (D)
    */
-  lmonp_stop_at_launch_bp_abort        = 1,
+  lmonp_stop_at_launch_bp_abort,
 
   /*
    * engine->FE: process table filled (typically right after 
    * lmonp_stop_at_launch_bp_spawned)
    */
-  lmonp_proctable_avail                = 2,
+  lmonp_proctable_avail,
 
   /*
    * engine->FE: resource handle filled (typically right after 
    * lmonp_stop_at_launch_bp_spawned)
    */
-  lmonp_resourcehandle_avail           = 3,
+  lmonp_resourcehandle_avail,
 
   /*
    * engine->FE: we don't yet communicate following seven events 
    */
-  lmonp_stop_at_first_exec             = 4, 
-  lmonp_stop_at_first_attach           = 5,
-  lmonp_stop_at_loader_bp              = 6,
-  lmonp_stop_at_thread_creation        = 7,
-  lmonp_stop_at_thread_death           = 8,
-  lmonp_stop_at_fork_bp                = 9,
-  lmonp_stop_not_interested            = 10,
+  lmonp_stop_at_first_exec, 
+  lmonp_stop_at_first_attach,
+  lmonp_stop_at_loader_bp,
+  lmonp_stop_at_thread_creation,
+  lmonp_stop_at_thread_death,
+  lmonp_stop_at_fork_bp,
+  lmonp_stop_not_interested,
 
   /*
    * engine->FE: job launcher terminated
    */
-  lmonp_terminated                     = 11,
+  lmonp_terminated,
   
   /*
    * engine->FE: The main thread of the launcher exited
    * Semantics is defined in README.ERROR_HANDLE (D)
    */
-  lmonp_exited                         = 12,
+  lmonp_exited,
   
   /*
    * engine->FE: The detach done
    */
-  lmonp_detach_done                    = 13,
+  lmonp_detach_done,
  
   /*
    * engine->FE: The kill done
    */
-  lmonp_kill_done                      = 14,
+  lmonp_kill_done,
 
   /*
    * engine->FE: engine failed and done its cleanup.
    * Semantics is defined in README.ERROR_HANDLE (A) 
    */
-  lmonp_stop_tracing                   = 15,
+  lmonp_stop_tracing,
 
   /*
    * engine->FE: back-end daemons exited.
    * Semantics is defined in README.ERROR_HANDLE (C.2)
    */
-  lmonp_bedmon_exited                  = 16,
+  lmonp_bedmon_exited,
 
   /*
    * engine->FE: back-end daemons exited.
    * Semantics is defined in README.ERROR_HANDLE (C.2)
    */
-  lmonp_mwdmon_exited                  = 17,
+  lmonp_mwdmon_exited,
 
   /*
    * FE->engine: please detach command
    */
-  lmonp_detach                         = 18,
+  lmonp_detach,
 
   /*
    * FE->engine: please kill command
    */
-  lmonp_kill                           = 19,
+  lmonp_kill,
  
   /*
    * FE->engine: please shutdownbe command
    */
-  lmonp_shutdownbe                     = 20,
+  lmonp_shutdownbe,
 
   /*
    * end of enumerator marker
    */
-  lmonp_invalid                        = 30
+  lmonp_invalid
 
 } lmonp_fe_to_fe_msg_e;
 

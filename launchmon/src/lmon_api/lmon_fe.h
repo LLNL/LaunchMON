@@ -28,6 +28,7 @@
  *
  *
  *  Update Log:
+ *        Jun  28 2010 DHA: Added LMON_fe_getRMInfo support.
  *        Dec  23 2009 DHA: Removed header file macroes for header files that
  *                          would exit on almost all UNIX based platforms,
  *                               facilitaing binary distribution.
@@ -129,6 +130,8 @@ lmon_rc_e LMON_fe_getStatus ( int sessionHandle, int *status );
 lmon_rc_e LMON_fe_regStatusCB (int sessionHandle, int (*func) (int *status));
 
 lmon_rc_e LMON_fe_regErrorCB ( int (*errorCB) (const char *format, va_list ap) );
+
+lmon_rc_e LMON_fe_getRMInfo (int sessionHandle, lmon_rm_info_t *info);
 
 lmon_rc_e LMON_fe_getProctable (
                 int sessionHandle, 
