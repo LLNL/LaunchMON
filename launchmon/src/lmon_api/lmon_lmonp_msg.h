@@ -77,10 +77,20 @@ typedef enum _lmonp_msg_class_e {
 typedef enum _lmonp_fe_to_fe_msg_e {
 
   /*
+   * engine->FE: connect ack no parse error 
+   */
+  lmonp_conn_ack_no_error = 0,
+
+  /*
+   * engine->FE: connect ack with parse errors found 
+   */
+  lmonp_conn_ack_parse_error,
+
+  /*
    * engine->FE: a job launcher hits the launch function with 
    * MPIR_DEBUG_SPAWNED state 
    */
-  lmonp_stop_at_launch_bp_spawned      = 0, 
+  lmonp_stop_at_launch_bp_spawned, 
 
   /*
    * engine->FE: rminfo filled  
@@ -380,7 +390,7 @@ int lmon_timedaccept ( int s, struct sockaddr *addr,
 /*!
     Which spatial component is using this lmonp message? 
 */
-void set_client_name ( const char* cn );
+void set_client_name ( const char *cn );
 
 
 //! int print_msg_header ( my_lmon_kind_e rw, lmonp_t* msg );
@@ -388,7 +398,7 @@ void set_client_name ( const char* cn );
     print_msg_header: debug routine, printing message type and comm parties
                        0 on success, -1 on error
 */
-int print_msg_header ( my_lmon_kind_e rw, lmonp_t* msg );
+int print_msg_header ( my_lmon_kind_e rw, lmonp_t *msg );
 
 
 //! init_msg_header ( lmonp_t* msg );
@@ -396,7 +406,7 @@ int print_msg_header ( my_lmon_kind_e rw, lmonp_t* msg );
   int init_msg_header: zero outthe header portion of lmonp message
                        0 on success, -1 on error
 */
-int init_msg_header ( lmonp_t* msg );
+int init_msg_header ( lmonp_t *msg );
 
 
 //! 
@@ -404,7 +414,7 @@ int init_msg_header ( lmonp_t* msg );
   The functions looks at the header of msg before shipping the 
   entire msg via fd
 */
-int write_lmonp_long_msg ( int fd, lmonp_t* msg, int msglength );
+int write_lmonp_long_msg ( int fd, lmonp_t *msg, int msglength );
 
 
 //! int read_lmonp_msgheader ( int fd, lmonp_t* msg )
@@ -412,7 +422,7 @@ int write_lmonp_long_msg ( int fd, lmonp_t* msg, int msglength );
   The functions reads only the header portion of an
   lmonp message via fd.
 */
-int read_lmonp_msgheader ( int fd, lmonp_t* msg );
+int read_lmonp_msgheader ( int fd, lmonp_t *msg );
 
 
 //! int read_lmonp_payloads ( int fd, void* buf, int length )
@@ -420,7 +430,7 @@ int read_lmonp_msgheader ( int fd, lmonp_t* msg );
   The functions reads the payloads portion of an
   lmonp message via fd.
 */
-int read_lmonp_payloads ( int fd, void* buf, int length );
+int read_lmonp_payloads ( int fd, void *buf, int length );
 
 
 //! int set_msg_header (lmonp_t* msg, ...
@@ -428,7 +438,7 @@ int read_lmonp_payloads ( int fd, void* buf, int length );
   a helper function setting the lmonp header 
 */
 int set_msg_header ( 
-                 lmonp_t* msg, 
+                 lmonp_t *msg, 
 	         lmonp_msg_class_e mc, 
 		 int type, 
 		 unsigned short seckey_or_numtasks, 
@@ -444,9 +454,9 @@ int set_msg_header (
 /*!
   message offset search routines 
 */
-char* get_lmonpayload_begin ( lmonp_t *msg );
-char* get_usrpayload_begin ( lmonp_t *msg );
-char* get_strtab_begin ( lmonp_t *msg );
+char * get_lmonpayload_begin ( lmonp_t *msg );
+char * get_usrpayload_begin ( lmonp_t *msg );
+char * get_strtab_begin ( lmonp_t *msg );
 int parse_raw_RPDTAB_msg (lmonp_t *proctabMsg, void *pMap);
 
 ssize_t lmon_write_raw ( int fd, void *buf, size_t count );

@@ -67,6 +67,11 @@ user payload into \fIudata\fR.
 When the received message contains no user payload, this function
 return \fBLMON_ENOPLD\fR.
 
+The above functions require all of the back-end daemons to
+participate, but \fIudata\fR is only meaningful to the master
+daemon.
+
+
 .SH RETURN VALUE
 These functions return \fBLMON_OK\fR
 on success; otherwise, an LMON error code is returned 

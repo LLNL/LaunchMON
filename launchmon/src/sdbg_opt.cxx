@@ -27,6 +27,8 @@
  *						
  *
  *  Update Log:
+ *        Jun 30 2010 DHA: Added faster engine parsing error detection support
+ *                         Deprecated option_sanity_check(); 
  *        Jun 10 2010 DHA: Added RM MAP support. Removed Linux-specific getexec 
  *                         from here
  *        Mar 16 2009 DHA: Added COBO support
@@ -107,6 +109,7 @@ opts_args_t::opts_args_t ()
   my_opt->launcher_pid = -1;
 
   my_rmconfig = new rc_rm_t();
+  has_parse_error = false;
 
   MODULENAME = self_trace_t::opt_module_trace.module_name;
 }
@@ -197,11 +200,15 @@ opts_args_t::process_args ( int *argc, char ***argv )
 
 	    case 'a':  
 	      if(debugtarget)
-		nargv[i] = debugtarget;
+	        {
+		  nargv[i] = debugtarget;
+	          my_opt->remaining = &(nargv[i]);
+                }
 	      else
-		exit(1);  
-
-	      my_opt->remaining = &(nargv[i]);
+ 	        {
+		  has_parse_error = true;
+		  rv = false;
+	        }
 	      fin_parsing = true;
 	      break;
 
@@ -243,8 +250,14 @@ opts_args_t::process_args ( int *argc, char ***argv )
 	      my_opt->tool_daemon =  nargv[i+1];
 	      bspth = nargv[i+1];
 	      if (!check_path(bspth, my_opt->tool_daemon))
-  	        exit(1);
-
+		{
+		  //
+	          // tool daemon nonexistent
+		  // 
+		  has_parse_error = true;
+		  fin_parsing = true;
+		  rv = false;
+		}
 	      i++;
 	      break;
 	
@@ -255,6 +268,12 @@ opts_args_t::process_args ( int *argc, char ***argv )
 
 	    case 'p':
 	      my_opt->launcher_pid = (pid_t)atoi(nargv[i+1]);
+	      if (LMON_get_execpath(my_opt->launcher_pid, my_opt->debugtarget) <  0)
+                {
+		  has_parse_error = true;
+		  fin_parsing = true;
+		  rv = false;
+                } 
 	      my_opt->attach = true;
 	      i++;
 	      break;
@@ -340,7 +359,13 @@ opts_args_t::process_args ( int *argc, char ***argv )
 	  my_opt->debugtarget = nargv[i];
 	  bspth = debugtarget;
 	  if (!check_path(bspth, my_opt->debugtarget))
-	    exit(1);
+            {
+	      //
+	      // job launcher path nonexistent
+	      // 
+	      has_parse_error = true;
+	      rv = false;	
+	    }
 	}
     }
 
@@ -383,20 +408,14 @@ opts_args_t::process_args ( int *argc, char ***argv )
       self_trace_t::opt_module_trace.verbosity_level = verbo;
     }
 
-  if ( !option_sanity_check() )
+  if ( !has_parse_error && !construct_launch_string() )
     {
       if ( my_opt->remote && (my_opt->verbose == 0 ))
-        exit (1);
+        has_parse_error = true;
+      else
+        print_usage();
 
-      print_usage();
-    }
-
-  if ( !construct_launch_string() )
-    {
-      if ( my_opt->remote && (my_opt->verbose == 0 ))
-        exit (1);
-
-      print_usage();
+      rv = false;
     }
 
   if ( !(my_opt->remote && (my_opt->verbose == 0 )) )
@@ -423,20 +442,6 @@ opts_args_t::construct_launch_string ()
       }
 
       return false;
-    }
-
-  if ( my_opt->attach ) 
-    {
-      if ( LMON_get_execpath(my_opt->launcher_pid, my_opt->debugtarget) < 0 )
-        {
-          {
-	    self_trace_t::trace ( true, 
-	      MODULENAME,
-	      1,
-	      "Can't determine the executable path of the pid (%d).", my_opt->launcher_pid);
-          }
-          return false;
-        }
     }
 
 #ifdef RM_BE_STUB_CMD
@@ -527,41 +532,6 @@ opts_args_t::print_copyright()
         my_opt->copyright.c_str());
   }
   std::cout << my_opt->copyright << std::endl;
-}
-
-
-//!  opts_args_t::option_sanity_check()
-/*!  
-     sanity check for options and argument
-*/
-bool
-opts_args_t::option_sanity_check()
-{ 
-  if (!my_opt) 
-    {
-      {
-	self_trace_t::trace ( LEVELCHK(quiet), 
-	  MODULENAME,
-	  1,
-	  "options and arguments haven't been parsed ");
-      }
-
-      return false;
-    }
-
-  if ( my_opt->tool_daemon == std::string(""))
-    {
-      {
-	self_trace_t::trace ( LEVELCHK(quiet), 
-	  MODULENAME,
-	  1,
-	  "a tool daemon path must be specified with -d option");
-      }
-
-      return false;
-    }
-
-  return true;
 }
 
 

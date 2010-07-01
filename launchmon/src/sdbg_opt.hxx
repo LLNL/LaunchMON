@@ -1,7 +1,7 @@
 /*
  * $Header: /usr/gapps/asde/cvs-vault/sdb/launchmon/src/sdbg_opt.hxx,v 1.6.2.3 2008/02/20 17:37:57 dahn Exp $
  *--------------------------------------------------------------------------------
- * Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at 
+ * Copyright (c) 2008 ~ 2010, Lawrence Livermore National Security, LLC. Produced at 
  * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>. 
  * LLNL-CODE-409469. All rights reserved.
  *
@@ -27,13 +27,15 @@
  *					
  *
  *  Update Log:
+ *        Jun 30 2010 DHA: Added faster engine parsing error detection support
+ *                         Deprecated option_sanity_check(); 
  *        Jun 09 2010 DHA: Added RM MAP support
  *        Feb 09 2008 DHA: Added LLNS Copyright
- *        Dec 05  2007 DHA: Added model checker support
- *        Jul 04  2006 DHA: Added self tracing support
- *        Jun 08  2006 DHA: Added attach-to-a-running-job support 
- *        Jun 07  2007 DHA: Populated more options (tool_daemon_opts, copyright) 
- *        Jun 06  2006 DHA: File created      
+ *        Dec 05 2007 DHA: Added model checker support
+ *        Jul 04 2006 DHA: Added self tracing support
+ *        Jun 08 2006 DHA: Added attach-to-a-running-job support 
+ *        Jun 07 2007 DHA: Populated more options (tool_daemon_opts, copyright) 
+ *        Jun 06 2006 DHA: File created      
  */ 
 
 //! FILE: sdbg_opt.hxx
@@ -131,11 +133,11 @@ public:
 
   define_gset(opt_struct_t*, my_opt)
   define_gset(rc_rm_t*, my_rmconfig)
+  define_gset(bool, has_parse_error)
 
   bool process_args (int *argc, char ***argv);
   void print_usage();
   bool construct_launch_string();
-  bool option_sanity_check();
   void print_copyright();
 
 
@@ -144,6 +146,8 @@ private:
        { return (self_trace_t::opt_module_trace.verbosity_level >= level); }
  
   bool check_path(std::string &base, std::string &pth);
+
+  bool has_parse_error;
 
   // move the copy ctor in the private area preventing an object 
   // of this class copied

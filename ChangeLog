@@ -1,5 +1,26 @@
+2010-06-30 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/sdbg_opt.hxx
+	launchmon/src/sdbg_opt.cxx 
+	launchmon/src/sdbg_base_driver_impl.hxx
+	launchmon/src/lmon_api/lmon_lmonp_msg.h
+	launchmon/src/linux/sdbg_linux_launchmon.cxx:	
+	Added faster dection of LaunchMON engine parsing errors 
+	in reponse to a feature request (ID: 2993295).
+
+
 2010-06-28 Dong H. Ahn <ahn1@llnl.gov>
-	* files...:
+	* launchmon/man/Makefile.am 
+	launchmon/man/LMON_fe_getRMInfo.3
+	launchmon/src/sdbg_base_launchmon_impl.hxx
+	launchmon/src/linux/sdbg_linux_launchmon.cxx
+	launchmon/src/linux/lmon_api/lmon_fe.cxx
+	launchmon/src/lmon_api/lmon_api_std.h
+	launchmon/src/lmon_api/lmon_lmonp_msg.h
+	launchmon/src/lmon_api/lmon_fe.h
+	launchmon/src/sdbg_base_launchmon.hxx
+	launchmon/src/sdbg_rm_map.hxx
+	test/src/fe_attach_smoketest.cxx
+	test/src/fe_launch_smoketest.cxx:
 	Added LMON_fe_getRMInfo support
 
 

@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Jun 30 2010 DHA: Added faster engine parsing error detection support
  *        Jun 28 2010 DHA: Added LMON_fe_getRMInfo support
  *        Apr 27 2010 DHA: Added MEASURE_TRACING_COST support.
  *        Feb 04 2010 DHA: Added LMON_FE_HOSTNAME_TO_CONN support
@@ -1283,6 +1284,7 @@ LMON_fe_acceptEngine ( int sessionHandle )
   struct sockaddr_in clientaddr;
   socklen_t clientaddr_len;
   lmon_session_desc_t *mydesc = NULL; 
+  lmonp_t msg;
   char *tout = NULL; 
   int listenfd = -1;
   int tosec = 0;
@@ -1318,6 +1320,29 @@ LMON_fe_acceptEngine ( int sessionHandle )
 	"accepting a connection with an engine failed");
 
       return LMON_ESYS;
+    }
+
+  if ( read_lmonp_msgheader(mydesc->commDesc[fe_engine_conn].sessionAcceptSockFd, &msg) < 0 )
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+	"read_lmonp_msg returned a negative return code");
+
+      return LMON_ESYS;
+    }
+
+  if (msg.type.fetofe_type == lmonp_conn_ack_parse_error) 
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+	"the engine reported parse errors with its connect-back");
+   
+      return LMON_EINVAL;
+    }
+  else if (msg.type.fetofe_type != lmonp_conn_ack_no_error) 
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+	"the engine sent a wrong msg type... a version mismatch?");
+   
+      return LMON_EINVAL;
     }
 
   return LMON_OK;

@@ -111,7 +111,6 @@ main( int argc, char* argv[] )
       return EXIT_FAILURE;
     }
 
-  printf("argc is %d\n", argc);
   if (argc > 1) 
     {
      signum = atoi(argv[1]);

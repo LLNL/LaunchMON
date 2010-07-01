@@ -27,6 +27,7 @@
  *
  *
  *  Update Log:
+ *        Jun 30 2010 DHA: Added faster parse error detection support
  *        Feb 09 2008 DHA: Added LLNS Copyright
  *        Jul 05 2006 DHA: Added signal handling support
  *        Jul 05 2006 DHA: Added self tracing support
@@ -187,7 +188,8 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive_engine(opts_args_t *opt)
       // launchmon engine initialization
       // this includes connecting to the FE client.
       //
-      lmon->init( opt ); 
+      if (lmon->init( opt ) != LAUNCHMON_OK) 
+        return SDBG_DRIVER_FAILED;
 
       if ( !opt->get_my_opt()->attach ) 
 	{

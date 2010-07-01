@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Jun 30 2010 DHA: Added faster parse error detection support
  *        Jun 28 2010 DHA: Added support to implement LMON_fe_getRMInfo
  *        Jun 10 2010 DHA: Added CRAY XT support and RM MAP support.
  *        Apr 27 2010 DHA: Added more MEASURE_TRACING_COST support.
@@ -309,6 +310,8 @@ linux_launchmon_t::init_API(opts_args_t *opt)
   char *tokenize = NULL;
   char *FEip = NULL;
   char *FEport = NULL;
+  int optval = 1;
+  int optlen = sizeof(optval);
   int clientsockfd;
   struct sockaddr_in servaddr;
 
@@ -318,7 +321,7 @@ linux_launchmon_t::init_API(opts_args_t *opt)
       // if this isn't API mode, apparently you don't have to 
       // do anything.
       //
-      return LAUNCHMON_OK;
+      goto no_error;
     }
 
   //
@@ -339,7 +342,7 @@ linux_launchmon_t::init_API(opts_args_t *opt)
       self_trace_t::trace ( LEVELCHK(level1),
         MODULENAME,1,
         "inet_pton failed in the engine init handler.");
-      return LAUNCHMON_FAILED;
+      goto has_error;
     }
 
   free(tokenize);
@@ -349,17 +352,15 @@ linux_launchmon_t::init_API(opts_args_t *opt)
       self_trace_t::trace ( LEVELCHK(level1),
         MODULENAME,1,
         "socket failed in the engine init handler.");
-        return LAUNCHMON_FAILED;
+      goto has_error;
     }
 
-  int optval = 1;
-  int optlen = sizeof(optval);
   if( setsockopt(clientsockfd, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) < 0 )
     {
       self_trace_t::trace ( LEVELCHK(level1),
         MODULENAME,1,
         "setting socket keepalive failed.");
-      return LAUNCHMON_FAILED;
+      goto has_error;
     }
 
   if ( ( connect ( clientsockfd, 
@@ -368,8 +369,8 @@ linux_launchmon_t::init_API(opts_args_t *opt)
     {
       self_trace_t::trace ( LEVELCHK(level1),
         MODULENAME,1,
-        "connect failed in PLST init handler.");
-      return LAUNCHMON_FAILED;
+        "connect failed in the engine's init handler.");
+      goto has_error;
     }
 
   //
@@ -388,7 +389,27 @@ linux_launchmon_t::init_API(opts_args_t *opt)
       "linux_launchmon_t initialized.");
   }
 
+  //
+  // communicate to the FE API that there was a parse error
+  //
+  if (opt->get_has_parse_error())
+    {
+      say_fetofe_msg ( lmonp_conn_ack_parse_error );
+      self_trace_t::trace ( true,
+        MODULENAME,1,
+        "the engine deteced parsing errors.");
+      goto has_error;
+    } 
+  else
+    {
+      say_fetofe_msg ( lmonp_conn_ack_no_error );
+    }
+  
+no_error:
   return LAUNCHMON_OK;
+
+has_error:
+  return LAUNCHMON_FAILED;
 }
 
 
