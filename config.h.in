@@ -25,9 +25,6 @@
 /* env command found */
 #undef ENVCMD
 
-/* Define dot for GLUESYM */
-#undef GLUESYM
-
 /* Define to 1 if you have the <algorithm> header file. */
 #undef HAVE_ALGORITHM
 
@@ -265,8 +262,17 @@
 /* "Definition for ALPS/APRUN" */
 #undef RM_ALPS_APRUN
 
+/* be starter stub location */
+#undef RM_BE_STUB_CMD
+
 /* Define 1 for RM_BG_MPIRUN */
 #undef RM_BG_MPIRUN
+
+/* bulk launcher location */
+#undef RM_FE_COLOC_CMD
+
+/* Define 1 for RM_ORTE_ORTERUN */
+#undef RM_ORTE_ORTERUN
 
 /* Define 1 for RM_SLURM_SRUN */
 #undef RM_SLURM_SRUN
