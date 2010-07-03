@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Jul 02 2010 DHA: Decreased the verbose level for Daemon args too long
+ *                         check. Cleaned up that code to enhance the readability.
  *        Jun 30 2010 DHA: Added faster parse error detection support
  *        Jun 28 2010 DHA: Added support to implement LMON_fe_getRMInfo
  *        Jun 10 2010 DHA: Added CRAY XT support and RM MAP support.
@@ -1758,7 +1760,11 @@ linux_launchmon_t::handle_trap_after_attach_event (
 
           std::string expstr
             = p.get_myopts()->get_my_rmconfig()->expand_coloc_str();
-          char serverargs[BG_SERVERARG_LENGTH] = {0};
+          char serverargs[BG_SERVERARG_LENGTH];
+          int fi;
+          for (fi=0; fi < BG_SERVERARG_LENGTH; ++fi) 
+            serverargs[fi] = '\0';
+
           const symbol_base_t<T_VA> &sa 
             = main_im->get_a_symbol (p.get_launch_server_args ());
           T_VA sa_addr = sa.get_relocated_address();
@@ -1771,27 +1777,35 @@ linux_launchmon_t::handle_trap_after_attach_event (
 
               curptr = serverargs;
               token = strtok (serverargstmp, " ");
-              int tlen = strlen(token);
-              while ( curptr != NULL
-                          && ((curptr-serverargs+tlen+1) < BG_SERVERARG_LENGTH))
+              int tlen = strlen(token) + 1; 
+              int usedbytes = curptr - serverargs;
+	      while (usedbytes < BG_SERVERARG_LENGTH)
                 {
-                  memcpy ( curptr, token, tlen);
-                  *(curptr + tlen) = '\0';
-                  curptr += tlen + 1;
-                  token = strtok (NULL, " ");
+                  //
+                  // Don't fill the very last byte for safety 
+                  //
+                  if ((usedbytes + tlen) >= BG_SERVERARG_LENGTH)
+                    {
+                      self_trace_t::trace (true, 
+                        MODULENAME, 1,
+                        "Daemon arguments list too long. Truncated at %s", token);
+
+                      break;
+                    }   
+
+                  memcpy ( curptr, token, (tlen));
+		  //self_trace_t::trace (true, MODULENAME, 0, "Wrote %s", token);
+		  curptr += tlen;
+		  usedbytes += tlen;
+		  token = strtok (NULL, " ");
                   if (!token)
                     break;
-                  tlen = strlen(token);
+                  tlen = strlen(token) + 1; 
                 }
-              if ( (curptr - serverargs) > (BG_SERVERARG_LENGTH-1))
-                {
-                  self_trace_t::trace ( LEVELCHK(level2),
-                                    MODULENAME,1,
-                                   "Daemon arg list too long");
-                }
-
               (*curptr) = '\0';
-              curptr += 1;
+	      curptr += 1;
+	      usedbytes += 1;
+	      //self_trace_t::trace (true, MODULENAME, 0, "Used bytes %d", usedbytes);
             }
 
           get_tracer()->tracer_write ( p,
@@ -2025,7 +2039,7 @@ linux_launchmon_t::handle_trap_after_exec_event (
             = main_im->get_a_symbol (p.get_launch_server_args ());
           T_VA sa_addr = sa.get_relocated_address();
 
-          if (expstr != "")
+         if (expstr != "")
             {
               char *serverargstmp = strdup(expstr.c_str());
               char *curptr = NULL;
@@ -2033,28 +2047,33 @@ linux_launchmon_t::handle_trap_after_exec_event (
 
               curptr = serverargs;
               token = strtok (serverargstmp, " ");
-              int tlen = strlen(token);
-              while ( curptr != NULL 
-	            	  && ((curptr-serverargs+tlen+1) < BG_SERVERARG_LENGTH))
+              int tlen = strlen(token) + 1;
+              int usedbytes = curptr - serverargs;
+              while (usedbytes < BG_SERVERARG_LENGTH)
                 {
-                  memcpy ( curptr, token, tlen);
-                  *(curptr + tlen) = '\0';
-                  curptr += tlen + 1;
+                  //
+                  // Don't fill the very last byte for safety 
+                  //
+                  if ((usedbytes + tlen) >= BG_SERVERARG_LENGTH)
+                    {
+                      self_trace_t::trace (true,
+                        MODULENAME, 1,
+                        "Daemon args list too long. Truncated at %s", token);
+
+                      break;
+                    }
+
+                  memcpy ( curptr, token, (tlen));
+                  curptr += tlen;
+                  usedbytes += tlen;
                   token = strtok (NULL, " ");
                   if (!token)
                     break;
-                  tlen = strlen(token);
+                  tlen = strlen(token) + 1;
                 }
-              if ( (curptr - serverargs) > (BG_SERVERARG_LENGTH-1))
-                {
-                  self_trace_t::trace ( LEVELCHK(level2),
-                                    MODULENAME,1,
-                                   "Daemon arg list too long");
-                }
-
               (*curptr) = '\0';
               curptr += 1;
-            }  
+            }
 
           get_tracer()->tracer_write ( p,
                                        sa_addr,
