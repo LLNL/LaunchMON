@@ -4178,15 +4178,6 @@ LMON_fe_getProctable (
       return LMON_EBDARG;
     }
 
-  if ( mydesc->registered == LMON_FALSE )
-  {
-    LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-      "has this session already finished?");
-
-    pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
-    return LMON_EDUNAV;
-  }
-
   if ( !( mydesc->proctab_msg ) )
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true, 

@@ -1,3 +1,9 @@
+2010-07-21 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/linux/lmon_api/lmon_fe.cxx:
+	Removed a code rot from LMON_fe_getProctable. Credit to 
+	Dane Gardner at LANL.
+
+
 2010-06-30 Dong H. Ahn <ahn1@llnl.gov>
 	* launchmon/src/sdbg_opt.hxx
 	launchmon/src/sdbg_opt.cxx 
