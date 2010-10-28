@@ -26,6 +26,12 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Oct 27 2010 DHA: Reorganize methods within this file.
+ *        Oct 26 2010 DHA: Mods to use slightly changed abstraction 
+ *                         for breakpoint_base_t and tracer_base_t. 
+ *        Oct 01 2010 DHA: Refactor handling of mpir variables setup to 
+ *                         handle_mpir_variables.
+ *        Sep 02 2010 DHA: Added MPIR_attach_fifo support
  *        Jul 02 2010 DHA: Decreased the verbose level for Daemon args too long
  *                         check. Cleaned up that code to enhance the readability.
  *        Jun 30 2010 DHA: Added faster parse error detection support
@@ -105,6 +111,18 @@ extern "C" {
 # error sys/types.h is required
 #endif
 
+#if HAVE_SYS_STAT_H
+# include <sys/stat.h>
+#else
+# error sys/stat.h is required
+#endif
+
+#if HAVE_FCNTL_H
+# include <fcntl.h>
+#else
+# error fcntl.h is required
+#endif
+
 #if HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 #else
@@ -170,10 +188,10 @@ static double endTS;
 #endif
 
 ////////////////////////////////////////////////////////////////////
-//
-// static functions
-//
-//
+//                                                                //
+// STATIC FUNCTIONS                                               //
+//                                                                //
+////////////////////////////////////////////////////////////////////
 
 //!  File scope  get_va_from_procfs
 /*!  get_va_from_procfs
@@ -300,12 +318,17 @@ get_auxv ( pid_t pid )
   return ret_pc;
 }
 
+
 ////////////////////////////////////////////////////////////////////
-//
-// PRIVATE METHODS (class linux_launchmon_t<>)
-//
+//                                                                //
+// PRIVATE METHODS (class linux_launchmon_t<>)                    //
+//                                                                //
 ////////////////////////////////////////////////////////////////////
 
+//!  PRIVATE: 
+/*! linux_launchmon_t::init_API initialize API support
+    within the engine
+*/
 launchmon_rc_e
 linux_launchmon_t::init_API(opts_args_t *opt)
 { 
@@ -415,437 +438,33 @@ has_error:
 }
 
 
-////////////////////////////////////////////////////////////////////
-//
-// PUBLIC INTERFACES (class linux_launchmon_t<>)
-//
-///////////////////////////////////////////////////////////////////
-
-//!  PUBLIC: 
-/*! linux_launchmon_t<> constructors & destructor
-
-
+//!  PRIVATE: 
+/*! linux_launchmon_t::free_engine_resources constructors & destructor
+    free resources that the engine created here including
+    files.
 */
-linux_launchmon_t::linux_launchmon_t () 
-  : continue_method(normal_continue),
-    MODULENAME(self_trace_t::launchmon_module_trace.module_name)
+void
+linux_launchmon_t::free_engine_resources (
+  process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p )
 {
-  /* any more initialization here */
+  const char *hostnamesfn 
+    = p.get_myopts()->get_my_rmconfig()->get_hostnames_fn();
+
+  if (hostnamesfn)
+    {
+      remove(hostnamesfn);
+    }
 }
 
 
-//!  PUBLIC: 
+//! PRIVATE: 
 /*! linux_launchmon_t<> constructors & destructor
-
+    Making copy Ctor private keep an object from being copied
 
 */
 linux_launchmon_t::linux_launchmon_t ( const linux_launchmon_t& l )
 {
-  /* any more initialization here */
-  self_trace_t::trace ( LEVELCHK(level1), 
-     MODULENAME, 1, 
-    "launchmon object shouldn't be copied, exiting.");
-}
-
-
-//!  PUBLIC: 
-/*! linux_launchmon_t<> constructors & destructor
-
-
-*/
-linux_launchmon_t::~linux_launchmon_t ()
-{
-  /* nothing to delete in this layer */ 
-}
-
-
-//! PUBLIC: init
-/*!
-    Method that registers platform specific process/thread tracers 
-    into the platform indepdent layer. It also initializes the FE-engine
-    connection for API mode.
-*/
-launchmon_rc_e 
-linux_launchmon_t::init ( opts_args_t *opt )
-{
-  using namespace std;
-
-  launchmon_rc_e lrc;
-
-  //
-  // registering a linux process tracer
-  //
-  set_tracer(new linux_ptracer_t<SDBG_LINUX_DFLT_INSTANTIATION>());
-
-  //
-  // registering a linux thread tracer
-  //
-  set_ttracer (new linux_thread_tracer_t<T_VA,T_WT,T_IT,T_GRS,T_FRS>());
-
-  lrc = init_API(opt);
-
-  set_last_seen (gettimeofdayD()); 
-
-  return lrc;
-}
-
-
-//! PUBLIC: handle_attach_event 
-/*!
-    handles an attach event.
-*/
-launchmon_rc_e 
-linux_launchmon_t::handle_attach_event
-( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p )
-{
-  try 
-    {
-      bool use_cxt = false;
-
-      get_tracer()->tracer_attach(p, use_cxt, -1);
-
-      set_last_seen (gettimeofdayD ());
-      return LAUNCHMON_OK;
-    }
-  catch ( symtab_exception_t e ) 
-    {
-      e.report();
-      return LAUNCHMON_FAILED; 
-    }
-  catch ( tracer_exception_t e ) 
-    {
-      e.report();
-      return LAUNCHMON_FAILED;
-    }
-  catch ( machine_exception_t e )
-    {
-      e.report();
-      return LAUNCHMON_FAILED;
-    }
-}
-
-
-//! PUBLIC: handle_bp_prologue
-/*!
-    performs the breakpoint event prologue. This is nothing 
-    but stepping over the target breakpoint.
-*/
-launchmon_rc_e 
-linux_launchmon_t::handle_bp_prologue ( 
-                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p,
-		 breakpoint_base_t<T_VA,T_IT> *bp)
-{
-  try 
-    {
-      using namespace std;
-
-      T_VA pc = T_UNINIT_HEX;
-      T_VA  adjusted_pc = T_UNINIT_HEX;    
-      bool use_cxt = true;
-      T_VA retaddr;
-
-      get_tracer()->tracer_getregs(p, use_cxt);
-      pc = p.get_gprset(use_cxt)->get_pc();
-
-      //
-      // We must keep track of the "return address" 
-      // in case the following single step causing the caller
-      // to return from the target function,  
-      // to simply execute the very next instruction. 
-      //
-      if ( (retaddr = p.get_gprset(use_cxt)->get_ret_addr())
-           == T_UNINIT_HEX )
-        {
-          T_VA mem_retaddr;
-          mem_retaddr = p.get_gprset(use_cxt)->get_memloc_for_ret_addr();
-          get_tracer()->tracer_read ( p,
-                                      mem_retaddr,
-                                      &retaddr,
-                                      sizeof(retaddr),
-                                      use_cxt );
-        }
-
-      bp->set_return_addr(retaddr);
-
-      get_tracer()->pullout_breakpoint  (p, *bp, use_cxt); 
-      adjusted_pc = bp->get_address_at(); 
-
-      p.get_gprset(use_cxt)->set_pc(adjusted_pc);
-      get_tracer()->tracer_setregs(p, use_cxt);
-
-      get_tracer()->tracer_singlestep (p, use_cxt);
-
-      {
-	self_trace_t::trace ( LEVELCHK(level3), 
-	  MODULENAME,0, 
-	  "breakpoint event prologue completed. [pc=0x%x]", 
-	   pc);
-      }
-
-      return LAUNCHMON_BP_PROLOGUE;
-    }
-  catch ( symtab_exception_t e ) 
-    {
-      e.report();
-      return LAUNCHMON_FAILED;
-    }
-  catch ( tracer_exception_t e ) 
-    {
-      e.report();
-      return LAUNCHMON_FAILED;
-    }  
-  catch ( machine_exception_t e )
-    {
-      e.report();
-      return LAUNCHMON_FAILED;
-    }
-}
-
-
-//! PUBLIC: is_bp_prologue_done
-/*!
-    checks if the prologue for the breakpoint event has been 
-    performed. If not, it performs the prologue.
-*/
-launchmon_rc_e 
-linux_launchmon_t::is_bp_prologue_done ( 
-                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p,
-		 breakpoint_base_t<T_VA,T_IT> *bp )
-{
-  try 
-    {
-      using namespace std;
-
-      T_VA pc = T_UNINIT_HEX;    
-      bool use_cxt = true;
-
-      get_tracer()->tracer_getregs(p,use_cxt);
-      pc = p.get_gprset(use_cxt)->get_pc();  
-
-      if ( bp->status == breakpoint_base_t<T_VA,T_IT>::disabled ) 
-	{
-	  get_tracer()->insert_breakpoint ( p, *bp, use_cxt);
-
-	  {
-	    self_trace_t::trace ( LEVELCHK(level3), 
-	      MODULENAME,0,
-	      "breakpoint event prologue was already done,  time for bp event epilogue. [pc=0x%x]",
-	      pc);
-	  }
-
-	  return LAUNCHMON_OK;
-	}  
-
-      return ( handle_bp_prologue(p, bp)); 
-    }
-  catch ( symtab_exception_t e ) 
-    {
-      e.report();
-      return LAUNCHMON_FAILED;
-    }
-  catch ( tracer_exception_t e ) 
-    {
-      e.report();
-      return LAUNCHMON_FAILED;
-    }
-  catch ( machine_exception_t e )
-    {
-      e.report();
-      return LAUNCHMON_FAILED;
-    }    
-}
-
-
-//! PRIVATE: linux_launchmon_t::acquire_proctable
-/*!
-    acquires RPDTAB as well as the resource ID if available. 
-    (e.g., totalview_jobid)
-
-*/
-bool 
-linux_launchmon_t::acquire_proctable (
-                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p, 
-		 bool use_cxt )
-{
-  try
-    {
-      using namespace std;
-
-      char resource_id[MAX_STRING_SIZE];
-      image_base_t<T_VA,elf_wrapper>* main_im;
-
-      T_VA proctable_loc;
-      unsigned long long i, maxcount;   // proctable index can be large!
-      int local_pcount;      
-#if MEASURE_TRACING_COST   
-      double c_start_ts;
-      double c_end_ts;
-      c_start_ts = gettimeofdayD();
-#endif
-
-      assert ( (main_im  = p.get_myimage()) != NULL );
-
-      //
-      // fetching the RPDTAB size
-      //
-      const symbol_base_t<T_VA>& debug_ps 
-	    = main_im->get_a_symbol ( p.get_launch_proctable_size() );
-      T_VA procsize_addr = debug_ps.get_relocated_address();  
-
-      get_tracer()->tracer_read( p, 
-				 procsize_addr, 
-				 &(local_pcount), 
-				 sizeof(local_pcount), 
-				 use_cxt );     
-      set_pcount (local_pcount);
-      assert(get_pcount() > 0 );
-
-      //
-      // launcher_proctable holds the MPIR_PROCDESC array. Note that
-      // it only contains scalars and pointer addresses. To fetch 
-      // the strings pointed by those pointer addresses, we must
-      // perform separate read operations using those addresses.
-      //
-      MPIR_PROCDESC* launcher_proctable 
-	    = (MPIR_PROCDESC *) malloc (sizeof (MPIR_PROCDESC) * get_pcount());   
-      const symbol_base_t<T_VA>& debug_pt 
-	    = main_im->get_a_symbol ( p.get_launch_proctable() );
-      T_VA proctable_addr = debug_pt.get_relocated_address();
-      get_tracer()->tracer_read ( p, 
-				  proctable_addr, 
-				  &proctable_loc,
-				  sizeof(proctable_loc), 
-				  use_cxt );
-      get_tracer()->tracer_read ( p, 
-				  proctable_loc,
-				  launcher_proctable,
-				  ( sizeof (MPIR_PROCDESC) * get_pcount()), 
-				  use_cxt );
-
- 
-      //
-      // fetching each RPDTAB entry including strings pointed by 
-      // C pointers.
-      //
-      maxcount = (unsigned long long) get_pcount();
-      for ( i = 0; i < get_pcount(); ++i ) 
-	{
-	  MPIR_PROCDESC_EXT* an_entry 
-	         = (MPIR_PROCDESC_EXT* ) malloc(sizeof(MPIR_PROCDESC_EXT));
-
-	  /*
-	   * allocating storages for "an_entry"
-	   */	
-	  an_entry->pd.host_name 
-                 = (char*) malloc(MAX_STRING_SIZE);
-	  an_entry->pd.executable_name 
-                 = (char*) malloc(MAX_STRING_SIZE);
-	  an_entry->pd.pid 
-                 = launcher_proctable[i].pid;      
-	  an_entry->mpirank = i; /* The mpi rank is the index into the global tab */
-
-	  /*
-	   * memory-fetching to get the "host_name" 
-           */	
-	  get_tracer()->tracer_read_string ( p, 
-					     (T_VA) launcher_proctable[i].host_name,    
-					     (void*) (an_entry->pd.host_name),
-					     MAX_STRING_SIZE,
-					     use_cxt );   
-   
-	  /*
-    	   * memory-fetching to get the "executable name" 
-	   */	 
-	  get_tracer()->tracer_read_string ( p, 
-					     (T_VA)launcher_proctable[i].executable_name,
-					     (void*)an_entry->pd.executable_name,
-					     MAX_STRING_SIZE,
-					     use_cxt );
-
-	  get_proctable_copy()[an_entry->pd.host_name].push_back(an_entry);
-	} 
-
-      free ( launcher_proctable ); 
-
-      if ( get_proctable_copy().empty() )
-	{
-	  self_trace_t::trace ( LEVELCHK(level1), 
-	     MODULENAME, 1, 
-	     "proctable is empty!");  
-
-	  return LAUNCHMON_FAILED;
-	}
-
-      if (p.get_myopts()->get_my_rmconfig()->get_rid_supported())
-        {
-          //
-          //
-          // fetching the resource ID
-          //
-          const symbol_base_t<T_VA>& rid 
-	    = main_im->get_a_symbol (p.get_resource_handler_sym());
-
-          T_VA where_is_rid;
-
-          get_tracer()->tracer_read ( p, 
-				      rid.get_relocated_address(),
-				      (void *) &where_is_rid,
-				      sizeof(T_VA),
-				      use_cxt);    
-  
-          get_tracer()->tracer_read_string ( 
-				      p, where_is_rid,
-				      (void*) resource_id,
-				      MAX_STRING_SIZE,
-				      use_cxt);
-
-          set_resid ( atoi(resource_id) );
-          p.set_rid ( get_resid () );
-
-          // -1 is the init value that SLURM sets internally 
-          // for "totalview_jobid"
-          if ( get_resid() == -1 ) 
-	   {
-	     self_trace_t::trace ( LEVELCHK(level1), 
-	       MODULENAME, 1, 
-	       "resource ID is not valid!");  
-
-	     return LAUNCHMON_FAILED;
-	   }
-        }
-      else
-        {
-	  set_resid (p.get_pid(false));
-          p.set_rid (get_resid());
-	} 
-
-#if MEASURE_TRACING_COST
-      c_end_ts = gettimeofdayD();
-      {
-        self_trace_t::trace ( true, 
- 	   MODULENAME,0,
-	   "PROCTAB(%d) Fetching: %f ",
-	   get_pcount(), (c_end_ts - c_start_ts));
-      }
-#endif
-
-      return LAUNCHMON_OK;
-  }
-  catch ( symtab_exception_t e ) 
-    {
-      e.report ();
-      return LAUNCHMON_FAILED;
-    }
-  catch ( tracer_exception_t e ) 
-    {
-      e.report ();
-      return LAUNCHMON_FAILED;
-    }  
-  catch ( machine_exception_t e )
-    {
-      e.report ();
-      return LAUNCHMON_FAILED;
-    }
+  // launchmon object must not be copied, exiting.
 }
 
 
@@ -984,30 +603,78 @@ linux_launchmon_t::launch_tool_daemons (
 	  "COUNT: %d, ACCUM TIME (except for the proctab fetching): %f", countHandler, accum);
       } 
 #endif
-      //
-      // For non-colocation RM, we need to fork/exec
-      // 
-      set_toollauncherpid  (fork());
-      if ( !get_toollauncherpid ())
-        {
-          //
-          // The child process
-          //
-          char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
-          char *sharedsecret = strtok (tokenize2, ":");
-          char *randomID = strtok (NULL, ":");
-#if PMGR_BASED
-          char *tokenize = strdup(p.get_myopts()->get_my_opt()->pmgr_info.c_str());
-          char *mip = strtok ( tokenize, ":" );
-          char *mport = strtok ( NULL, ":" );
-#endif
 
-          p.get_myopts()->get_my_rmconfig()->set_paramset(
+      char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
+      char *sharedsecret = strtok (tokenize2, ":");
+      char *randomID = strtok (NULL, ":");
+#if PMGR_BASED
+      char *tokenize = strdup(p.get_myopts()->get_my_opt()->pmgr_info.c_str());
+      char *mip = strtok ( tokenize, ":" );
+      char *mport = strtok ( NULL, ":" );
+#endif
+      char hnfn[PATH_MAX] = {'\0'};
+      char tmpsuf[128] = {'\0'};
+
+      //
+      //
+      // Handle the file that contains hostnames of the target nodes
+      if (!getcwd(hnfn, PATH_MAX))
+        {
+          self_trace_t::trace ( true, /* print always */ 
+          MODULENAME,1,
+	  "getcwd failed" );
+
+          return false;
+        }
+         
+      strcat(hnfn, "/");
+      strcat(hnfn, LMON_HOSTS_FN_BASE);
+      snprintf(tmpsuf, 128, ".%d", getpid());
+      strcat(hnfn, tmpsuf);
+      ofstream hnstream;
+      hnstream.open(hnfn, ios::out);
+
+      if (hnstream.fail())
+        {
+          self_trace_t::trace ( true, 
+            MODULENAME,0,
+            "open %s failed, trying /tmp/%s instead", hnfn, LMON_HOSTS_FN_BASE );
+
+          snprintf(hnfn, PATH_MAX, "/tmp/%s", LMON_HOSTS_FN_BASE);
+          strcat(hnfn, tmpsuf);
+
+          // try open again
+          hnstream.open(hnfn, ios::out);
+          if (hnstream.fail())
+            {
+              self_trace_t::trace ( true, 
+                MODULENAME,0,
+                "open %s also failed!", hnfn);
+              return false;
+            }
+          }
+
+      std::map<std::string, std::vector<MPIR_PROCDESC_EXT *> >::const_iterator pos;
+      int count=0;
+      for (pos = get_proctable_copy().begin(); pos != get_proctable_copy().end(); ++pos)
+        {
+          hnstream << pos->first;
+          count++;              
+          if (count < get_proctable_copy().size())
+            {
+              hnstream << ","; 
+            } 
+        }
+
+      hnstream.close();
+
+      p.get_myopts()->get_my_rmconfig()->set_paramset(
 	    get_proctable_copy().size(),
 	    get_proctable_copy().size(),
 	    sharedsecret,
 	    randomID,
-	    get_resid()
+	    get_resid(),
+            hnfn
 #if PMGR_BASED
 	    , 
 	    get_proctable_copy().size(),
@@ -1015,14 +682,22 @@ linux_launchmon_t::launch_tool_daemons (
 	    mport,
 	    get_resid()
 #endif
-	  );	
+      );	
+
+      //
+      // For non-colocation RM, we need to fork/exec
+      // 
+      set_toollauncherpid  (fork());
+      if ( !get_toollauncherpid ())
+        {
 
           std::string expandstr = p.get_myopts()->get_my_rmconfig()->expand_coloc_str();
           {
-	    self_trace_t::trace ( LEVELCHK(level1), 
-			      MODULENAME,0,
-			      "launching daemons with: %s",
-			      expandstr.c_str());
+	    self_trace_t::trace ( 
+              LEVELCHK(level1), 
+	      MODULENAME,0,
+	      "launching daemons with: %s",
+	      expandstr.c_str());
           }
 
           char *expanded_string = strdup(expandstr.c_str()); 
@@ -1074,10 +749,1654 @@ linux_launchmon_t::launch_tool_daemons (
 }
 
 
+//! PRIVATE: handle_bp_prologue
+/*!
+    performs the breakpoint event prologue. It includes 
+    stepping over the target breakpoint.
+*/
+launchmon_rc_e 
+linux_launchmon_t::handle_bp_prologue ( 
+                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p,
+		 breakpoint_base_t<T_VA,T_IT> *bp)
+{
+  try 
+    {
+      T_VA pc           = T_UNINIT_HEX;
+      T_VA adjusted_pc  = T_UNINIT_HEX;    
+      T_VA retaddr      = T_UNINIT_HEX;
+      bool use_cxt      = true;
+
+      get_tracer()->tracer_getregs(p, use_cxt);
+      pc = p.get_gprset(use_cxt)->get_pc();
+
+      //
+      // We must keep track of the "return address" 
+      // in case the following single step causing the caller
+      // to return from the target function,  
+      // to simply execute the very next instruction. 
+      //
+      retaddr = p.get_gprset(use_cxt)->get_ret_addr();
+      if ( retaddr == T_UNINIT_HEX )
+        {
+          T_VA mem_retaddr
+            = p.get_gprset(use_cxt)->get_memloc_for_ret_addr();
+
+          get_tracer()->tracer_read(p,
+                                    mem_retaddr,
+                                    &retaddr,
+                                    sizeof(retaddr),
+                                    use_cxt );
+        }
+
+      bp->set_return_addr(retaddr);
+      get_tracer()->disable_breakpoint(p, *bp, use_cxt); 
+      adjusted_pc = bp->get_address_at(); 
+      p.get_gprset(use_cxt)->set_pc(adjusted_pc);
+      get_tracer()->tracer_setregs(p, use_cxt);
+      get_tracer()->tracer_singlestep(p, use_cxt);
+
+      {
+	self_trace_t::trace ( 
+          LEVELCHK(level3), 
+	  MODULENAME,0, 
+	  "breakpoint event prologue completed. [pc=0x%x]", 
+	  pc);
+      }
+
+      return LAUNCHMON_BP_PROLOGUE;
+    }
+  catch ( symtab_exception_t e ) 
+    {
+      e.report();
+      return LAUNCHMON_FAILED;
+    }
+  catch ( tracer_exception_t e ) 
+    {
+      e.report();
+      return LAUNCHMON_FAILED;
+    }  
+  catch ( machine_exception_t e )
+    {
+      e.report();
+      return LAUNCHMON_FAILED;
+    }
+}
+
+
+//! PRIVATE: is_bp_prologue_done
+/*!
+    checks if the prologue for the breakpoint event has been 
+    performed. If not, it calls into the prologue.
+*/
+bool
+linux_launchmon_t::is_bp_prologue_done ( 
+                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p,
+		 breakpoint_base_t<T_VA,T_IT> *bp )
+{
+  try 
+    {
+      T_VA pc = T_UNINIT_HEX;    
+      bool use_cxt = true;
+
+      get_tracer()->tracer_getregs(p,use_cxt);
+      pc = p.get_gprset(use_cxt)->get_pc();  
+
+      if ( bp->is_disabled() ) 
+	{
+	  get_tracer()->enable_breakpoint ( p, *bp, use_cxt);
+
+	  {
+	    self_trace_t::trace ( 
+              LEVELCHK(level3), 
+	      MODULENAME,0,
+	      "breakpoint event prologue was already done. [pc=0x%x]",
+	      pc);
+	  }
+
+	  return true;
+	}  
+
+      return (handle_bp_prologue(p, bp) == LAUNCHMON_BP_PROLOGUE)? false : true; 
+    }
+  catch ( symtab_exception_t e ) 
+    {
+      e.report();
+      return LAUNCHMON_FAILED;
+    }
+  catch ( tracer_exception_t e ) 
+    {
+      e.report();
+      return LAUNCHMON_FAILED;
+    }
+  catch ( machine_exception_t e )
+    {
+      e.report();
+      return LAUNCHMON_FAILED;
+    }    
+}
+
+
+//! PRIVATE: linux_launchmon_t::acquire_proctable
+/*!
+    acquires RPDTAB as well as the resource ID if available. 
+    (e.g., totalview_jobid)
+
+*/
+bool 
+linux_launchmon_t::acquire_proctable (
+                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p, 
+		 bool use_cxt )
+{
+  try
+    {
+      using namespace std;
+
+      char resource_id[MAX_STRING_SIZE];
+      image_base_t<T_VA,elf_wrapper>* main_im;
+
+      T_VA proctable_loc;
+      unsigned long long i, maxcount;   // proctable index can be large!
+      int local_pcount;      
+#if MEASURE_TRACING_COST   
+      double c_start_ts;
+      double c_end_ts;
+      c_start_ts = gettimeofdayD();
+#endif
+      main_im  = p.get_myimage();
+      if (!main_im)
+        {
+	  self_trace_t::trace ( 
+             true, 
+	     MODULENAME, 1, 
+	     "main image not processed");  
+          return false;
+        } 
+
+      //
+      // fetching the RPDTAB size
+      //
+      const symbol_base_t<T_VA>& debug_ps 
+	= main_im->get_a_symbol ( p.get_launch_proctable_size() );
+      T_VA procsize_addr = debug_ps.get_relocated_address();  
+
+      get_tracer()->tracer_read( p, 
+				 procsize_addr, 
+				 &(local_pcount), 
+				 sizeof(local_pcount), 
+				 use_cxt );     
+      set_pcount (local_pcount);
+      assert(get_pcount() > 0 );
+
+      //
+      // launcher_proctable holds the MPIR_PROCDESC array. Note that
+      // it only contains scalars and pointer addresses. To fetch 
+      // the strings pointed by those pointer addresses, we must
+      // perform separate read operations using those addresses.
+      //
+      MPIR_PROCDESC* launcher_proctable 
+	= (MPIR_PROCDESC *) malloc (sizeof (MPIR_PROCDESC) * get_pcount());   
+
+      if (!launcher_proctable)
+        {
+	  self_trace_t::trace ( 
+             true, 
+	     MODULENAME, 
+             1, 
+	     "Out of memory!");  
+
+          return false;
+        }
+
+      const symbol_base_t<T_VA>& debug_pt 
+	    = main_im->get_a_symbol ( p.get_launch_proctable() );
+      T_VA proctable_addr = debug_pt.get_relocated_address();
+      get_tracer()->tracer_read ( p, 
+				  proctable_addr, 
+				  &proctable_loc,
+				  sizeof(proctable_loc), 
+				  use_cxt );
+      get_tracer()->tracer_read ( p, 
+				  proctable_loc,
+				  launcher_proctable,
+				  ( sizeof (MPIR_PROCDESC) * get_pcount()), 
+				  use_cxt );
+
+ 
+      //
+      // fetching each proctable entry including strings pointed by 
+      // C pointers.
+      //
+      maxcount = (unsigned long long) get_pcount();
+      for ( i = 0; i < maxcount; ++i ) 
+	{
+	  MPIR_PROCDESC_EXT* an_entry 
+	    = (MPIR_PROCDESC_EXT* ) malloc(sizeof(MPIR_PROCDESC_EXT));
+
+          if (!an_entry)
+            {
+	      self_trace_t::trace ( 
+                true, 
+	        MODULENAME, 1, 
+	       "Out of memory!");  
+
+              return false;
+            }
+
+	  //
+	  // allocating storages for "an_entry"
+	  //	
+	  an_entry->pd.host_name 
+                 = (char*) malloc(MAX_STRING_SIZE);
+	  an_entry->pd.executable_name 
+                 = (char*) malloc(MAX_STRING_SIZE);
+	  an_entry->pd.pid 
+                 = launcher_proctable[i].pid;      
+	  an_entry->mpirank = i; /* The mpi rank is the index into the global tab */
+
+	  //
+	  // memory-fetching to get the "host_name" 
+          //	
+	  get_tracer()->tracer_read_string(p, 
+			  (T_VA) launcher_proctable[i].host_name,    
+			  (void*) (an_entry->pd.host_name),
+			  MAX_STRING_SIZE,
+			  use_cxt );   
+   
+	  //
+    	  // memory-fetching to get the "executable name" 
+	  //	 
+	  get_tracer()->tracer_read_string(p, 
+		          (T_VA)launcher_proctable[i].executable_name,
+			  (void*)an_entry->pd.executable_name,
+			  MAX_STRING_SIZE,
+			  use_cxt );
+
+	  get_proctable_copy()[an_entry->pd.host_name].push_back(an_entry);
+	} 
+
+      free ( launcher_proctable ); 
+
+      if ( get_proctable_copy().empty() )
+	{
+	  self_trace_t::trace ( LEVELCHK(level1), 
+	     MODULENAME, 1, 
+	     "proctable is empty!");  
+
+	  return LAUNCHMON_FAILED;
+	}
+
+      if (p.get_myopts()->get_my_rmconfig()->get_rid_supported())
+        {
+          //
+          //
+          // fetching the resource ID
+          //
+          const symbol_base_t<T_VA>& rid 
+	    = main_im->get_a_symbol (p.get_resource_handler_sym());
+
+          T_VA where_is_rid;
+
+          get_tracer()->tracer_read ( p, 
+				      rid.get_relocated_address(),
+				      (void *) &where_is_rid,
+				      sizeof(T_VA),
+				      use_cxt);    
+  
+          get_tracer()->tracer_read_string ( 
+				      p, 
+                                      where_is_rid,
+				      (void*) resource_id,
+				      MAX_STRING_SIZE,
+				      use_cxt);
+
+          set_resid ( atoi(resource_id) );
+          p.set_rid ( get_resid () );
+
+          // -1 is the init value that SLURM sets internally 
+          // for "totalview_jobid"
+          if ( get_resid() == -1 ) 
+	   {
+	     self_trace_t::trace ( LEVELCHK(level1), 
+	       MODULENAME, 1, 
+	       "resource ID is not valid!");  
+
+	     return LAUNCHMON_FAILED;
+	   }
+        }
+      else
+        {
+	  set_resid (p.get_pid(false));
+          p.set_rid (get_resid());
+	} 
+
+#if MEASURE_TRACING_COST
+      c_end_ts = gettimeofdayD();
+      {
+        self_trace_t::trace ( true, 
+ 	   MODULENAME,0,
+	   "PROCTAB(%d) Fetching: %f ",
+	   get_pcount(), (c_end_ts - c_start_ts));
+      }
+#endif
+
+      return LAUNCHMON_OK;
+    }
+  catch ( symtab_exception_t e ) 
+    {
+      e.report ();
+      return LAUNCHMON_FAILED;
+    }
+  catch ( tracer_exception_t e ) 
+    {
+      e.report ();
+      return LAUNCHMON_FAILED;
+    }  
+  catch ( machine_exception_t e )
+    {
+      e.report ();
+      return LAUNCHMON_FAILED;
+    }
+}
+
+
+//!  PRIVATE: linux_launchmon_t::disable_all_BPs
+/*! 
+     disables all the hidden breakpoints    
+*/
+bool 
+linux_launchmon_t::disable_all_BPs ( 
+                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p, 
+		 bool use_cxt )
+{
+  try 
+    {
+
+      tracer_base_t<SDBG_LINUX_DFLT_INSTANTIATION> *tr = get_tracer(); 
+ 
+      if ( p.get_launch_hidden_bp() ) 
+	{
+	 tr->disable_breakpoint ( 
+           p, 
+	   *(p.get_launch_hidden_bp()), 
+	   use_cxt);
+	}
+
+      if ( p.get_loader_hidden_bp() ) 
+	{
+	 tr->disable_breakpoint ( 
+           p, 
+           *(p.get_loader_hidden_bp()), 
+	   use_cxt);
+	}
+
+      if ( p.get_thread_creation_hidden_bp() ) 
+	{
+	  tr->disable_breakpoint ( 
+            p,
+	    *(p.get_thread_creation_hidden_bp()), 
+	    use_cxt);
+	}  
+
+      if ( p.get_thread_death_hidden_bp() ) 
+	{ 
+	  tr->disable_breakpoint ( 
+            p, 
+	    *(p.get_thread_death_hidden_bp()),
+	    use_cxt);	
+	}
+
+      if ( p.get_fork_hidden_bp() ) 
+	{ 
+	  tr->disable_breakpoint ( 
+            p, 
+	    *(p.get_fork_hidden_bp()), 
+            use_cxt);
+	}
+
+      return true;
+    }
+  catch ( symtab_exception_t e ) 
+    {
+      e.report();
+      return false;
+    }
+  catch ( tracer_exception_t e ) 
+    {
+      e.report();
+      return false;
+    }
+  catch ( machine_exception_t e )
+    {
+      e.report();
+      return false;
+    }
+}
+
+
+//!  PRIVATE: linux_launchmon_t::set_mpir_variables
+/*!   
+     set MPIR variables
+*/
+bool 
+linux_launchmon_t::handle_mpir_variables (
+                process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p,
+                image_base_t<T_VA,elf_wrapper> &image )
+{
+  try
+    {
+      bool use_cxt = true;
+      breakpoint_base_t<T_VA, T_IT> *la_bp;
+      T_VA debug_state_flag;
+      int bdbg = 1;
+
+      //
+      // registering p.launch_hidden_bp 
+      //
+      const symbol_base_t<T_VA>& launch_bp_sym
+        = image.get_a_symbol (p.get_launch_breakpoint_sym());
+
+      if (!(!launch_bp_sym) && launch_bp_sym.is_defined())
+        {
+          if ( p.get_launch_hidden_bp() )
+            {
+               if (p.get_launch_hidden_bp()->is_enabled())
+                 {
+                   //
+                   // If bp already inserted, remove it.
+                   //
+                   get_tracer()->disable_breakpoint( p,
+                                   *(p.get_launch_hidden_bp()),
+                                   use_cxt);
+                  }
+              delete p.get_launch_hidden_bp();
+              p.set_launch_hidden_bp(NULL);
+            }
+          la_bp = new linux_breakpoint_t();
+          la_bp->set_address_at(launch_bp_sym.get_relocated_address());
+
+#if PPC_ARCHITECTURE
+          //
+          // DHA Mar 05 2009
+          // PowerPC Linux has begun to change the linking convention
+          // such that binaries no longer export direct function
+          // symbols. (e.g., .MPIR_Breakpoint). But rather, undotted
+          // global data symbols (e.g., MPIR_Breakpoint) contains the
+          // address for the corresponding function.
+          //
+          // Added indirect breakpoint support for that and use this
+          // method on all PPC systems across the board including
+          // BGL and BGP
+          //
+          la_bp->set_use_indirection();
+#endif
+          la_bp->set();
+
+          p.set_launch_hidden_bp(la_bp);
+          get_tracer()->enable_breakpoint(p,
+                                          *(p.get_launch_hidden_bp()),
+                                          use_cxt );
+        }
+
+      //
+      // setting MPIR_debing_debugged
+      //
+      const symbol_base_t<T_VA>& debug_state
+        = image.get_a_symbol (p.get_launch_being_debug());
+      debug_state_flag = debug_state.get_relocated_address();
+      get_tracer()->tracer_write ( p,
+                                   debug_state_flag,
+                                   &bdbg,
+                                   sizeof(bdbg),
+                                   use_cxt );
+
+
+      if (p.get_myopts()->get_my_rmconfig()->get_has_mpir_coloc())
+        {
+          //
+          // Always check correctness of BG_SERVERARG_LENGTH 
+          // and BG_EXECPATH_LENGTH
+          //
+          const int BG_SERVERARG_LENGTH = 1024;
+          const int BG_EXECPATH_LENGTH = 256;
+          const symbol_base_t<T_VA>& executablepath
+            = image.get_a_symbol (p.get_launch_exec_path ());
+
+          T_VA ep_addr = executablepath.get_relocated_address();
+
+          int dpsize = p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size();
+          if (dpsize >= BG_EXECPATH_LENGTH)
+            {
+              self_trace_t::trace ( true,
+                MODULENAME,1,
+                "daemon path(%d) exceeds the buffer length: %d",
+                p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size()+1,
+                BG_EXECPATH_LENGTH);
+
+              return LAUNCHMON_FAILED;
+            }
+
+          get_tracer()->tracer_write (
+            p,
+            ep_addr,
+            p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().c_str(),
+            p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size()+1,
+            use_cxt
+          );
+
+          char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
+          char *sharedsecret = strtok (tokenize2, ":");
+          char *randomID = strtok (NULL, ":");
+#if PMGR_BASED
+          char *tokenize = strdup(p.get_myopts()->get_my_opt()->pmgr_info.c_str());
+          char *mip = strtok ( tokenize, ":" );
+          char *mport = strtok ( NULL, ":" );
+#endif
+          p.get_myopts()->get_my_rmconfig()->set_paramset(
+            0,
+            0,
+            sharedsecret,
+            randomID,
+           -1,
+            NULL
+#if PMGR_BASED
+          , 0,
+            mip,
+            mport,
+            24689 /* just a number for pmgrjobid */
+#endif
+          );
+
+          std::string expstr
+            = p.get_myopts()->get_my_rmconfig()->expand_coloc_str();
+          char serverargs[BG_SERVERARG_LENGTH] = {0};
+          const symbol_base_t<T_VA> &sa
+            = image.get_a_symbol (p.get_launch_server_args ());
+          T_VA sa_addr = sa.get_relocated_address();
+
+         if (expstr != "")
+            {
+              char *serverargstmp = strdup(expstr.c_str());
+              char *curptr = NULL;
+              char *token = NULL;
+
+              curptr = serverargs;
+              token = strtok (serverargstmp, " ");
+              int tlen = strlen(token) + 1;
+              int usedbytes = curptr - serverargs;
+              while (usedbytes < BG_SERVERARG_LENGTH)
+                {
+                  //
+                  // Don't fill the very last byte for safety 
+                  //
+                  if ((usedbytes + tlen) >= BG_SERVERARG_LENGTH)
+                    {
+                      self_trace_t::trace (true,
+                        MODULENAME, 1,
+                        "Daemon args list too long. Truncated at %s", token);
+
+                      break;
+                    }
+
+                  memcpy ( curptr, token, (tlen));
+                  curptr += tlen;
+                  usedbytes += tlen;
+                  token = strtok (NULL, " ");
+                  if (!token)
+                    break;
+                  tlen = strlen(token) + 1;
+                }
+              (*curptr) = '\0';
+              curptr += 1;
+            }
+
+          get_tracer()->tracer_write ( p,
+                                       sa_addr,
+                                       serverargs,
+                                       BG_SERVERARG_LENGTH,
+                                       use_cxt );
+
+          if (p.get_myopts()->get_my_rmconfig()->get_has_mpir_attach_fifo())
+            {
+              const symbol_base_t<T_VA>& af_sym 
+                = image.get_a_symbol(p.get_launch_attach_fifo());
+
+              if (!(!af_sym) && !(p.get_sym_attach_fifo()))
+                {
+                  symbol_base_t<T_VA> *af_sym_copy = new symbol_base_t<T_VA>(af_sym);
+                  p.set_sym_attach_fifo(af_sym_copy); 
+                } 
+
+            } // RM with MPIR_attach_fifo support
+
+        } // With MPIR Colocation service
+    }
+  catch ( symtab_exception_t e ) 
+    {
+      e.report();
+      return false;
+    }
+  catch ( tracer_exception_t e ) 
+    {
+      e.report();
+      return false;
+    }
+  catch ( machine_exception_t e )
+    {
+      e.report();
+      return false;
+    }
+}
+
+
+//!  PRIVATE: linux_launchmon_t::enable_all_BPs
+/*!   
+     enables all the hidden breakpoints
+*/
+bool 
+linux_launchmon_t::enable_all_BPs ( 
+	         process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p, 
+		 bool use_cxt )
+{
+  try 
+    {
+      tracer_base_t<SDBG_LINUX_DFLT_INSTANTIATION> *tr = get_tracer();
+ 
+      if (p.get_launch_hidden_bp()) 
+	{
+	  tr->enable_breakpoint ( 
+            p, 
+	    *(p.get_launch_hidden_bp()), 
+	    use_cxt);
+	}
+
+      if (p.get_loader_hidden_bp()) 
+	{
+	  tr->enable_breakpoint ( 
+            p, 
+	    *(p.get_loader_hidden_bp()), 
+	    use_cxt);
+	}
+
+      if (p.get_thread_creation_hidden_bp()) 
+	{
+	  tr->enable_breakpoint ( 
+            p, 
+	    *(p.get_thread_creation_hidden_bp()), 
+	    use_cxt);
+	}
+
+      if (p.get_thread_death_hidden_bp()) 
+	{ 
+	  tr->enable_breakpoint ( 
+            p, 
+	    *(p.get_thread_death_hidden_bp()), 
+	    use_cxt);
+	}
+
+      if (p.get_fork_hidden_bp()) 
+	{
+	  tr->enable_breakpoint ( 
+            p, 
+            *(p.get_fork_hidden_bp()), 
+	    use_cxt);
+	}
+
+      return true;
+    }
+  catch ( symtab_exception_t e ) 
+    {
+      e.report();
+      return false;
+    }
+  catch ( tracer_exception_t e ) 
+    {
+      e.report();
+      return false;
+    }
+  catch ( machine_exception_t e )
+    {
+      e.report();
+      return false;
+    }
+}
+
+
+//!  PRIVATE: linux_launchmon_t::check_dependent_SOs
+/*!
+     checks to see if libpthread is linked, and if so
+     initializes the thread tracer
+     Sep 13 2010, we now handle RM SO here as well. 
+*/
+bool 
+linux_launchmon_t::check_dependent_SOs ( 
+                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p )
+{
+  try 
+    {
+      using namespace std;
+
+      bool use_cxt = true;
+      bool rc = false;
+      image_base_t<T_VA,elf_wrapper> *dynloader_im;
+      image_base_t<T_VA,elf_wrapper> *thr_im;
+      image_base_t<T_VA,elf_wrapper> *libc_im;
+      image_base_t<T_VA,elf_wrapper> *rmso_im;
+      breakpoint_base_t<T_VA, T_IT> *frbp;
+      T_VA where_to_read;
+      struct r_debug r_debug_buf;
+      struct link_map a_map;
+      char lname[MAX_STRING_SIZE];
+
+      thr_im = p.get_mythread_lib_image();
+      libc_im = p.get_mylibc_image();
+      rmso_im = p.get_myrmso_image();
+
+      if (!thr_im || !libc_im || !rmso_im)
+        {
+	  {
+	    self_trace_t::trace (true, 
+	      MODULENAME, 0,
+	      "objects for key binary images are not allocated");
+	  }
+
+          return false;
+        }
+
+      if ( (libc_im->get_image_base_address() != SYMTAB_UNINIT_ADDR)
+           && (thr_im->get_image_base_address() !=  SYMTAB_UNINIT_ADDR ) 
+           && (!p.get_myopts()->get_my_rmconfig()->get_has_rm_so() 
+               || rmso_im->get_image_base_address() !=  SYMTAB_UNINIT_ADDR))
+	{
+	  {
+	    self_trace_t::trace ( LEVELCHK(level3), 
+	      MODULENAME, 0,
+	      "dependent libraries have been already found.");
+	  }
+
+	  return false;
+	}
+
+      dynloader_im = p.get_mydynloader_image();  
+      const symbol_base_t<T_VA>& r_debug_sym 
+	    = dynloader_im->get_a_symbol (p.get_loader_r_debug_sym());    
+
+      get_tracer()->tracer_read ( p, 
+	r_debug_sym.get_relocated_address(), 
+	&r_debug_buf, 
+	sizeof(struct r_debug),
+	use_cxt);
+
+      assert ( r_debug_buf.r_map != 0 );  
+
+      where_to_read = (T_VA) r_debug_buf.r_map;
+
+    do 
+      {
+	get_tracer()->tracer_read ( p, 
+				    where_to_read, &a_map, 
+				    sizeof(struct link_map),
+				    use_cxt);
+	if (a_map.l_name) 
+	  {
+	    string slname;
+	    char *cplname1, *cplname2, *dn, *bn;
+
+	    get_tracer()->tracer_read_string ( p, 
+	      (T_VA)(a_map.l_name), 
+	      lname, 
+	      MAX_STRING_SIZE,
+	      use_cxt);
+
+	    cplname1 = strdup(lname);
+	    cplname2 = strdup(lname);
+            dn = dirname(cplname1);
+            bn = basename(cplname2);
+	    slname = lname;
+
+	    if ( (strncmp(LIBPTHREAD_IDEN,bn,strlen(LIBPTHREAD_IDEN)) == 0 ) 
+                  && (a_map.l_addr)) 
+              {
+                /*
+                 * The linked map for the POSIX thread library is found
+                 *
+                 */
+                if (thr_im->get_image_base_address() == SYMTAB_UNINIT_ADDR)
+                  {
+                    thr_im->init(slname);
+		    thr_im->read_linkage_symbols();
+	            thr_im->set_image_base_address(a_map.l_addr);
+		    thr_im->compute_reloc(); 
+		    get_ttracer()->ttracer_init(p, get_tracer()); 
+		    rc = true;
+                  }
+	      } 
+	    else if ( (strncmp(LIBC_IDEN,bn,strlen(LIBC_IDEN)) == 0 ) 
+                  && (a_map.l_addr)) 
+              {
+                /*
+                 * The linked map for the C runtime library is found
+                 *
+                 */
+                if (libc_im->get_image_base_address() == SYMTAB_UNINIT_ADDR)
+                  {
+                    libc_im->init(slname);
+                    libc_im->read_linkage_symbols();
+                    libc_im->set_image_base_address(a_map.l_addr);	 	
+		    libc_im->compute_reloc();
+		    const symbol_base_t<T_VA>& fork_bp_sym 
+		      = libc_im->get_a_symbol (p.get_fork_sym());
+		    frbp = new linux_breakpoint_t();
+		    frbp->set_address_at(fork_bp_sym.get_relocated_address());
+#if PPC_ARCHITECTURE
+                    frbp->set_use_indirection();
+#endif
+		    frbp->set();
+		    p.set_fork_hidden_bp(frbp);
+		    get_tracer()->enable_breakpoint(p,
+		                                    (*p.get_fork_hidden_bp()),
+		                                    use_cxt );
+                  }
+              }
+            else if ( p.get_myopts()->get_my_rmconfig()->get_has_rm_so() )
+              {
+                /*
+                 * The linked map for RM SO is found
+                 *
+                 */
+                std::string rmso = p.get_myopts()->get_my_rmconfig()->get_rm_so_name();
+                if ( (strncmp(rmso.c_str(), bn, rmso.size()) == 0) )
+                  {
+                    if (rmso_im->get_image_base_address() == SYMTAB_UNINIT_ADDR)
+                      {
+                        rmso_im->init(slname);
+                        rmso_im->read_linkage_symbols();
+                        rmso_im->set_image_base_address(a_map.l_addr);
+                        rmso_im->compute_reloc();
+
+                        //
+                        // we want to reset mpir variables because rmso might
+                        // hold the actual storage for those variables 
+                        // and thus variables could have been (re)-initialized 
+                        // as part of SO init right before this dl breakpoint
+                        // is called.
+                        //
+                        handle_mpir_variables(p, *(p.get_myimage()));
+                        p.set_myrmso_image(rmso_im);
+
+
+                        //
+                        // Some RM's base image doesn't "define" MPIR_Breakpoint
+                        // In that case, we use the same symbol defined within the RM lib.  
+                        //
+                        const symbol_base_t<T_VA>& launch_bp_sym
+                          = rmso_im->get_a_symbol (p.get_launch_breakpoint_sym());
+
+                        if (!(!launch_bp_sym) && launch_bp_sym.is_defined())
+                          {
+                            if ( p.get_launch_hidden_bp() )
+                              {
+                                if (p.get_launch_hidden_bp()->is_enabled())
+                                  {
+                                    //
+                                    // If bp already inserted, remove it.
+                                    //
+                                    get_tracer()->disable_breakpoint( p,
+                                      *(p.get_launch_hidden_bp()),
+                                      use_cxt);
+                                  }
+                                delete p.get_launch_hidden_bp();
+                                p.set_launch_hidden_bp(NULL);
+                              }
+                            breakpoint_base_t<T_VA, T_IT> *la_bp
+                              = new linux_breakpoint_t();
+                            la_bp->set_address_at(launch_bp_sym.get_relocated_address());
+#if PPC_ARCHITECTURE
+                            la_bp->set_use_indirection();
+#endif
+                            la_bp->set();
+                            p.set_launch_hidden_bp(la_bp);
+                            get_tracer()->enable_breakpoint(p,
+                                            *(p.get_launch_hidden_bp()),
+                                            use_cxt );
+                         }
+                      }
+                  }
+              }
+
+            free(cplname1);
+            free(cplname2);
+	  }
+
+	where_to_read =  (T_VA) a_map.l_next;
+
+      } while (where_to_read && where_to_read != T_UNINIT_HEX );
+ 
+    return rc;
+    }
+  catch ( symtab_exception_t e ) 
+    {
+      e.report();
+      return LAUNCHMON_FAILED;
+    }
+  catch ( tracer_exception_t e ) 
+    {
+      e.report();
+      return LAUNCHMON_FAILED;
+    } 
+  catch ( machine_exception_t e )
+    {
+      e.report();
+      return LAUNCHMON_FAILED;
+    }
+}
+
+
+////////////////////////////////////////////////////////////////////
+//                                                                //
+// PUBLIC INTERFACES (class linux_launchmon_t<>)                  //
+//                                                                //
+////////////////////////////////////////////////////////////////////
+
+//! PUBLIC: 
+/*! linux_launchmon_t<> constructors & destructor
+
+
+*/
+linux_launchmon_t::linux_launchmon_t () 
+  : continue_method(normal_continue),
+    MODULENAME(self_trace_t::launchmon_module_trace.module_name)
+{
+  // more initialization here
+}
+
+
+//! PUBLIC: 
+/*! linux_launchmon_t<> constructors & destructor
+
+
+*/
+linux_launchmon_t::~linux_launchmon_t ()
+{
+
+}
+
+
+//! PUBLIC: init
+/*!
+    Method that registers platform specific process/thread 
+    tracers into the platform indepdent layer. It also initializes 
+    the FE-engine connection in API mode.
+*/
+launchmon_rc_e 
+linux_launchmon_t::init ( opts_args_t *opt )
+{
+  launchmon_rc_e lrc;
+
+  //
+  // registering a linux process tracer
+  //
+  set_tracer(new linux_ptracer_t<SDBG_LINUX_DFLT_INSTANTIATION>());
+
+  //
+  // registering a linux thread tracer
+  //
+  set_ttracer(new linux_thread_tracer_t<T_VA,T_WT,T_IT,T_GRS,T_FRS>());
+
+  //
+  // API initialization
+  //
+  lrc = init_API(opt);
+
+  set_last_seen(gettimeofdayD()); 
+
+  return lrc;
+}
+
+
+////////////////////////////////////////////////////////////////////
+//
+// EVENT HANDLERS 
+//
+//
+
+//! PUBLIC: handle_attach_event 
+/*!
+    handles an attach event.
+*/
+launchmon_rc_e 
+linux_launchmon_t::handle_attach_event
+( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p )
+{
+  try 
+    {
+      get_tracer()->tracer_attach(p, false, -1);
+      set_last_seen(gettimeofdayD());
+      return LAUNCHMON_OK;
+    }
+  catch ( symtab_exception_t e ) 
+    {
+      e.report();
+      return LAUNCHMON_FAILED; 
+    }
+  catch ( tracer_exception_t e ) 
+    {
+      e.report();
+      return LAUNCHMON_FAILED;
+    }
+  catch ( machine_exception_t e )
+    {
+      e.report();
+      return LAUNCHMON_FAILED;
+    }
+}
+
+
+//! PUBLIC: handle_trap_after_attach_event
+/*!
+    handles a trap-after-attach event.
+*/
+launchmon_rc_e 
+linux_launchmon_t::handle_trap_after_attach_event ( 
+                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p )
+{ 
+  try 
+    {    
+      using namespace std; 
+
+#if MEASURE_TRACING_COST
+      beginTS = gettimeofdayD ();
+      {
+        self_trace_t::trace ( 
+          true, // print always 
+          MODULENAME,
+          0,
+          "The RM process has just been trapped due to attach"); 
+      }
+#endif
+
+      bool use_cxt = true;
+      image_base_t<T_VA,elf_wrapper> *dynloader_im = NULL;
+      image_base_t<T_VA,elf_wrapper> *main_im = NULL;  
+      breakpoint_base_t<T_VA, T_IT> *lo_bp = NULL;
+      breakpoint_base_t<T_VA, T_IT> *la_bp = NULL;
+      int bdbg = 1;
+      T_VA lpc = T_UNINIT_HEX;
+      T_VA debug_state_flag = T_UNINIT_HEX;
+      T_VA debug_state_addr = T_UNINIT_HEX;
+      T_VA addr_dl_bp = T_UNINIT_HEX;
+
+      {
+	self_trace_t::trace ( 
+          LEVELCHK(level2), 
+	  MODULENAME,
+          0,
+	  " trap after attach event handler invoked. ");
+      }
+
+      main_im  = p.get_myimage();
+      if ( !main_im )
+	{
+	  self_trace_t::trace ( 
+            LEVELCHK(level1), 
+            MODULENAME,
+            1,
+	    "main image is null.");
+				
+	  return LAUNCHMON_FAILED;
+	}
+      
+      dynloader_im = p.get_mydynloader_image();
+      if ( !dynloader_im )
+      {
+	self_trace_t::trace ( 
+          LEVELCHK(level1), 
+	  MODULENAME,
+          1,
+	  "dynamic loader image is null.");
+			      
+	return LAUNCHMON_FAILED;
+      }      
+
+      main_im->set_image_base_address(0);
+      main_im->compute_reloc();
+
+      //
+      // handle_mpir_variables method requires main image has been relocated
+      // (though this is meaningless almost all platforms
+      handle_mpir_variables(p, *main_im); 
+
+      lpc = get_va_from_procfs ( p.get_master_thread_pid(), 
+				 dynloader_im->get_base_image_name() );
+
+      if ( (lpc = get_auxv (p.get_master_thread_pid()) ) == T_UNINIT_HEX)
+      {
+	 lpc = get_va_from_procfs ( p.get_master_thread_pid(), 
+		 dynloader_im->get_base_image_name() );
+      }
+      
+      if ( lpc == T_UNINIT_HEX )
+      {
+	self_trace_t::trace ( 
+          LEVELCHK(level1), 
+	  MODULENAME,
+          1,
+	  "can't resolve the base address of the loader.");
+			      
+	return LAUNCHMON_FAILED;
+      }	
+      
+      dynloader_im->set_image_base_address(lpc);
+      dynloader_im->compute_reloc();
+
+      // registering p.loader_hidden_bp. 
+      // 
+      const symbol_base_t<T_VA>& dynload_sym 
+	    = dynloader_im->get_a_symbol (p.get_loader_breakpoint_sym());   
+
+      lo_bp = new linux_breakpoint_t();
+      addr_dl_bp = dynload_sym.get_relocated_address();
+      lo_bp->set_address_at ( addr_dl_bp );
+#if PPC_ARCHITECTURE
+      lo_bp->set_use_indirection();
+#endif
+      lo_bp->set();
+
+      p.set_loader_hidden_bp(lo_bp);
+      get_tracer()->enable_breakpoint (p, 
+				       (*p.get_loader_hidden_bp()),
+				       use_cxt );
+
+      check_dependent_SOs(p);
+      p.set_never_trapped(false); 
+
+      if (p.get_myopts()->get_my_rmconfig()->get_has_mpir_coloc())
+        {
+          if (p.get_myopts()->get_my_rmconfig()->get_has_mpir_attach_fifo())
+            {
+              if (p.get_sym_attach_fifo())
+                {
+                  //
+                  // MPIR_attach_fifo support is only applicable to attach mode.
+                  // 
+                  char fifopathbuf[256]; 
+                  T_VA fifo_addr = p.get_sym_attach_fifo()->get_relocated_address();
+                  get_tracer()->tracer_read_string(p, 
+                                               fifo_addr,
+				               (void*) fifopathbuf,
+				               256,
+				               use_cxt);
+                  p.get_myopts()->get_my_rmconfig()->set_rm_attach_fifo_path(fifopathbuf);
+
+	          //
+	          // We have to continue the target process before starting FIFO
+	          // otherwise open on the FIFO will block
+	          //
+	          get_tracer()->tracer_continue (p, use_cxt);
+                  int fifofd = 0;
+                  if ( (fifofd = open(fifopathbuf, O_WRONLY)) >= 0)
+                    {
+                      char wakeup = (char) 1; 
+                      if ( lmon_write_raw(fifofd, &wakeup, 1) != 1 )
+                        {
+                          self_trace_t::trace(
+                            true,  
+                            MODULENAME,
+                            0,
+                            "lmon_write_raw returned a value that is not equal to 1");
+                        }
+                      close(fifofd);
+                    }
+                  else
+                    {
+                      self_trace_t::trace(
+                        true,  
+                        MODULENAME,
+                        0,
+                        "Open a FIFO (%s) failed, errno(%d)", fifopathbuf, errno);
+                    } 
+                } 
+              else
+                {
+                  self_trace_t::trace(
+                    true,  
+                    MODULENAME,
+                    0,
+                    "MPIR_attach_fifo symbol not found");
+                } 
+            } 
+          else
+            {
+	      get_tracer()->tracer_continue (p, use_cxt);
+            }
+        } // With MPIR Colocation service
+      else
+        {
+           //
+           // Without MPIR Colocation service, you would have
+           // Proctable available on attach and you would be 
+           // ready to launch daemon at this point
+           // 
+           // 
+           acquire_proctable ( p, use_cxt );
+           ship_proctab_msg ( lmonp_proctable_avail );
+           ship_resourcehandle_msg ( lmonp_resourcehandle_avail, get_resid() );
+	   ship_rminfo_msg ( lmonp_rminfo, 
+			     (int) p.get_pid(false), 
+			      p.get_myopts()->get_my_rmconfig()->get_rm_type());
+           say_fetofe_msg ( lmonp_stop_at_first_attach );
+           launch_tool_daemons(p);
+	   get_tracer()->tracer_continue (p, use_cxt);
+        }
+
+      {
+	self_trace_t::trace ( 
+          LEVELCHK(level2), 
+	  MODULENAME,
+          0,
+	  "trap after attach event handler completed.");
+      }
+#if 0
+      if (p.get_myopts()->get_my_rmconfig()->get_has_mpir_coloc())
+        {
+          //
+          // Always check correctness of BG_SERVERARG_LENGTH 
+          // and BG_EXECPATH_LENGTH
+          //
+          const int BG_SERVERARG_LENGTH = 1024;
+          const int BG_EXECPATH_LENGTH = 256;
+          const symbol_base_t<T_VA>& executablepath
+            = main_im->get_a_symbol (p.get_launch_exec_path ());
+
+          T_VA ep_addr = executablepath.get_relocated_address();
+          int dpsize = p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size();
+          if (dpsize >= BG_EXECPATH_LENGTH)
+            {
+	      self_trace_t::trace ( true, 
+		MODULENAME,1,
+		"daemon path(%d) exceeds the buffer length: %d", 
+		p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size()+1,
+		BG_EXECPATH_LENGTH);
+			      
+	      return LAUNCHMON_FAILED;
+            }
+
+          get_tracer()->tracer_write ( 
+	    p,
+            ep_addr,
+	    p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().c_str(),
+	    p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size()+1,
+            use_cxt 
+	  );
+
+          char *tokenize2 
+            = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
+          char *sharedsecret = strtok (tokenize2, ":");
+          char *randomID = strtok (NULL, ":");
+#if PMGR_BASED
+          char *tokenize 
+            = strdup(p.get_myopts()->get_my_opt()->pmgr_info.c_str());
+          char *mip = strtok ( tokenize, ":" );
+          char *mport = strtok ( NULL, ":" );
+#endif
+          p.get_myopts()->get_my_rmconfig()->set_paramset(
+            0,
+	    0,
+	    sharedsecret,
+	    randomID,
+	    -1
+#if PMGR_BASED
+	  , 0,
+	    mip,
+	    mport,
+	    24689 /* just a number for pmgrjobid */
+#endif 
+          );
+
+          std::string expstr
+            = p.get_myopts()->get_my_rmconfig()->expand_coloc_str();
+          char serverargs[BG_SERVERARG_LENGTH];
+          int fi;
+          for (fi=0; fi < BG_SERVERARG_LENGTH; ++fi) 
+            serverargs[fi] = '\0';
+
+          const symbol_base_t<T_VA> &sa 
+            = main_im->get_a_symbol (p.get_launch_server_args ());
+          T_VA sa_addr = sa.get_relocated_address();
+
+          if (expstr != "")
+            {
+              char *serverargstmp = strdup(expstr.c_str());
+              char *curptr = NULL;
+              char *token = NULL;
+
+              curptr = serverargs;
+              token = strtok (serverargstmp, " ");
+              int tlen = strlen(token) + 1; 
+              int usedbytes = curptr - serverargs;
+	      while (usedbytes < BG_SERVERARG_LENGTH)
+                {
+                  //
+                  // Don't fill the very last byte for safety 
+                  //
+                  if ((usedbytes + tlen) >= BG_SERVERARG_LENGTH)
+                    {
+                      self_trace_t::trace (true, 
+                        MODULENAME, 1,
+                        "Daemon arguments list too long. Truncated at %s", token);
+
+                      break;
+                    }   
+
+                  memcpy ( curptr, token, (tlen));
+		  //self_trace_t::trace (true, MODULENAME, 0, "Wrote %s", token);
+		  curptr += tlen;
+		  usedbytes += tlen;
+		  token = strtok (NULL, " ");
+                  if (!token)
+                    break;
+                  tlen = strlen(token) + 1; 
+                }
+              (*curptr) = '\0';
+	      curptr += 1;
+	      usedbytes += 1;
+	      //self_trace_t::trace (true, MODULENAME, 0, "Used bytes %d", usedbytes);
+            }
+
+          get_tracer()->tracer_write ( p,
+                                       sa_addr,
+                                       serverargs,
+                                       BG_SERVERARG_LENGTH,
+                                       use_cxt );
+
+          if (p.get_myopts()->get_my_rmconfig()->get_has_mpir_attach_fifo())
+            {
+              char fifopathbuf[256]; 
+              const symbol_base_t<T_VA>& fifopath
+                = main_im->get_a_symbol(p.get_launch_attach_fifo());
+              T_VA fifo_addr = fifopath.get_relocated_address();
+              get_tracer()->tracer_read_string(p, 
+                                               fifo_addr,
+				               (void*) fifopathbuf,
+				               256,
+				               use_cxt);
+              p.get_myopts()->get_my_rmconfig()->set_rm_attach_fifo_path(fifopathbuf);
+              int fifofd = 0;
+              if ( (fifofd = open(fifopathbuf, O_RDONLY)) >= 0)
+                {
+                  char wakeup = (char) 1; 
+                  if ( lmon_write_raw(fifofd, &wakeup, 1) != 1 )
+                    {
+                      self_trace_t::trace(true,  
+                        MODULENAME,0,
+                        "lmon_write_raw returned a value that is not equal to 1");
+                    }
+                  close(fifofd);
+                }
+              else
+                {
+                  self_trace_t::trace(true,  
+                    MODULENAME,0,
+                    "Open an FIFO (%s) failed", fifopathbuf);
+                }
+            } // RM with MPIR_attach_fifo support
+        } // With MPIR Colocation service
+      else
+        {
+           //
+           // Without MPIR Colocation service, you would have
+           // Proctable available on attach and you would be 
+           // ready to launch daemon at this point
+           // 
+           // 
+           acquire_proctable ( p, use_cxt );
+           ship_proctab_msg ( lmonp_proctable_avail );
+           ship_resourcehandle_msg ( lmonp_resourcehandle_avail, get_resid() );
+	   ship_rminfo_msg ( lmonp_rminfo, 
+			     (int) p.get_pid(false), 
+			      p.get_myopts()->get_my_rmconfig()->get_rm_type());
+           say_fetofe_msg ( lmonp_stop_at_first_attach );
+           launch_tool_daemons(p);
+        }
+
+      get_tracer()->tracer_continue (p, use_cxt);
+
+      {
+	self_trace_t::trace ( LEVELCHK(level2), 
+			      MODULENAME,0,
+	"trap after attach event handler completed.");
+      }
+#endif
+  
+#if MEASURE_TRACING_COST
+      endTS = gettimeofdayD ();
+      accum += endTS - beginTS;
+      countHandler++;
+      // accum and countHandler now contain the cost of this handler which 
+      // is invoked just once per job
+      {
+        self_trace_t::trace ( 
+          true, // print always 
+          MODULENAME, 
+          0,
+          "Just continued the RM process out of the first trap"); 
+      }
+#endif
+
+      set_last_seen (gettimeofdayD ());
+
+      return LAUNCHMON_OK;
+    }
+  catch ( symtab_exception_t e ) 
+    {
+      e.report();
+      return LAUNCHMON_FAILED;
+    }
+  catch ( tracer_exception_t e ) 
+    {
+      e.report();
+      return LAUNCHMON_FAILED;
+    } 
+  catch ( machine_exception_t e )
+    {
+      e.report();
+      return LAUNCHMON_FAILED;
+    }
+}
+
+
+//! PUBLIC: handle_trap_after_exec_event
+/*!
+    handles the first fork/exec-trap event.  
+*/
+launchmon_rc_e 
+linux_launchmon_t::handle_trap_after_exec_event ( 
+                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p )
+{
+  try 
+    {
+      using namespace std;
+
+#if MEASURE_TRACING_COST
+     beginTS = gettimeofdayD ();
+     {
+       self_trace_t::trace ( 
+         true, // print always 
+         MODULENAME,
+         0,
+         "The RM process has just been forked and exec'ed.");
+     }
+#endif
+
+      bool use_cxt = true;
+      image_base_t<T_VA,elf_wrapper> *main_im, *dynloader_im;
+      breakpoint_base_t<T_VA, T_IT> *lo_bp;
+      T_VA addr_dl_start, dl_linked_addr, addr_dl_bp;
+
+      {
+	self_trace_t::trace ( LEVELCHK(level2), 
+          MODULENAME,0,
+	  "trap after first exec event handler invoked.");
+      }
+
+      main_im  = p.get_myimage();
+      if ( !main_im )
+	{
+	  self_trace_t::trace ( LEVELCHK(level1), 
+	    MODULENAME,1,
+	    "main image is null.");
+				
+	  return LAUNCHMON_FAILED;
+	}
+      
+      dynloader_im = p.get_mydynloader_image();
+      if ( !dynloader_im )
+      {
+	self_trace_t::trace ( LEVELCHK(level1), 
+	  MODULENAME,1,
+	  "dynamic loader image is null.");
+			      
+	return LAUNCHMON_FAILED;
+      }    
+
+      main_im->set_image_base_address(0);
+      main_im->compute_reloc();
+
+      //
+      // handle_mpir_variables method requires main image has been relocated
+      // (though this is meaningless almost all platforms
+      handle_mpir_variables(p, *main_im); 
+
+      //
+      // computing where the dynamic loader was linked and 
+      // registering p.loader_hidden_bp 
+      const symbol_base_t<T_VA>& dynload_sym 
+	= dynloader_im->get_a_symbol (p.get_loader_breakpoint_sym());  
+
+      if ( (dl_linked_addr = get_auxv (p.get_pid (true)) ) == T_UNINIT_HEX)
+        {
+	  //
+	  // Corner case; we deal with a heuristics
+	  //
+#if PPC_ARCHITECTURE
+          //
+          // DHA Mar 05 2009
+	  // There're systems that do not directly 
+	  // export function symbols, and the original logic 
+	  // to determining the base linked address of the runtime 
+	  // linker maps has some problems. 
+	  // Specifically, one must know the relative function address of 
+	  // _start to compute the linked addrss, but the system 
+	  // that only allows indirection to get this function address 
+	  // won't provide that without
+	  // having to collect that info from the memory. Now,
+	  // collecting this from the mem isn't possible 
+	  // for symbols within the runtime linker until
+	  // the base mapped address for the linker is determined.
+	  // Egg-and-Chicken problem. 
+	  //
+	  // In such a system, we use a hack assuming the runtime
+	  // linker is mapped to an address aligned in some multiple pages, 
+	  // which insn't too outragous to assume. 
+	  //
+	  
+	  dl_linked_addr
+# if BIT64
+	    =  p.get_gprset(use_cxt)->get_pc() & 0xffffffffff0000;
+# else
+	    =  p.get_gprset(use_cxt)->get_pc() & 0xffff0000;
+# endif
+#else /* PPC_ARCHITECTURE */
+          //
+          // This requires the actual page size to compute this loader load
+          // address implictly. Just using the following bits for now.  
+          //
+	  dl_linked_addr
+#if BIT64
+	    =  p.get_gprset(use_cxt)->get_pc() & 0xfffffffffff000;
+#else
+	    =  p.get_gprset(use_cxt)->get_pc() & 0xfffff000;
+#endif
+#endif
+        }
+  
+      dynloader_im->set_image_base_address(dl_linked_addr);
+      dynloader_im->compute_reloc();
+
+      lo_bp = new linux_breakpoint_t();
+      addr_dl_bp = dynload_sym.get_relocated_address();
+      lo_bp->set_address_at ( addr_dl_bp );
+      
+#if PPC_ARCHITECTURE
+      lo_bp->set_use_indirection();
+      T_VA adjusted_indirect_addr; 
+      //
+      // This is A special case because the loader hasn't had
+      // a chance even to relocate its own symbols... 
+      //
+      get_tracer()->tracer_read (p,
+	addr_dl_bp,
+	&adjusted_indirect_addr,
+	sizeof(T_VA),
+	use_cxt);
+
+      lo_bp->set_indirect_address_at(adjusted_indirect_addr + dl_linked_addr);
+#endif
+      lo_bp->set();
+
+      p.set_loader_hidden_bp(lo_bp);
+      get_tracer()->enable_breakpoint(p,
+				      (*p.get_loader_hidden_bp()),
+				      use_cxt );
+
+      // now this process has get past the first fork/exec
+      //
+      p.set_never_trapped ( false );
+      get_tracer()->tracer_continue (p, use_cxt);
+ 
+      {
+	self_trace_t::trace ( LEVELCHK(level2), 
+	  MODULENAME,0,
+	  "trap after first exec event handler completed.");
+      }
+
+#if MEASURE_TRACING_COST
+      endTS = gettimeofdayD ();
+      accum += endTS - beginTS;
+      countHandler++;
+      // accum and countHandler now contain the cost of this handler which 
+      // is invoked just once per job
+      {
+        self_trace_t::trace ( true, // print always 
+          MODULENAME,0,
+          "Just continued the RM process out of the first trap"); 
+      }
+#endif
+
+      set_last_seen (gettimeofdayD ());
+      return LAUNCHMON_OK;
+    }
+  catch ( symtab_exception_t e ) 
+    {
+      e.report();
+      abort();
+    }
+  catch ( tracer_exception_t e ) 
+    {
+      e.report();
+      return LAUNCHMON_FAILED;
+    }
+  catch ( machine_exception_t e )
+    {
+      e.report();
+      return LAUNCHMON_FAILED;
+    }
+}
+
+
 //! PUBLIC: handle_launch_bp_event
 /*!
     The event handler for a launch breakpoint hit event.
-    Most RM APAI implementations use MPIR_Breakpoint for this.
+    Most RM MPIR APAI implementations use MPIR_Breakpoint for this.
 */
 
 launchmon_rc_e 
@@ -1092,11 +2411,11 @@ linux_launchmon_t::handle_launch_bp_event (
 #endif
       launchmon_rc_e lrc = LAUNCHMON_OK;
       bool use_cxt = true;
-      image_base_t<T_VA,elf_wrapper>* main_im;
+      image_base_t<T_VA,elf_wrapper> *main_im;
       T_VA debug_state_addr;
       int bdbg, bdbgp;
   
-      if ( is_bp_prologue_done(p, p.get_launch_hidden_bp()) != LAUNCHMON_OK ) {
+      if (!(is_bp_prologue_done(p, p.get_launch_hidden_bp()))) {
 #if MEASURE_TRACING_COST
         endTS = gettimeofdayD ();
         accum += endTS - beginTS;
@@ -1107,19 +2426,30 @@ linux_launchmon_t::handle_launch_bp_event (
 
 #if MEASURE_TRACING_COST
       {
-        self_trace_t::trace ( true, /* print always */
-	  MODULENAME,0,
+        self_trace_t::trace ( 
+          true, /* print always */
+	  MODULENAME,
+          0,
 	  "launch-breakpoint hit event handler invoked.");
       }
 #endif
       {
-        self_trace_t::trace ( LEVELCHK(level2),
-	  MODULENAME,0,
+        self_trace_t::trace ( 
+          LEVELCHK(level2),
+	  MODULENAME,
+          0,
 	  "launch-breakpoint hit event handler invoked.");
       }
 
       main_im  = p.get_myimage();  
-      assert(main_im != NULL);
+      if (!main_im)
+        {
+          self_trace_t::trace ( true, /* print always */
+	    MODULENAME,0,
+	    "main image has not been processed.");
+
+          return LAUNCHMON_FAILED;
+        }
 
       //
       // looking up MPIR_debug_state
@@ -1140,137 +2470,177 @@ linux_launchmon_t::handle_launch_bp_event (
       accum += endTS - beginTS;
       countHandler++;
 #endif
+      
+      //
+      // MPIR_debug_state 
+      //
+      //
+      if (!validate_mpir_state_transition(bdbg))
+        {
+	  self_trace_t::trace ( 
+            true, 
+	    MODULENAME,0,
+	    "MPIR state transition is invalid! continue...");
 
-      switch ( bdbg )
-	{
-	case MPIR_DEBUG_SPAWNED:
-          {
-	    /*
-	     * Apparently, MPI tasks have just been spawned.
-	     *   We want to acquire RPDTAB and the resource ID, 
-	     *   and to pass those along to the FE client. 
-	     *   Subsequently, we want to launch the specified tool 
-             *   daemons before let go of the RM process.
-	     */
+          //
+          // if state transition isn't valid, simply continue
+          //
+          get_tracer()->tracer_continue (p, use_cxt);
+        }
+      else
+        {
+          switch ( bdbg )
 	    {
-	      self_trace_t::trace ( LEVELCHK(level2), 
-		MODULENAME,0,
-	        "launch-breakpoint hit event handler completing with MPIR_DEBUG_SPAWNED");
-	    }
-	    acquire_proctable ( p, use_cxt );
-	    ship_proctab_msg ( lmonp_proctable_avail );
-	    ship_resourcehandle_msg ( lmonp_resourcehandle_avail, get_resid() );
-	    ship_rminfo_msg ( lmonp_rminfo, 
-			      (int) p.get_pid(false), 
-			      p.get_myopts()->get_my_rmconfig()->get_rm_type());
-	    say_fetofe_msg ( lmonp_stop_at_launch_bp_spawned );
+	    case MPIR_DEBUG_SPAWNED:
+              {
+	        //
+	        // Apparently, MPI tasks have just been spawned.
+	        //   We want to acquire RPDTAB and the resource ID, 
+	        //   and to pass those along to the FE client. 
+	        //   Subsequently, we want to launch the specified tool 
+                //   daemons before let go of the RM process.
+	        //
+	        {
+	          self_trace_t::trace ( 
+                    LEVELCHK(level2), 
+		    MODULENAME,0,
+	            "launch-breakpoint hit event handler completing with MPIR_DEBUG_SPAWNED");
+	        }
+	        acquire_proctable ( p, use_cxt );
+	        ship_proctab_msg ( lmonp_proctable_avail );
+	        ship_resourcehandle_msg ( lmonp_resourcehandle_avail, get_resid() );
+	        ship_rminfo_msg ( lmonp_rminfo, 
+		  	          (int) p.get_pid(false), 
+			          p.get_myopts()->get_my_rmconfig()->get_rm_type());
+	        say_fetofe_msg ( lmonp_stop_at_launch_bp_spawned );
 
-    	    launch_tool_daemons(p);
+    	        launch_tool_daemons(p);
 
-	    get_tracer()->tracer_continue (p, use_cxt);
+                set_engine_state(bdbg);
+	        get_tracer()->tracer_continue (p, use_cxt);
+	        break;
+              }
+	    case MPIR_DEBUG_ABORTING:
+              {
+	        //
+	        // Apparently, MPI tasks have just been aborted, 
+                //   either normally or abnormally.
+                //   We want to pass this along to the FE client, 
+	        //   to notify the RM launcher of the upcoming detach via 
+                //   the MPIR_being_debugged, to disinsert all breakpoints, and to 
+	        //   actually issue a detach command to the RM process.
+	        //
+                int bdbg = 0;
+                T_VA debug_state_flag = T_UNINIT_HEX;
 
+	        {
+	          self_trace_t::trace ( LEVELCHK(level2), 
+		    MODULENAME,0,
+	            "launch-breakpoint hit event handler completing with MPIR_DEBUG_ABORTING");
+                }
 
-	    break;
-          }
-	case MPIR_DEBUG_ABORTING:
-          {
-	    /*
-	     * Apparently, MPI tasks have just been aborted, either normally or abnormally.
-             *   We want to pass this along to the FE client, 
-	     *   to notify the RM launcher of the upcoming detach via 
-             *   the MPIR_being_debugged, to disinsert all breakpoints, and to 
-	     *   actually issue a detach command to the RM process.
-	     */
-            int bdbg = 0;
-            T_VA debug_state_flag = T_UNINIT_HEX;
+                //
+                // disable all the hidden breakpoints. Since we don't     
+                // know if the context is slave or main thread, we have to 
+                // pass true 
+                disable_all_BPs (p, true);
 
-	    {
-	      self_trace_t::trace ( LEVELCHK(level2), 
-		MODULENAME,0,
-	        "launch-breakpoint hit event handler completing with MPIR_DEBUG_ABORTING");
-            }
-            //
-            // disable all the hidden breakpoints. Since we don't     
-            // know if the context is slave or main thread, we have to 
-            // pass true 
-            disable_all_BPs (p, true);
+                //
+                // unsetting "MPIR_being_debugged."
+                //
+                const symbol_base_t<T_VA>& being_debugged
+                  = p.get_myimage()->get_a_symbol (p.get_launch_being_debug());
 
-            //
-            // unsetting "MPIR_being_debugged."
-            //
-            const symbol_base_t<T_VA>& being_debugged
-              = p.get_myimage()->get_a_symbol (p.get_launch_being_debug());
-
-            get_tracer()->tracer_write ( p,
+                get_tracer()->tracer_write ( p,
                                   being_debugged.get_relocated_address(),
                                   &bdbg,
                                   sizeof(bdbg),
                                   true );
-            //
-            // detach from all slave threads.
-            //
-            for ( p.thr_iter = p.get_thrlist().begin();
-                    p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
-              {
-                if ( !(p.thr_iter->second->is_master_thread()) )
+
+                //
+                // detach from all slave threads.
+                //
+                for ( p.thr_iter = p.get_thrlist().begin();
+                        p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
                   {
-                    // operates on a slave thread
-                    p.make_context ( p.thr_iter->first );
-                    if (get_tracer()->status(p, true) == SDBG_TRACE_STOPPED)
+                    if ( !(p.thr_iter->second->is_master_thread()) )
                       {
-                        get_tracer()->tracer_detach ( p, true );
+                        // operates on a slave thread
+                        p.make_context ( p.thr_iter->first );
+                        if (get_tracer()->status(p, true) == SDBG_TRACE_STOPPED)
+                          {
+                            get_tracer()->tracer_detach ( p, true );
+                          }
+                        p.check_and_undo_context ( p.thr_iter->first );
                       }
-                    p.check_and_undo_context ( p.thr_iter->first );
                   }
-              }
 
-            self_trace_t::trace ( LEVELCHK(level1),
-              MODULENAME,
-              0,
-              "detached from all threads of the RM process...");
+                self_trace_t::trace ( 
+                  LEVELCHK(level1),
+                  MODULENAME,
+                  0,
+                  "detached from all threads of the RM process...");
 
+                //
+                // detach from the main thread
+                //
+                if (get_tracer()->status(p, false) == SDBG_TRACE_STOPPED)
+                  {
+                    get_tracer()->tracer_detach ( p, false );
+                  }
 
-            //
-            // detach from the main thread
-            //
-            if (get_tracer()->status(p, false) == SDBG_TRACE_STOPPED)
+                self_trace_t::trace ( 
+                  LEVELCHK(level1),
+                  MODULENAME,
+                  0,
+                  "detached from all the RM process...");
+
+                set_engine_state(bdbg);
+                say_fetofe_msg(lmonp_stop_at_launch_bp_abort);
+
+ 	        //
+ 	        // this return code will cause the engine to exit.
+ 	        // but it should leave its children RM_daemon process
+ 	        // in a running state.
+ 	        //
+ 	        lrc = LAUNCHMON_MPIR_DEBUG_ABORT;
+
+	        {
+	          self_trace_t::trace ( 
+                    LEVELCHK(level2),
+		    MODULENAME,0,
+	            "launch-breakpoint hit event handler completing with MPIR_DEBUG_ABORTING");
+	        }
+	        break; 
+	      }
+            case MPIR_NULL:
               {
-                get_tracer()->tracer_detach ( p, false );
+	        {
+	          self_trace_t::trace ( 
+                    LEVELCHK(level2), 
+		    MODULENAME,0,
+	            "launch-breakpoint hit event handler completing with MPIR_NULL");
+	        }
+                set_engine_state(bdbg);
+	        get_tracer()->tracer_continue (p, use_cxt);
+                break;
               }
-
-            self_trace_t::trace ( LEVELCHK(level1),
-              MODULENAME,
-              0,
-              "detached from all the RM process...");
-
-            say_fetofe_msg(lmonp_stop_at_launch_bp_abort);
-
- 	    //
- 	    // this return code will cause the engine to exit.
- 	    // but it should leave its children RM_daemon process
- 	    // in a running state.
- 	    //
- 	    lrc = LAUNCHMON_MPIR_DEBUG_ABORT;
-
-	    {
-	      self_trace_t::trace ( LEVELCHK(level2),
-		MODULENAME,0,
-	        "launch-breakpoint hit event handler completing with MPIR_DEBUG_ABORTING");
+	    default:
+	      {
+	        {
+	          self_trace_t::trace ( LEVELCHK(level2), 
+		    MODULENAME,0,
+	            "launch-breakpoint hit event handler completing with unknown debug state");
+	        }
+                set_engine_state(bdbg);
+	        get_tracer()->tracer_continue (p, use_cxt);
+	        break;
+	      }
 	    }
-	    break; 
-	  }
-	default:
-	  {
-	    {
-	      self_trace_t::trace ( LEVELCHK(level2), 
-		MODULENAME,0,
-	       "launch-breakpoint hit event handler completing with unknown debug state");
-	    }
-	    break;
-	  }
-	}
+        }
 
       set_last_seen (gettimeofdayD ());
+
       return lrc;
   }
   catch ( symtab_exception_t e ) 
@@ -1402,6 +2772,7 @@ linux_launchmon_t::handle_detach_cmd_event
         }
 
       free(bnbuf);
+      free_engine_resources(p);
 
       //
       // This return code will cause the engine to exit.
@@ -1409,6 +2780,7 @@ linux_launchmon_t::handle_detach_cmd_event
       // in a running state.
       //
       set_last_seen (gettimeofdayD ());
+
       return LAUNCHMON_STOP_TRACE;
     }
   catch ( symtab_exception_t e ) 
@@ -1485,11 +2857,14 @@ linux_launchmon_t::handle_kill_cmd_event
       // detach from all the main thread
       //
       get_tracer()->tracer_detach ( p, false );
-
-       self_trace_t::trace ( LEVELCHK(level1),
-         MODULENAME,
-         0,
-         "detached from the RM process ...");
+     
+      {
+         self_trace_t::trace ( 
+           LEVELCHK(level1),
+           MODULENAME,
+           0,
+           "detached from the RM process ...");
+      }
 
       //
       // kill both the target RM and tool RM gracefully
@@ -1534,6 +2909,8 @@ linux_launchmon_t::handle_kill_cmd_event
           break;
         }
 
+      free_engine_resources(p);
+
       //
       // this return code will cause the engine to exit.
       // daemon should have gotten a kill command if supported
@@ -1561,656 +2938,6 @@ linux_launchmon_t::handle_kill_cmd_event
 }
 
 
-//! PUBLIC: handle_trap_after_attach_event
-/*!
-    handles a trap-after-attach event.
-*/
-launchmon_rc_e 
-linux_launchmon_t::handle_trap_after_attach_event ( 
-                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p )
-{ 
-  try 
-    {    
-      using namespace std; 
-
-#if MEASURE_TRACING_COST
-      beginTS = gettimeofdayD ();
-      {
-        self_trace_t::trace ( true, // print always 
-                              MODULENAME,0,
-                              "The RM process has just been trapped due to attach"); 
-      }
-#endif
-
-      bool use_cxt = true;
-      image_base_t<T_VA,elf_wrapper> *dynloader_im = NULL;
-      image_base_t<T_VA,elf_wrapper> *main_im = NULL;  
-      breakpoint_base_t<T_VA, T_IT> *lo_bp = NULL;
-      breakpoint_base_t<T_VA, T_IT> *la_bp = NULL;
-      int bdbg = 1;
-      T_VA lpc = T_UNINIT_HEX;
-      T_VA debug_state_flag = T_UNINIT_HEX;
-      T_VA debug_state_addr = T_UNINIT_HEX;
-      T_VA addr_dl_bp = T_UNINIT_HEX;
-
-      {
-	self_trace_t::trace ( LEVELCHK(level2), 
-			      MODULENAME,0,
-			      " trap after attach event handler invoked. ");
-      }
-
-      main_im  = p.get_myimage();
-      if ( !main_im )
-	{
-	  self_trace_t::trace ( LEVELCHK(level1), 
-			        MODULENAME,1,
-				"main image is null.");
-				
-	  return LAUNCHMON_FAILED;
-	}
-      
-      dynloader_im = p.get_mydynloader_image();
-      if ( !dynloader_im )
-      {
-	self_trace_t::trace ( LEVELCHK(level1), 
-			      MODULENAME,1,
-			      "dynamic loader image is null.");
-			      
-	return LAUNCHMON_FAILED;
-      }      
-
-      main_im->set_image_base_address(0);
-      main_im->compute_reloc();
-
-      lpc = get_va_from_procfs ( p.get_master_thread_pid(), 
-				 dynloader_im->get_base_image_name() );
-
-      if ( (lpc = get_auxv (p.get_master_thread_pid()) ) == T_UNINIT_HEX)
-      {
-	 lpc = get_va_from_procfs ( p.get_master_thread_pid(), 
-		 dynloader_im->get_base_image_name() );
-      }
-      
-      if ( lpc == T_UNINIT_HEX )
-      {
-	self_trace_t::trace ( LEVELCHK(level1), 
-			      MODULENAME,1,
-			      "can't resolve the base address of the loader.");
-			      
-	return LAUNCHMON_FAILED;
-      }	
-      
-      dynloader_im->set_image_base_address(lpc);
-      dynloader_im->compute_reloc();
-
-      // registering p.launch_hidden_bp: because launch_hidden_bp 
-      // comes from the base image, it doesn't need to be relocating. 
-      const symbol_base_t<T_VA>& launch_bp_sym 
-	    = main_im->get_a_symbol (p.get_launch_breakpoint_sym());
-
-      la_bp = new linux_breakpoint_t();
-      la_bp->set_address_at(launch_bp_sym.get_relocated_address());
-#if PPC_ARCHITECTURE
-      la_bp->set_use_indirection();
-#endif
-      la_bp->status 
-	    = breakpoint_base_t<T_VA, T_IT>::set_but_not_inserted;
-
-      p.set_launch_hidden_bp(la_bp);
-      get_tracer()->insert_breakpoint ( p, 
-					(*p.get_launch_hidden_bp()),
-					use_cxt );
-   
-
-      // registering p.loader_hidden_bp. 
-      // 
-      const symbol_base_t<T_VA>& dynload_sym 
-	    = dynloader_im->get_a_symbol (p.get_loader_breakpoint_sym());   
-
-      lo_bp = new linux_breakpoint_t();
-      addr_dl_bp = dynload_sym.get_relocated_address();
-      lo_bp->set_address_at ( addr_dl_bp );
-#if PPC_ARCHITECTURE
-      lo_bp->set_use_indirection();
-#endif
-      lo_bp->status 
-	    = breakpoint_base_t<T_VA, T_IT>::set_but_not_inserted;
-
-      p.set_loader_hidden_bp(lo_bp);
-      get_tracer()->insert_breakpoint ( p, 
-					(*p.get_loader_hidden_bp()),
-					use_cxt );
-
-
-      // setting MPIR_being_debugged.
-      //
-      const symbol_base_t<T_VA>& debug_state 
-	= main_im->get_a_symbol (p.get_launch_being_debug());
-
-      debug_state_flag = debug_state.get_relocated_address();  
-
-      get_tracer()->tracer_write ( p, 
-				   debug_state_flag, 
-				   &bdbg,
-				   sizeof(bdbg), 
-				   use_cxt );
-
-      //	
-      // checking to see if the pthread library has been loaded, 
-      // and if so, initializing the thread tracing.
-      //
-      chk_pthread_libc_and_init(p);
-      p.set_never_trapped(false); 
-
-      if (p.get_myopts()->get_my_rmconfig()->get_has_mpir_coloc())
-        {
-          //
-          // Always check correctness of BG_SERVERARG_LENGTH 
-          // and BG_EXECPATH_LENGTH
-          //
-          const int BG_SERVERARG_LENGTH = 1024;
-          const int BG_EXECPATH_LENGTH = 256;
-          const symbol_base_t<T_VA>& executablepath
-            = main_im->get_a_symbol (p.get_launch_exec_path ());
-
-          T_VA ep_addr = executablepath.get_relocated_address();
-          int dpsize = p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size();
-          if (dpsize >= BG_EXECPATH_LENGTH)
-            {
-	      self_trace_t::trace ( true, 
-		MODULENAME,1,
-		"daemon path(%d) exceeds the buffer length: %d", 
-		p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size()+1,
-		BG_EXECPATH_LENGTH);
-			      
-	      return LAUNCHMON_FAILED;
-            }
-
-          get_tracer()->tracer_write ( 
-	    p,
-            ep_addr,
-	    p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().c_str(),
-	    p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size()+1,
-            use_cxt 
-	  );
-
-          char *tokenize2 
-            = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
-          char *sharedsecret = strtok (tokenize2, ":");
-          char *randomID = strtok (NULL, ":");
-#if PMGR_BASED
-          char *tokenize 
-            = strdup(p.get_myopts()->get_my_opt()->pmgr_info.c_str());
-          char *mip = strtok ( tokenize, ":" );
-          char *mport = strtok ( NULL, ":" );
-#endif
-          p.get_myopts()->get_my_rmconfig()->set_paramset(
-            0,
-	    0,
-	    sharedsecret,
-	    randomID,
-	    -1
-#if PMGR_BASED
-	  , 0,
-	    mip,
-	    mport,
-	    24689 /* just a number for pmgrjobid */
-#endif 
-          );
-
-          std::string expstr
-            = p.get_myopts()->get_my_rmconfig()->expand_coloc_str();
-          char serverargs[BG_SERVERARG_LENGTH];
-          int fi;
-          for (fi=0; fi < BG_SERVERARG_LENGTH; ++fi) 
-            serverargs[fi] = '\0';
-
-          const symbol_base_t<T_VA> &sa 
-            = main_im->get_a_symbol (p.get_launch_server_args ());
-          T_VA sa_addr = sa.get_relocated_address();
-
-          if (expstr != "")
-            {
-              char *serverargstmp = strdup(expstr.c_str());
-              char *curptr = NULL;
-              char *token = NULL;
-
-              curptr = serverargs;
-              token = strtok (serverargstmp, " ");
-              int tlen = strlen(token) + 1; 
-              int usedbytes = curptr - serverargs;
-	      while (usedbytes < BG_SERVERARG_LENGTH)
-                {
-                  //
-                  // Don't fill the very last byte for safety 
-                  //
-                  if ((usedbytes + tlen) >= BG_SERVERARG_LENGTH)
-                    {
-                      self_trace_t::trace (true, 
-                        MODULENAME, 1,
-                        "Daemon arguments list too long. Truncated at %s", token);
-
-                      break;
-                    }   
-
-                  memcpy ( curptr, token, (tlen));
-		  //self_trace_t::trace (true, MODULENAME, 0, "Wrote %s", token);
-		  curptr += tlen;
-		  usedbytes += tlen;
-		  token = strtok (NULL, " ");
-                  if (!token)
-                    break;
-                  tlen = strlen(token) + 1; 
-                }
-              (*curptr) = '\0';
-	      curptr += 1;
-	      usedbytes += 1;
-	      //self_trace_t::trace (true, MODULENAME, 0, "Used bytes %d", usedbytes);
-            }
-
-          get_tracer()->tracer_write ( p,
-                                       sa_addr,
-                                       serverargs,
-                                       BG_SERVERARG_LENGTH,
-                                       use_cxt );
-        } // With MPIR Colocation service
-      else
-        {
-           //
-           // Without MPIR Colocation service, you would have
-           // Proctable available on attach and you would be 
-           // ready to launch daemon at this point
-           // 
-           // 
-           acquire_proctable ( p, use_cxt );
-           ship_proctab_msg ( lmonp_proctable_avail );
-           ship_resourcehandle_msg ( lmonp_resourcehandle_avail, get_resid() );
-	   ship_rminfo_msg ( lmonp_rminfo, 
-			     (int) p.get_pid(false), 
-			      p.get_myopts()->get_my_rmconfig()->get_rm_type());
-           say_fetofe_msg ( lmonp_stop_at_first_attach );
-           launch_tool_daemons(p);
-        }
-
-      get_tracer()->tracer_continue (p, use_cxt);
-
-      {
-	self_trace_t::trace ( LEVELCHK(level2), 
-			      MODULENAME,0,
-	"trap after attach event handler completed.");
-      }
-  
-#if MEASURE_TRACING_COST
-      endTS = gettimeofdayD ();
-      accum += endTS - beginTS;
-      countHandler++;
-      // accum and countHandler now contain the cost of this handler which 
-      // is invoked just once per job
-      {
-        self_trace_t::trace ( true, // print always 
-                              MODULENAME,0,
-                              "Just continued the RM process out of the first trap"); 
-      }
-#endif
-
-      set_last_seen (gettimeofdayD ());
-      return LAUNCHMON_OK;
-    }
-  catch ( symtab_exception_t e ) 
-    {
-      e.report();
-      return LAUNCHMON_FAILED;
-    }
-  catch ( tracer_exception_t e ) 
-    {
-      e.report();
-      return LAUNCHMON_FAILED;
-    } 
-  catch ( machine_exception_t e )
-    {
-      e.report();
-      return LAUNCHMON_FAILED;
-    }
-}
-
-
-//! PUBLIC: handle_trap_after_exec_event
-/*!
-    handles the first fork/exec-trap event.  
-*/
-launchmon_rc_e 
-linux_launchmon_t::handle_trap_after_exec_event ( 
-                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p )
-{
-  try 
-    {
-      using namespace std;
-
-#if MEASURE_TRACING_COST
-     beginTS = gettimeofdayD ();
-     {
-       self_trace_t::trace ( true, // print always 
-                             MODULENAME,0,
-                             "The RM process has just been forked and exec'ed.");
-     }
-#endif
-
-      bool use_cxt = true;
-      image_base_t<T_VA,elf_wrapper> *main_im, *dynloader_im;
-      breakpoint_base_t<T_VA, T_IT> *lo_bp, *la_bp;
-      T_VA addr_dl_start, dl_linked_addr, addr_dl_bp;
-      T_VA debug_state_flag;
-      int bdbg = 1; 
-
-      {
-	self_trace_t::trace ( LEVELCHK(level2), 
-			      MODULENAME,0,
-			      "trap after first exec event handler invoked.");
-      }
-
-      main_im  = p.get_myimage();
-      if ( !main_im )
-	{
-	  self_trace_t::trace ( LEVELCHK(level1), 
-			        MODULENAME,1,
-				"main image is null.");
-				
-	  return LAUNCHMON_FAILED;
-	}
-      
-      dynloader_im = p.get_mydynloader_image();
-      if ( !dynloader_im )
-      {
-	self_trace_t::trace ( LEVELCHK(level1), 
-			      MODULENAME,1,
-			      "dynamic loader image is null.");
-			      
-	return LAUNCHMON_FAILED;
-      }    
-
-      main_im->set_image_base_address(0);
-      main_im->compute_reloc();
- 
-      //
-      // registering p.launch_hidden_bp 
-      //
-      const symbol_base_t<T_VA>& launch_bp_sym 
-	= main_im->get_a_symbol (p.get_launch_breakpoint_sym());
-
-      la_bp = new linux_breakpoint_t();
-      la_bp->set_address_at(launch_bp_sym.get_relocated_address());
-      
-#if PPC_ARCHITECTURE
-      //
-      // DHA Mar 05 2009
-      // PowerPC Linux has begun to change the linking convention
-      // such that binaries no longer export direct function
-      // symbols. (e.g., .MPIR_Breakpoint). But rather, undotted
-      // global data symbols (e.g., MPIR_Breakpoint) contains the
-      // address for the corresponding function.
-      //
-      // Added indirect breakpoint support for that and use this
-      // method on all PPC systems across the board including
-      // BGL and BGP
-      //
-      la_bp->set_use_indirection();
-#endif
-
-      la_bp->status 
-	= breakpoint_base_t<T_VA, T_IT>::set_but_not_inserted;
-
-      p.set_launch_hidden_bp(la_bp);
-      get_tracer()->insert_breakpoint ( p, 
-					(*p.get_launch_hidden_bp()),
-					use_cxt );
-
-      //
-      // setting MPIR_debing_debugged
-      //
-      const symbol_base_t<T_VA>& debug_state 
-	= main_im->get_a_symbol (p.get_launch_being_debug());
-      debug_state_flag = debug_state.get_relocated_address();  
-      get_tracer()->tracer_write ( p, 
-				   debug_state_flag, 
-				   &bdbg,
-				   sizeof(bdbg), 
-				   use_cxt );
- 
-
-      if (p.get_myopts()->get_my_rmconfig()->get_has_mpir_coloc())
-        {
-          //
-          // Always check correctness of BG_SERVERARG_LENGTH 
-          // and BG_EXECPATH_LENGTH
-          //
-          const int BG_SERVERARG_LENGTH = 1024;
-          const int BG_EXECPATH_LENGTH = 256;
-          const symbol_base_t<T_VA>& executablepath
-            = main_im->get_a_symbol (p.get_launch_exec_path ());
-
-          T_VA ep_addr = executablepath.get_relocated_address();
-
-          int dpsize = p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size(); 
-          if (dpsize >= BG_EXECPATH_LENGTH)
-            {
-	      self_trace_t::trace ( true, 
-	        MODULENAME,1,
-		"daemon path(%d) exceeds the buffer length: %d", 
-		p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size()+1,
-		BG_EXECPATH_LENGTH);
-			      
-	      return LAUNCHMON_FAILED;
-            }
-
-          get_tracer()->tracer_write ( 
-	    p,
-            ep_addr,
-	    p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().c_str(),
-            p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size()+1,
-            use_cxt 
- 	  );
-
-          char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
-          char *sharedsecret = strtok (tokenize2, ":");
-          char *randomID = strtok (NULL, ":");
-#if PMGR_BASED
-          char *tokenize = strdup(p.get_myopts()->get_my_opt()->pmgr_info.c_str());
-          char *mip = strtok ( tokenize, ":" );
-          char *mport = strtok ( NULL, ":" );
-#endif
-          p.get_myopts()->get_my_rmconfig()->set_paramset(
-	    0,
-	    0,
-	    sharedsecret,
-	    randomID,
-	   -1
-#if PMGR_BASED
-	  , 0,
-	    mip,
-	    mport,
-	    24689 /* just a number for pmgrjobid */
-#endif 
-          );
-
-          std::string expstr 
-	    = p.get_myopts()->get_my_rmconfig()->expand_coloc_str();
-          char serverargs[BG_SERVERARG_LENGTH] = {0};
-          const symbol_base_t<T_VA> &sa
-            = main_im->get_a_symbol (p.get_launch_server_args ());
-          T_VA sa_addr = sa.get_relocated_address();
-
-         if (expstr != "")
-            {
-              char *serverargstmp = strdup(expstr.c_str());
-              char *curptr = NULL;
-              char *token = NULL;
-
-              curptr = serverargs;
-              token = strtok (serverargstmp, " ");
-              int tlen = strlen(token) + 1;
-              int usedbytes = curptr - serverargs;
-              while (usedbytes < BG_SERVERARG_LENGTH)
-                {
-                  //
-                  // Don't fill the very last byte for safety 
-                  //
-                  if ((usedbytes + tlen) >= BG_SERVERARG_LENGTH)
-                    {
-                      self_trace_t::trace (true,
-                        MODULENAME, 1,
-                        "Daemon args list too long. Truncated at %s", token);
-
-                      break;
-                    }
-
-                  memcpy ( curptr, token, (tlen));
-                  curptr += tlen;
-                  usedbytes += tlen;
-                  token = strtok (NULL, " ");
-                  if (!token)
-                    break;
-                  tlen = strlen(token) + 1;
-                }
-              (*curptr) = '\0';
-              curptr += 1;
-            }
-
-          get_tracer()->tracer_write ( p,
-                                       sa_addr,
-                                       serverargs,
-                                       BG_SERVERARG_LENGTH,
-                                       use_cxt );
-
-        } // With MPIR Colocation service
-
-      //
-      // computing where the dynamic loader was linked and 
-      // registering p.loader_hidden_bp 
-      const symbol_base_t<T_VA>& dynload_sym 
-	= dynloader_im->get_a_symbol (p.get_loader_breakpoint_sym());  
-
-      if ( (dl_linked_addr = get_auxv (p.get_pid (true)) ) == T_UNINIT_HEX)
-        {
-	  //
-	  // Corner case; we deal with a heuristics
-	  //
-#if PPC_ARCHITECTURE
-          //
-          // DHA Mar 05 2009
-	  // There're systems that do not directly 
-	  // export function symbols, and the original logic 
-	  // to determining the base linked address of the runtime 
-	  // linker maps has some problems. 
-	  // Specifically, one must know the relative function address of 
-	  // _start to compute the linked addrss, but the system 
-	  // that only allows indirection to get this function address 
-	  // won't provide that without
-	  // having to collect that info from the memory. Now,
-	  // collecting this from the mem isn't possible 
-	  // for symbols within the runtime linker until
-	  // the base mapped address for the linker is determined.
-	  // Egg-and-Chicken problem. 
-	  //
-	  // In such a system, we use a hack assuming the runtime
-	  // linker is mapped to an address aligned in some multiple pages, 
-	  // which insn't too outragous to assume. 
-	  //
-	  
-	  dl_linked_addr
-# if BIT64
-	    =  p.get_gprset(use_cxt)->get_pc() & 0xffffffffff0000;
-# else
-	    =  p.get_gprset(use_cxt)->get_pc() & 0xffff0000;
-# endif
-#else /* PPC_ARCHITECTURE */
-          //
-          // This requires the actual page size to compute this loader load
-          // address implictly. Just using the following bits for now.  
-          //
-	  dl_linked_addr
-#if BIT64
-	    =  p.get_gprset(use_cxt)->get_pc() & 0xfffffffffff000;
-#else
-	    =  p.get_gprset(use_cxt)->get_pc() & 0xfffff000;
-#endif
-#endif
-        }
-  
-      dynloader_im->set_image_base_address(dl_linked_addr);
-      dynloader_im->compute_reloc();
-
-      lo_bp = new linux_breakpoint_t();
-      addr_dl_bp = dynload_sym.get_relocated_address();
-      lo_bp->set_address_at ( addr_dl_bp );
-      
-#if PPC_ARCHITECTURE
-      lo_bp->set_use_indirection();
-      T_VA adjusted_indirect_addr; 
-      //
-      // This is A special case because the loader hasn't had
-      // a chance even to relocate its own symbols... 
-      //
-      get_tracer()->tracer_read (p,
-	addr_dl_bp,
-	&adjusted_indirect_addr,
-	sizeof(T_VA),
-	use_cxt);
-
-      lo_bp->set_indirect_address_at(adjusted_indirect_addr + dl_linked_addr);
-#endif
-
-      lo_bp->status 
-	= breakpoint_base_t<T_VA, T_IT>::set_but_not_inserted;
-
-      p.set_loader_hidden_bp(lo_bp);
-      get_tracer()->insert_breakpoint ( p,
-					(*p.get_loader_hidden_bp()),
-					use_cxt );
-
-      // now this process has get past the first fork/exec
-      //
-      p.set_never_trapped ( false );
-      get_tracer()->tracer_continue (p, use_cxt);
- 
-      {
-	self_trace_t::trace ( LEVELCHK(level2), 
-			      MODULENAME,0,
-			      "trap after first exec event handler completed.");
-      }
-
-#if MEASURE_TRACING_COST
-      endTS = gettimeofdayD ();
-      accum += endTS - beginTS;
-      countHandler++;
-      // accum and countHandler now contain the cost of this handler which 
-      // is invoked just once per job
-      {
-        self_trace_t::trace ( true, // print always 
-                              MODULENAME,0,
-                              "Just continued the RM process out of the first trap"); 
-      }
-#endif
-
-      set_last_seen (gettimeofdayD ());
-      return LAUNCHMON_OK;
-    }
-  catch ( symtab_exception_t e ) 
-    {
-      e.report();
-      abort();
-    }
-  catch ( tracer_exception_t e ) 
-    {
-      e.report();
-      return LAUNCHMON_FAILED;
-    }
-  catch ( machine_exception_t e )
-    {
-      e.report();
-      return LAUNCHMON_FAILED;
-    }
-}
-
 
 //! PUBLIC: handle_loader_bp_event
 /*!
@@ -2234,7 +2961,7 @@ linux_launchmon_t::handle_loader_bp_event (
 
       bool use_cxt = true;
 
-      if ( is_bp_prologue_done(p, p.get_loader_hidden_bp()) != LAUNCHMON_OK ) {
+      if (!(is_bp_prologue_done(p, p.get_loader_hidden_bp()))) {
 #if MEASURE_TRACING_COST
         endTS = gettimeofdayD ();
         accum += endTS - beginTS;
@@ -2245,17 +2972,18 @@ linux_launchmon_t::handle_loader_bp_event (
 
       {
 	self_trace_t::trace ( LEVELCHK(level2), 
-			      MODULENAME,0,
-			      "loader event handler invoked.");
+	  MODULENAME,0,
+	  "loader event handler invoked.");
       }
 
-      chk_pthread_libc_and_init(p);    
+      check_dependent_SOs(p);
+
       get_tracer()->tracer_continue (p, use_cxt);
 
       {
 	self_trace_t::trace ( LEVELCHK(level2), 
-			      MODULENAME,0,
-			      "loader event handler completed.");
+	  MODULENAME,0,
+	  "loader event handler completed.");
       }
 
 #if MEASURE_TRACING_COST
@@ -2265,6 +2993,7 @@ linux_launchmon_t::handle_loader_bp_event (
 #endif 
 
       set_last_seen (gettimeofdayD ());
+
       return LAUNCHMON_OK;
     }
   catch ( symtab_exception_t e ) 
@@ -2303,7 +3032,7 @@ linux_launchmon_t::handle_fork_bp_event (
 
       bool use_cxt = true; 
   
-      if ( is_bp_prologue_done(p, p.get_fork_hidden_bp()) != LAUNCHMON_OK ) {
+      if (!(is_bp_prologue_done(p, p.get_fork_hidden_bp()))) {
 #if MEASURE_TRACING_COST
         endTS = gettimeofdayD ();
         accum += endTS - beginTS;
@@ -2401,11 +3130,13 @@ linux_launchmon_t::handle_exit_event (
 	      "a main thread has exited.");
 	  }
 
-	  /*
-	   * LMON API SUPPORT: a message via a pipe to the watchdog thread
-	   *
-	   */
+	  //
+	  // LMON API SUPPORT: a message via a pipe to the watchdog thread
+	  // 
+	  //
 	  say_fetofe_msg(lmonp_exited);	 
+
+          free_engine_resources(p);
 
           //
           // this return code will cause the engine to exit.
@@ -2425,14 +3156,6 @@ linux_launchmon_t::handle_exit_event (
       endTS = gettimeofdayD ();
       accum += endTS - beginTS;
       countHandler++;
-
-#if 0
-      if (rc == LAUNCHMON_MAINPROG_EXITED) { 
-        fprintf (stdout, "COUNT: %d\n", countHandler);
-        fprintf (stdout, "ACCUM TIME: %f\n", accum);
-      } 
-#endif
-
 #endif
 
       set_last_seen (gettimeofdayD ());
@@ -2491,6 +3214,7 @@ linux_launchmon_t::handle_term_event (
 #endif
 
   set_last_seen (gettimeofdayD ());
+
   return LAUNCHMON_OK;
 }
 
@@ -2513,7 +3237,7 @@ linux_launchmon_t::handle_thrcreate_bp_event (
       
       bool use_cxt = true; 
       
-      if ( is_bp_prologue_done(p, p.get_thread_creation_hidden_bp()) != LAUNCHMON_OK ) {
+      if (!(is_bp_prologue_done(p, p.get_thread_creation_hidden_bp()))) {
 #if MEASURE_TRACING_COST
         endTS = gettimeofdayD (); 
         accum += endTS - beginTS;
@@ -2585,7 +3309,7 @@ linux_launchmon_t::handle_thrdeath_bp_event (
 
       bool use_cxt = true; 
 
-      if ( is_bp_prologue_done(p, p.get_thread_death_hidden_bp()) != LAUNCHMON_OK )
+      if ( !(is_bp_prologue_done(p, p.get_thread_death_hidden_bp()))) 
         {
 #if MEASURE_TRACING_COST
            endTS = gettimeofdayD (); 
@@ -2708,6 +3432,7 @@ linux_launchmon_t::handle_not_interested_event (
 #endif     
 
      set_last_seen (gettimeofdayD ());
+
      return LAUNCHMON_OK;
     }
   catch ( symtab_exception_t e ) 
@@ -2791,299 +3516,3 @@ linux_launchmon_t::handle_relay_signal_event (
     }
 }
 
-////////////////////////////////////////////////////////////////////
-//
-// PRIVATE METHODS (class linux_launchmon_t<>)
-//
-//
-
-//!  PRIVATE: linux_launchmon_t::disable_all_BPs
-/*! 
-     disables all the hidden breakpoints    
-*/
-bool 
-linux_launchmon_t::disable_all_BPs ( 
-                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p, 
-		 bool use_cxt )
-{
-  try 
-    {
-
-      tracer_base_t<SDBG_LINUX_DFLT_INSTANTIATION> *tr = get_tracer(); 
- 
-      if ( p.get_launch_hidden_bp() ) 
-	{
-	 tr->pullout_breakpoint ( 
-           p, 
-	   *(p.get_launch_hidden_bp()), 
-	   use_cxt);
-	}
-
-      if ( p.get_loader_hidden_bp() ) 
-	{
-	 tr->pullout_breakpoint ( 
-           p, 
-           *(p.get_loader_hidden_bp()), 
-	   use_cxt);
-	}
-
-      if ( p.get_thread_creation_hidden_bp() ) 
-	{
-	  tr->pullout_breakpoint ( 
-            p,
-	    *(p.get_thread_creation_hidden_bp()), 
-	    use_cxt);
-	}  
-
-      if ( p.get_thread_death_hidden_bp() ) 
-	{ 
-	  tr->pullout_breakpoint ( 
-            p, 
-	    *(p.get_thread_death_hidden_bp()),
-	    use_cxt);	
-	}
-
-      if ( p.get_fork_hidden_bp() ) 
-	{ 
-	  tr->pullout_breakpoint ( 
-            p, 
-	    *(p.get_fork_hidden_bp()), 
-            use_cxt);
-	}
-
-      return true;
-    }
-  catch ( symtab_exception_t e ) 
-    {
-      e.report();
-      return false;
-    }
-  catch ( tracer_exception_t e ) 
-    {
-      e.report();
-      return false;
-    }
-  catch ( machine_exception_t e )
-    {
-      e.report();
-      return false;
-    }
-}
-
-
-//!  PRIVATE: linux_launchmon_t::enable_all_BPs
-/*!   
-     enables all the hidden breakpoints
-*/
-bool 
-linux_launchmon_t::enable_all_BPs ( 
-	         process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p, 
-		 bool use_cxt )
-{
-  try 
-    {
-      tracer_base_t<SDBG_LINUX_DFLT_INSTANTIATION>* tr = get_tracer();
- 
-      if (p.get_launch_hidden_bp()) 
-	{
-	  tr->insert_breakpoint ( 
-            p, 
-	    *(p.get_launch_hidden_bp()), 
-	    use_cxt);
-	}
-
-      if (p.get_loader_hidden_bp()) 
-	{
-	  tr->insert_breakpoint ( 
-            p, 
-	    *(p.get_loader_hidden_bp()), 
-	    use_cxt);
-	}
-
-      if (p.get_thread_creation_hidden_bp()) 
-	{
-	  tr->insert_breakpoint ( 
-            p, 
-	    *(p.get_thread_creation_hidden_bp()), 
-	    use_cxt);
-	}
-
-      if (p.get_thread_death_hidden_bp()) 
-	{ 
-	  tr->insert_breakpoint ( 
-            p, 
-	    *(p.get_thread_death_hidden_bp()), 
-	    use_cxt);
-	}
-
-      if (p.get_fork_hidden_bp()) 
-	{
-	  tr->insert_breakpoint ( 
-            p, 
-            *(p.get_fork_hidden_bp()), 
-	    use_cxt);
-	}
-
-      return true;
-    }
-  catch ( symtab_exception_t e ) 
-    {
-      e.report();
-      return false;
-    }
-  catch ( tracer_exception_t e ) 
-    {
-      e.report();
-      return false;
-    }
-  catch ( machine_exception_t e )
-    {
-      e.report();
-      return false;
-    }
-}
-
-
-//!  PRIVATE: linux_launchmon_t::chk_pthread_libc_and_init
-/*!
-     checks to see if libpthread is linked, and if so
-     initializes the thread tracer
-*/
-bool 
-linux_launchmon_t::chk_pthread_libc_and_init ( 
-                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p )
-{
-  try 
-    {
-      using namespace std;
-
-      bool use_cxt = true;
-      bool rc = false;
-      image_base_t<T_VA,elf_wrapper> *dynloader_im;
-      image_base_t<T_VA,elf_wrapper> *thr_im;
-      image_base_t<T_VA,elf_wrapper> *libc_im;
-      breakpoint_base_t<T_VA, T_IT> *frbp;
-      T_VA where_to_read;
-      struct r_debug r_debug_buf;
-      struct link_map a_map;
-      char lname[MAX_STRING_SIZE];
-
-      assert( (thr_im = p.get_mythread_lib_image()) != NULL );
-
-      if ( thr_im->get_image_base_address() !=  SYMTAB_UNINIT_ADDR ) 
-	{
-	  {
-	    self_trace_t::trace ( LEVELCHK(level3), 
-	      MODULENAME, 0,
-	      "libpthread base already found. No need for dynamic load tracing. [base addr=0x%x]",
-	      thr_im->get_image_base_address());
-	  }
-
-	  return false;
-	}
-
-      assert( (libc_im = p.get_mylibc_image()) != NULL );
-      assert( (dynloader_im = p.get_mydynloader_image()) != NULL );  
-
-      const symbol_base_t<T_VA>& r_debug_sym 
-	    = dynloader_im->get_a_symbol (p.get_loader_r_debug_sym());    
-
-      get_tracer()->tracer_read ( p, 
-	r_debug_sym.get_relocated_address(), 
-	&r_debug_buf, 
-	sizeof(struct r_debug),
-	use_cxt);
-
-      assert ( r_debug_buf.r_map != 0 );  
-
-      where_to_read = (T_VA) r_debug_buf.r_map;
-
-    do 
-      {
-	get_tracer()->tracer_read ( p, 
-				    where_to_read, &a_map, 
-				    sizeof(struct link_map),
-				    use_cxt);
-	if (a_map.l_name) 
-	  {
-	    string slname;
-	    char *cplname1, *cplname2, *dn, *bn;
-
-	    get_tracer()->tracer_read_string ( p, 
-	      (T_VA)(a_map.l_name), 
-	      lname, 
-	      MAX_STRING_SIZE,
-	      use_cxt);
-
-	    cplname1 = strdup(lname);
-	    cplname2 = strdup(lname);
-            dn = dirname(cplname1);
-            bn = basename(cplname2);
-	    slname = lname;
-
-	    if ( (strncmp(LIBPTHREAD_IDEN,bn,strlen(LIBPTHREAD_IDEN)) == 0 ) 
-                  && (a_map.l_addr)) 
-              {
-                /*
-                 * The linked map for the POSIX thread library is found
-                 *
-                 */
-                thr_im->init(slname);
-		thr_im->read_linkage_symbols();
-	        thr_im->set_image_base_address(a_map.l_addr);
-		thr_im->compute_reloc(); 
-		get_ttracer()->ttracer_init(p, get_tracer()); 
-		rc = true;
-	      } 
-	    else if ( (strncmp(LIBC_IDEN,bn,strlen(LIBC_IDEN)) == 0 ) 
-                  && (a_map.l_addr)) 
-              {
-                /*
-                 * The linked map for the C runtime library is found
-                 *
-                 */
-                libc_im->init(slname);
-                libc_im->read_linkage_symbols();
-                libc_im->set_image_base_address(a_map.l_addr);	 	
-		libc_im->compute_reloc();
-		const symbol_base_t<T_VA>& fork_bp_sym 
-		  = libc_im->get_a_symbol (p.get_fork_sym());
-		frbp = new linux_breakpoint_t();
-		frbp->set_address_at(fork_bp_sym.get_relocated_address());
-#if PPC_ARCHITECTURE
-                frbp->set_use_indirection();
-#endif
-		frbp->status 
-		  = breakpoint_base_t<T_VA, T_IT>::set_but_not_inserted;
-		p.set_fork_hidden_bp(frbp);
-		get_tracer()->insert_breakpoint ( p,
-		  (*p.get_fork_hidden_bp()),
-		  use_cxt );
-              }
-
-            free(cplname1);
-            free(cplname2);
-	  }
-
-	where_to_read =  (T_VA) a_map.l_next;
-
-      } while (where_to_read  && where_to_read != T_UNINIT_HEX );
- 
-    return rc;
-    }
-  catch ( symtab_exception_t e ) 
-    {
-      e.report();
-      return LAUNCHMON_FAILED;
-    }
-  catch ( tracer_exception_t e ) 
-    {
-      e.report();
-      return LAUNCHMON_FAILED;
-    } 
-  catch ( machine_exception_t e )
-    {
-      e.report();
-      return LAUNCHMON_FAILED;
-    }
-}
