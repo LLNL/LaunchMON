@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Sep 02 2010 DHA: Added MPIR_attach_fifo support
  *        Aug  07 2009 DHA: Added more comments; added exception throwing 
  *                          into linux_<arch>_process_t constructors that
  *                          calls basic_init.
@@ -363,7 +364,7 @@ linux_x86_process_t::linux_x86_process_t (
   get_thrlist().insert(make_pair((int)pid, master_thread));
 
   //
-  // now is the time to initialize my image!
+  // now is the time to initialize my images!
   //
   if (!basic_init(mi)) {
     throw (machine_exception_t("fail to initialize a process"));
@@ -415,6 +416,7 @@ linux_x86_process_t::launcher_symbols_init()
   set_launch_acquired_premain (LAUNCH_ACQUIRED_PREMAIN);
   set_launch_exec_path (LAUNCH_EXEC_PATH);
   set_launch_server_args (LAUNCH_SERVER_ARGS);
+  set_launch_attach_fifo (LAUNCH_ATTACH_FIFO);
   set_loader_breakpoint_sym(LOADER_BP_SYM);
   set_loader_r_debug_sym(LOADER_R_DEBUG);
   set_loader_start_sym(LOADER_START);
@@ -442,7 +444,8 @@ bool
 linux_x86_process_t::basic_init (const std::string &mi)
 {
   struct stat pathchk;
-  
+
+
   //
   // make sure paths exist
   //
@@ -469,15 +472,21 @@ linux_x86_process_t::basic_init (const std::string &mi)
 
   //
   // image object representing the POSIX thread library 
-  // details are filled in proctected_init down in the base layer 
+  // details are filled in dynamically at SO load 
   //
   set_mythread_lib_image (new linux_image_t<T_VA>());
 
   //
   // image object representing the LIBC library 
-  // details are filled in proctected_init down in the base layer 
+  // details are filled in dynamically at SO load 
   //
   set_mylibc_image (new linux_image_t<T_VA>());
+
+  //
+  // image object representing a RM SO library 
+  // details are filled in dynamically at SO load.
+  //
+  set_myrmso_image (new linux_image_t<T_VA>());
 
   if (!protected_init(mi)) 
     {
@@ -953,6 +962,7 @@ linux_ppc_process_t::launcher_symbols_init()
   set_launch_acquired_premain (LAUNCH_ACQUIRED_PREMAIN);
   set_launch_exec_path (LAUNCH_EXEC_PATH);
   set_launch_server_args (LAUNCH_SERVER_ARGS);
+  set_launch_attach_fifo (LAUNCH_ATTACH_FIFO);
   set_loader_breakpoint_sym(LOADER_BP_SYM);
   set_loader_r_debug_sym(LOADER_R_DEBUG);
   set_loader_start_sym(LOADER_START);
@@ -990,6 +1000,7 @@ linux_ppc_process_t::basic_init (
   set_mydynloader_image (new linux_image_t<T_VA>());
   set_mythread_lib_image (new linux_image_t<T_VA>());
   set_mylibc_image (new linux_image_t<T_VA>());
+  set_myrmso_image (new linux_image_t<T_VA>());
 
   if (!protected_init(mi)) 
     {
