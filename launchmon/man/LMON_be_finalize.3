@@ -38,6 +38,13 @@ Each back-end daemon must call this fuction to be finalized
 correctly. The behavior of any subsequent LaunchMON back-end API calls 
 after \fBLMON_be_finalize ()\fR is undefined. 
 
+.PP
+\fB[IBM BlueGene Note]\fR The \fBLMON_be_finalize ()\fR function
+sends an END_DEBUG message to CIOD for the CIOD debug protocol
+larger than or equal to 3. Sending this message tells
+CIOD to reset the environment to be able to allow another 
+tool to attach to the job. 
+
 .SH RETURN VALUE
 These functions return \fBLMON_OK\fR
 on success; otherwise, an LMON error code is returned 
