@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Oct 26 2010 DHA: Hid status and added status set/unset methods
  *        Mar 06 2008 DHA: Added indirect breakpoint
  *        Feb 09 2008 DHA: Added LLNS Copyright
  *        Jun 06 2006 DHA: Added DOXYGEN comments on the file scope 
@@ -69,16 +70,15 @@ class breakpoint_base_t
 public:
 
   enum bp_status_e {
-    uninit,
-    set_but_not_inserted,
-    enabled, 
-    disabled
+    bp_unset,
+    bp_set,
+    bp_enabled, 
+    bp_disabled
   };
 
-  bp_status_e status;
   
   breakpoint_base_t ()                     {
-					     status = uninit; 
+					     status = bp_unset; 
 					   }
 
   breakpoint_base_t ( const breakpoint_base_t<VA, IT> &b )
@@ -117,7 +117,51 @@ public:
   void set_orig_instruction ( const IT &i ) { orig_instruction = i; }
   void set_blend_mask ( const IT &i)        { blend_mask = i; }
 
+  bool enable()                             
+         { 
+           status = ((status == bp_set) || (status == bp_disabled)) ? bp_enabled : status; 
+           return (status == bp_enabled) ? true : false; 
+         }
+                                                 
+  bool disable()
+         { 
+           status = ((status == bp_enabled)) ? bp_disabled : status; 
+           return (status == bp_disabled) ? true : false; 
+         }
+
+  bool set()
+         { 
+           status = ((status == bp_unset)) ? bp_set : status; 
+           return (status == bp_set) ? true : false; 
+         }
+
+  bool is_enabled()
+         { 
+           return (status == bp_enabled) ? true : false; 
+         }
+
+  bool is_disabled()
+         { 
+           return (status == bp_disabled) ? true : false; 
+         }
+
+  bool is_set()
+         { 
+           return (status == bp_set) ? true : false; 
+         }
+
+  bool is_unset() 
+         { 
+           return (status == bp_unset) ? true : false; 
+         }
+
 private:
+
+  //! status
+  /*!
+      status of the BP object
+  */
+  bp_status_e status;
 
   //! use_indirect:
   /*!
