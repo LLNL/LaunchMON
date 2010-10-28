@@ -405,12 +405,14 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::process_base_t ()
     mydynloader_image(NULL),  
     mythread_lib_image(NULL),
     mylibc_image(NULL),
+    myrmso_image(NULL),
     myopts(NULL),
     launch_hidden_bp(NULL),
     loader_hidden_bp(NULL),
     thread_creation_hidden_bp(NULL),
     thread_death_hidden_bp(NULL),
-    fork_hidden_bp(NULL)
+    fork_hidden_bp(NULL),
+    sym_attach_fifo(NULL) 
 { 
   /* more init ? */
 }
@@ -446,6 +448,9 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::~process_base_t ()
   if (mylibc_image)
     delete mylibc_image;
 
+  if (mylibc_image)
+    delete myrmso_image;
+
   if (launch_hidden_bp)
     delete launch_hidden_bp;
 
@@ -460,6 +465,9 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::~process_base_t ()
 
   if (fork_hidden_bp)
     delete fork_hidden_bp;
+
+  if (sym_attach_fifo)
+    delete sym_attach_fifo;
 
   if (!thrlist.empty())
     {
@@ -530,68 +538,81 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::debug_iter_thrlist()
 
 }
 
-
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-image_base_t<VA,EXECHANDLER>* 
+image_base_t<VA,EXECHANDLER> * 
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_myimage ()
 {
   return myimage;
 }
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-image_base_t<VA,EXECHANDLER>* 
+image_base_t<VA,EXECHANDLER> * 
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_mydynloader_image ()
 {
   return mydynloader_image;
 }
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-image_base_t<VA,EXECHANDLER>* 
+image_base_t<VA,EXECHANDLER> * 
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_mythread_lib_image ()
 {
   return mythread_lib_image;
 }
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-image_base_t<VA,EXECHANDLER>*
+image_base_t<VA,EXECHANDLER> *
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_mylibc_image ()
 {
   return mylibc_image;
 }
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-breakpoint_base_t<VA,IT>* 
+image_base_t<VA,EXECHANDLER> *
+process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_myrmso_image ()
+{
+  return myrmso_image;
+}
+
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+breakpoint_base_t<VA,IT> * 
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_launch_hidden_bp ()
 {
   return launch_hidden_bp;
 }
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-breakpoint_base_t<VA,IT>*
-process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_fork_hidden_bp ()
-{
-  return fork_hidden_bp;
-}
-
-template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-breakpoint_base_t<VA,IT>* 
+breakpoint_base_t<VA,IT> * 
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_loader_hidden_bp ()
 {
   return loader_hidden_bp;
 }
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-breakpoint_base_t<VA,IT>* 
+breakpoint_base_t<VA,IT> * 
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_thread_creation_hidden_bp ()
 {
   return thread_creation_hidden_bp;
 }
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-breakpoint_base_t<VA,IT>* 
+breakpoint_base_t<VA,IT> * 
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_thread_death_hidden_bp ()
 {
   return thread_death_hidden_bp;
+}
+
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+breakpoint_base_t<VA,IT> *
+process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_fork_hidden_bp ()
+{
+  return fork_hidden_bp;
+}
+
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+const symbol_base_t<VA> *
+process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_sym_attach_fifo ()
+{
+  return sym_attach_fifo;
 }
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
@@ -620,6 +641,13 @@ void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_mylibc_image
 (image_base_t<VA,EXECHANDLER>* i)
 {
   mylibc_image = i;
+}
+
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_myrmso_image
+(image_base_t<VA,EXECHANDLER>* i)
+{
+  myrmso_image = i;
 }
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
@@ -655,6 +683,13 @@ void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_fork_hidden_bp
 (breakpoint_base_t<VA,IT>* b)
 {
   fork_hidden_bp = b;
+}
+
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_sym_attach_fifo
+(symbol_base_t<VA>* o)
+{
+  sym_attach_fifo = o;
 }
 
 //! PUBLIC: get_pid
@@ -902,6 +937,7 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_fprset ( bool context_sensitive )
 
 //! PROTECTED: protected_init 
 /*!
+    DEPRECATED!
     protected_init: This should really be something that should
     be handled by this base layer. But we don't want
     a component other than its derived class calls this
