@@ -26,6 +26,9 @@
  *--------------------------------------------------------------------------------                      
  *
  *  Update Log:
+ *        Oct 22 2010 DHA: Added support for launching of tool daemons
+ *                         into a subset of an allocation under SLURM.
+ *                         (ID: 2871927).
  *        Jun 28 2010 DHA: Moved the rm_catalogue_e defintition into the
  *                         LMON API standard header. 
  *        Jun 09 2010 DHA: Created file.
@@ -57,6 +60,7 @@ struct coloc_str_param_t
   char *pmgrip;
   char *pmgrport;
   int pmgrjobid; 
+  char *hnfilename;
 };
 
 class rc_rm_t 
@@ -76,6 +80,7 @@ public:
      paramset.pmgrip     = NULL;
      paramset.pmgrport   = NULL;
      paramset.pmgrjobid  = -1;       
+     paramset.hnfilename = NULL;
    }
 
   // don't use operations requiring a copy ctor
@@ -91,6 +96,8 @@ public:
         free(paramset.pmgrip);
       if (paramset.pmgrport)
 	free(paramset.pmgrport);
+      if (paramset.hnfilename)
+	free(paramset.hnfilename);
     }
   
   // init must be called after ctor
@@ -113,6 +120,10 @@ public:
 	  rmname = "RC_mchecker_rm";
   	  has_mpir_coloc = true; 
           rid_supported = false;
+	  has_mpir_attach_fifo = false;
+	  rm_attach_fifo_path = "";
+          has_rm_so = false;
+          rm_so_name = "";
    	  rm_daemon_path = tdpath;
           rm_daemon_stub = bestubpath; 
   	  rm_coloc_cmd = "coloc";
@@ -123,6 +134,10 @@ public:
   	  rmname = "RC_slurm";
   	  has_mpir_coloc = false; 
           rid_supported = true;
+	  has_mpir_attach_fifo = false;
+	  rm_attach_fifo_path = "";
+          has_rm_so = false;
+          rm_so_name = "";
 	  rm_daemon_path = tdpath;
           rm_daemon_stub = bestubpath; 
   	  rm_coloc_cmd = lnchrpath;
@@ -131,7 +146,7 @@ public:
             rm_coloc_cmd = TVCMD + std::string(" ") + rm_coloc_cmd + std::string(" -a");        
 #endif
           rm_coloc_str = rm_coloc_cmd;
-	  rm_coloc_str += std::string(" --input=none --jobid=%d --nodes=%d --ntasks=%d ")
+	  rm_coloc_str += std::string(" --input=none --jobid=%d --nodes=%d --ntasks=%d --nodelist=%s ")
             + rm_daemon_path + std::string(" ") + tdopts
 #if PMGR_BASED 
             + std::string(" --pmgrsize=%d --pmgrip=%s --pmgrport=%s --pmgrjobid=%d --pmgrlazyrank=1 --pmgrlazysize=1")
@@ -146,6 +161,10 @@ public:
 	  rmname = "RC_bgrm";
   	  has_mpir_coloc = true; 
           rid_supported = false;
+	  has_mpir_attach_fifo = false;
+	  rm_attach_fifo_path = "";
+          has_rm_so = false;
+          rm_so_name = "";
 	  rm_daemon_path = tdpath;
           rm_daemon_stub = bestubpath; 
   	  rm_coloc_cmd = "coloc";
@@ -160,6 +179,10 @@ public:
 	  rmname = "RC_alps";
   	  has_mpir_coloc = false; 
           rid_supported = false;
+	  has_mpir_attach_fifo = false;
+	  rm_attach_fifo_path = "";
+          has_rm_so = false;
+          rm_so_name = "";
 	  rm_daemon_path = tdpath;
 	  rm_daemon_stub = bestubpath;
   	  rm_coloc_cmd = lnchrpath;
@@ -175,6 +198,10 @@ public:
 	  rmname = "RC_orte";
   	  has_mpir_coloc = true; 
           rid_supported = false;
+	  has_mpir_attach_fifo = true;
+          has_rm_so = true;
+          rm_so_name = "libopen-rte.so";
+	  rm_attach_fifo_path = "";
 	  rm_daemon_path = tdpath;
 	  rm_daemon_stub = bestubpath;
   	  rm_coloc_cmd = "coloc";
@@ -197,7 +224,7 @@ public:
   //
   // setting param set w/o pmgr
   //
-  bool set_paramset (int nn, int nd, char *ss, char *ri, int rid)
+  bool set_paramset (int nn, int nd, char *ss, char *ri, int rid, char *hns)
     {
       if (!ss || !ri)
         return false;
@@ -207,6 +234,10 @@ public:
       paramset.sharedsec = strdup(ss);
       paramset.randomid = strdup(ri);
       paramset.resourceid = rid;
+      if (hns)
+        {
+          paramset.hnfilename= strdup(hns);
+        }
   
       return true;
     }
@@ -214,12 +245,13 @@ public:
   //
   // setting param set w pmgr
   //
-  bool set_paramset (int nn, int nd, char *ss, char *ri, int rid, int pmsize, char *pmip, char *pmport, int pmjid)
+  bool set_paramset (int nn, int nd, char *ss, char *ri, int rid, char *hns, 
+                     int pmsize, char *pmip, char *pmport, int pmjid)
     {
       if (!pmip || !pmport)
         return false;
 
-      if (!set_paramset (nn, nd, ss, ri, rid))
+      if (!set_paramset (nn, nd, ss, ri, rid, hns))
         return false;
 
       paramset.pmgrsize = pmsize;
@@ -252,6 +284,7 @@ public:
 		   paramset.resourceid,
 		   paramset.nnodes,
 		   paramset.ndaemons,
+                   paramset.hnfilename,
 #if PMGR_BASED
 		   paramset.pmgrsize, 
 		   paramset.pmgrip,
@@ -389,8 +422,17 @@ public:
 
   define_gset(bool, has_mpir_coloc)
   define_gset(bool, rid_supported)
+  define_gset(bool, has_mpir_attach_fifo)
   define_gset(std::string, rm_daemon_path)
   define_gset(rm_catalogue_e, rm_type)
+  define_gset(std::string, rm_attach_fifo_path)
+  define_gset(bool, has_rm_so)
+  define_gset(std::string, rm_so_name)
+  
+  const char * get_hostnames_fn()
+    {
+      return paramset.hnfilename;
+    }
 
 private:
 
@@ -457,6 +499,9 @@ private:
   // Some RM supports resource ID	
   bool rid_supported;
 
+  // for MPIR_attach_fifo supported RM
+  bool has_mpir_attach_fifo;
+
   // daemon path
   std::string rm_daemon_path;
   
@@ -472,6 +517,13 @@ private:
 
   // fully expanded string of rm_coloc_str
   std::string rm_coloc_exp_str;
+
+  // fifo path
+  std::string rm_attach_fifo_path;
+
+  // any RM SO? (FLAG string for now... later vector might be needed
+  bool has_rm_so;
+  std::string rm_so_name;
 
   // parameter set
   coloc_str_param_t paramset;
