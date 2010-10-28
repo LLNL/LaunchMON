@@ -1,3 +1,29 @@
+2010-10-27 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/man/LMON_be_finalize.3:
+	Added a BlueGene note describing the use of
+	END_DEBUG within the LMON_be_finalize call (ID: 3079668).
+
+	* launchmon/src/sdbg_base_launchmon.hxx
+	launchmon/src/sdbg_base_launchmon_impl.hxx
+	launchmon/src/linux/sdbg_linux_launchmon.hxx
+	launchmon/src/linux/sdbg_linux_launchmon.cxx:
+	Added mpir state tracking support to detect bad
+	state changes of RM.
+
+	* launchmon/src/sdbg_base_symtab.hxx
+	launchmon/src/linux/sdbg_linux_symtab.hxx
+	launchmon/src/linux/sdbg_linux_symtab_impl.hxx:
+	Added support that allows checking some of attributes
+	of a symbol.
+
+
+2010-10-21 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/sdbg_rm_map.hxx
+	launchmon/src/linux/sdbg_linux_launchmon.cxx:
+	Added support for launching of tool daemons
+	into a subset of an allocation under SLURM (ID: 2871927).
+
+
 2010-07-21 Dong H. Ahn <ahn1@llnl.gov>
 	* launchmon/src/linux/lmon_api/lmon_fe.cxx:
 	Removed a code rot from LMON_fe_getProctable. Credit to 
@@ -31,8 +57,7 @@
 
 
 2010-06-25 Dong H. Ahn <ahn1@llnl.gov>
-	* ChangeLog
-	README.ERROR_HANDLING
+	* README.ERROR_HANDLING
 	test/src/test.attach_1_remote.in
 	test/src/test.fe_regStatusCB.in
 	test/src/test.attach_4_shutdownbe.in
