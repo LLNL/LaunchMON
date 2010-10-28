@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Sep 02 2010 DHA: Added MPIR_attach_fifo support
  *        Dec  16 2009 DHA: Moved backtrace support with C++ demangling here
  *        Aug  10 2009 DHA: Added more comments
  *        Mar  06 2008 DHA: Deprecate GLUESYM support
@@ -121,11 +122,17 @@ const char * const LAUNCH_ACQUIRED_PREMAIN  = "MPIR_acquired_pre_main";
 */
 const char * const LAUNCH_EXEC_PATH         = "MPIR_executable_path";
 
-//! LAUNCH_EXEC_PATH:
+//! LAUNCH_SERVER_ARGS:
 /*!
     Symbol that provides the tool daemons with their arguments
 */
 const char * const LAUNCH_SERVER_ARGS       = "MPIR_server_arguments";
+
+//! LAUNCH_ATTACH_FIFO:
+/*!
+    Symbol that provides the tool daemons with their arguments
+*/
+const char * const LAUNCH_ATTACH_FIFO       = "MPIR_attach_fifo";
 
 //! LOADER_BP_SYM:
 /*!
