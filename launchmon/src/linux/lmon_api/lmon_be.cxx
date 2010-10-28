@@ -1636,6 +1636,22 @@ LMON_be_handshake ( void *udata )
 # endif
 #endif /* RM_BG_MPIRUN */
 
+  //
+  // Clean up proctab
+  //
+  for(i=0; i < proctab_size; i++)
+    {
+     if (proctab[i].pd.executable_name)
+        {
+          free(proctab[i].pd.executable_name);
+          proctab[i].pd.executable_name = NULL;
+        }
+      if (proctab[i].pd.host_name)
+        {
+          free(proctab[i].pd.host_name);
+          proctab[i].pd.host_name = NULL;
+        }
+    }
   free (proctab);
 
   //
@@ -1687,7 +1703,7 @@ LMON_be_ready ( void *udata )
     		      uoffset, 
     		      LMON_MAX_USRPAYLOAD, 
     		      &upl_leng );
-    	assert ( upl_leng <= LMON_MAX_USRPAYLOAD );
+    	//assert ( upl_leng <= LMON_MAX_USRPAYLOAD );
         readymsg->usr_payload_length = upl_leng;
       }
     else
@@ -1705,6 +1721,7 @@ LMON_be_ready ( void *udata )
     		servsockfd, 
     		readymsg, 
     		sizeof (lmonp_t) + readymsg->usr_payload_length );
+    free (readymsg);
     
   END_MASTER_ONLY
 
