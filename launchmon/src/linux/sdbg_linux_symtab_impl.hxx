@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Oct 27 2010 DHA: Added is_defined, is_globally_visible, 
+ *                         is_locally_visible virtual methods.
  *        Dec 20 2009 DHA: Fixed a bug that arose when Mark's patch
  *                         was folded in.  
  *        Mar 06 2009 DHA: Folded in Mark O'Connor's patch that 
@@ -133,7 +135,8 @@ template <LINUX_SYMTAB_TEMPLATELIST>
 linkage_symbol_t<LINUX_SYMTAB_TEMPLPARAM>::linkage_symbol_t()
   : symbol_base_t<LINUX_SYMTAB_TEMPLPARAM>()
 { 
-  section = SYMTAB_UNINIT_STRING;
+  defined = false;
+  vis = elf_sym_none;
   visibility = SYMTAB_UNINIT_STRING;
   binding = SYMTAB_UNINIT_STRING; 
   type = SYMTAB_UNINIT_STRING;
@@ -145,7 +148,8 @@ linkage_symbol_t<LINUX_SYMTAB_TEMPLPARAM>::linkage_symbol_t
 (const linkage_symbol_t& l) 
   : symbol_base_t<LINUX_SYMTAB_TEMPLPARAM>(l)
 { 
-  section = l.section; 
+  defined = l.defined;
+  vis = l.vis;
   visibility = l.visibility;
   binding = l.binding;
 }
@@ -157,7 +161,8 @@ linkage_symbol_t<LINUX_SYMTAB_TEMPLPARAM>::linkage_symbol_t
  const VA ra, const VA rla)
   : symbol_base_t<LINUX_SYMTAB_TEMPLPARAM>(n,ln,ra,rla)
 {
-  section = SYMTAB_UNINIT_STRING;
+  defined = false;
+  vis = elf_sym_none;
   visibility = SYMTAB_UNINIT_STRING;
   binding = SYMTAB_UNINIT_STRING; 
   type = SYMTAB_UNINIT_STRING;
@@ -265,6 +270,30 @@ const std::string
 linkage_symbol_t<LINUX_SYMTAB_TEMPLPARAM>::get_type () const 
 { 
   return type;
+}
+
+
+template <LINUX_SYMTAB_TEMPLATELIST>
+bool 
+linkage_symbol_t<LINUX_SYMTAB_TEMPLPARAM>::is_defined() const
+{
+  return defined;  
+}
+
+
+template <LINUX_SYMTAB_TEMPLATELIST>
+bool 
+linkage_symbol_t<LINUX_SYMTAB_TEMPLPARAM>::is_globally_visible() const
+{
+  return (vis == elf_sym_global)? true : false;
+}
+
+
+template <LINUX_SYMTAB_TEMPLATELIST>
+bool 
+linkage_symbol_t<LINUX_SYMTAB_TEMPLPARAM>::is_locally_visible() const
+{
+  return (vis == elf_sym_local)? true : false;
 }
 
 
@@ -595,13 +624,16 @@ throw(symtab_exception_t)
 		     (const VA) SYMTAB_UNINIT_ADDR);
 
 	  a_linksym->set_binding(decode_binding(first_sym->st_info));	  
+          a_linksym->set_vis(resolve_binding(first_sym->st_info));
 	  a_linksym->set_visibility(decode_visibility(first_sym->st_other));
 	  a_linksym->set_type(decode_type(first_sym->st_info));
+          a_linksym->set_defined((first_sym->st_shndx != SHN_UNDEF)? true : false);
+
           /* TODO: a tool says keystr is leaked, confirm if it really does */
 	  string* keystr = new string(symname);
 
-	  get_linkage_symtab().insert ( make_pair( (*keystr), 
-						   (symbol_base_t<VA>*) a_linksym));
+	  get_linkage_symtab().insert(make_pair((*keystr), 
+						(symbol_base_t<VA>*) a_linksym));
 	}
 
       first_sym++;
@@ -889,6 +921,48 @@ linux_image_t<LINUX_IMAGE_TEMPLPARAM>::decode_type(int code) const
     Determines the symbol binding information
 */
 template <LINUX_IMAGE_TEMPLATELIST>
+LMON_ELF_visibility 
+linux_image_t<LINUX_IMAGE_TEMPLPARAM>::resolve_binding(int code) const
+{
+  LMON_ELF_visibility rc = elf_sym_none;
+
+#if BIT64
+  switch(ELF64_ST_BIND(code))
+#else
+  switch(ELF32_ST_BIND(code))
+#endif
+    {
+    case STB_LOCAL:
+       rc = elf_sym_local;
+       break;
+
+    case STB_GLOBAL:
+       rc = elf_sym_global;
+       break;
+
+    case STB_WEAK:
+       rc = elf_sym_weak;
+       break;
+
+    default:
+      break;
+    }
+
+  if ( (rc == elf_sym_none) 
+       && ( (code <= STB_HIPROC) && (code >= STB_LOPROC) ))
+    {
+      rc = elf_sym_procspecific;
+    }
+
+  return rc;
+}
+
+
+//! PROTECTED: image_t<VA>::decode_binding --
+/*!
+    Determines the symbol binding information
+*/
+template <LINUX_IMAGE_TEMPLATELIST>
 const std::string  
 linux_image_t<LINUX_IMAGE_TEMPLPARAM>::decode_binding(int code) const
 {  
@@ -943,7 +1017,7 @@ linux_image_t<LINUX_IMAGE_TEMPLPARAM>::decode_binding(int code) const
 }
 
 
-//! PROTECTED: image_t<VA>::decode_binding --
+//! PROTECTED: image_t<VA>::decode_visibility --
 /*!
     Determines the symbol visibility information
 */
@@ -960,7 +1034,6 @@ linux_image_t<LINUX_IMAGE_TEMPLPARAM>::decode_visibility (int code) const
   switch(ELF32_ST_VISIBILITY(code))
 #endif
     {
-
     case STV_DEFAULT:
       ret_string = "Default symbol visibility rules";
       break;
