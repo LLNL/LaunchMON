@@ -257,15 +257,15 @@ main (int argc, char* argv[])
   launcher_argv[2] = strdup(argv[1]);
   launcher_argv[3] = NULL;
 #elif RM_ORTE_ORTERUN
-  launcher_argv    = (char **) malloc(5*sizeof(char*));
+  launcher_argv    = (char **) malloc(8*sizeof(char*));
   launcher_argv[0] = strdup(mylauncher);
-  /* launcher_argv[1] = strdup("-gmca");
-  launcher_argv[2] = strdup("orte_enable_debug_cospawn_while_running");
-  launcher_argv[3] = strdup("1");*/
-  launcher_argv[1] = strdup("-np");
-  launcher_argv[2] = strdup(argv[2]);
-  launcher_argv[3] = strdup(argv[1]);
-  launcher_argv[4] = NULL;
+  launcher_argv[1] = strdup("-mca");
+  launcher_argv[2] = strdup("debugger");
+  launcher_argv[3] = strdup("mpirx");
+  launcher_argv[4] = strdup("-np");
+  launcher_argv[5] = strdup(argv[2]);
+  launcher_argv[6] = strdup(argv[1]);
+  launcher_argv[7] = NULL;
   fprintf (stdout, "[LMON_FE] launching the job/daemons via %s\n", mylauncher);
 #else
 # error add support for the RM of your interest here
