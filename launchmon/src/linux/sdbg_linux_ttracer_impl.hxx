@@ -203,11 +203,12 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_init (
 #if RM_BG_MPIRUN
       bp->set_use_indirection();
 #endif
-      bp->status = breakpoint_base_t<VA, IT>::set_but_not_inserted;
+      bp->set();
+
       p.set_thread_creation_hidden_bp(bp);
-      pt->insert_breakpoint ( p, 
-			      *(p.get_thread_creation_hidden_bp()),
-			      true);
+      pt->enable_breakpoint(p, 
+			    *(p.get_thread_creation_hidden_bp()),
+			    true);
 
       {
 	self_trace_t::trace ( LEVELCHK(level2), 
@@ -237,11 +238,12 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_init (
       tdbp->set_use_indirection();
 #endif
       tdbp->set_address_at(thread_death_bp_sym.get_relocated_address());
-      tdbp->status = breakpoint_base_t<VA, IT>::set_but_not_inserted;
+      tdbp->set();
+
       p.set_thread_death_hidden_bp(tdbp);
-      pt->insert_breakpoint ( p, 
-			      *(p.get_thread_death_hidden_bp()),
-			      true);
+      pt->enable_breakpoint(p, 
+			    *(p.get_thread_death_hidden_bp()),
+			    true);
     }
 #endif
 
