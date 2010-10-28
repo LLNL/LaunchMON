@@ -131,7 +131,8 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::operator=(
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::launchmon_base_t () 
-  : resid(-1), 
+  : engine_state(mpir_start),
+    resid(-1), 
     pcount(-1),
     toollauncherpid(-1),
     FE_sockfd(-1),
@@ -272,6 +273,29 @@ thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *
 launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_ttracer()
 {
   return ttracer;
+}
+
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+void 
+launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_engine_state (int s)
+{
+  switch (s)
+    {
+    case MPIR_DEBUG_SPAWNED:
+      engine_state = mpir_spawned;
+      break;
+    case MPIR_DEBUG_ABORTING:
+      engine_state = mpir_abort;
+      break;
+    case MPIR_NULL:
+      engine_state = mpir_null;
+      break;
+    default:
+      engine_state = mpir_unknown;
+      break;
+    }
+
+  return;
 }
 
 //! decipher_an_event:
@@ -1088,6 +1112,44 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_daemon_exit_event
       //
       return LAUNCHMON_FAILED;
     }
+}
+
+
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+bool
+launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::validate_mpir_state_transition(int s)
+{
+  bool rc = false;
+  switch(s)
+    {
+    case MPIR_DEBUG_SPAWNED:
+      if ( (engine_state == mpir_start) 
+           || (engine_state == mpir_null) )
+        {
+          rc = true;
+        }
+      break;
+    case MPIR_DEBUG_ABORTING: 
+      if ( (engine_state == mpir_start) 
+           || (engine_state == mpir_null) 
+           || (engine_state == mpir_spawned) )
+        {
+          rc = true;
+        }
+      break;  
+    case MPIR_NULL:
+      if ( (engine_state == mpir_start) 
+           || (engine_state == mpir_null) 
+           || (engine_state == mpir_spawned) )
+        {
+          rc = true;
+        }
+      break;
+    default:
+      break;
+    }
+
+  return rc;
 }
 
 #endif // SDBG_BASE_LAUNCHMON_IMPL_HXX
