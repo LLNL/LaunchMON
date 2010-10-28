@@ -36,8 +36,4 @@ NUMTASKS=524288
 RM_TYPE=@RMTP@
 LMON_OPTS=""
                                                                                                                                                                       
-if test "x$RM_TYPE" = "xbgrm" ; then
-  LMON_OPTS="--pmgr bgl:21000"
-fi
-
 @LMON@ $LMON_OPTS -d `pwd`/be_standalone_kicker@EXE@ `pwd`/LE_model_checker@EXE@ -a -p$NUMTASKS -t1
