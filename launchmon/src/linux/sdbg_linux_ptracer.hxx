@@ -182,12 +182,12 @@ public:
   virtual tracer_error_e tracer_trace_me   ()
     throw (linux_tracer_exception_t);   
 
-  virtual tracer_error_e insert_breakpoint 
+  virtual tracer_error_e enable_breakpoint 
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
       breakpoint_base_t<VA, IT>& bp, bool use_cxt )
     throw (linux_tracer_exception_t);
 
-  virtual tracer_error_e pullout_breakpoint 
+  virtual tracer_error_e disable_breakpoint 
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, 
       breakpoint_base_t<VA, IT>& bp, bool use_cxt )
     throw (linux_tracer_exception_t);
