@@ -771,10 +771,7 @@ LMON_init_sess ( lmon_session_desc_t* s )
   s->proctab_msg = NULL; 
   s->hntab_msg = NULL;
 
-  if (s->pMap.size() != 0) {
-    s->pMap.clear();
-  }
-
+  // make_sure: s->pMap.size == 0
   s->resourceHandle = LMON_INIT;
 
   s->statusCB = NULL;
@@ -841,9 +838,25 @@ LMON_destroy_sess ( lmon_session_desc_t* s )
   s->hntab_msg = NULL; 
   s->resourceHandle = LMON_INIT;
 
-  if (s->pMap.size() != 0) {
-    s->pMap.clear();
-  }
+  if (s->pMap.size() != 0) 
+    {
+      //
+      // TODO: ugly, someday, change pointers to smart pointers
+      // that mix well with STL
+      //
+      std::map<std::string,std::vector<MPIR_PROCDESC_EXT *>,lexGraphCmp>::iterator iter;
+      std::vector<MPIR_PROCDESC_EXT *>::iterator vectiter;
+      for (iter=s->pMap.begin(); iter != s->pMap.end(); ++iter)
+        {
+          for (vectiter = iter->second.begin(); vectiter != iter->second.end(); ++vectiter)
+            {
+              free((*vectiter)->pd.executable_name);
+              free((*vectiter)->pd.host_name);
+              free((*vectiter));
+            }
+        }
+        s->pMap.clear(); 
+    }
 
   s->statusCB = NULL;
 
@@ -1600,22 +1613,25 @@ LMON_assist_ICCL_BE_init (lmon_session_desc_t *mydesc)
       return LMON_ESYS;
     }
 
-   if ( cobo_server_get_root_socket (&(mydesc->commDesc[fe_be_conn].sessionAcceptSockFd)) != COBO_SUCCESS)
-     {
-        LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-          "cobo_server_get_rootsocket failed.");
+  if ( cobo_server_get_root_socket (&(mydesc->commDesc[fe_be_conn].sessionAcceptSockFd)) != COBO_SUCCESS)
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "cobo_server_get_rootsocket failed.");
 
        return LMON_ESYS;
-     }
+    }
 
+  free(hostlist);
+  free(portlist);
+   
 # if MEASURE_TRACING_COST
-   if ( lmon_read_raw(mydesc->commDesc[fe_be_conn].sessionAcceptSockFd, (void*)&be_ts, sizeof(double)) < 0 )
-     {
+  if ( lmon_read_raw(mydesc->commDesc[fe_be_conn].sessionAcceptSockFd, (void*)&be_ts, sizeof(double)) < 0 )
+    {
        LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
          "read on a socket failed during MEASURE_TRACING_COST.");
 
        return LMON_ESYS;
-     }
+    }
 # endif
 
 #endif /* COBO_BASED */
@@ -3348,8 +3364,7 @@ LMON_fe_regPackForFeToBe (
       return LMON_EBDARG;
     }
   
-  if ( ( mydesc->registered == LMON_TRUE ) 
-	   && ( mydesc->spawned == LMON_FALSE ) ) 
+  if ( mydesc->spawned == LMON_FALSE ) 
     {
 
       if ( mydesc->pack != NULL )
@@ -3413,8 +3428,7 @@ LMON_fe_regUnpackForBeToFe (
       return LMON_EBDARG;
     }
   
-  if ( ( mydesc->registered == LMON_TRUE ) 
-       && ( mydesc->spawned == LMON_FALSE )) 
+  if ( mydesc->spawned == LMON_FALSE ) 
     {
       if ( mydesc->unpack != NULL )
 	{
@@ -3476,8 +3490,7 @@ LMON_fe_regPackForFeToMw (
       return LMON_EBDARG;
     }
   
-  if ( ( mydesc->registered == LMON_TRUE ) 
-	   && ( mydesc->spawned == LMON_FALSE ) ) 
+  if ( mydesc->spawned == LMON_FALSE ) 
     {
 
       if ( mydesc->mw_pack != NULL )
@@ -3540,8 +3553,7 @@ LMON_fe_regUnpackForMwToFe (
       return LMON_EBDARG;
     }
   
-  if ( ( mydesc->registered == LMON_TRUE ) 
-       && ( mydesc->spawned == LMON_FALSE )) 
+  if ( mydesc->spawned == LMON_FALSE ) 
     {
       if ( mydesc->mw_unpack != NULL )
 	{
@@ -3597,8 +3609,7 @@ LMON_fe_putToBeDaemonEnv (
       return LMON_EBDARG;
     }
 
-  if ( ( mydesc->registered == LMON_TRUE ) 
-       && ( mydesc->spawned == LMON_FALSE )) 
+  if ( mydesc->spawned == LMON_FALSE ) 
     { 
       rc = LMON_fe_putToDaemonEnv ( &(mydesc->daemonEnvList[0]),
 				    dmonEnv,
@@ -3650,8 +3661,7 @@ LMON_fe_putToMwDaemonEnv (
       return LMON_EBDARG;
     }
   
-  if ( ( mydesc->registered == LMON_TRUE ) 
-       && ( mydesc->spawned == LMON_FALSE )) 
+  if ( mydesc->spawned == LMON_FALSE ) 
     { 
       rc = LMON_fe_putToDaemonEnv ( &(mydesc->daemonEnvList[1]),
 				    dmonEnv,
@@ -4103,7 +4113,7 @@ LMON_fe_getProctableSize (
       return LMON_EBDARG;
     }
 
-  if ( mydesc->registered == LMON_FALSE )
+  if ( mydesc->spawned == LMON_FALSE )
   {
     LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
       "has this session already finished?");
@@ -4177,6 +4187,16 @@ LMON_fe_getProctable (
       pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
       return LMON_EBDARG;
     }
+
+  if ( mydesc->spawned == LMON_FALSE )
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+                   "has this session already finished?");
+
+      pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
+      return LMON_EDUNAV;
+    }
+
 
   if ( !( mydesc->proctab_msg ) )
     {
@@ -4407,7 +4427,7 @@ LMON_fe_getResourceHandle (
       return LMON_EBDARG;
     }
 
-  if ( mydesc->registered == LMON_FALSE )
+  if ( mydesc->spawned == LMON_FALSE )
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
                    "has this session already finished?");
