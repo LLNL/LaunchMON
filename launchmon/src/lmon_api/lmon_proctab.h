@@ -36,6 +36,7 @@
 
 #include <lmon_api/common.h> 
 
+#define MPIR_NULL           0
 #define MPIR_DEBUG_SPAWNED  1
 #define MPIR_DEBUG_ABORTING 2
 
