@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Oct 27 2010 DHA: Added is_defined, is_globally_visible, 
+ *                         is_locally_visible virtual methods.
  *        Feb 09 2008 DHA: Added LLNS Copyright
  *        Mar 30 2006 DHA: Added exception handling support
  *        Feb 08 2006 DHA: Seperated OS dependent components 
@@ -148,6 +150,18 @@ public:
   const std::string & get_base_lib_name() const; 
   const VA & get_raw_address() const;
   const VA & get_relocated_address() const;
+
+  virtual bool is_defined() const { return false; }
+  virtual bool is_globally_visible() const { return false; }
+  virtual bool is_locally_visible() const { return false; }
+
+  //
+  // overloading operator!
+  //
+  friend bool operator!(const symbol_base_t<BASE_SYMTAB_TEMPLPARAM> &sym)
+    {
+      return ((sym.name == SYMTAB_UNINIT_STRING)? true : false);
+    }
 
 private:
   std::string name;
