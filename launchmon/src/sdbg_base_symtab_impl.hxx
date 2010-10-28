@@ -437,4 +437,5 @@ image_base_t<BASE_IMAGE_TEMPLPARAM>::init ( const std::string &lib )
   return (init());
 }
 
+
 #endif // SDBG_BASE_SYMTAB_IMPL_HXX
