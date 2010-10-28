@@ -26,6 +26,10 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Oct 26 2010 DHA: Changed method names from insert|pullout_breakpoint
+ *                         to enable|disable_breakpoint. Slight linux
+ *                         implementation change as part of refactoring in
+ *                         the breakpoint_base_t class. 
  *        May 08 2008 DHA: Added comments for the "use_cxt" argument
  *        Feb 09 2008 DHA: Added LLNS Copyright
  *        Mar 31 2006 DHA: Added tracer_read_string.
@@ -59,6 +63,10 @@
     SDBG_TRACE_EPERM_ERR,
     SDBG_TRACE_EFAULT_ERR,
     SDBG_TRACE_EBUSY_ERR,
+    SDBG_TRACE_STATE_UNKNOWN,
+    SDBG_TRACE_UNIMPLEMENTED,
+    SDBG_TRACE_STOPPED,
+    SDBG_TRACE_RUNNING,
     SDBG_TRACE_FAILED: failed. catch-all
 */
 enum tracer_error_e {
@@ -70,6 +78,7 @@ enum tracer_error_e {
   SDBG_TRACE_EPERM_ERR,
   SDBG_TRACE_EFAULT_ERR,
   SDBG_TRACE_EBUSY_ERR,
+  SDBG_TRACE_STATE_UNKNOWN,
   SDBG_TRACE_UNIMPLEMENTED,
   SDBG_TRACE_STOPPED,
   SDBG_TRACE_RUNNING,
@@ -78,6 +87,7 @@ enum tracer_error_e {
 
 
 ////////////////////////////////////////////////////////////////////////////
+//
 //
 //
 
@@ -222,12 +232,12 @@ public:
   virtual tracer_error_e tracer_trace_me   ()
     throw (tracer_exception_t)                                 =0;
 
-  virtual tracer_error_e insert_breakpoint 
+  virtual tracer_error_e enable_breakpoint 
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
       breakpoint_base_t<VA, IT>& bp, bool use_cxt )
     throw (tracer_exception_t)                                 =0;
 
-  virtual tracer_error_e pullout_breakpoint 
+  virtual tracer_error_e disable_breakpoint 
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
       breakpoint_base_t<VA, IT>& bp, bool use_cxt ) 
     throw (tracer_exception_t)                                 =0;
