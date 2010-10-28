@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Oct 01 2010 DHA: Refactor handling of mpir variables setup to 
+ *                         handle_mpir_variables.
  *        Sep 24 2008 DHA: Added handle_daemon_exit_event for 
  *                         better error handling
  *        Jul 03 2006 DHA: Added self tracing support
@@ -77,71 +79,63 @@ public:
   //  Public Interfaces:
   //
   //
-  virtual launchmon_rc_e init ( opts_args_t* opt );
+  virtual launchmon_rc_e init ( opts_args_t *opt );
 
-  launchmon_rc_e handle_bp_prologue
-                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p,
-		   breakpoint_base_t<T_VA,T_IT>* bp );
-
-  launchmon_rc_e is_bp_prologue_done
-                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p,
-		   breakpoint_base_t<T_VA,T_IT>* bp );
-  
   virtual 
   launchmon_rc_e handle_attach_event
-                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p );
+                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
 
   virtual 
   launchmon_rc_e handle_launch_bp_event 
-                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p );
+                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
   
   virtual 
   launchmon_rc_e handle_detach_cmd_event 
-                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p );
+                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
 
   virtual 
   launchmon_rc_e handle_kill_cmd_event 
-                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p );
+                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
 
   virtual 
   launchmon_rc_e handle_trap_after_exec_event 
-                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p );
+                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
 
   virtual 
   launchmon_rc_e handle_trap_after_attach_event
-                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p );
+                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
 
   virtual 
   launchmon_rc_e handle_loader_bp_event 
-                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p );
+                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
   
   virtual 
   launchmon_rc_e handle_exit_event 
-                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p );
+                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
 
   virtual 
   launchmon_rc_e handle_term_event 
-                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p );
+                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
   
   virtual 
   launchmon_rc_e handle_thrcreate_bp_event 
-                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p );
+                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
 
   virtual 
   launchmon_rc_e handle_thrdeath_bp_event 
-                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p );
+                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
   
   virtual 
   launchmon_rc_e handle_fork_bp_event
-                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p );
+                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
 
   virtual 
   launchmon_rc_e handle_not_interested_event
-                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p );
+                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
 
   virtual 
   launchmon_rc_e handle_relay_signal_event
-                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p, int sig);
+                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p, int sig);
 
 private:
 
@@ -152,22 +146,36 @@ private:
   //
   linux_launchmon_t (const linux_launchmon_t& l );
 
+  launchmon_rc_e handle_bp_prologue
+                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p,
+		   breakpoint_base_t<T_VA,T_IT> *bp );
+
+  bool is_bp_prologue_done
+                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p,
+		   breakpoint_base_t<T_VA,T_IT> *bp );
+
   bool disable_all_BPs (
-                process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p, bool );
+                process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p, bool );
 
   bool enable_all_BPs ( 
-                process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p, bool );
+                process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p, bool );
 
-  bool chk_pthread_libc_and_init ( 
-                process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p );
+  bool check_dependent_SOs ( 
+                process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
 
   bool acquire_proctable ( 
-                process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p, bool );
+                process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p, bool );
   
   bool launch_tool_daemons ( 
-                process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p );
+                process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
+
+  bool handle_mpir_variables (
+                process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p,
+                image_base_t<T_VA,elf_wrapper> &i);
 
   launchmon_rc_e init_API (opts_args_t *);
+
+  void free_engine_resources(process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p);
 
   bool LEVELCHK(self_trace_verbosity level) 
        { return (self_trace_t::launchmon_module_trace.verbosity_level >= level); }
