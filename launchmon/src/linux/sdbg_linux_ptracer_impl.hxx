@@ -918,20 +918,25 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_trace_me ()
 } // linux_ptracer_t::tracer_trace_me
 
 
-//! PUBLIC: insert_breakpoint 
+//! PUBLIC: enable_breakpoint 
 /*!
   inserts the trap instruction at bp.get_address_at() and set
   "disabel" to the BP
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e 
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::insert_breakpoint ( 
+linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::enable_breakpoint ( 
                  process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
 		 breakpoint_base_t<VA, IT>& bp, bool use_cxt )
   throw (linux_tracer_exception_t)
 {
   IT blend;
   IT origInst;
+
+  if ( !(bp.is_set() || bp.is_disabled()) )
+    {
+      return SDBG_TRACE_STATE_UNKNOWN;
+    }
 
   if (bp.get_use_indirection()) 
     { 
@@ -987,34 +992,33 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::insert_breakpoint (
                     use_cxt);
     }
 
-  bp.status = breakpoint_base_t<VA, IT>::enabled;
+  //
+  // BP state transitioned to enabled
+  //
+  bp.enable();
 
   return SDBG_TRACE_OK;
 
-} // linux_ptracer_t::insert_breakpoint
+} // linux_ptracer_t::enable_breakpoint
 
 
-//! PUBLIC: insert_breakpoint 
+//! PUBLIC: disable_breakpoint 
 /*!
   pulls out the trap instruction at bp.get_address_at() and set
   "disable" to the BP.
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e 
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::pullout_breakpoint ( 
+linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::disable_breakpoint ( 
                  process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
 		 breakpoint_base_t<VA, IT>& bp, bool use_cxt )
   throw (linux_tracer_exception_t)
 {
-  using namespace std;
   IT origInst;
 
-  string e;
-  string func = "[linux_ptracer_t::tracer_pullout_breakpoint]";
-
-  if (bp.status != breakpoint_base_t<VA, IT>::enabled) 
+  if ( !bp.is_enabled() ) 
     {
-      return SDBG_TRACE_OK;     
+      return SDBG_TRACE_STATE_UNKNOWN;     
     }
 
   origInst = bp.get_orig_instruction();
@@ -1036,11 +1040,14 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::pullout_breakpoint (
                     use_cxt);
     }
 
-  bp.status = breakpoint_base_t<T_VA,T_IT>::disabled;
+  //
+  // BP state transitioned to disabled 
+  //
+  bp.disable();
 
   return SDBG_TRACE_OK;
 
-} // linux_ptracer_t::pullout_breakpoint 
+} // linux_ptracer_t::disable_breakpoint 
 
 
 //! PUBLIC: convert_error_code
