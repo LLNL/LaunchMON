@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Sep 02 2010 DHA: Added MPIR_attach_fifo support
  *        May 08 2008 DHA: Added an alias (is_master_thread) for get_master_thread
  *                         because the latter isn't entirely intuitive.
  *        Mar 18 2008 DHA: Added BlueGene support.
@@ -343,23 +344,28 @@ public:
   image_base_t<VA,EXECHANDLER> * get_mydynloader_image ();
   image_base_t<VA,EXECHANDLER> * get_mythread_lib_image ();
   image_base_t<VA,EXECHANDLER> * get_mylibc_image();
+  image_base_t<VA,EXECHANDLER> * get_myrmso_image();
   breakpoint_base_t<VA,IT> * get_launch_hidden_bp ();
   breakpoint_base_t<VA,IT> * get_loader_hidden_bp ();
   breakpoint_base_t<VA,IT> * get_thread_creation_hidden_bp ();
   breakpoint_base_t<VA,IT> * get_thread_death_hidden_bp ();
   breakpoint_base_t<VA,IT> * get_fork_hidden_bp ();
+  const symbol_base_t<VA> * get_sym_attach_fifo ();
+  
   opts_args_t * get_myopts() { return myopts; }
 
   void set_myimage (image_base_t<VA,EXECHANDLER> *i);
   void set_mydynloader_image (image_base_t<VA,EXECHANDLER> *i);
   void set_mythread_lib_image (image_base_t<VA,EXECHANDLER> *i);
   void set_mylibc_image (image_base_t<VA,EXECHANDLER> *i);
+  void set_myrmso_image (image_base_t<VA,EXECHANDLER> *i);
   void set_launch_hidden_bp(breakpoint_base_t<VA,IT> *b);
   void set_loader_hidden_bp(breakpoint_base_t<VA,IT> *b);
   void set_thread_creation_hidden_bp(breakpoint_base_t<VA,IT> *b);
   void set_thread_death_hidden_bp(breakpoint_base_t<VA,IT> *b); 
   void set_fork_hidden_bp(breakpoint_base_t<VA,IT> *b);
   void set_myopts(opts_args_t *o) { myopts = o; }
+  void set_sym_attach_fifo(symbol_base_t<VA> *o);
 
   define_gset(bool,never_trapped)
   define_gset(bool, please_detach)
@@ -374,6 +380,7 @@ public:
   define_gset(std::string,launch_acquired_premain)
   define_gset(std::string,launch_exec_path)
   define_gset(std::string,launch_server_args)
+  define_gset(std::string,launch_attach_fifo)
   define_gset(std::string,thread_creation_sym)
   define_gset(std::string,thread_death_sym)
   define_gset(std::string,loader_breakpoint_sym)
@@ -413,6 +420,7 @@ private:
   image_base_t<VA,EXECHANDLER> *mydynloader_image;
   image_base_t<VA,EXECHANDLER> *mythread_lib_image;
   image_base_t<VA,EXECHANDLER> *mylibc_image;
+  image_base_t<VA,EXECHANDLER> *myrmso_image;
 
   opts_args_t *myopts;
 
@@ -427,6 +435,8 @@ private:
   breakpoint_base_t<VA,IT> *thread_death_hidden_bp;
   breakpoint_base_t<VA,IT> *fork_hidden_bp; 
 
+  symbol_base_t<VA> *sym_attach_fifo;
+
   //
   // launcher/debugger ABI symbols  
   //
@@ -439,6 +449,7 @@ private:
   std::string launch_acquired_premain;
   std::string launch_exec_path;
   std::string launch_server_args;
+  std::string launch_attach_fifo;
   std::string thread_creation_sym;
   std::string thread_death_sym;
   std::string loader_breakpoint_sym;
