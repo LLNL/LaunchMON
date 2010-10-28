@@ -136,6 +136,7 @@ template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 class launchmon_base_t {
 
 public:
+  enum engine_state_e {mpir_start, mpir_null, mpir_spawned, mpir_abort, mpir_unknown};
 
   launchmon_base_t ();
 
@@ -152,6 +153,7 @@ public:
   //
   void set_tracer ( tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *t );
   void set_ttracer ( thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *t );
+  void set_engine_state (int); 
   tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> * get_tracer ();    
   thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> * get_ttracer ();
   define_gset (int, resid)
@@ -305,6 +307,9 @@ public:
   launchmon_rc_e handle_daemon_exit_event ( 
                 process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p );
 
+  
+  bool validate_mpir_state_transition(int s); 
+
 
   //
   // Utility method that handles a detach/kill request command
@@ -334,6 +339,11 @@ private:
   // thread tracer
   //
   thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *ttracer;
+
+  //
+  // mpir tracer state
+  //
+  engine_state_e engine_state;
 
   //
   // resource id, for slurm it is what totalview_jobid contains.
