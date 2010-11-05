@@ -26,6 +26,10 @@
  *--------------------------------------------------------------------------------                      
  *
  *  Update Log:
+ *        Nov 05 2010 DHA: Support for excluding existing system DSOs from 
+ *                         being broadcast. Credit to Andrew Gontarek at Cray
+ *                         for providing DSO list for CLE3.1 and CLE2.2
+ *        Nov 04 2010 DHA: Support for base executable relocation
  *        Jun 10 2010 DHA: File created 
  */
 
@@ -89,7 +93,16 @@ struct option lopts[] = {
   {0, 0, 0, 0}
 };
 
+enum CLE_version_e {
+  cle_ver_2_2,
+  cle_ver_3_1,
+  cle_ver_unknown
+}; 
+
+const char XTRELEASE_FILE_PATH[] = "/etc/opt/cray/release/xtrelease";
+const char DSO_CONFIG_FILE = "CLE-dso.conf";
 const char MSGPREFIX[] = "ALPS FE COLOCATOR";
+
 static void
 ALPS_say_msg ( const char* m, bool is_err, const char* output, ... )
 {
@@ -121,6 +134,69 @@ sighandler (int sig)
 
   exit(EXIT_FAILURE);
 }
+
+
+//
+// get_CLE_ver return an enumerator indicating
+// what DSO list file you sould use at run-time 
+// As other CLE lists are added, the logic of 
+// detecting CLE versions need to be added here.
+//
+static CLE_version_e 
+get_CLE_ver()
+{
+  try 
+    {
+      CLE_version_e rc = cle_ver_unknown;
+      std::ifstream xtrelease_file(XTRELEASE_FILE_PATH);
+
+      if ( !xtrease_file )
+        {
+          rc = cle_ver_2_2;
+        }
+      else 
+        {
+          std::ostreamstream oss;
+          oss << xtrelease_file.rdbuf();  
+          std::string::size_type pos = oss.str().find_first_of("=", 0);
+          const std::string vstr("3.1.")
+          if (oss.str().compare(pos+1, 4, vstr) == 0)
+            {
+              rc = cle_ver_3_1;
+            }
+        }
+
+      return rc;
+    }
+    catch (out_of_range) {
+      return cle_ver_unknown;
+    }
+}
+
+
+static 
+void
+build_DSO_mask (std::map<std::string, int> &dontShipIt, 
+                const std::ifstream &listFstream)
+{
+  char apath[PATH_MAX];
+
+  //note new line is not stored in apath
+  while (!listFstream.getline(apath, PATH_MAX).eof()) 
+    {
+      std::map<std::string, int>::iterator iter; 
+      iter = dontShipIt.find(apath);
+      if (iter == dontShipIt.end())      
+        {
+          dontShipIt[apath] = 1;  
+        }
+      else
+        {
+          iter->second++;
+        } 
+    }
+}  
+
 
 //
 // Function that actually launches daemons using APLS tool helper 
@@ -162,6 +238,141 @@ launch_daemons(int apid,
   int pe0Node = places[0].nid;
 
   //
+  // building dontshipit map 
+  //
+  std::map<std::string, int> &dontShipIt;
+  std::string dsoListPath;
+  std::string dsoListDir;
+  char *pref = getenv("LMON_PREFIX");
+  if (pref)
+    {
+      dsoListDir = std::string(pref) + std::string("/lib/");
+      dsoListPath = dsoListDir + DSO_CONFIG_FILE;
+    }
+  else
+    {
+      ALPS_say_msg(MSGPREFIX, 
+                   true, 
+                   "error LMON_PREFIX envVar not found");
+    }
+
+  std::ifstream dsofstream(dsoListPath);
+  if (!dsofstream)
+    {
+      ALPS_say_msg(MSGPREFIX, 
+                   true, 
+                   "error %s not found", 
+                   dsoListPath.c_str());
+    }
+  else
+    {
+      aLine[PATH_MAX];
+      std::map<std::string, std::string> confMap;
+      while (!dsofstream.getline(aLine, PATH_MAX).eof())
+        {
+          if ((aLine[0] != '-') && (aLine[1] != 'i'))
+            {
+              continue;
+            } 
+
+          std::string aLineStr(aLine);
+          std::string::size_type pos = aLineStr.find_first_of(" \t", 0); 
+          pos = aLineStr.find_first_not_of(" \t", pos);
+          std::string::size_type lastpos = aLine.find_first_of(" \t", pos);
+          std::string verstr = aLineStr.substr(pos, lastpos-pos);
+          pos = aLineStr.find_first_not_of(" \t", lastpos);
+          lastpos = aLine.find_first_of(" \t", pos);
+          std::string filename;
+
+          if (lastpos == std::string::npos)
+            {
+              filename = aLineStr.substr(pos);
+            }
+          else
+            {
+              filename = aLineStr.substr(pos, lastpos-pos);
+            }
+
+          confMap[verstr] = filename; 
+        }
+
+      CLE_version_e ver = get_CLE_ver();
+      switch (ver)
+        {
+        case cle_ver_2_2:
+          {
+            std::map<std::string, std::string>::const_iterator citer 
+              = confMap.find(std::string("2.2"));
+            if (citer != confMap.end())
+              { 
+                std::string confPath = dsoListDir + citer->second;
+                std::ifstream confFile(confPath);
+                if (!confFile)
+                  {
+                    ALPS_say_msg(MSGPREFIX,
+                      true,
+                      "can't open %s", 
+                      confPath.c_str());
+                  }
+                else
+                  {
+                    build_DSO_mask(dontShipIt,confFile);
+                  }
+              }
+             break;
+          }
+        case cle_ver_3_1:
+          {
+            std::map<std::string, std::string>::const_iterator citer 
+              = confMap.find(std::string("3.1"));
+            if (citer != confMap.end())
+              { 
+                std::string confPath = dsoListDir + citer->second;
+                std::ifstream confFile(confPath);
+                if (!confFile)
+                  {
+                    ALPS_say_msg(MSGPREFIX,
+                      true,
+                      "can't open %s", 
+                      confPath.c_str());
+                  }
+                else
+                  {
+                    build_DSO_mask(dontShipIt,confFile);
+                  }
+              }
+             break;
+          }
+        case cle_ver_unknown:
+          {
+            //
+	    // In this case, DSOs from combined list are used 
+            //
+            std::map<std::string, std::string>::const_iterator citer;
+            for (citer = confMap.begin(); citer != confMap.end(); ++citer)
+              {
+                std::string confPath = dsoListDir + citer->second;
+                std::ifstream confFile(confPath);
+                if (!confFile)
+                  {
+                    ALPS_say_msg(MSGPREFIX,
+                      true,
+                      "can't open %s", confPath.c_str());
+
+                  }
+                else
+                  {
+                    build_DSO_mask(dontShipIt,confFile);
+                  } 
+              }
+            break;
+          }
+        default:
+          break;
+        }
+    }
+
+  //
   // library Distribution
   //
   std::vector<std::string>::iterator iter;
@@ -172,6 +383,12 @@ launch_daemons(int apid,
           ALPS_say_msg(MSGPREFIX, true, "Can't access %s", (*iter).c_str());
 	  rc = -1;
           // we will still try to launch daemons even if a library trasfer fails
+          continue;
+        }
+
+      if (dontShipIt.find((*iter)) != dontShipIt.end())
+        {
+          // this library already exists in CN and so no need to broadcast
           continue;
         }
 
@@ -196,13 +413,41 @@ launch_daemons(int apid,
     }
 
   char lcmdtmp[ALPS_STRING_MAX];
-  snprintf(lcmdtmp, ALPS_STRING_MAX, "%s %d %s %s", 
-    bestarter.c_str(), my_apid, daemonpath.c_str(), dargs.c_str());  
+
+  err_str = alps_launch_tool_helper(my_apid,pe0Node,true,false,1,&(daemonpath.c_str()));
+  if (err_str)
+    {
+      ALPS_say_msg(MSGPREFIX, true, "error in alps_launch_tool_helper: %s", err_str);
+      //
+      // If the executable relocation failed, we should use the original
+      // be daemon path
+      //
+      snprintf(lcmdtmp, ALPS_STRING_MAX, "%s %d %s %s", 
+      bestarter.c_str(), my_apid, daemonpath.c_str(), dargs.c_str());  
+    }
+  else
+    {
+      //
+      // Otherwise, the relocated daemon path is passed to ALPS tool helper
+      //  
+      char reloc_exec[PATH_MAX];
+      char *bncp = strdup(daemonpath.c_str());
+      char *bn = basename(bncp);
+      
+      snprintf (reloc_exec, PATH_MAX,
+         "/var/spool/alps/%d/toolhelper%d/%s",
+         my_apid, my_apid, bn);
+
+      snprintf(lcmdtmp, ALPS_STRING_MAX, "%s %d %s %s", 
+      bestarter.c_str(), my_apid, reloc_exec, dargs.c_str());  
+      free(bncp);
+    }
+
   char *lcmd = lcmdtmp;
   //
   // Launching backend daemons here 
   // 
-  //ALPS_say_msg(MSGPREFIX, false, "%s", lcmd );
+  ALPS_say_msg(MSGPREFIX, false, "%s", lcmd );
   err_str = alps_launch_tool_helper(my_apid, pe0Node,true, true, 1, &lcmd);
   if (err_str)
     {
@@ -488,6 +733,7 @@ get_dep_DSO (const std::string &daemonpath, std::vector<std::string> &dlibs)
 
   return 0; 
 }
+
 
 int
 main (int argc, char *argv[])

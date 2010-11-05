@@ -28,6 +28,7 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        Nov 04 2010 DHA: Added lib_SCRIPTS 
 ##        Jun 10 2010 DHA: Added alps_fe_colocator support
 ##        May 13 2010 DHA: Made for alps_be_starter
 ##
@@ -50,4 +51,6 @@ alps_be_starter: alps_be_starter.c Makefile
 
 alps_fe_colocator_CXXFLAGS      = @LNCHR_BIT_FLAGS@
 alps_fe_colocator_LDADD         = @LIBELF@ @LIBALPS@
-
+lib_SCRIPTS                     = CLE-dso.conf \
+                                  CLE_2_2-dso.conf \
+                                  CLE_3_1-dso.conf
