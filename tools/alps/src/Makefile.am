@@ -46,11 +46,15 @@ alps_fe_colocator_SOURCES = alps_fe_colocator.cxx
 alps_be_starter: alps_be_starter.c Makefile
 	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CFLAGS) $(CFLAGS) -o $@ $<   
 
-#alps_fe_colocator: alps_fe_colocator.cxx Makefile
-#	$(CPP) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) -o $@ $<   
-
 alps_fe_colocator_CXXFLAGS      = @LNCHR_BIT_FLAGS@
 alps_fe_colocator_LDADD         = @LIBELF@ @LIBALPS@
-lib_SCRIPTS                     = CLE-dso.conf \
+
+bin_SCRIPTS                     = CLE-dso.conf \
                                   CLE_2_2-dso.conf \
                                   CLE_3_1-dso.conf
+
+CLEANFILES                      = $(bin_SCRIPTS)
+EXTRA_DIST                      = CLE-dso.conf \
+                                  CLE_2_2-dso.conf \
+                                  CLE_3_1-dso.conf
+

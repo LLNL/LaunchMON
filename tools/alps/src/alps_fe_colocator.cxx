@@ -29,6 +29,7 @@
  *        Nov 05 2010 DHA: Support for excluding existing system DSOs from 
  *                         being broadcast. Credit to Andrew Gontarek at Cray
  *                         for providing DSO list for CLE3.1 and CLE2.2
+ *                         (ID: 3103796) 
  *        Nov 04 2010 DHA: Support for base executable relocation
  *        Jun 10 2010 DHA: File created 
  */
@@ -65,10 +66,12 @@ extern char *alpsGetMyNid(int *nid);
 
 #include <iostream>
 #include <vector>
+#include <map>
 #include <string>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
+#include <stdexcept>
 
 #if BIT64
 typedef Elf64_Shdr myElf_Shdr;
@@ -100,7 +103,7 @@ enum CLE_version_e {
 }; 
 
 const char XTRELEASE_FILE_PATH[] = "/etc/opt/cray/release/xtrelease";
-const char DSO_CONFIG_FILE = "CLE-dso.conf";
+const char DSO_CONFIG_FILE[] = "CLE-dso.conf";
 const char MSGPREFIX[] = "ALPS FE COLOCATOR";
 
 static void
@@ -150,16 +153,16 @@ get_CLE_ver()
       CLE_version_e rc = cle_ver_unknown;
       std::ifstream xtrelease_file(XTRELEASE_FILE_PATH);
 
-      if ( !xtrease_file )
+      if ( !xtrelease_file )
         {
           rc = cle_ver_2_2;
         }
       else 
         {
-          std::ostreamstream oss;
+          std::ostringstream oss;
           oss << xtrelease_file.rdbuf();  
           std::string::size_type pos = oss.str().find_first_of("=", 0);
-          const std::string vstr("3.1.")
+          const std::string vstr("3.1.");
           if (oss.str().compare(pos+1, 4, vstr) == 0)
             {
               rc = cle_ver_3_1;
@@ -168,7 +171,7 @@ get_CLE_ver()
 
       return rc;
     }
-    catch (out_of_range) {
+    catch (std::out_of_range e) {
       return cle_ver_unknown;
     }
 }
@@ -177,7 +180,7 @@ get_CLE_ver()
 static 
 void
 build_DSO_mask (std::map<std::string, int> &dontShipIt, 
-                const std::ifstream &listFstream)
+                std::ifstream &listFstream)
 {
   char apath[PATH_MAX];
 
@@ -240,13 +243,13 @@ launch_daemons(int apid,
   //
   // building dontshipit map 
   //
-  std::map<std::string, int> &dontShipIt;
+  std::map<std::string, int> dontShipIt;
   std::string dsoListPath;
   std::string dsoListDir;
   char *pref = getenv("LMON_PREFIX");
   if (pref)
     {
-      dsoListDir = std::string(pref) + std::string("/lib/");
+      dsoListDir = std::string(pref) + std::string("/bin/");
       dsoListPath = dsoListDir + DSO_CONFIG_FILE;
     }
   else
@@ -256,7 +259,7 @@ launch_daemons(int apid,
                    "error LMON_PREFIX envVar not found");
     }
 
-  std::ifstream dsofstream(dsoListPath);
+  std::ifstream dsofstream(dsoListPath.c_str());
   if (!dsofstream)
     {
       ALPS_say_msg(MSGPREFIX, 
@@ -266,7 +269,7 @@ launch_daemons(int apid,
     }
   else
     {
-      aLine[PATH_MAX];
+      char aLine[PATH_MAX];
       std::map<std::string, std::string> confMap;
       while (!dsofstream.getline(aLine, PATH_MAX).eof())
         {
@@ -278,10 +281,10 @@ launch_daemons(int apid,
           std::string aLineStr(aLine);
           std::string::size_type pos = aLineStr.find_first_of(" \t", 0); 
           pos = aLineStr.find_first_not_of(" \t", pos);
-          std::string::size_type lastpos = aLine.find_first_of(" \t", pos);
+          std::string::size_type lastpos = aLineStr.find_first_of(" \t", pos);
           std::string verstr = aLineStr.substr(pos, lastpos-pos);
           pos = aLineStr.find_first_not_of(" \t", lastpos);
-          lastpos = aLine.find_first_of(" \t", pos);
+          lastpos = aLineStr.find_first_of(" \t", pos);
           std::string filename;
 
           if (lastpos == std::string::npos)
@@ -306,7 +309,7 @@ launch_daemons(int apid,
             if (citer != confMap.end())
               { 
                 std::string confPath = dsoListDir + citer->second;
-                std::ifstream confFile(confPath);
+                std::ifstream confFile(confPath.c_str());
                 if (!confFile)
                   {
                     ALPS_say_msg(MSGPREFIX,
@@ -328,7 +331,7 @@ launch_daemons(int apid,
             if (citer != confMap.end())
               { 
                 std::string confPath = dsoListDir + citer->second;
-                std::ifstream confFile(confPath);
+                std::ifstream confFile(confPath.c_str());
                 if (!confFile)
                   {
                     ALPS_say_msg(MSGPREFIX,
@@ -352,7 +355,7 @@ launch_daemons(int apid,
             for (citer = confMap.begin(); citer != confMap.end(); ++citer)
               {
                 std::string confPath = dsoListDir + citer->second;
-                std::ifstream confFile(confPath);
+                std::ifstream confFile(confPath.c_str());
                 if (!confFile)
                   {
                     ALPS_say_msg(MSGPREFIX,
@@ -413,8 +416,9 @@ launch_daemons(int apid,
     }
 
   char lcmdtmp[ALPS_STRING_MAX];
-
-  err_str = alps_launch_tool_helper(my_apid,pe0Node,true,false,1,&(daemonpath.c_str()));
+  char *baseexec = strdup(daemonpath.c_str());
+  err_str = alps_launch_tool_helper(my_apid,pe0Node,true,false,1,&baseexec);
+  free(baseexec);
   if (err_str)
     {
       ALPS_say_msg(MSGPREFIX, true, "error in alps_launch_tool_helper: %s", err_str);
