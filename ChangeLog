@@ -1,3 +1,14 @@
+2010-11-05 Dong H. Ahn <ahn1@llnl.gov>
+	* tools/alps/src/alps_fe_colocator.cxx
+	tools/alps/src/CLE-dso.conf
+	tools/alps/src/CLE_2_2-dso.conf
+	tools/alps/src/CLE_3_1-dso.conf
+	tools/alps/src/Makefile.am:
+	Added support for excluding certain system DSOs from 
+	being broadcast. Credit to Andrew Gontarek at Cray
+	for providing DSO list for CLE3.1 and CLE2.2; 
+	Added Support for base executable relocation (ID: 3103796).
+
 2010-10-27 Dong H. Ahn <ahn1@llnl.gov>
 	* launchmon/man/LMON_be_finalize.3:
 	Added a BlueGene note describing the use of

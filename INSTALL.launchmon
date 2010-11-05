@@ -21,7 +21,7 @@ the LaunchMON package.
 
 4) Build.
 
-   % gmake
+   % make
 
    will build the package directly within the source tree.  
 
