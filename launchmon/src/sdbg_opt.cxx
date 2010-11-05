@@ -453,10 +453,17 @@ opts_args_t::construct_launch_string ()
 
   std::string bulklauncher = my_opt->debugtarget;
 #ifdef RM_FE_COLOC_CMD
-  char *pref2; 
-  bulklauncher = RM_FE_COLOC_CMD;
-  if (pref2 = getenv("LMON_PREFIX")) 
-    bulklauncher = std::string(pref) + std::string("/bin/") + bulklauncher;
+  char *bnbuf = strdup(bulklauncher.c_str());
+  char *dt = basename(bnbuf);
+
+  if ((std::string(dt) != std::string("LE_model_checker.debug")) 
+      && (std::string(dt) != std::string("LE_model_checker")))
+    {
+      char *pref2; 
+      bulklauncher = RM_FE_COLOC_CMD;
+      if (pref2 = getenv("LMON_PREFIX")) 
+        bulklauncher = std::string(pref) + std::string("/bin/") + bulklauncher;
+    }
 #endif
   
   bool initc = my_rmconfig->init( bulklauncher,

@@ -48,8 +48,9 @@ fi
 
 NUMTASKS=`expr $NUMNODES \* @SMP@ / 2`
                                                                                                                                                
+export LMON_PREFIX=@LMONPREFIX@
 export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
-                                                                                                                                               
+
 $NOHUP fe_launch_smoketest@EXE@ `pwd`/simple_MPI@EXE@ $NUMTASKS $NUMNODES pdebug `pwd`/be_kicker@EXE@
 
 if test -f nohup.out; then

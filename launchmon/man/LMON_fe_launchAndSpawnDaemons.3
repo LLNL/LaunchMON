@@ -119,6 +119,10 @@ spawn an engine remotely (e.g., "/usr/bin/rsh")
 .TP
 .B LMON_PREFIX
 sets the installation path of the package.
+\fB[Cray ALPS Note]\fR Setting this environment variable is
+required for Cray ALPS for which LaunchMON builds
+various tool helper executables and configuration 
+files.  
 .TP
 .B LMON_DEBUG_LAUNCHMON_ENGINE
 invokes totalview to aid in debugging of the LaunchMON engine

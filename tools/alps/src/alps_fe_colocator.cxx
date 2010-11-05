@@ -254,17 +254,19 @@ launch_daemons(int apid,
     }
   else
     {
+      dsoListDir = std::string("./");
+      dsoListPath = dsoListDir + DSO_CONFIG_FILE;
       ALPS_say_msg(MSGPREFIX, 
-                   true, 
-                   "error LMON_PREFIX envVar not found");
+                   false, 
+                   "LMON_PREFIX envVar not found");
     }
 
   std::ifstream dsofstream(dsoListPath.c_str());
   if (!dsofstream)
     {
       ALPS_say_msg(MSGPREFIX, 
-                   true, 
-                   "error %s not found", 
+                   false, 
+                   "%s not found... selective DSO bcast will not work", 
                    dsoListPath.c_str());
     }
   else
@@ -360,8 +362,8 @@ launch_daemons(int apid,
                   {
                     ALPS_say_msg(MSGPREFIX,
                       true,
-                      "can't open %s", confPath.c_str());
-
+                      "can't open %s", 
+                      confPath.c_str());
                   }
                 else
                   {
