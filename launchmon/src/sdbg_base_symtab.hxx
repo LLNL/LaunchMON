@@ -252,12 +252,12 @@ public:
   //
   // Some Util methods.
   //
-  virtual const std::string decode_binding(int code) const     
-                          { return std::string(SYMTAB_UNINIT_STRING); }
-  virtual const std::string decode_visibility (int code) const
-                          { return std::string(SYMTAB_UNINIT_STRING); }
-  virtual const std::string decode_type(int code) const
-                          { return std::string(SYMTAB_UNINIT_STRING); }
+  virtual void decode_binding(int code, std::string &s) const     
+                          { s = std::string(SYMTAB_UNINIT_STRING); }
+  virtual void decode_visibility (int code, std::string &s) const
+                          { s = std::string(SYMTAB_UNINIT_STRING); }
+  virtual void decode_type(int code, std::string &s) const
+                          { s = std::string(SYMTAB_UNINIT_STRING); }
 
 protected:
   std::map<std::string, symbol_base_t<VA>*, ltstr> linkage_symtab;
@@ -276,7 +276,7 @@ private:
   std::string base_image_name;
   std::string path;
   VA image_base_address;
-  EXECHANDLER* native_exec_handler;
+  EXECHANDLER *native_exec_handler;
 };
 
 #endif // SDBG_BASE_SYMTAB_HXX
