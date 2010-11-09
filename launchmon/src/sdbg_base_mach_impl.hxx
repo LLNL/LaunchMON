@@ -474,6 +474,10 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::~process_base_t ()
       //
       // this should call destructors for each containing thread obj 
       //
+      for (thr_iter = thrlist.begin(); thr_iter != thrlist.end(); ++thr_iter)
+        {
+          delete thr_iter->second;
+        }
       thrlist.clear();
     }
 }
