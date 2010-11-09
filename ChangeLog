@@ -1,3 +1,22 @@
+2010-11-08 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/sdbg_base_symtab_impl.hxx
+	launchmon/src/sdbg_base_mach_impl.hxx
+	launchmon/src/sdbg_base_symtab.hxx
+	launchmon/src/linux/sdbg_linux_symtab.hxx
+	launchmon/src/linux/main.cxx
+	launchmon/src/linux/lmon_api/lmon_fe.cxx
+	launchmon/src/linux/lmon_api/lmon_lmonp_msg.cxx
+	launchmon/src/linux/lmon_api/lmon_be_comm.cxx
+	launchmon/src/linux/lmon_api/lmon_be.cxx
+	launchmon/src/linux/sdbg_linux_launchmon.cxx
+	launchmon/src/linux/sdbg_linux_symtab_impl.hxx
+	launchmon/src/sdbg_opt.cxx
+	launchmon/src/sdbg_base_launchmon_impl.hxx
+	test/src/be_kicker.cxx
+	test/src/be_kicker_usrpayload_test.cxx:
+	Added tweaks to the memory use as memory checkers
+	are applied in preparation for the official 0.7 release.
+
 2010-11-05 Dong H. Ahn <ahn1@llnl.gov>
 	* tools/alps/src/alps_fe_colocator.cxx
 	tools/alps/src/CLE-dso.conf
