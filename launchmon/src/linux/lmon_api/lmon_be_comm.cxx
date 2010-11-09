@@ -275,6 +275,8 @@ LMON_be_internal_init ( int* argc, char*** argv, char *myhn )
       return LMON_EINVAL;
     }
 
+  free(portlist);
+
 # if VERBOSE
     LMON_say_msg(LMON_BE_MSG_PREFIX, false,
       "My rank is %d, My size is %d", ICCL_rank, ICCL_size);
