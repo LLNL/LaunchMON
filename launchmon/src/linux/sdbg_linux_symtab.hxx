@@ -205,9 +205,9 @@ public:
   // Some Util methods.
   //
   virtual LMON_ELF_visibility resolve_binding ( int code ) const;
-  virtual const std::string decode_binding ( int code ) const;
-  virtual const std::string decode_visibility ( int code ) const;
-  virtual const std::string decode_type ( int code ) const;
+  virtual void decode_binding ( int code, std::string &s ) const;
+  virtual void decode_visibility ( int code, std::string &s ) const;
+  virtual void decode_type ( int code, std::string &s ) const;
   
 private:
   bool LEVELCHK(self_trace_verbosity level) 
