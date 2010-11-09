@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Nov 01 2010 DHA: Fix small memory leaks in createSession
  *        Jun 30 2010 DHA: Added faster engine parsing error detection support
  *        Jun 28 2010 DHA: Added LMON_fe_getRMInfo support
  *        Apr 27 2010 DHA: Added MEASURE_TRACING_COST support.
@@ -3205,6 +3206,14 @@ LMON_fe_createSession ( int *sessionHandle )
                                fe_listensock_info_secchk,
                                4 );
 
+      //
+      // release memory
+      //
+      for (i=0; i < 4; ++i)
+        {
+          free(fe_listensock_info_secchk[i].envName);
+          free(fe_listensock_info_secchk[i].envValue);
+        }
 
       if ( getenv("LMON_DEBUG_BES"))
         {
@@ -3219,6 +3228,13 @@ LMON_fe_createSession ( int *sessionHandle )
 	  de[1].envValue = strdup(getenv("DISPLAY"));
 	  de[1].next = NULL;
 	  LMON_fe_putToDaemonEnv ( &(mydesc->daemonEnvList[0]), de, 2 );
+          //
+          // release memory
+          //
+          free(de[0].envName);
+          free(de[0].envValue);
+          free(de[1].envName);
+          free(de[1].envValue);
         }
 
       fe_listensock_info_secchk_mw[0].envName 
@@ -3258,6 +3274,15 @@ LMON_fe_createSession ( int *sessionHandle )
                                fe_listensock_info_secchk_mw,
                                4 );
 
+      //
+      // release memory
+      //
+      for (i=0; i < 4; ++i)
+        {
+          free(fe_listensock_info_secchk_mw[i].envName);
+          free(fe_listensock_info_secchk_mw[i].envValue);
+        }
+
       if ( getenv("LMON_DEBUG_MWS"))
         {
 	  //
@@ -3271,6 +3296,13 @@ LMON_fe_createSession ( int *sessionHandle )
 	  de[1].envValue = strdup(getenv("DISPLAY"));
 	  de[1].next = NULL;
 	  LMON_fe_putToDaemonEnv ( &(mydesc->daemonEnvList[1]), de, 2 );
+          //
+          // release memory
+          //
+          free(de[0].envName);
+          free(de[0].envValue);
+          free(de[1].envName);
+          free(de[1].envValue);
         }
 
       sess.sessionPtrIndex++;     // increment sessionPtrIndex to point to the next
