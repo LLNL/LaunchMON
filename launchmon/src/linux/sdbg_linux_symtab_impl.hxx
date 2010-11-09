@@ -607,6 +607,9 @@ throw(symtab_exception_t)
 
   while ( first_sym < last_sym ) 
     { 
+      //
+      // Some memory checkers complain symname is leaked, but 
+      // we can't simply free it because it is unclear if it's safe
       char* symname = elf_strptr(elf_h, 
 				 shdr->sh_link, 
 				 (size_t) first_sym->st_name); 
@@ -623,16 +626,19 @@ throw(symtab_exception_t)
 		     (const VA) first_sym->st_value,
 		     (const VA) SYMTAB_UNINIT_ADDR);
 
-	  a_linksym->set_binding(decode_binding(first_sym->st_info));	  
+          string tmp; 
+          decode_binding(first_sym->st_info, tmp);
+	  a_linksym->set_binding(tmp);	  
           a_linksym->set_vis(resolve_binding(first_sym->st_info));
-	  a_linksym->set_visibility(decode_visibility(first_sym->st_other));
-	  a_linksym->set_type(decode_type(first_sym->st_info));
+          decode_visibility(first_sym->st_other, tmp);
+	  a_linksym->set_visibility(tmp);
+          decode_type(first_sym->st_info, tmp); 
+	  a_linksym->set_type(tmp);
           a_linksym->set_defined((first_sym->st_shndx != SHN_UNDEF)? true : false);
 
-          /* TODO: a tool says keystr is leaked, confirm if it really does */
-	  string* keystr = new string(symname);
+	  string keystr(symname);
 
-	  get_linkage_symtab().insert(make_pair((*keystr), 
+	  get_linkage_symtab().insert(make_pair(keystr, 
 						(symbol_base_t<VA>*) a_linksym));
 	}
 
@@ -845,12 +851,10 @@ linux_image_t<LINUX_IMAGE_TEMPLPARAM>::fetch_DSO_info
     Determines the symbol type
 */
 template <LINUX_IMAGE_TEMPLATELIST>
-const std::string 
-linux_image_t<LINUX_IMAGE_TEMPLPARAM>::decode_type(int code) const
+void 
+linux_image_t<LINUX_IMAGE_TEMPLPARAM>::decode_type(int code, std::string &ret_string) const
 {
   using namespace std;
-
-  string ret_string;
 
 #if BIT64 
   switch(ELF64_ST_TYPE(code))
@@ -860,63 +864,61 @@ linux_image_t<LINUX_IMAGE_TEMPLPARAM>::decode_type(int code) const
     {
 
     case STT_NOTYPE:
-      ret_string = "Symbol type is unspecified";
+      ret_string = string("Symbol type is unspecified");
       break;
 
     case STT_OBJECT:
-      ret_string = "Symbol is a data object";
+      ret_string = string("Symbol is a data object");
       break;
 
     case STT_FUNC:
-      ret_string = "Symbol is a code object";
+      ret_string = string("Symbol is a code object");
       break;
 
     case STT_SECTION:
-      ret_string = "Symbol associated with a section";
+      ret_string = string("Symbol associated with a section");
       break;
 
     case STT_FILE:
-      ret_string = "Symbol's name is file name";
+      ret_string = string("Symbol's name is file name");
       break;
 
     case STT_COMMON:
-      ret_string = "Symbol is a common data object";
+      ret_string = string("Symbol is a common data object");
       break;
 
     case STT_TLS:
-      ret_string = "Symbol is thread-local data object";
+      ret_string = string("Symbol is thread-local data object");
       break;
 
     case STT_NUM:
-      ret_string = "Number of defined types.";
+      ret_string = string("Number of defined types");
       break;
 
     case STT_LOOS:
-      ret_string = "Start of OS-specific";
+      ret_string = string("Start of OS-specific");
       break;
 
     case STT_HIOS:
-      ret_string = "End of OS-specific";
+      ret_string = string("End of OS-specific");
       break;
 
     case STT_LOPROC:
-      ret_string = "Start of processor-specific";
+      ret_string = string("Start of processor-specific");
       break;
 
     case STT_HIPROC:
-      ret_string = "End of processor-specific";
+      ret_string = string("End of processor-specific");
       break;
 
     default:    
-      ret_string = SYMTAB_UNINIT_STRING;
+      ret_string = string(SYMTAB_UNINIT_STRING);
       break;
     }
-  
-  return ret_string;
 }
 
 
-//! PROTECTED: image_t<VA>::decode_binding --
+//! PROTECTED: image_t<VA>::resolve_binding --
 /*!
     Determines the symbol binding information
 */
@@ -963,12 +965,11 @@ linux_image_t<LINUX_IMAGE_TEMPLPARAM>::resolve_binding(int code) const
     Determines the symbol binding information
 */
 template <LINUX_IMAGE_TEMPLATELIST>
-const std::string  
-linux_image_t<LINUX_IMAGE_TEMPLPARAM>::decode_binding(int code) const
+void
+linux_image_t<LINUX_IMAGE_TEMPLPARAM>::decode_binding(int code, std::string &ret_string) const
 {  
   using namespace std;
 
-  string ret_string;
 #if BIT64
   switch(ELF64_ST_BIND(code))
 #else
@@ -1012,8 +1013,6 @@ linux_image_t<LINUX_IMAGE_TEMPLPARAM>::decode_binding(int code) const
       ret_string = SYMTAB_UNINIT_STRING;
       break;
     }
-  
-  return ret_string; 
 }
 
 
@@ -1022,12 +1021,11 @@ linux_image_t<LINUX_IMAGE_TEMPLPARAM>::decode_binding(int code) const
     Determines the symbol visibility information
 */
 template <LINUX_IMAGE_TEMPLATELIST>
-const std::string
-linux_image_t<LINUX_IMAGE_TEMPLPARAM>::decode_visibility (int code) const
+void
+linux_image_t<LINUX_IMAGE_TEMPLPARAM>::decode_visibility (int code, std::string &ret_string) const
 {
   using namespace std;
  
-  string ret_string;
 #if BIT64 
   switch(ELF64_ST_VISIBILITY(code))
 #else
@@ -1054,8 +1052,6 @@ linux_image_t<LINUX_IMAGE_TEMPLPARAM>::decode_visibility (int code) const
       ret_string = SYMTAB_UNINIT_STRING;
       break;
     }
-
-  return ret_string;
 }
 
 
