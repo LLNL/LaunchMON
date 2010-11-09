@@ -313,6 +313,9 @@ get_auxv ( pid_t pid )
       }
   } while (auxvBuf.a_type != AT_BASE);
 
+
+  fclose(fptr);
+
   ret_pc = (auxvBuf.a_type == AT_BASE)? auxvBuf.a_un.a_val : T_UNINIT_HEX;
 
   return ret_pc;
@@ -683,6 +686,11 @@ linux_launchmon_t::launch_tool_daemons (
 	    get_resid()
 #endif
       );	
+
+#if PMGR_BASED
+      free(tokenize);
+#endif
+      free(tokenize2);
 
       //
       // For non-colocation RM, we need to fork/exec
@@ -3110,7 +3118,7 @@ linux_launchmon_t::handle_exit_event (
 
       if (p.get_cur_thread_ctx () != p.get_master_thread_pid()) 
 	{
-
+          delete p.get_thrlist()[p.get_cur_thread_ctx()];
 	  p.get_thrlist().erase(p.get_cur_thread_ctx());
 	  {
 	    self_trace_t::trace ( LEVELCHK(level2), 
