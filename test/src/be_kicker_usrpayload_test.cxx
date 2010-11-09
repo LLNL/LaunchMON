@@ -408,6 +408,13 @@ main( int argc, char* argv[] )
     }
 #endif
 
+  for (i=0; i < proctab_size; i++)
+    {
+      if (proctab[i].pd.executable_name)
+        free(proctab[i].pd.executable_name);
+      if (proctab[i].pd.host_name)
+        free(proctab[i].pd.host_name);
+    }
   free (proctab);
 
   /* sending this to mark the end of the BE session */
