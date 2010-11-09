@@ -233,6 +233,9 @@ image_base_t<BASE_IMAGE_TEMPLPARAM>::image_base_t
   
   sprintf(tempstr, "%s", lib.c_str());
   path = lib;
+  //
+  // some memory checkers complain about basename...
+  //  
   base_image_name = basename((char*) tempstr);
   MODULENAME = self_trace_t::symtab_module_trace.module_name;
 }
@@ -257,16 +260,38 @@ image_base_t<BASE_IMAGE_TEMPLPARAM>::image_base_t
 
 //! PUBLIC: image_base_t<> destructor
 /*!
-    desructor
+    destructor
 */
 template <BASE_IMAGE_TEMPLATELIST>
 image_base_t<BASE_IMAGE_TEMPLPARAM>::~image_base_t()
 {
   if (native_exec_handler)   
-    native_exec_handler->finalize();
+    {
+      native_exec_handler->finalize();
+      delete native_exec_handler;
+      native_exec_handler = NULL;
+    }
 
-  linkage_symtab.clear();
-  debug_symtab.clear();    
+  if (!(linkage_symtab.empty()))
+    {
+      typename std::map<std::string, symbol_base_t<VA>*, ltstr>::iterator iter;
+      for (iter = linkage_symtab.begin(); iter != linkage_symtab.end(); ++iter)
+        {
+          delete iter->second;
+          iter->second = NULL;
+        }
+      linkage_symtab.clear(); 
+    }
+  if (!(debug_symtab.empty()))
+    {
+      typename std::map<std::string, symbol_base_t<VA>*, ltstr>::iterator iter;
+      for (iter = debug_symtab.begin(); iter != debug_symtab.end(); ++iter)
+        {
+          delete iter->second;
+          iter->second = NULL;
+        }
+      debug_symtab.clear();
+    }
 }
 
 
@@ -433,7 +458,9 @@ image_base_t<BASE_IMAGE_TEMPLPARAM>::init ( const std::string &lib )
   sprintf(tempstr, "%s", lib.c_str());
   path = lib;
   base_image_name = basename((char*) tempstr);
-  
+  //
+  // some memory checkers complain about basename...
+  //  
   return (init());
 }
 
