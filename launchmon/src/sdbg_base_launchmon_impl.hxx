@@ -161,7 +161,31 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::~launchmon_base_t ()
   if (ttracer)
     delete ttracer;
 
-  proctable_copy.clear();
+  if (!proctable_copy.empty())
+    {
+      std::map<std::string, std::vector<MPIR_PROCDESC_EXT *> >::iterator iter;
+      for(iter = proctable_copy.begin(); iter != proctable_copy.end(); ++iter)
+        {
+          if (!(iter->second.empty())) 
+            {
+              std::vector<MPIR_PROCDESC_EXT *>::iterator viter;
+              for (viter = iter->second.begin(); viter != iter->second.end(); ++viter)
+                {
+                  if ((*viter)->pd.host_name)
+                    {
+                      free((*viter)->pd.host_name);
+                    }
+
+                  if ((*viter)->pd.executable_name)
+                    {
+                      free((*viter)->pd.executable_name);
+                    }
+                  free(*viter);
+                }
+            }
+        }
+      proctable_copy.clear();
+    }
 }
 
 //!
