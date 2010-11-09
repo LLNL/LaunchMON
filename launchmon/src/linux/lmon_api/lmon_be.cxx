@@ -1025,6 +1025,26 @@ LMON_be_finalize ()
   if ( LMON_be_internal_finalize () != LMON_OK )
     return LMON_ESUBCOM;
 
+  if (bedata.proctab_msg)
+    free(bedata.proctab_msg);
+
+  if (!proctab_cache.empty())
+    {
+      std::map<std::string,std::vector<MPIR_PROCDESC_EXT *> >::iterator iter;
+      std::vector<MPIR_PROCDESC_EXT *>::iterator vectiter;
+      for (iter=proctab_cache.begin(); iter != proctab_cache.end(); ++iter)
+        {
+          for (vectiter = iter->second.begin(); vectiter != iter->second.end(); ++vectiter)
+            {
+              free((*vectiter)->pd.executable_name);
+              free((*vectiter)->pd.host_name);
+              free((*vectiter));
+            }
+        }
+        proctab_cache.clear();
+
+    }
+
   return LMON_OK;
 }
 
@@ -1690,7 +1710,8 @@ LMON_be_ready ( void *udata )
         int upl_leng;
     	readymsg = (lmonp_t *) malloc ( 
     			      sizeof (lmonp_t) 
-    			      + LMON_MAX_USRPAYLOAD );
+    			      + LMON_MAX_USRPAYLOAD);
+        memset(readymsg, '\0', sizeof (lmonp_t) + LMON_MAX_USRPAYLOAD);
         set_msg_header ( 
                     readymsg,
                     lmonp_fetobe,
@@ -1708,7 +1729,8 @@ LMON_be_ready ( void *udata )
       }
     else
       {
-    	readymsg = (lmonp_t *) malloc ( sizeof (lmonp_t));
+    	readymsg = (lmonp_t *) calloc ( sizeof (lmonp_t), 1);
+        memset(readymsg, '\0', sizeof(lmonp_t));
     	readymsg->usr_payload_length = 0;
       }
 
@@ -1995,7 +2017,7 @@ LMON_be_sendUsrData ( void* udata )
         int upl_leng;
     	usrmsg = (lmonp_t *) malloc ( 
     			      sizeof (lmonp_t) 
-    			      + LMON_MAX_USRPAYLOAD );
+    			      + LMON_MAX_USRPAYLOAD);
 	if ( usrmsg == NULL )
 	  {
 	    LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
@@ -2004,7 +2026,7 @@ LMON_be_sendUsrData ( void* udata )
 	    lrc = LMON_ENOMEM;
             goto something_bad;
 	  }
-	
+        memset(usrmsg, '\0', sizeof (lmonp_t) + LMON_MAX_USRPAYLOAD);	
         set_msg_header ( 
                     usrmsg,
                     lmonp_fetobe,
@@ -2019,7 +2041,7 @@ LMON_be_sendUsrData ( void* udata )
 	    goto something_bad;
           }
 
-    	assert ( upl_leng <= LMON_MAX_USRPAYLOAD );
+    	//assert ( upl_leng <= LMON_MAX_USRPAYLOAD );
         usrmsg->usr_payload_length = upl_leng;
       }
     else
@@ -2033,6 +2055,7 @@ LMON_be_sendUsrData ( void* udata )
 	    lrc = LMON_ENOMEM;
             goto something_bad;
 	  }
+        memset(usrmsg, '\0', sizeof (lmonp_t));  
     	usrmsg->usr_payload_length = 0;
 	lrc = LMON_ENCLLB;
       }
