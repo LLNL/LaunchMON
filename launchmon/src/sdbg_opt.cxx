@@ -151,7 +151,6 @@ opts_args_t::process_args ( int *argc, char ***argv )
   char *tracingmodule;
   char c;
   string modulename;
-  string bspth;
   int level;
   int i = 1;
   self_trace_verbosity ver = quiet;
@@ -247,20 +246,21 @@ opts_args_t::process_args ( int *argc, char ***argv )
 	      break;
 
 	    case 'd':
-	      my_opt->tool_daemon =  nargv[i+1];
-	      bspth = nargv[i+1];
-	      if (!check_path(bspth, my_opt->tool_daemon))
-		{
-		  //
-	          // tool daemon nonexistent
-		  // 
-		  has_parse_error = true;
-		  fin_parsing = true;
-		  rv = false;
-		}
-	      i++;
-	      break;
-	
+              {
+	        my_opt->tool_daemon =  nargv[i+1];
+                string dtar(nargv[i+1]);
+	        if (!check_path(dtar, my_opt->tool_daemon))
+		  {
+		    //
+	            // tool daemon nonexistent
+		    // 
+		    has_parse_error = true;
+		    fin_parsing = true;
+		    rv = false;
+		  }
+	        i++;
+	        break;
+	      }
 	    case 't':
 	      my_opt->tool_daemon_opts = nargv[i+1];
 	      i++;
@@ -357,8 +357,8 @@ opts_args_t::process_args ( int *argc, char ***argv )
 	{
 	  debugtarget = nargv[i];
 	  my_opt->debugtarget = nargv[i];
-	  bspth = debugtarget;
-	  if (!check_path(bspth, my_opt->debugtarget))
+          string dtar(debugtarget);
+	  if (!check_path(dtar, my_opt->debugtarget))
             {
 	      //
 	      // job launcher path nonexistent
@@ -572,28 +572,28 @@ opts_args_t::check_path ( std::string &base, std::string &path )
   //
   while ( stat( path.c_str(), &pathchk ) != 0 ) 
     {		  
-      pth = strtok(mypath, ":");
+      pth = strtok(mypathstart, ":");
       if ( (base[0] != '/') && pth != NULL ) 
 	{
 	  string dt = string(pth) + string("/") +  string(base);
 	  path = dt;
 	}
-    else 
-      {
-	{
-	  self_trace_t::trace ( LEVELCHK(quiet), 
-	  MODULENAME,
-	  1,
-	  "the path[%s] does not exit.",
-	  base.c_str());
-	}
-	rc = false;
-	break;
-      }		
-      mypath = NULL;	
+      else 
+        {
+	  {
+	    self_trace_t::trace ( LEVELCHK(quiet), 
+	    MODULENAME,
+	    1,
+	    "the path[%s] does not exit.",
+	    base.c_str());
+	  }
+	  rc = false;
+	  break;
+        }		
+      mypathstart = NULL;	
     }
   
-  free(mypathstart);
+  free(mypath);
 
   return rc;
 }
