@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Nov  08 2010 DHA: Added a lexical scope around the driver object
+ *                          to support memory tools 
  *        Aug  10 2008 DHA: Now returns EXIT_FAILURE
  *        Mar  11 2008 DHA: Added Linux PPC support
  *        Feb  09 2008 DHA: Added LLNS Copyright
@@ -52,15 +54,18 @@ int main(int argc, char* argv[])
   try 
   {
 
+    int rc = EXIT_FAILURE;
+      {
 #if X86_ARCHITECTURE || X86_64_ARCHITECTURE || PPC_ARCHITECTURE
-    //
-    // driver instantiation for the linux platform.
-    //
-    //
-    linux_driver_t<T_VA,T_WT,T_IT,T_GRS,T_FRS> driver;
+        //
+        // driver instantiation for the linux platform.
+        //
+        //
+        linux_driver_t<T_VA,T_WT,T_IT,T_GRS,T_FRS> driver;
 #endif
-
-    return ( driver.driver_main(argc, argv));
+        rc = driver.driver_main(argc, argv); 
+      }
+    return rc; 
   }
   catch ( symtab_exception_t e ) 
     {
@@ -76,7 +81,7 @@ int main(int argc, char* argv[])
       //
       // return EXIT_FAILURE
       //
-      return -1;
+      return EXIT_FAILURE;
     }
   catch ( tracer_exception_t e ) 
     {
@@ -84,6 +89,6 @@ int main(int argc, char* argv[])
       //
       // return EXIT_FAILURE
       //
-      return -1;
+      return EXIT_FAILURE;
     }
 }
