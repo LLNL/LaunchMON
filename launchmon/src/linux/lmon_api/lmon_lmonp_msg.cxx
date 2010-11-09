@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Nov 08 2010 DHA: Added memset to set_msg_header to remove
+ *                         write-into-uninitialized buf conditions
  *        Dec 23 2009 DHA: Added explict config.h inclusion 
  *        Mar 13 2009 DHA: Added large nTasks supporf
  *        Mar 05 2008 DHA: Added timedaccept support 
@@ -560,6 +562,8 @@ set_msg_header (lmonp_t *msg,
 {
   if (!msg)
     return -1;
+
+  memset(msg, '\0', sizeof(*msg));
 
   msg->msgclass = mc;
 
