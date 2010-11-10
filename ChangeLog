@@ -1,3 +1,25 @@
+2010-11-09 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/linux/sdbg_linux_launchmon.cxx:
+	Added a fix for a scalability bug. When launchmon puts
+	comma-separated hostnames in one line, srun's 
+	--node-list option fails with 
+	"srun: error: Line 1, of hostfile ...hostnamefn.31504 too long."
+	For Moe Jette's suggestion, the newline character
+	is used instead as the delimiter.
+
+	At 1334 Sierra nodes (16008 processes): Cold Start 
+	The inclusive LMON overhead of bootstrapping the ICCL layer: 8.673522 secs
+	The exclusive LMON overhead of bootstrapping the ICCL layer: 0.050768 secs
+	LMON_fe_launchAndSpawnDaemons perf: 18 (1289347047 - 1289347029) seconds 568745 (648176 - 79431) usec
+	LMON_fe_getProctable perf: 0 (1289347047 - 1289347047) seconds 2813 (651002 - 648189) usec
+
+	At 1334 Sierra nodes (16008 processes): Warm Start 
+	The inclusive LMON overhead of bootstrapping the ICCL layer: 1.128388 secs
+	The exclusive LMON overhead of bootstrapping the ICCL layer: 0.411942 secs
+	LMON_fe_launchAndSpawnDaemons perf: 3 (1289347052 - 1289347048) seconds 774304 (468822 - 694518) usec
+	LMON_fe_getProctable perf: 0 (1289347052 - 1289347052) seconds 2277 (471121 - 468844) usec
+
+
 2010-11-08 Dong H. Ahn <ahn1@llnl.gov>
 	* launchmon/src/sdbg_base_symtab_impl.hxx
 	launchmon/src/sdbg_base_mach_impl.hxx
@@ -17,6 +39,7 @@
 	Added tweaks to the memory use as memory checkers
 	are applied in preparation for the official 0.7 release.
 
+
 2010-11-05 Dong H. Ahn <ahn1@llnl.gov>
 	* tools/alps/src/alps_fe_colocator.cxx
 	tools/alps/src/CLE-dso.conf
@@ -27,6 +50,7 @@
 	being broadcast. Credit to Andrew Gontarek at Cray
 	for providing DSO list for CLE3.1 and CLE2.2; 
 	Added Support for base executable relocation (ID: 3103796).
+
 
 2010-10-27 Dong H. Ahn <ahn1@llnl.gov>
 	* launchmon/man/LMON_be_finalize.3:
