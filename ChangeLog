@@ -1,3 +1,9 @@
+2010-11-10 Dong H. Ahn <ahn1@llnl.gov>
+	* test/src/Makefile.am:
+	Added support for testdir to install test files 
+	into a non-bin directory
+
+
 2010-11-09 Dong H. Ahn <ahn1@llnl.gov>
 	* launchmon/src/linux/sdbg_linux_launchmon.cxx:
 	Added a fix for a scalability bug. When launchmon puts
