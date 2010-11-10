@@ -45,7 +45,8 @@ if WITH_CIOD
 INCLUDES                          += -I@ARCHHEADER@ -I$(top_srcdir)/@CIODLOC@
 endif
 
-bin_PROGRAMS                      = fe_jobsnap \
+testdir                           = ${pkgdatadir}/tests
+test_PROGRAMS                     = fe_jobsnap \
 				    be_jobsnap \
 				    LE_model_checker \
 				    fe_launch_smoketest \
@@ -115,7 +116,7 @@ be_jobsnap_CXXFLAGS               = $(AM_CXXFLAGS)
 be_jobsnap_LDFLAGS                = -L$(top_srcdir)/@LMONAPILOC@
 be_jobsnap_LDADD                  = -lmonbeapi
 
-bin_SCRIPTS                       = test.LE_model_checker_mainthread \
+test_SCRIPTS                      = test.LE_model_checker_mainthread \
 				    test.LE_model_checker_pthread \
 			            test.LE_model_checker_large \
 				    test.LE_model_checker_extreme \
@@ -140,7 +141,7 @@ bin_SCRIPTS                       = test.LE_model_checker_mainthread \
 				    test.fe_regStatusCB
 
 
-CLEANFILES                        = $(bin_SCRIPTS)
+CLEANFILES                        = $(test_SCRIPTS)
 EXTRA_DIST                        = test.LE_model_checker_mainthread.in \
                                     test.LE_model_checker_pthread.in \
                                     test.LE_model_checker_large.in \
