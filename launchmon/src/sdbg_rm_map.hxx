@@ -461,7 +461,9 @@ private:
         {
           rm_type = RC_alps;
         }
-      else if (dt == string ("mpirun") || dt == string ("mpirun32") || dt == string("mpirun64"))
+      else if (dt == string ("mpirun") 
+               || dt == string ("mpirun32") 
+               || dt == string("mpirun64"))
         {
           rm_type = RC_bgrm;
         }
@@ -469,7 +471,8 @@ private:
         {
           rm_type = RC_orte;
         }
-      else if (dt == string ("LE_model_checker.debug") || dt == string ("LE_model_checker"))
+      else if (dt == string ("LE_model_checker.debug") 
+               || dt == string ("LE_model_checker"))
 	{
 	  rm_type = RC_mchecker_rm;
 	}
