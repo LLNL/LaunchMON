@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------                      
  *
  *  Update Log:
+ *        Nov 22 2010 DHA: Includes limits.h
  *        Oct 22 2010 DHA: Added support for launching of tool daemons
  *                         into a subset of an allocation under SLURM.
  *                         (ID: 2871927).
@@ -45,6 +46,12 @@
 #else
 # error signal.h is required
 #endif
+#if HAVE_LIMITS_H
+# include <limits.h>
+#else
+# error limits.h is required
+#endif
+
 
 #include <string>
 #include <lmon_api/lmon_api_std.h>

@@ -50,6 +50,7 @@ extern "C" {
 # include <time.h>
 # include <sys/time.h>
 # include <stdarg.h>
+# include <limits.h>
 # ifndef _GNU_SOURCE
 #  define _GNU_SOURCE
 # endif
@@ -72,6 +73,7 @@ extern char *alpsGetMyNid(int *nid);
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
+#include <algorithm>
 
 #if BIT64
 typedef Elf64_Shdr myElf_Shdr;
