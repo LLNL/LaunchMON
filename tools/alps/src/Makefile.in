@@ -56,7 +56,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
-am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)"
+am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(etcdir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_alps_be_starter_OBJECTS = alps_be_starter.$(OBJEXT)
@@ -66,8 +66,8 @@ am_alps_fe_colocator_OBJECTS =  \
 	alps_fe_colocator-alps_fe_colocator.$(OBJEXT)
 alps_fe_colocator_OBJECTS = $(am_alps_fe_colocator_OBJECTS)
 alps_fe_colocator_DEPENDENCIES =
-binSCRIPT_INSTALL = $(INSTALL_SCRIPT)
-SCRIPTS = $(bin_SCRIPTS)
+etcSCRIPT_INSTALL = $(INSTALL_SCRIPT)
+SCRIPTS = $(etc_SCRIPTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -239,7 +239,8 @@ alps_be_starter_SOURCES = alps_be_starter.c
 alps_fe_colocator_SOURCES = alps_fe_colocator.cxx
 alps_fe_colocator_CXXFLAGS = @LNCHR_BIT_FLAGS@
 alps_fe_colocator_LDADD = @LIBELF@ @LIBALPS@
-bin_SCRIPTS = CLE-dso.conf \
+etcdir = ${prefix}/etc
+etc_SCRIPTS = CLE-dso.conf \
                                   CLE_2_2-dso.conf \
                                   CLE_3_1-dso.conf
 
@@ -312,24 +313,24 @@ clean-binPROGRAMS:
 alps_fe_colocator$(EXEEXT): $(alps_fe_colocator_OBJECTS) $(alps_fe_colocator_DEPENDENCIES) 
 	@rm -f alps_fe_colocator$(EXEEXT)
 	$(CXXLINK) $(alps_fe_colocator_LDFLAGS) $(alps_fe_colocator_OBJECTS) $(alps_fe_colocator_LDADD) $(LIBS)
-install-binSCRIPTS: $(bin_SCRIPTS)
+install-etcSCRIPTS: $(etc_SCRIPTS)
 	@$(NORMAL_INSTALL)
-	test -z "$(bindir)" || $(mkdir_p) "$(DESTDIR)$(bindir)"
-	@list='$(bin_SCRIPTS)'; for p in $$list; do \
+	test -z "$(etcdir)" || $(mkdir_p) "$(DESTDIR)$(etcdir)"
+	@list='$(etc_SCRIPTS)'; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  if test -f $$d$$p; then \
 	    f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
-	    echo " $(binSCRIPT_INSTALL) '$$d$$p' '$(DESTDIR)$(bindir)/$$f'"; \
-	    $(binSCRIPT_INSTALL) "$$d$$p" "$(DESTDIR)$(bindir)/$$f"; \
+	    echo " $(etcSCRIPT_INSTALL) '$$d$$p' '$(DESTDIR)$(etcdir)/$$f'"; \
+	    $(etcSCRIPT_INSTALL) "$$d$$p" "$(DESTDIR)$(etcdir)/$$f"; \
 	  else :; fi; \
 	done
 
-uninstall-binSCRIPTS:
+uninstall-etcSCRIPTS:
 	@$(NORMAL_UNINSTALL)
-	@list='$(bin_SCRIPTS)'; for p in $$list; do \
+	@list='$(etc_SCRIPTS)'; for p in $$list; do \
 	  f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
-	  echo " rm -f '$(DESTDIR)$(bindir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(bindir)/$$f"; \
+	  echo " rm -f '$(DESTDIR)$(etcdir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(etcdir)/$$f"; \
 	done
 
 mostlyclean-compile:
@@ -486,7 +487,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(PROGRAMS) $(SCRIPTS)
 installdirs:
-	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(etcdir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-am
@@ -534,9 +535,9 @@ info: info-am
 
 info-am:
 
-install-data-am:
+install-data-am: install-etcSCRIPTS
 
-install-exec-am: install-binPROGRAMS install-binSCRIPTS
+install-exec-am: install-binPROGRAMS
 
 install-info: install-info-am
 
@@ -562,21 +563,21 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
+uninstall-am: uninstall-binPROGRAMS uninstall-etcSCRIPTS \
 	uninstall-info-am
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-binPROGRAMS \
 	clean-generic clean-libtool ctags distclean distclean-compile \
 	distclean-generic distclean-libtool distclean-tags distdir dvi \
 	dvi-am html html-am info info-am install install-am \
-	install-binPROGRAMS install-binSCRIPTS install-data \
-	install-data-am install-exec install-exec-am install-info \
+	install-binPROGRAMS install-data install-data-am \
+	install-etcSCRIPTS install-exec install-exec-am install-info \
 	install-info-am install-man install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-binPROGRAMS \
-	uninstall-binSCRIPTS uninstall-info-am
+	uninstall-etcSCRIPTS uninstall-info-am
 
 
 alps_be_starter: alps_be_starter.c Makefile

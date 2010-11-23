@@ -251,7 +251,7 @@ launch_daemons(int apid,
   char *pref = getenv("LMON_PREFIX");
   if (pref)
     {
-      dsoListDir = std::string(pref) + std::string("/bin/");
+      dsoListDir = std::string(pref) + std::string("/etc/");
       dsoListPath = dsoListDir + DSO_CONFIG_FILE;
     }
   else
