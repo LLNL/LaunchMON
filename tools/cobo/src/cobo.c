@@ -1108,7 +1108,7 @@ static int cobo_scatter_tree(void* sendbuf, int sendcount, void* recvbuf)
     /* if i have any children, receive their data */
     int i;
     int offset = sendcount;
-    for(i=0; i<cobo_num_child; i++) {
+    for(i=cobo_num_child-1; i>=0; i--) {
         if (cobo_write_fd(cobo_child_fd[i], (char*)bigbuf + offset, sendcount * cobo_child_incl[i]) < 0) {
             cobo_error("Scattering data to child (rank %d) failed @ file %s:%d",
                        cobo_child[i], __FILE__, __LINE__
