@@ -26,6 +26,9 @@
  *--------------------------------------------------------------------------------                      
  *
  *  Update Log:
+ *        Sep 12 2011 DHA: Added be_fail_detection_supported support
+ *                         for the orphaned alps_fe_colocat problem
+ *                         (ID: 3408210).
  *        Nov 22 2010 DHA: Includes limits.h
  *        Oct 22 2010 DHA: Added support for launching of tool daemons
  *                         into a subset of an allocation under SLURM.
@@ -127,6 +130,7 @@ public:
 	  rmname = "RC_mchecker_rm";
   	  has_mpir_coloc = true; 
           rid_supported = false;
+          be_fail_detection_supported = false;
 	  has_mpir_attach_fifo = false;
 	  rm_attach_fifo_path = "";
           has_rm_so = false;
@@ -141,6 +145,7 @@ public:
   	  rmname = "RC_slurm";
   	  has_mpir_coloc = false; 
           rid_supported = true;
+          be_fail_detection_supported = true;
 	  has_mpir_attach_fifo = false;
 	  rm_attach_fifo_path = "";
           has_rm_so = false;
@@ -168,6 +173,7 @@ public:
 	  rmname = "RC_bgrm";
   	  has_mpir_coloc = true; 
           rid_supported = false;
+          be_fail_detection_supported = false;
 	  has_mpir_attach_fifo = false;
 	  rm_attach_fifo_path = "";
           has_rm_so = false;
@@ -186,6 +192,7 @@ public:
 	  rmname = "RC_alps";
   	  has_mpir_coloc = false; 
           rid_supported = false;
+          be_fail_detection_supported = false;
 	  has_mpir_attach_fifo = false;
 	  rm_attach_fifo_path = "";
           has_rm_so = false;
@@ -205,6 +212,7 @@ public:
 	  rmname = "RC_orte";
   	  has_mpir_coloc = true; 
           rid_supported = false;
+          be_fail_detection_supported = false; 
 	  has_mpir_attach_fifo = true;
           has_rm_so = true;
           rm_so_name = "libopen-rte.so";
@@ -429,6 +437,7 @@ public:
 
   define_gset(bool, has_mpir_coloc)
   define_gset(bool, rid_supported)
+  define_gset(bool, be_fail_detection_supported) 
   define_gset(bool, has_mpir_attach_fifo)
   define_gset(std::string, rm_daemon_path)
   define_gset(rm_catalogue_e, rm_type)
@@ -508,6 +517,9 @@ private:
 
   // Some RM supports resource ID	
   bool rid_supported;
+
+  // back-end failure detection supported
+  bool be_fail_detection_supported;
 
   // for MPIR_attach_fifo supported RM
   bool has_mpir_attach_fifo;

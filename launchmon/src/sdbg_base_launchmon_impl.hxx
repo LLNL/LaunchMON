@@ -26,6 +26,9 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Sep 12 2011 DHA: Added a be_fail_detection_supported check
+ *                         within handle_daemon_exit for the orphaned 
+ *                         alps_fe_colocat problem (ID: 3408210).
  *        Jun 28 2010 DHA: Added ship_rminfo_msg 
  *        Aug 07 2009 DHA: Added p.set_lwp_state tracking to decipher_an_event
  *                         method.
@@ -1102,7 +1105,20 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_daemon_exit_event
         MODULENAME,
         0,
         "daemon exited...");
-      request_detach(p, RM_BE_daemon_exited);
+
+      //
+      // Lower layer calls this handler when it gets notified of
+      // the status change (to exit) of the RM launcher process 
+      // that launched RM_daemons. Depending on
+      // RM types, this may or may not mean the RM_daemons are
+      // actually terminated or exited. So, we query the RM map
+      // layer to ask questions first.
+      //
+      if (p.get_myopts()->get_my_rmconfig()->get_be_fail_detection_supported())
+        {
+          request_detach(p, RM_BE_daemon_exited);
+        }
+
       set_last_seen (gettimeofdayD ());
       return LAUNCHMON_OK;
     }
