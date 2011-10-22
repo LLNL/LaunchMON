@@ -24,16 +24,18 @@
  * with this program; if not, write to the Free Software Foundation, Inc., 59 Temple 
  * Place, Suite 330, Boston, MA 02111-1307 USA
  *--------------------------------------------------------------------------------
- *	
+ *
  *
  *  Update Log:
+ *        Oct 10 2011 DHA: Augmented _lmon_rm_info_t in support of the dynamic
+ *                         resource manager detection scheme.
  *        Jun 28 2010 DHA: Added LMON_fe_getRMInfo support;
  *                         moved rm_catalogue_e to here and added
  *                         lmon_rm_info_t here
- *        May 20 2009 DHA: Change LMON_VERSION 
- *        Jun 06 2008 DHA: Change C++ compiler support style  
- *                         (GNU). 
- *        Feb 09 2008 DHA: Added LLNS Copyright 
+ *        May 20 2009 DHA: Change LMON_VERSION.
+ *        Jun 06 2008 DHA: Change C++ compiler support style.
+ *                         (GNU).
+ *        Feb 09 2008 DHA: Added LLNS Copyright.
  *        Aug 15 2006 DHA: More error code Populated
  *        Dec 20 2006 DHA: Created file.
  */
@@ -46,7 +48,7 @@
 BEGIN_C_DECLS
 
 #undef  LMON_VERSION
-#define LMON_VERSION          900072 /* version 0.7.2beta */
+#define LMON_VERSION          900100 /* version 1.0beta */
 
 #define LMON_FE_ADDR_ENVNAME  "LMON_FE_WHERETOCONNECT_ADDR"
 #define LMON_FE_PORT_ENVNAME  "LMON_FE_WHERETOCONNECT_PORT"
@@ -98,19 +100,17 @@ typedef enum _rm_catalogue_e
   RC_alps,
   RC_orte,
   RC_none
-  /* 
+  /*
     new RMs should be added here as LaunchMON is ported 
     on other RMs	
   */
 } rm_catalogue_e;
 
 typedef struct _lmon_rm_info_t {
-  rm_catalogue_e rm_type;
+  rm_catalogue_e *rm_supported_types;
+  int num_supported_types;
+  int index_to_cur_instance;
   pid_t rm_launcher_pid;
-  /* 
-    Other RMs info fields should be added here 
-    as other use cases come along.
-  */ 
 } lmon_rm_info_t;
 
 typedef struct _lmon_daemon_env_t {

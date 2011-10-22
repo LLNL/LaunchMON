@@ -30,14 +30,15 @@
 #  Attach the tool to a running program and collect jobsnap data.
 #
 #  Update Log:
+#        Oct 21 2011 DHA: Added dynamic RM detection support.
 #        Mar 06 2009 DHA: Changed bglrm to bgrm
 #        Jun 17 2008 DHA: Created file.
 #
 
-RM_TYPE=@RMTP@
+RM_TYPE=@TEST_RMTP@
 NUMNODES=@NNODES@
 NOHUP=""
-if test "x$RM_TYPE" = "xbgrm" ; then
+if test "x$RM_TYPE" = "xRC_bgrm" ; then
   NOHUP=nohup
   rm -f nohup.out
 fi
@@ -49,9 +50,9 @@ MPI_JOB_LAUNCHER_PATH=@TJLPATH@
 export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
 export JOBSNAP_TEST=1
  
-if test "x$RM_TYPE" = "xslurm" ; then
+if test "x$RM_TYPE" = "xRC_slurm" ; then
   $MPI_JOB_LAUNCHER_PATH -n$NUMTASKS -N$NUMNODES -ppdebug `pwd`/hang_on_SIGUSR1@EXE@ &
-elif test "x$RM_TYPE" = "xbgrm" ; then 
+elif test "x$RM_TYPE" = "xRC_bgrm" ; then 
   $MPI_JOB_LAUNCHER_PATH -verbose 1 -np $NUMTASKS -exe `pwd`/hang_on_SIGUSR1@EXE@ -cwd `pwd` &
 else
   echo "This RM is not supported yet" 

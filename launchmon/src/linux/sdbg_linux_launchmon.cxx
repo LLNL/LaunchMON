@@ -1,8 +1,8 @@
 /*
  * $Header: $
  *--------------------------------------------------------------------------------
- * Copyright (c) 2008 - 2010, Lawrence Livermore National Security, LLC. Produced at 
- * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>. 
+ * Copyright (c) 2008 - 2010, Lawrence Livermore National Security, LLC. Produced at
+ * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>.
  * LLNL-CODE-409469. All rights reserved.
  *
  * This file is part of LaunchMON. For details, see 
@@ -11,25 +11,26 @@
  * Please also read LICENSE.txt -- Our Notice and GNU Lesser General Public License.
  *
  * 
- * This program is free software; you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License (as published by the Free Software 
+ * This program is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License (as published by the Free Software
  * Foundation) version 2.1 dated February 1999.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or 
- * FITNESS FOR A PARTICULAR PURPOSE. See the terms and conditions of the GNU 
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the terms and conditions of the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License along 
- * with this program; if not, write to the Free Software Foundation, Inc., 59 Temple 
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *--------------------------------------------------------------------------------			
+ *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Oct 07 2011 DHA: Dynamic resource manager detection support.
  *        Oct 27 2010 DHA: Reorganize methods within this file.
- *        Oct 26 2010 DHA: Mods to use slightly changed abstraction 
- *                         for breakpoint_base_t and tracer_base_t. 
- *        Oct 01 2010 DHA: Refactor handling of mpir variables setup to 
+ *        Oct 26 2010 DHA: Mods to use slightly changed abstraction
+ *                         for breakpoint_base_t and tracer_base_t.
+ *        Oct 01 2010 DHA: Refactor handling of mpir variables setup to
  *                         handle_mpir_variables.
  *        Sep 02 2010 DHA: Added MPIR_attach_fifo support
  *        Jul 02 2010 DHA: Decreased the verbose level for Daemon args too long
@@ -38,22 +39,22 @@
  *        Jun 28 2010 DHA: Added support to implement LMON_fe_getRMInfo
  *        Jun 10 2010 DHA: Added CRAY XT support and RM MAP support.
  *        Apr 27 2010 DHA: Added more MEASURE_TRACING_COST support.
- *        Dec 22 2009 DHA: Added auxilliary vector support to discover 
- *                         the loader's load address accurately. (e.g.,  
- *                         without having to rely on the "_start" symbol exported. 
+ *        Dec 22 2009 DHA: Added auxilliary vector support to discover
+ *                         the loader's load address accurately. (e.g.,
+ *                         without having to rely on the "_start" symbol exported.
  *        Dec 16 2009 DHA: Added COBO support
  *        May 07 2009 DHA: Added a patch to fix the attach-detach-and-reattach failure
  *                         on BlueGene. This requires IBM efix27.
- *        Mar 04 2009 DHA: Added BlueGene/P support. 
+ *        Mar 04 2009 DHA: Added BlueGene/P support.
  *                         In particular, changed RM_BGL_MPIRUN to RM_BG_MPIRUN 
  *                         to genericize BlueGene Support.
  *                         Added indirect breakpoint support.
  *        Sep 24 2008 DHA: Enforced the error handling semantics
  *                         defined in README.ERROR_HANDLIN.
- *        Sep 22 2008 DHA: Added set_last_seen support to enable 
+ *        Sep 22 2008 DHA: Added set_last_seen support to enable
  *                         a two-phased polling scheme.
  *        Jun 18 2008 DHA: Added 64 bit mpirun support.
- *        Mar 11 2008 DHA: Added Linux PowerPC/BlueGene support. 
+ *        Mar 11 2008 DHA: Added Linux PowerPC/BlueGene support.
  *        Feb 09 2008 DHA: Added LLNS Copyright.
  *        Dec 05 2007 DHA: fixed a scalability bug that was exposed during
  *                         adding the modle checker support. When pcount > 2K,
@@ -62,37 +63,37 @@
  *                         child process to fail. I added a check for
  *                         execvp and a note saying the developers should
  *                         use the API mode when higher scalability is
- *                         desired. In addition, I removed envVar exporting 
- *                         for the model checking case. 
+ *                         desired. In addition, I removed envVar exporting
+ *                         for the model checking case.
  *        Dec 04 2007 DHA: freed launcher_proctable (TV detects a memory leak there).
  *        Mar 13 2007 DHA: pipe_t support. Better coding for proctab message packing.
- *                         Turned on the PID environment variable support for 
+ *                         Turned on the PID environment variable support for
  *                         standalone launchmon utility.
  *        Jan 09 2006 DHA: Linux X86/64 support
  *        Jul 03 2006 DHA: Better self tracing support
- *        Jun 30 2006 DHA: Added acquire_protable so that both 
- *                         handle_launch_bp_event and 
+ *        Jun 30 2006 DHA: Added acquire_protable so that both
+ *                         handle_launch_bp_event and
  *                         handle_trap_after_attach_event can user the service.
- *        Jun 29 2006 DHA: Added chk_pthread_libc_and_init private 
+ *        Jun 29 2006 DHA: Added chk_pthread_libc_and_init private
  *                         method. This is mainly to enhance code
  *                         reusability. It is now used not only by
- *                         handle_loader_bp_event, but also by 
+ *                         handle_loader_bp_event, but also by
  *                         handle_trap_after_attach_event.
  *        Jun 29 2006 DHA: Added get_va_from_procfs support which
  *                         allows fetching the base address of the
  *                         dynamic linker module.
- *                         Only other way that I know of that would 
- *                         allow me to do this is by spawning a sample 
- *                         process and do some math when it's stopped 
- *                         at the first fork/exec. Even so, with modern 
- *                         Redhead security features (exec-shield), 
- *                         the sample process may not generate an exact 
+ *                         Only other way that I know of that would
+ *                         allow me to do this is by spawning a sample
+ *                         process and do some math when it's stopped
+ *                         at the first fork/exec. Even so, with modern
+ *                         Redhead security features (exec-shield),
+ *                         the sample process may not generate an exact
  *                         base address for the dynlinker.
  *        Jun 08 2006 DHA: Added attach-to-a-running job support.
  *                         handle_attach_event method
- *        Mar 31 2006 DHA: Some read operations are now using. 
+ *        Mar 31 2006 DHA: Some read operations are now using.
  *                         tracer_string_read instead of tracer_read.
- *        Mar 31 2006 DHA: Added self tracing support. 
+ *        Mar 31 2006 DHA: Added self tracing support.
  *        Mar 30 2006 DHA: Added exception handling support.
  *        Jan 12 2006 DHA: Created file.
  */
@@ -200,7 +201,7 @@ static double endTS;
      shared library using /proc file system. It returns T_UNINIT_HEX
      when fails to find "dynname." This is a hack; I need to get
      the base link address of the dynamic linker from AUX vector.
-     
+
      NOTE: Dec 23 2009 DHA: This function shouldn't be used if other
      more standard methods are available like get_auxv below
 */
@@ -260,7 +261,7 @@ get_va_from_procfs ( pid_t pid, const std::string& dynname )
       perm = NULL;
       libname = NULL;
     }
-    
+
   fclose ( fptr );
 
   return ret_pc;
@@ -485,14 +486,14 @@ linux_launchmon_t::launch_tool_daemons (
   if (get_proctable_copy().empty())
     {
       self_trace_t::trace ( true, 
- 	   MODULENAME,0,
-	  "Proctab is empty!");
+          MODULENAME,0,
+          "Proctab is empty!");
 
       return false;
     }
 
-  if ( !get_API_mode() 
-       && (p.get_myopts()->get_my_rmconfig()->get_rm_type() != RC_mchecker_rm) )
+  if ( !get_API_mode()
+       && (!p.rmgr()->is_modelchecker()))
     {
       //
       // Standalone launchmon. The launchmon session is not
@@ -541,7 +542,7 @@ linux_launchmon_t::launch_tool_daemons (
 	}
     }
  
-  if ( p.get_myopts()->get_my_rmconfig()->get_rm_type() == RC_mchecker_rm )
+  if ( p.get_myopts()->get_my_rmconfig()->is_modelchecker())
     {
       //
       // mpirun model checker support
@@ -577,14 +578,14 @@ linux_launchmon_t::launch_tool_daemons (
   //
   // W/ new RM MAP support
   //
-  if (p.get_myopts()->get_my_rmconfig()->get_has_mpir_coloc())
+  if (p.get_myopts()->get_my_rmconfig()->is_coloc_sup())
     {
       //
       // there isn't much you want to do here,
       // because RM that supports colocation service 
       // co-spawns daemons as part of its MPIR APAI extension. 
       // This includes BGRM
-    
+
       //
       // TODO: We may not want to release the mpirun process until the 
       // tool set up is done...
@@ -610,11 +611,6 @@ linux_launchmon_t::launch_tool_daemons (
       char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
       char *sharedsecret = strtok (tokenize2, ":");
       char *randomID = strtok (NULL, ":");
-#if PMGR_BASED
-      char *tokenize = strdup(p.get_myopts()->get_my_opt()->pmgr_info.c_str());
-      char *mip = strtok ( tokenize, ":" );
-      char *mport = strtok ( NULL, ":" );
-#endif
       char hnfn[PATH_MAX] = {'\0'};
       char tmpsuf[128] = {'\0'};
 
@@ -629,7 +625,7 @@ linux_launchmon_t::launch_tool_daemons (
 
           return false;
         }
-         
+
       strcat(hnfn, "/");
       strcat(hnfn, LMON_HOSTS_FN_BASE);
       snprintf(tmpsuf, 128, ".%d", getpid());
@@ -662,97 +658,71 @@ linux_launchmon_t::launch_tool_daemons (
       for (pos = get_proctable_copy().begin(); pos != get_proctable_copy().end(); ++pos)
         {
           hnstream << pos->first;
-          count++;              
+          count++;
           if (count < get_proctable_copy().size())
             {
-              hnstream << "\n"; 
+              hnstream << "\n";
             } 
         }
 
       hnstream.close();
 
-      p.get_myopts()->get_my_rmconfig()->set_paramset(
+      p.rmgr()->set_paramset(
 	    get_proctable_copy().size(),
 	    get_proctable_copy().size(),
 	    sharedsecret,
 	    randomID,
 	    get_resid(),
             hnfn
-#if PMGR_BASED
-	    , 
-	    get_proctable_copy().size(),
-	    mip,
-	    mport,
-	    get_resid()
-#endif
-      );	
+      );
 
-#if PMGR_BASED
-      free(tokenize);
-#endif
       free(tokenize2);
 
       //
       // For non-colocation RM, we need to fork/exec
-      // 
+      //
       set_toollauncherpid  (fork());
       if ( !get_toollauncherpid ())
         {
+          std::string expandstr;
+          std::list<std::string> alist
+            = p.rmgr()->expand_launch_string(expandstr);
 
-          std::string expandstr = p.get_myopts()->get_my_rmconfig()->expand_coloc_str();
           {
-	    self_trace_t::trace ( 
-              LEVELCHK(level1), 
-	      MODULENAME,0,
-	      "launching daemons with: %s",
-	      expandstr.c_str());
+           self_trace_t::trace (
+              //LEVELCHK(level1),
+              true,
+              MODULENAME,0,
+              "launching daemons with: %s",
+              expandstr.c_str());
           }
 
-          char *expanded_string = strdup(expandstr.c_str()); 
-          char *t = expanded_string;
-          char *tmp;
-          int i=0;
-          int n=128;
-          char **av = (char**) malloc (n*sizeof(tmp));
-          if (av == NULL) 
+          char **av = (char **) malloc((alist.size() + 1)*sizeof(char *));
+          size_t indx=0;
+          std::list<std::string>::iterator iter;
+          for (iter = alist.begin(); iter != alist.end(); iter++)
             {
-              self_trace_t::trace ( true,
-                                MODULENAME,1,
-                                "malloc returned null");
-              perror("");
-              exit(1);
+              av[indx] = strdup((*iter).c_str());
+              indx++;
             }
 
-          while ( ( tmp = strtok ( t, " " )) != NULL  )
-	    {
-	      av[i] = strdup ( tmp );
-	      t = NULL;
-	      if ( i > n )
-	        {
-	          av = (char **) realloc ( av, 2*n*sizeof(tmp));
-	          n += n;
-	        }
-	      i++;
-	    }
-          av[i] = NULL;
+          av[indx] = NULL;
 
           //
           // Sink
           //
           if ( execvp ( av[0], av) < 0 )
-	    {
-	      self_trace_t::trace ( true, 
-	    			    MODULENAME,1,
-				    "execvp to launch tool daemon failed");
-	      perror("");
-	      exit(1);
-	    }
+            {
+              self_trace_t::trace ( true,
+                MODULENAME,1,
+                "execvp to launch tool daemon failed");
+                perror("");
+                exit(1);
+            }
         } //Child vs. parent
-
-      // Only parent reaches here
-
+        // Only parent reaches here
     } // Co-location vs. traditional daemon launching
-    
+
     return LAUNCHMON_OK;
 }
 
@@ -1003,9 +973,9 @@ linux_launchmon_t::acquire_proctable (
 
 	  //
 	  // memory-fetching to get the "host_name" 
-          //	
+          //
 	  get_tracer()->tracer_read_string(p, 
-			  (T_VA) launcher_proctable[i].host_name,    
+			  (T_VA) launcher_proctable[i].host_name,
 			  (void*) (an_entry->pd.host_name),
 			  MAX_STRING_SIZE,
 			  use_cxt );   
@@ -1022,68 +992,89 @@ linux_launchmon_t::acquire_proctable (
 	  get_proctable_copy()[an_entry->pd.host_name].push_back(an_entry);
 	} 
 
-      free ( launcher_proctable ); 
+      free ( launcher_proctable );
 
       if ( get_proctable_copy().empty() )
 	{
-	  self_trace_t::trace ( LEVELCHK(level1), 
-	     MODULENAME, 1, 
-	     "proctable is empty!");  
+	  self_trace_t::trace ( LEVELCHK(level1),
+	     MODULENAME, 1,
+	     "proctable is empty!");
 
 	  return LAUNCHMON_FAILED;
 	}
 
-      if (p.get_myopts()->get_my_rmconfig()->get_rid_supported())
+      if (p.get_myopts()->get_my_rmconfig()->is_rid_sup())
         {
-          //
-          //
-          // fetching the resource ID
-          //
-          const symbol_base_t<T_VA>& rid 
-	    = main_im->get_a_symbol (p.get_resource_handler_sym());
+          if (p.get_myopts()->get_my_rmconfig()->is_rid_via_symbol())
+            {
+              resource_manager_t r_mgr;
+              r_mgr = p.get_myopts()->get_my_rmconfig()->get_resource_manager();
+              std::string rid_sym = r_mgr.get_job_id().id.symbol_name;
 
-          T_VA where_is_rid;
+              const symbol_base_t<T_VA>& rid
+                = main_im->get_a_symbol(rid_sym);
 
-          get_tracer()->tracer_read ( p, 
-				      rid.get_relocated_address(),
-				      (void *) &where_is_rid,
-				      sizeof(T_VA),
-				      use_cxt);    
-  
-          get_tracer()->tracer_read_string ( 
-				      p, 
-                                      where_is_rid,
-				      (void*) resource_id,
-				      MAX_STRING_SIZE,
-				      use_cxt);
+              if (r_mgr.get_job_id().dtype == cstring)
+                {
+                  T_VA where_is_rid;
 
-          set_resid ( atoi(resource_id) );
-          p.set_rid ( get_resid () );
+                  get_tracer()->tracer_read(
+                                        p,
+                                        rid.get_relocated_address(),
+                                        (void *) &where_is_rid,
+                                        sizeof(T_VA),
+                                        use_cxt);
 
-          // -1 is the init value that SLURM sets internally 
-          // for "totalview_jobid"
-          if ( get_resid() == -1 ) 
-	   {
-	     self_trace_t::trace ( LEVELCHK(level1), 
-	       MODULENAME, 1, 
-	       "resource ID is not valid!");  
+                  get_tracer()->tracer_read_string (
+                                        p,
+                                        where_is_rid,
+                                        (void*) resource_id,
+                                        MAX_STRING_SIZE,
+                                        use_cxt);
 
-	     return LAUNCHMON_FAILED;
-	   }
+                  set_resid(atoi(resource_id));
+                  p.set_rid(get_resid());
+
+                  // -1 is the init value that SLURM sets internally 
+                  // for "totalview_jobid"
+                  if ( get_resid() == -1 )
+	           {
+	             self_trace_t::trace ( LEVELCHK(level1),
+	               MODULENAME, 1,
+	               "resource ID is not valid!");
+
+	             return LAUNCHMON_FAILED;
+	           }
+                }
+              else if (r_mgr.get_job_id().dtype == integer32)
+                {
+                  uint32_t int_val;
+
+                  get_tracer()->tracer_read(
+                                        p,
+                                        rid.get_relocated_address(),
+                                        (void *) &int_val,
+                                        sizeof(int_val),
+                                        use_cxt);
+                  set_resid(int_val);
+                  p.set_rid(get_resid());
+                }
+          else if (p.get_myopts()->get_my_rmconfig()->is_rid_via_pid())
+            {
+              set_resid (p.get_pid(false));
+              p.set_rid (get_resid());
+            }
         }
-      else
-        {
-	  set_resid (p.get_pid(false));
-          p.set_rid (get_resid());
-	} 
+      }
+
 
 #if MEASURE_TRACING_COST
       c_end_ts = gettimeofdayD();
       {
-        self_trace_t::trace ( true, 
- 	   MODULENAME,0,
-	   "PROCTAB(%d) Fetching: %f ",
-	   get_pcount(), (c_end_ts - c_start_ts));
+        self_trace_t::trace ( true,
+           MODULENAME,0,
+           "PROCTAB(%d) Fetching: %f ",
+           get_pcount(), (c_end_ts - c_start_ts));
       }
 #endif
 
@@ -1258,7 +1249,7 @@ linux_launchmon_t::handle_mpir_variables (
                                    use_cxt );
 
 
-      if (p.get_myopts()->get_my_rmconfig()->get_has_mpir_coloc())
+      if (p.rmgr()->is_coloc_sup())
         {
           //
           // Always check correctness of BG_SERVERARG_LENGTH 
@@ -1270,120 +1261,96 @@ linux_launchmon_t::handle_mpir_variables (
             = image.get_a_symbol (p.get_launch_exec_path ());
 
           T_VA ep_addr = executablepath.get_relocated_address();
+          std::string daemon_pth;
+          daemon_pth = p.rmgr()->get_coloc_paramset().rm_daemon_path;
+          size_t dpsize = daemon_pth.size() + 1;
 
-          int dpsize = p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size();
-          if (dpsize >= BG_EXECPATH_LENGTH)
+          if (dpsize > BG_EXECPATH_LENGTH)
             {
               self_trace_t::trace ( true,
                 MODULENAME,1,
                 "daemon path(%d) exceeds the buffer length: %d",
-                p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size()+1,
+                dpsize,
                 BG_EXECPATH_LENGTH);
 
               return LAUNCHMON_FAILED;
             }
 
-          get_tracer()->tracer_write (
-            p,
-            ep_addr,
-            p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().c_str(),
-            p.get_myopts()->get_my_rmconfig()->get_rm_daemon_path().size()+1,
-            use_cxt
-          );
+          get_tracer()->tracer_write(p,
+                                     ep_addr,
+                                     daemon_pth.c_str(),
+                                     dpsize,
+                                     use_cxt);
 
           char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
           char *sharedsecret = strtok (tokenize2, ":");
           char *randomID = strtok (NULL, ":");
-#if PMGR_BASED
-          char *tokenize = strdup(p.get_myopts()->get_my_opt()->pmgr_info.c_str());
-          char *mip = strtok ( tokenize, ":" );
-          char *mport = strtok ( NULL, ":" );
-#endif
-          p.get_myopts()->get_my_rmconfig()->set_paramset(
-            0,
-            0,
-            sharedsecret,
-            randomID,
-           -1,
-            NULL
-#if PMGR_BASED
-          , 0,
-            mip,
-            mport,
-            24689 /* just a number for pmgrjobid */
-#endif
-          );
+          p.rmgr()->set_paramset(0,
+                                 0,
+                                 sharedsecret,
+                                 randomID,
+                                 -1,
+                                 NULL);
 
-          std::string expstr
-            = p.get_myopts()->get_my_rmconfig()->expand_coloc_str();
+          std::string expstr;
+          std::list<std::string> alist;
+          //
+          // Change this for vector<string> interface
+          //
+          alist = p.rmgr()->expand_launch_string(expstr);
           char serverargs[BG_SERVERARG_LENGTH] = {0};
           const symbol_base_t<T_VA> &sa
             = image.get_a_symbol (p.get_launch_server_args ());
           T_VA sa_addr = sa.get_relocated_address();
 
-         if (expstr != "")
+          if (expstr != "")
             {
-              char *serverargstmp = strdup(expstr.c_str());
-              char *curptr = NULL;
-              char *token = NULL;
-
-              curptr = serverargs;
-              token = strtok (serverargstmp, " ");
-              int tlen = strlen(token) + 1;
-              int usedbytes = curptr - serverargs;
-              while (usedbytes < BG_SERVERARG_LENGTH)
+              if (expstr.size() >= BG_SERVERARG_LENGTH)
                 {
-                  //
-                  // Don't fill the very last byte for safety 
-                  //
-                  if ((usedbytes + tlen) >= BG_SERVERARG_LENGTH)
+                  self_trace_t::trace (true,
+                    MODULENAME, 1,
+                    "Daemon args list too long to fit %s", expstr.c_str());
+                }
+              else
+                {
+                  char *traverse = serverargs;
+                  std::list<std::string>::iterator iter;
+                  for (iter = alist.begin(); iter != alist.end(); iter++)
                     {
-                      self_trace_t::trace (true,
-                        MODULENAME, 1,
-                        "Daemon args list too long. Truncated at %s", token);
-
-                      break;
+                      memcpy(traverse, (*iter).c_str(), (*iter).size());
+                      traverse += (*iter).size();
+                      traverse = '\0';
+                      traverse += 1;
                     }
 
-                  memcpy ( curptr, token, (tlen));
-                  curptr += tlen;
-                  usedbytes += tlen;
-                  token = strtok (NULL, " ");
-                  if (!token)
-                    break;
-                  tlen = strlen(token) + 1;
+                  get_tracer()->tracer_write(p,
+                                             sa_addr,
+                                             serverargs,
+                                             BG_SERVERARG_LENGTH,
+                                             use_cxt);
                 }
-              (*curptr) = '\0';
-              curptr += 1;
             }
 
-          get_tracer()->tracer_write ( p,
-                                       sa_addr,
-                                       serverargs,
-                                       BG_SERVERARG_LENGTH,
-                                       use_cxt );
-
-          if (p.get_myopts()->get_my_rmconfig()->get_has_mpir_attach_fifo())
+          if (p.rmgr()->is_attfifo_sup())
             {
               const symbol_base_t<T_VA>& af_sym 
                 = image.get_a_symbol(p.get_launch_attach_fifo());
 
               if (!(!af_sym) && !(p.get_sym_attach_fifo()))
                 {
-                  symbol_base_t<T_VA> *af_sym_copy = new symbol_base_t<T_VA>(af_sym);
-                  p.set_sym_attach_fifo(af_sym_copy); 
-                } 
-
+                  symbol_base_t<T_VA> *af_sym_copy
+                    = new symbol_base_t<T_VA>(af_sym);
+                  p.set_sym_attach_fifo(af_sym_copy);
+                }
             } // RM with MPIR_attach_fifo support
-
         } // With MPIR Colocation service
     }
-  catch ( symtab_exception_t e ) 
+  catch ( symtab_exception_t e )
     {
       e.report();
       return false;
     }
-  catch ( tracer_exception_t e ) 
+  catch ( tracer_exception_t e )
     {
       e.report();
       return false;
@@ -1511,8 +1478,8 @@ linux_launchmon_t::check_dependent_SOs (
         }
 
       if ( (libc_im->get_image_base_address() != SYMTAB_UNINIT_ADDR)
-           && (thr_im->get_image_base_address() !=  SYMTAB_UNINIT_ADDR ) 
-           && (!p.get_myopts()->get_my_rmconfig()->get_has_rm_so() 
+           && (thr_im->get_image_base_address() !=  SYMTAB_UNINIT_ADDR )
+           && (!p.rmgr()->need_check_launcher_so()
                || rmso_im->get_image_base_address() !=  SYMTAB_UNINIT_ADDR))
 	{
 	  {
@@ -1524,9 +1491,9 @@ linux_launchmon_t::check_dependent_SOs (
 	  return false;
 	}
 
-      dynloader_im = p.get_mydynloader_image();  
-      const symbol_base_t<T_VA>& r_debug_sym 
-	    = dynloader_im->get_a_symbol (p.get_loader_r_debug_sym());    
+      dynloader_im = p.get_mydynloader_image();
+      const symbol_base_t<T_VA>& r_debug_sym
+	    = dynloader_im->get_a_symbol (p.get_loader_r_debug_sym());
 
       get_tracer()->tracer_read ( p, 
 	r_debug_sym.get_relocated_address(), 
@@ -1605,13 +1572,13 @@ linux_launchmon_t::check_dependent_SOs (
 		                                    use_cxt );
                   }
               }
-            else if ( p.get_myopts()->get_my_rmconfig()->get_has_rm_so() )
+            else if ( p.rmgr()->need_check_launcher_so() )
               {
                 /*
                  * The linked map for RM SO is found
                  *
                  */
-                std::string rmso = p.get_myopts()->get_my_rmconfig()->get_rm_so_name();
+                std::string rmso = p.rmgr()->get_launcher_so_name();
                 if ( (strncmp(rmso.c_str(), bn, rmso.size()) == 0) )
                   {
                     if (rmso_im->get_image_base_address() == SYMTAB_UNINIT_ADDR)
@@ -1917,9 +1884,9 @@ linux_launchmon_t::handle_trap_after_attach_event (
       check_dependent_SOs(p);
       p.set_never_trapped(false); 
 
-      if (p.get_myopts()->get_my_rmconfig()->get_has_mpir_coloc())
+      if (p.rmgr()->is_coloc_sup())
         {
-          if (p.get_myopts()->get_my_rmconfig()->get_has_mpir_attach_fifo())
+          if (p.rmgr()->is_attfifo_sup())
             {
               if (p.get_sym_attach_fifo())
                 {
@@ -1933,7 +1900,8 @@ linux_launchmon_t::handle_trap_after_attach_event (
 				               (void*) fifopathbuf,
 				               256,
 				               use_cxt);
-                  p.get_myopts()->get_my_rmconfig()->set_rm_attach_fifo_path(fifopathbuf);
+                  std::string fip = fifopathbuf;
+                  p.rmgr()->set_attach_fifo_path(fip);
 
 	          //
 	          // We have to continue the target process before starting FIFO
@@ -1988,9 +1956,9 @@ linux_launchmon_t::handle_trap_after_attach_event (
            acquire_proctable ( p, use_cxt );
            ship_proctab_msg ( lmonp_proctable_avail );
            ship_resourcehandle_msg ( lmonp_resourcehandle_avail, get_resid() );
-	   ship_rminfo_msg ( lmonp_rminfo, 
-			     (int) p.get_pid(false), 
-			      p.get_myopts()->get_my_rmconfig()->get_rm_type());
+	   ship_rminfo_msg ( lmonp_rminfo,
+			     (int) p.get_pid(false),
+			      p.rmgr()->get_resource_manager().get_rm());
            say_fetofe_msg ( lmonp_stop_at_first_attach );
            launch_tool_daemons(p);
 	   get_tracer()->tracer_continue (p, use_cxt);
@@ -2348,7 +2316,7 @@ linux_launchmon_t::handle_launch_bp_event (
 	        ship_resourcehandle_msg ( lmonp_resourcehandle_avail, get_resid() );
 	        ship_rminfo_msg ( lmonp_rminfo, 
 		  	          (int) p.get_pid(false), 
-			          p.get_myopts()->get_my_rmconfig()->get_rm_type());
+			          p.rmgr()->get_resource_manager().get_rm());
 	        say_fetofe_msg ( lmonp_stop_at_launch_bp_spawned );
 
     	        launch_tool_daemons(p);
@@ -2446,7 +2414,8 @@ linux_launchmon_t::handle_launch_bp_event (
 	          self_trace_t::trace ( 
                     LEVELCHK(level2),
 		    MODULENAME,0,
-	            "launch-breakpoint hit event handler completing with MPIR_DEBUG_ABORTING");
+	            "launch-breakpoint hit event handler "
+                    "completing with MPIR_DEBUG_ABORTING");
 	        }
 	        break; 
 	      }
@@ -2456,7 +2425,8 @@ linux_launchmon_t::handle_launch_bp_event (
 	          self_trace_t::trace ( 
                     LEVELCHK(level2), 
 		    MODULENAME,0,
-	            "launch-breakpoint hit event handler completing with MPIR_NULL");
+	            "launch-breakpoint hit event handler "
+                    "completing with MPIR_NULL");
 	        }
                 set_engine_state(bdbg);
 	        get_tracer()->tracer_continue (p, use_cxt);
@@ -2467,7 +2437,8 @@ linux_launchmon_t::handle_launch_bp_event (
 	        {
 	          self_trace_t::trace ( LEVELCHK(level2), 
 		    MODULENAME,0,
-	            "launch-breakpoint hit event handler completing with unknown debug state");
+	            "launch-breakpoint hit event handler "
+                    "completing with unknown debug state");
 	        }
                 set_engine_state(bdbg);
 	        get_tracer()->tracer_continue (p, use_cxt);
@@ -2574,19 +2545,19 @@ linux_launchmon_t::handle_detach_cmd_event
         case RM_MW_daemon_exited:
           say_fetofe_msg ( lmonp_mwdmon_exited );
           break;
-	case RM_JOB_mpir_aborting: 
+	case RM_JOB_mpir_aborting:
 	  say_fetofe_msg ( lmonp_stop_at_launch_bp_abort );
 	  break;
         case FE_requested_detach:
           say_fetofe_msg ( lmonp_detach_done );	
           break;
         case FE_requested_shutdown_dmon:
-          p.get_myopts()->get_my_rmconfig()->graceful_rmkill(get_toollauncherpid());
+          p.rmgr()->graceful_rmkill(get_toollauncherpid());
           say_fetofe_msg ( lmonp_detach_done );	
           break;
         case FE_disconnected:
 	  usleep (GracePeriodFEDisconnection);
-          p.get_myopts()->get_my_rmconfig()->graceful_rmkill(get_toollauncherpid());
+          p.rmgr()->graceful_rmkill(get_toollauncherpid());
           break;
         case ENGINE_dying_wsignal:
           say_fetofe_msg (lmonp_stop_tracing);
@@ -2596,7 +2567,8 @@ linux_launchmon_t::handle_detach_cmd_event
           {
 	    self_trace_t::trace ( LEVELCHK(level1), 
 			          MODULENAME,1,
-	    "Reason for the detach is unclear (reserved_for_rent or FE_requested_kill)  ");
+	    "Reason for the detach is unclear "
+            "(reserved_for_rent or FE_requested_kill)");
           }
           break;
         default:
@@ -2706,9 +2678,12 @@ linux_launchmon_t::handle_kill_cmd_event
       //
       // kill both the target RM and tool RM gracefully
       //
-      p.get_myopts()->get_my_rmconfig()->graceful_rmkill(p.get_pid(false));	
-      if (!p.get_myopts()->get_my_rmconfig()->get_has_mpir_coloc())
-        p.get_myopts()->get_my_rmconfig()->graceful_rmkill(get_toollauncherpid());
+      p.rmgr()->graceful_rmkill(p.get_pid(false));	
+      if (!p.rmgr()->is_coloc_sup())
+        {
+          int pid = get_toollauncherpid();
+          p.rmgr()->graceful_rmkill(pid);
+        }
 
       switch (p.get_reason())
         {
@@ -2724,7 +2699,8 @@ linux_launchmon_t::handle_kill_cmd_event
           {
 	    self_trace_t::trace ( LEVELCHK(level1), 
 			          MODULENAME,1,
-	    "RM_BE_daemon_exited or its equivalents should not kill the job!");
+	    "RM_BE_daemon_exited or "
+            "its equivalents should not kill the job!");
           }
           break;
         case FE_requested_kill:
@@ -2734,7 +2710,8 @@ linux_launchmon_t::handle_kill_cmd_event
           {
 	    self_trace_t::trace ( LEVELCHK(level1), 
 			          MODULENAME,1,
-	    "Reason for the kill is unclear (reserved_for_rent!)");
+	    "Reason for the kill is unclear "
+            "(reserved_for_rent!)");
           }
           break;
         default:

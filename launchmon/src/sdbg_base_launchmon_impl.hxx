@@ -41,7 +41,7 @@
  *                         the base class
  *        Mar 13 2007 DHA: pipe_t support
  *        Jul 03 2006 DHA: Added self tracing support
- *        Jan 12 2006 DHA: Created file.          
+ *        Jan 12 2006 DHA: Created file.
  */ 
 
 #ifndef SDBG_BASE_LAUNCHMON_IMPL_HXX
@@ -1114,7 +1114,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_daemon_exit_event
       // actually terminated or exited. So, we query the RM map
       // layer to ask questions first.
       //
-      if (p.get_myopts()->get_my_rmconfig()->get_be_fail_detection_supported())
+      if (p.rmgr()->is_fail_detect_sup())
         {
           request_detach(p, RM_BE_daemon_exited);
         }

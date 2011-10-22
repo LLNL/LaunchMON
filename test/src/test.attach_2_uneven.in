@@ -31,15 +31,16 @@
 #  number of processors per node, and unlock the hang. 
 #
 #  Update Log:
+#        Oct 21 2011 DHA: Added dynamic RM detection support.
 #        Mar 06 2009 DHA: Changed bglrm to bgrm
 #        Dec 14 2008 DHA: configurable NUMNODES
 #        Jun 16 2008 DHA: Created file.
 #
  
-RM_TYPE=@RMTP@
+RM_TYPE=@TEST_RMTP@
 NUMNODES=@NNODES@
 
-if test "x$RM_TYPE" = "xbgrm" ; then
+if test "x$RM_TYPE" = "xRC_bgrm" ; then
   rm -f nohup.out
 fi
 
@@ -47,19 +48,18 @@ NUMTASKS=`expr $NUMNODES / 2 \* @SMP@ + 2`
 WAITAMOUNT=$NUMNODES 
 SIGNUM=10
 MPI_JOB_LAUNCHER_PATH=@TJLPATH@
-RM_TYPE=@RMTP@
 export LMON_PREFIX=@LMONPREFIX@
 export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
  
-if test "x$RM_TYPE" = "xslurm" ; then
+if test "x$RM_TYPE" = "xRC_slurm" ; then
   $MPI_JOB_LAUNCHER_PATH -n$NUMTASKS -N$NUMNODES -ppdebug `pwd`/hang_on_SIGUSR1@EXE@ &
-elif test "x$RM_TYPE" = "xbgrm" ; then 
+elif test "x$RM_TYPE" = "xRC_bgrm" ; then 
   WAITAMOUNT=`expr $WAITAMOUNT \* 5`
   nohup $MPI_JOB_LAUNCHER_PATH -verbose 1 -np $NUMTASKS -exe `pwd`/hang_on_SIGUSR1@EXE@ -cwd `pwd` &
-elif test "x$RM_TYPE" = "xalps" ; then
+elif test "x$RM_TYPE" = "xRC_alps" ; then
   WAITAMOUNT=`expr $WAITAMOUNT`
   $MPI_JOB_LAUNCHER_PATH -n $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
-elif test "x$RM_TYPE" = "xorte" ; then
+elif test "x$RM_TYPE" = "xRC_orte" ; then
   WAITAMOUNT=`expr $WAITAMOUNT`
   $MPI_JOB_LAUNCHER_PATH -mca debugger mpirx -np $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
 else

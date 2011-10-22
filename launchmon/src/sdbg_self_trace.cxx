@@ -91,6 +91,9 @@ self_trace_entry_t self_trace_t::driver_module_trace
 self_trace_entry_t self_trace_t::opt_module_trace
      = { quiet, "OptionParsing", "option"};
 
+self_trace_entry_t self_trace_t::rm_module_trace
+     = { quiet, "ResourceManager", "resmgr"};
+
 self_trace_entry_t self_trace_t::sighandler_module_trace
      = { quiet, "SigHandler", "sighandler"};
 

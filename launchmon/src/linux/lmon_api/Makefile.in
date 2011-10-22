@@ -44,8 +44,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/x_ac_bootfabric.m4 \
 	$(top_srcdir)/config/x_ac_enable_verbose.m4 \
 	$(top_srcdir)/config/x_ac_gcrypt.m4 \
 	$(top_srcdir)/config/x_ac_mpicc.m4 \
-	$(top_srcdir)/config/x_ac_os_isa.m4 \
-	$(top_srcdir)/config/x_ac_rm.m4 \
+	$(top_srcdir)/config/x_ac_platform.m4 \
 	$(top_srcdir)/config/x_ac_testnnodes.m4 \
 	$(top_srcdir)/config/x_ac_tracing_cost.m4 \
 	$(top_srcdir)/configure.ac
@@ -72,8 +71,8 @@ libmonbeapi_la_OBJECTS = $(am_libmonbeapi_la_OBJECTS)
 libmonfeapi_la_DEPENDENCIES =
 am_libmonfeapi_la_OBJECTS = libmonfeapi_la-lmon_fe.lo \
 	libmonfeapi_la-lmon_lmonp_msg.lo \
-	libmonfeapi_la-sdbg_self_trace.lo libmonfeapi_la-sdbg_opt.lo \
-	libmonfeapi_la-lmon_say_msg.lo
+	libmonfeapi_la-lmon_say_msg.lo libmonfeapi_la-sdbg_rm_map.lo \
+	libmonfeapi_la-sdbg_self_trace.lo libmonfeapi_la-sdbg_opt.lo
 libmonfeapi_la_OBJECTS = $(am_libmonfeapi_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -100,7 +99,6 @@ ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
-ALPS_INC_DIR = @ALPS_INC_DIR@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
@@ -139,10 +137,7 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-LD = @LD@
 LDFLAGS = @LDFLAGS@
-LIBALPS = @LIBALPS@
-LIBBITSUFFIX = @LIBBITSUFFIX@
 LIBCOMM = @LIBCOMM@
 LIBDL = @LIBDL@
 LIBELF = @LIBELF@
@@ -175,6 +170,7 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 RANLIB = @RANLIB@
 RM_TYPE = @RM_TYPE@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SMPFACTOR = @SMPFACTOR@
@@ -188,8 +184,6 @@ WITH_CIOD_FALSE = @WITH_CIOD_FALSE@
 WITH_CIOD_TRUE = @WITH_CIOD_TRUE@
 WITH_COBO_FALSE = @WITH_COBO_FALSE@
 WITH_COBO_TRUE = @WITH_COBO_TRUE@
-WITH_PMGR_COLLECTIVE_FALSE = @WITH_PMGR_COLLECTIVE_FALSE@
-WITH_PMGR_COLLECTIVE_TRUE = @WITH_PMGR_COLLECTIVE_TRUE@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
@@ -237,45 +231,52 @@ subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 tvcmd = @tvcmd@
-@WITH_CIOD_TRUE@OPT_CIOD = -I$(top_srcdir)/@CIODLOC@ 
-OPT_GCRYPT = -I$(top_srcdir)/@GCRYPTLOC@ -I$(top_srcdir)/@GPGERRLOC@ 
-INCLUDES = -I@ARCHHEADER@ $(OPT_CIOD) $(OPT_GCRYPT) -I.. -I../.. -I$(top_srcdir)/@COMMLOC@ 
-BITS = @LIBBITSUFFIX@
+@WITH_CIOD_TRUE@CIOD_SUPPORT = -I$(top_srcdir)/@CIODLOC@
+GCRYPT_SUPPORT = -I$(top_srcdir)/@GCRYPTLOC@ \
+                               -I$(top_srcdir)/@GPGERRLOC@
+
+INCLUDES = -I@ARCHHEADER@ \
+                                $(OPT_CIOD) \
+                                $(GCRYPT_SUPPORT) \
+                               -I.. -I../.. \
+                               -I$(top_srcdir)/@COMMLOC@
+
 lib_LTLIBRARIES = libmonbeapi.la libmonfeapi.la
 libmonfeapi_la_SOURCES = lmon_fe.cxx \
-			       lmon_lmonp_msg.cxx \
-			       ../../sdbg_self_trace.cxx \
-			       ../../sdbg_opt.cxx \
-			       lmon_say_msg.cxx	\
-			       lmon_be_internal.hxx \
-			       ../../lmon_api/lmon_fe.h	\
-			       ../../lmon_api/lmon_lmonp_msg.h \
+                               lmon_lmonp_msg.cxx \
+                               lmon_say_msg.cxx \
+                               ../../sdbg_rm_map.cxx \
+                               ../../sdbg_self_trace.cxx \
+                               ../../sdbg_opt.cxx \
+                               ../../lmon_api/lmon_fe.h \
+                               ../../lmon_api/lmon_lmonp_msg.h \
                                ../../sdbg_opt.hxx \
-			       ../../lmon_api/lmon_say_msg.hxx	
+                               ../../sdbg_rm_map.hxx \
+                               ../../lmon_api/lmon_say_msg.hxx
 
 libmonfeapi_la_CFLAGS = $(AM_CFLAGS)
 libmonfeapi_la_CXXFLAGS = $(AM_CXXFLAGS)
 libmonfeapi_la_LDFLAGS = -L$(top_srcdir)/@COMMLOC@ \
-			       -L$(top_srcdir)/@GCRYPTLOC@ \
-			       -L$(top_srcdir)/@GPGERRLOC@ \
-			       $(AM_LDFLAGS) \
-			       -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
+                               -L$(top_srcdir)/@GCRYPTLOC@ \
+                               -L$(top_srcdir)/@GPGERRLOC@ \
+                               $(AM_LDFLAGS) \
+                               -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
 
 libmonfeapi_la_LIBADD = @LIBPTHREAD@ @LIBCOMM@ @LIBGCRYPT@ @LIBGPGERR@ @LIBRT@
 libmonbeapi_la_SOURCES = lmon_be.cxx \
-			       lmon_be_comm.cxx \
-			       lmon_lmonp_msg.cxx \
-		               lmon_say_msg.cxx
+                               lmon_be_comm.cxx \
+                               lmon_lmonp_msg.cxx \
+                               lmon_say_msg.cxx
 
 libmonbeapi_la_CFLAGS = $(AM_CFLAGS)
 libmonbeapi_la_CXXFLAGS = $(AM_CXXFLAGS)
 libmonbeapi_la_LDFLAGS = -L$(top_srcdir)/@COMMLOC@ \
-			       -L$(top_srcdir)/@GCRYPTLOC@ \
-			       -L$(top_srcdir)/@GPGERRLOC@ \
-			       $(AM_LDFLAGS) \
-			       -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@ 
+                               -L$(top_srcdir)/@GCRYPTLOC@ \
+                               -L$(top_srcdir)/@GPGERRLOC@ \
+                               $(AM_LDFLAGS) \
+                               -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
 
-libmonbeapi_la_LIBADD = @LIBCOMM@ @LIBGCRYPT@ @LIBGPGERR@ 
+libmonbeapi_la_LIBADD = @LIBCOMM@ @LIBGCRYPT@ @LIBGPGERR@
 all: all-am
 
 .SUFFIXES:
@@ -355,6 +356,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonfeapi_la-lmon_lmonp_msg.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonfeapi_la-lmon_say_msg.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonfeapi_la-sdbg_opt.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonfeapi_la-sdbg_rm_map.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmonfeapi_la-sdbg_self_trace.Plo@am__quote@
 
 .cxx.o:
@@ -420,6 +422,20 @@ libmonfeapi_la-lmon_lmonp_msg.lo: lmon_lmonp_msg.cxx
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmonfeapi_la_CXXFLAGS) $(CXXFLAGS) -c -o libmonfeapi_la-lmon_lmonp_msg.lo `test -f 'lmon_lmonp_msg.cxx' || echo '$(srcdir)/'`lmon_lmonp_msg.cxx
 
+libmonfeapi_la-lmon_say_msg.lo: lmon_say_msg.cxx
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmonfeapi_la_CXXFLAGS) $(CXXFLAGS) -MT libmonfeapi_la-lmon_say_msg.lo -MD -MP -MF "$(DEPDIR)/libmonfeapi_la-lmon_say_msg.Tpo" -c -o libmonfeapi_la-lmon_say_msg.lo `test -f 'lmon_say_msg.cxx' || echo '$(srcdir)/'`lmon_say_msg.cxx; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libmonfeapi_la-lmon_say_msg.Tpo" "$(DEPDIR)/libmonfeapi_la-lmon_say_msg.Plo"; else rm -f "$(DEPDIR)/libmonfeapi_la-lmon_say_msg.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lmon_say_msg.cxx' object='libmonfeapi_la-lmon_say_msg.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmonfeapi_la_CXXFLAGS) $(CXXFLAGS) -c -o libmonfeapi_la-lmon_say_msg.lo `test -f 'lmon_say_msg.cxx' || echo '$(srcdir)/'`lmon_say_msg.cxx
+
+libmonfeapi_la-sdbg_rm_map.lo: ../../sdbg_rm_map.cxx
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmonfeapi_la_CXXFLAGS) $(CXXFLAGS) -MT libmonfeapi_la-sdbg_rm_map.lo -MD -MP -MF "$(DEPDIR)/libmonfeapi_la-sdbg_rm_map.Tpo" -c -o libmonfeapi_la-sdbg_rm_map.lo `test -f '../../sdbg_rm_map.cxx' || echo '$(srcdir)/'`../../sdbg_rm_map.cxx; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libmonfeapi_la-sdbg_rm_map.Tpo" "$(DEPDIR)/libmonfeapi_la-sdbg_rm_map.Plo"; else rm -f "$(DEPDIR)/libmonfeapi_la-sdbg_rm_map.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../../sdbg_rm_map.cxx' object='libmonfeapi_la-sdbg_rm_map.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmonfeapi_la_CXXFLAGS) $(CXXFLAGS) -c -o libmonfeapi_la-sdbg_rm_map.lo `test -f '../../sdbg_rm_map.cxx' || echo '$(srcdir)/'`../../sdbg_rm_map.cxx
+
 libmonfeapi_la-sdbg_self_trace.lo: ../../sdbg_self_trace.cxx
 @am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmonfeapi_la_CXXFLAGS) $(CXXFLAGS) -MT libmonfeapi_la-sdbg_self_trace.lo -MD -MP -MF "$(DEPDIR)/libmonfeapi_la-sdbg_self_trace.Tpo" -c -o libmonfeapi_la-sdbg_self_trace.lo `test -f '../../sdbg_self_trace.cxx' || echo '$(srcdir)/'`../../sdbg_self_trace.cxx; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libmonfeapi_la-sdbg_self_trace.Tpo" "$(DEPDIR)/libmonfeapi_la-sdbg_self_trace.Plo"; else rm -f "$(DEPDIR)/libmonfeapi_la-sdbg_self_trace.Tpo"; exit 1; fi
@@ -433,13 +449,6 @@ libmonfeapi_la-sdbg_opt.lo: ../../sdbg_opt.cxx
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../../sdbg_opt.cxx' object='libmonfeapi_la-sdbg_opt.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmonfeapi_la_CXXFLAGS) $(CXXFLAGS) -c -o libmonfeapi_la-sdbg_opt.lo `test -f '../../sdbg_opt.cxx' || echo '$(srcdir)/'`../../sdbg_opt.cxx
-
-libmonfeapi_la-lmon_say_msg.lo: lmon_say_msg.cxx
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmonfeapi_la_CXXFLAGS) $(CXXFLAGS) -MT libmonfeapi_la-lmon_say_msg.lo -MD -MP -MF "$(DEPDIR)/libmonfeapi_la-lmon_say_msg.Tpo" -c -o libmonfeapi_la-lmon_say_msg.lo `test -f 'lmon_say_msg.cxx' || echo '$(srcdir)/'`lmon_say_msg.cxx; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libmonfeapi_la-lmon_say_msg.Tpo" "$(DEPDIR)/libmonfeapi_la-lmon_say_msg.Plo"; else rm -f "$(DEPDIR)/libmonfeapi_la-lmon_say_msg.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lmon_say_msg.cxx' object='libmonfeapi_la-lmon_say_msg.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmonfeapi_la_CXXFLAGS) $(CXXFLAGS) -c -o libmonfeapi_la-lmon_say_msg.lo `test -f 'lmon_say_msg.cxx' || echo '$(srcdir)/'`lmon_say_msg.cxx
 
 mostlyclean-libtool:
 	-rm -f *.lo

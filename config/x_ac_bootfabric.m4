@@ -37,7 +37,7 @@
 AC_DEFUN([X_AC_BOOTFABRIC], [
   AC_MSG_CHECKING([communication fabric type for bootstrapping])
   AC_ARG_WITH([bootfabric],
-    AS_HELP_STRING(--with-bootfabric@<:@=FABRICTYPE@:>@,specify a communication fabric for bootstrapping of ditributed LaunchMON components @<:@cobo pmgr@:> @<:@default=cobo@:>@),
+    AS_HELP_STRING(--with-bootfabric@<:@=FABRICTYPE@:>@,specify a communication fabric for bootstrapping of ditributed LaunchMON components @<:@cobo@:> @<:@default=cobo@:>@),
     [with_fab=$withval],
     [with_fab="check"])
   AC_ARG_WITH([cobo-port],
@@ -49,25 +49,25 @@ AC_DEFUN([X_AC_BOOTFABRIC], [
   commfab_found="no"
 
   if test "x$with_fab" = "xpmgr" ; then
-    if test -d tools/pmgr_collective; then 
+    #if test -d tools/pmgr_collective; then 
       #
       # Following defines macroes to pick up the customization
       # added to the original pmgr collective implementation.
       #
-      with_fab="pmgr"
-      commfab_found="yes"
-      AC_DEFINE(PMGR_BASED, 1, [Define 1 for PMGR_BASED])
-      AC_DEFINE(TEST_MORE_COLL, 1, [Define test more coll support])
-      AC_DEFINE(TOOL_HOST_ENV, "LMON_FE_WHERETOCONNECT_ADDR", [Define TOOL_HOST_ENV])
-      AC_DEFINE(TOOL_PORT_ENV, "LMON_FE_WHERETOCONNECT_PORT", [Define TOOL_PORT_ENV] )
-      AC_DEFINE(TOOL_SS_ENV, "LMON_SHARED_SECRET", [Define TOOL_SS_ENV])
-      AC_DEFINE(TOOL_SCH_ENV, "LMON_SEC_CHK", [Define TOOL_SCH_ENV])
-      AC_SUBST(COMMLOC, tools/pmgr_collective/src)
-      AC_SUBST(LIBCOMM, -lpmgr_collective)
-    else
+      #with_fab="pmgr"
+      #commfab_found="yes"
+      #AC_DEFINE(PMGR_BASED, 1, [Define 1 for PMGR_BASED])
+      #AC_DEFINE(TEST_MORE_COLL, 1, [Define test more coll support])
+      #AC_DEFINE(TOOL_HOST_ENV, "LMON_FE_WHERETOCONNECT_ADDR", [Define TOOL_HOST_ENV])
+      #AC_DEFINE(TOOL_PORT_ENV, "LMON_FE_WHERETOCONNECT_PORT", [Define TOOL_PORT_ENV] )
+      #AC_DEFINE(TOOL_SS_ENV, "LMON_SHARED_SECRET", [Define TOOL_SS_ENV])
+      #AC_DEFINE(TOOL_SCH_ENV, "LMON_SEC_CHK", [Define TOOL_SCH_ENV])
+      #AC_SUBST(COMMLOC, tools/pmgr_collective/src)
+      #AC_SUBST(LIBCOMM, -lpmgr_collective)
+    #else
       commfab_found="no"
-      AC_MSG_ERROR([--with-bootfabric=pmgr is given, but tools/pmgr_collective not found])
-    fi
+      AC_MSG_ERROR([--with-bootfabric=pmgr is given, but pmgr_collective has been deprecated])
+    #fi
   elif test "x$with_fab" = "xmpi" ; then
     commfab_found="yes"
     AC_DEFINE(MPI_BASED, 1, [Define 1 for MPI_BASED])
@@ -131,7 +131,7 @@ AC_DEFUN([X_AC_BOOTFABRIC], [
     fi
   fi
 
-  AM_CONDITIONAL([WITH_PMGR_COLLECTIVE], [test "x$commfab_found" = "xyes" -a "x$with_fab" = "xpmgr"])
+  #AM_CONDITIONAL([WITH_PMGR_COLLECTIVE], [test "x$commfab_found" = "xyes" -a "x$with_fab" = "xpmgr"])
   AM_CONDITIONAL([WITH_COBO], [test "x$commfab_found" = "xyes" -a "x$with_fab" = "xcobo"])
   AC_MSG_RESULT($with_fab:$commfab_found)
 ])

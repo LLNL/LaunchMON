@@ -33,7 +33,7 @@
 #
 
 NUMTASKS=8192
-RM_TYPE=@RMTP@
 LMON_OPTS=""
+export LMON_PREFIX=@LMONPREFIX@
 
 @LMON@ $LMON_OPTS -d `pwd`/be_standalone_kicker@EXE@ `pwd`/LE_model_checker@EXE@ -a -p$NUMTASKS -t1

@@ -28,15 +28,15 @@
 # --------------------------------------------------------------------------------
 # 
 #   Update Log:
-#         Jun 11 2008 DHA: File created. 
+#         Jun 11 2008 DHA: File created.
 #
-AC_DEFUN([X_AC_GCRYPT], [  
+AC_DEFUN([X_AC_GCRYPT], [
 
   AC_MSG_CHECKING([whether to configure and build gcrypt])
 
-  AC_ARG_WITH([gcrypt],  
+  AC_ARG_WITH([gcrypt],
     AS_HELP_STRING(--with-gcrypt@<:@=ARG@:>@,configure and build gcrypt @<:@default=yes@:>@), 
-    [with_gcrypt=$withval],  
+    [with_gcrypt=$withval],
     [with_gcrypt="check"]
   )
 

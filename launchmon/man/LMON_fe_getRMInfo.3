@@ -35,16 +35,26 @@ to the storage holding the \fBlmon_rm_info_t\fR type:
 .B "} rm_catalogue_e;
 .PP
 .B typedef struct {
-.B "   "rm_catalogue_e rm_type; "
-.B "   "pid_t rm_launcher_pid;  "
+.B "   "rm_catalogue_e *rm_supported_types; "
+.B "   "int num_supported_types; "
+.B "   "int index_to_cur_instance; "
+.B "   "pid_t rm_launcher_pid; "
 .B "} lmon_rm_info_t;
 .fi
 .PP
 
+The \fIrm\_supported\_types\fR field is a pointer to an array of
+the length of \fInum\_supported\_types\fR, containing the supported
+resource manager types (the \fIrm\_catalogue\_e\fR type) for the platform. These fields contain static information
+and thus are available before an active session is instantiated with
+a specific resource manager. However, \fIindex\_to\_cur\_instance\fR and \fIrm\_launcher\_pid\fR are specific to a resource manager that the session
+instantiates. Thus, these two later fields become available only after \fBLMON\_fe\_launchAndSpawnDaemons()\fR or \fBLMON\_fe\_attachAndSpawnDaemons()\fR is
+successfully returned for the session.
+
 .SH RETURN VALUE
-\fBLMON_OK\fR when both \fIrm\_type\fR and \fIrm_launcher_pid\fR are available; 
-\fBLMON_EDUNAV\fR only when \fIrm\_type\fR is available; otherwise, an LMON error code 
-is returned as described below. 
+\fBLMON_OK\fR when all the fields of \fIinfo\fR are available;
+\fBLMON_EDUNAV\fR only when \fIrm\_supported\_types\fR and \fInum\_supported\_types\fR are available; otherwise, an LMON error code 
+is returned as described below.
 
 .SH ERRORS
 .TP
@@ -58,7 +68,7 @@ Invalid arguments.
 Invalid session.
 .TP
 .B LMON_EDUNAV
-The pid of the target job launcher is not available.
+Neither the pid of the target job launcher (\fIrm\_launcher\_pid\fR) nor \fIindex\_to\_cur\_instance\fR is  available.
 
 .SH AUTHOR
 Dong H. Ahn <ahn1@llnl.gov>

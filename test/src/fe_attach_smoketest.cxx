@@ -186,8 +186,8 @@ main (int argc, char* argv[])
          {
             fprintf ( stdout, "[LMON FE] FAILED\n");
             return EXIT_FAILURE;
-         } 
-    } 
+         }
+    }
 
   spid = atoi(argv[1]);
   if ( spid < 0 )
@@ -198,7 +198,7 @@ main (int argc, char* argv[])
 
 #if MEASURE_TRACING_COST
   begin_timer ();
-#endif 
+#endif
 
   if (getenv ("FEN_RM_DISTRIBUTED"))
     {
@@ -387,7 +387,8 @@ main (int argc, char* argv[])
   else
    {
       fprintf ( stdout,
-         "\n[LMON FE] RM type is %d\n", rminfo.rm_type);
+         "\n[LMON FE] RM type is %d\n",
+           rminfo.rm_supported_types[rminfo.index_to_cur_instance]);
       fprintf ( stdout,
          "\n[LMON FE] RM launcher's pid is %d\n", rminfo.rm_launcher_pid);
    }

@@ -170,7 +170,7 @@ EXTRA_DIST                        = test.LE_model_checker_mainthread.in \
 do_subst = sed -e 's,@LMON@,$(prefix)/bin/launchmon$(EXEEXT),g' \
 	       -e 's,@LMONPREFIX@,$(prefix),g' \
                -e 's,@TJLPATH@,$(TARGET_JOB_LAUNCHER_PATH),g' \
-               -e 's,@RMTP@,$(RM_TYPE),g' \
+               -e 's,@TEST_RMTP@,$(RM_TYPE),g' \
 	       -e 's,@SMP@,$(SMPFACTOR),g' \
 	       -e 's,@NNODES@,$(TESTNNODES),g' \
                -e 's,@EXE@,$(EXEEXT),g' 

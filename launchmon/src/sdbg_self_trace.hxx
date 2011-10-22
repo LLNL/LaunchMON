@@ -64,6 +64,7 @@ struct self_trace_t {
   static self_trace_entry_t driver_module_trace;
   static self_trace_entry_t machine_module_trace;
   static self_trace_entry_t opt_module_trace;
+  static self_trace_entry_t rm_module_trace;
   static self_trace_entry_t sighandler_module_trace;
 
   static bool trace(bool, const std::string&, bool, const char*, ... );

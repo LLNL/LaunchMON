@@ -30,16 +30,35 @@
 ##
 ##  Update Log:
 ##        Jun 06 2008 DHA: Taken from the old Makefile, converting
-##                         to automake Makefile.am 
+##                         to automake Makefile.am
 ##        Feb 09 2008 DHA: Added LLNS Copyright
 ##        Dec 27 2006 DHA: Created file.
 ##
 
 SUBDIRS                = linux
 nobase_include_HEADERS = lmon_api/common.h \
-		         lmon_api/lmon_api_std.h \
-		  	 lmon_api/lmon_be.h \
-		  	 lmon_api/lmon_fe.h \
-		  	 lmon_api/lmon_lmonp_msg.h \
-		  	 lmon_api/lmon_mw.h \
-		  	 lmon_api/lmon_proctab.h
+                         lmon_api/lmon_api_std.h \
+                         lmon_api/lmon_be.h \
+                         lmon_api/lmon_fe.h \
+                         lmon_api/lmon_lmonp_msg.h \
+                         lmon_api/lmon_mw.h \
+                         lmon_api/lmon_proctab.h
+
+etcdir                 = ${prefix}/etc
+etc_SCRIPTS            = rm_info.conf \
+                         rm_alps.conf \
+                         rm_bglrm.conf \
+                         rm_bgprm.conf \
+                         rm_bgqrm.conf \
+                         rm_mchecker.conf \
+                         rm_openrte.conf \
+                         rm_slurm.conf
+
+EXTRA_DIST             = rm_info.conf \
+                         rm_alps.conf \
+                         rm_bglrm.conf \
+                         rm_bgprm.conf \
+                         rm_bgqrm.conf \
+                         rm_mchecler.conf \
+                         rm_openrte.conf \
+                         rm_slurm.conf

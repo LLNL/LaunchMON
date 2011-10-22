@@ -276,8 +276,7 @@ echo_argv (int argc, char** argv)
 }
 
 
-int 
-main ( int argc, char* argv[])
+int modelchecker_run( int argc, char* argv[])
 {
   int i = 0;
   int errorlevel;
@@ -412,4 +411,10 @@ main ( int argc, char* argv[])
     "[LMON LE: OK] Please check if launchmon fetched all RPDTAB entries of %d tasks\n", myopt.pcount);
   fprintf ( stdout, "****************************************************************\n\n");
   return 0;
+}
+
+int
+main ( int argc, char* argv[])
+{
+  return modelchecker_run(argc, argv);
 }

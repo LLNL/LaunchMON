@@ -24,25 +24,26 @@
  * with this program; if not, write to the Free Software Foundation, Inc., 59 Temple 
  * Place, Suite 330, Boston, MA 02111-1307 USA
  *--------------------------------------------------------------------------------
- *						
+ *	
  *
  *  Update Log:
+ *        Oct 07 2010 DHA: Dynamic resource manager detection support
  *        Jun 30 2010 DHA: Added faster engine parsing error detection support
- *                         Deprecated option_sanity_check(); 
+ *                         Deprecated option_sanity_check();
  *        Jun 10 2010 DHA: Added RM MAP support. Removed Linux-specific getexec 
  *                         from here
  *        Mar 16 2009 DHA: Added COBO support
- *                         Added 2010 to copyright 
+ *                         Added 2010 to copyright
  *        Mar 11 2009 DHA: Added 2009 to copyright
  *        Mar 17 2008 DHA: Added PMGR Collective support.
  *        Feb 09 2008 DHA: Added LLNS Copyright.
- *        Dec 05 2007 DHA: Fixed some unitialized option field, which 
+ *        Dec 05 2007 DHA: Fixed some unitialized option field, which
  *                         crashed the LaunchMON under the control
  *                         of TotalView's memory debugging, specifically
- *                         memory painting. 
+ *                         memory painting.
  *        Dec 05 2007 DHA: Added mpirun model checker support
  *        Jul 04 2006 DHA: Added self tracing support
- *        Jul 03 2006 DHA: Added a logic to catch an invalid pid 
+ *        Jul 03 2006 DHA: Added a logic to catch an invalid pid
  *                         for attaching case.
  *        Jun 08 2006 DHA: Added attach-to-a-running-job support
  *        Jun 06 2006 DHA: File created
@@ -65,18 +66,22 @@
 #include "lmon_api/lmon_say_msg.hxx"
 #include "sdbg_self_trace.hxx"
 
-const std::string software_name 
+
+const std::string software_name
    = PACKAGE_NAME;
-const std::string version 
+const std::string version
    = PACKAGE_VERSION;
 const std::string copyright 
-   = "Copyright (C) 2008-2010, Lawrence Livermore National Security, LLC.";
+   = "Copyright (C) 2008-2012, "
+     "Lawrence Livermore National Security, LLC.";
 const std::string produced 
    = "Produced at Lawrence Livermore National Laboratory.";
 const std::string right 
    = "LLNL-CODE-409469 All rights reserved.";
 const std::string LAUNCHMON_COPYRIGHT 
-   = software_name + " " +  version + "\n" + copyright + "\n" + produced + "\n" + right + "\n";
+   = software_name + " " +  version + "\n" + copyright 
+       + "\n" + produced + "\n" + right + "\n";
+
 
 ///////////////////////////////////////////////////////////////////
 //
@@ -84,10 +89,11 @@ const std::string LAUNCHMON_COPYRIGHT
 //
 ///////////////////////////////////////////////////////////////////
 
+
 //!
 /*!  opt_args_t constructor
-      
-    
+
+
 */
 opts_args_t::opts_args_t ()
 {
@@ -99,9 +105,6 @@ opts_args_t::opts_args_t ()
   my_opt->tool_daemon = "";
   my_opt->tool_daemon_opts = "";
   my_opt->remote_info = "";
-#if PMGR_BASED 
-  my_opt->pmgr_info = "";
-#endif
   my_opt->lmon_sec_info = "";
   my_opt->debugtarget = "";
   my_opt->launchstring = "";
@@ -164,40 +167,36 @@ opts_args_t::process_args ( int *argc, char ***argv )
   my_opt->remote = false;
 
   for (i=1; (i < (*argc)) && !fin_parsing ; i++) 
-    {    
+    {
       if (nargv[i][0] == '-') 
 	{
 	  c = nargv[i][1];
 	  if ( c == '-') 
 	    {
-	      if ( string(&nargv[i][2]) == string("verbose")) 
-		c = 'v';		
-	      else if ( string(&nargv[i][2]) == string("help")) 		
-		c = 'h';	    
-	      else if ( string(&nargv[i][2]) == string("daemonpath")) 		
-		c = 'd';	       
-	      else if ( string(&nargv[i][2]) == string("selftrace")) 		
-		c = 'x';	       
-	      else if ( string(&nargv[i][2]) == string("daemonopts")) 		
-		c = 't';		
-	      else if ( string(&nargv[i][2]) == string("pid")) 		
-		c = 'p';		
-	      else if ( string(&nargv[i][2]) == string("traceout"))		
+	      if ( string(&nargv[i][2]) == string("verbose"))
+		c = 'v';
+	      else if ( string(&nargv[i][2]) == string("help"))
+		c = 'h';
+	      else if ( string(&nargv[i][2]) == string("daemonpath"))
+		c = 'd';
+	      else if ( string(&nargv[i][2]) == string("selftrace"))
+		c = 'x';
+	      else if ( string(&nargv[i][2]) == string("daemonopts"))
+		c = 't';
+	      else if ( string(&nargv[i][2]) == string("pid"))
+		c = 'p';
+	      else if ( string(&nargv[i][2]) == string("traceout"))
 		c = 'o';
 	      else if ( string(&nargv[i][2]) == string("remote"))
 		c = 'r';
-#if PMGR_BASED 
-	      else if ( string(&nargv[i][2]) == string("pmgr"))
-	        c = 'm';
-#endif
 	      else if ( string(&nargv[i][2]) == string("lmonsec"))	
 	        c = 's';
 	    }
 
-	  switch (c) 
+	  switch (c)
 	    {
 
-	    case 'a':  
+	    case 'a':
 	      if(debugtarget)
 	        {
 		  nargv[i] = debugtarget;
@@ -223,11 +222,11 @@ opts_args_t::process_args ( int *argc, char ***argv )
 	      if (my_opt->verbose == 0)
 		ver = quiet;
 	      else if (my_opt->verbose == 1 )
-		ver = level1;       
+		ver = level1;
 	      else if (my_opt->verbose == 2 )
-		ver = level2;	   
-	      else 
-		my_opt->verbose = 1;	  
+		ver = level2;
+	      else
+		my_opt->verbose = 1;
 
 	      self_trace_t::launchmon_module_trace.verbosity_level = ver;
 	      self_trace_t::tracer_module_trace.verbosity_level = ver;
@@ -237,6 +236,7 @@ opts_args_t::process_args ( int *argc, char ***argv )
 	      self_trace_t::driver_module_trace.verbosity_level = ver;
 	      self_trace_t::machine_module_trace.verbosity_level = ver;
 	      self_trace_t::opt_module_trace.verbosity_level = ver;
+              self_trace_t::rm_module_trace.verbosity_level = ver;
 
 	      i++;
 	      break;
@@ -253,7 +253,7 @@ opts_args_t::process_args ( int *argc, char ***argv )
 		  {
 		    //
 	            // tool daemon nonexistent
-		    // 
+		    //
 		    has_parse_error = true;
 		    fin_parsing = true;
 		    rv = false;
@@ -273,23 +273,16 @@ opts_args_t::process_args ( int *argc, char ***argv )
 		  has_parse_error = true;
 		  fin_parsing = true;
 		  rv = false;
-                } 
+                }
 	      my_opt->attach = true;
 	      i++;
 	      break;
 
 	    case 'r':
 	      my_opt->remote = true;
-	      my_opt->remote_info = nargv[i+1]; // it should have hostname:port 
+	      my_opt->remote_info = nargv[i+1]; // it should have hostname:port
 	      i++;
 	      break;
-#if PMGR_BASED
-
- 	    case 'm':
-	      my_opt->pmgr_info = nargv[i+1]; // should also be hostname:port	
-	      i++;
-	      break;	
-#endif
 
  	    case 's':
 	      my_opt->lmon_sec_info = nargv[i+1];
@@ -305,42 +298,45 @@ opts_args_t::process_args ( int *argc, char ***argv )
 	      level = atoi(strtok(NULL, ":"));;
 
 	      if (level == 0)
-		ver = quiet;	      
+		ver = quiet;
 	      else if (level == 1 )
-		ver = level1;       
+		ver = level1;
 	      else if (level == 2 )
-		ver = level2;	     
+		ver = level2;
 	      else if (level == 3 )
-		ver = level3;	   
+		ver = level3;
 	      else if (level == 4 )
-		ver = level4;	   
-	      else 
+		ver = level4;
+	      else
 		ver = level1;
 
-	      if ( modulename== self_trace_t::launchmon_module_trace.module_symbol ) 
-		self_trace_t::launchmon_module_trace.verbosity_level = ver;       
-	      else if ( modulename 
+	      if ( modulename== self_trace_t::launchmon_module_trace.module_symbol )
+		self_trace_t::launchmon_module_trace.verbosity_level = ver;
+	      else if ( modulename
 			== self_trace_t::tracer_module_trace.module_symbol )
-		self_trace_t::tracer_module_trace.verbosity_level = ver;	      
+		self_trace_t::tracer_module_trace.verbosity_level = ver;
 	      else if ( modulename
 			== self_trace_t::symtab_module_trace.module_symbol )
-		self_trace_t::symtab_module_trace.verbosity_level = ver;       
-	      else if ( modulename 
+		self_trace_t::symtab_module_trace.verbosity_level = ver;
+	      else if ( modulename
 			== self_trace_t::thread_tracer_module_trace.module_symbol )
-		self_trace_t::thread_tracer_module_trace.verbosity_level = ver;       
-	      else if ( modulename 
+		self_trace_t::thread_tracer_module_trace.verbosity_level = ver;
+	      else if ( modulename
 			== self_trace_t::machine_module_trace.module_symbol )
 		self_trace_t::machine_module_trace.verbosity_level = ver;
-	      else if ( modulename 
+	      else if ( modulename
 			== self_trace_t::event_module_trace.module_symbol )
 		self_trace_t::event_module_trace.verbosity_level = ver;
-	      else if ( modulename 
+	      else if ( modulename
 			== self_trace_t::driver_module_trace.module_symbol )
 		self_trace_t::driver_module_trace.verbosity_level = ver;
-	      else if ( modulename 
+	      else if ( modulename
 			== self_trace_t::opt_module_trace.module_symbol )
 		self_trace_t::opt_module_trace.verbosity_level = ver;
-	      else if ( modulename 
+	      else if ( modulename
+			== self_trace_t::rm_module_trace.module_symbol )
+		self_trace_t::rm_module_trace.verbosity_level = ver;
+	      else if ( modulename
 			== self_trace_t::sighandler_module_trace.module_symbol )
 		self_trace_t::sighandler_module_trace.verbosity_level = ver;
 
@@ -350,7 +346,7 @@ opts_args_t::process_args ( int *argc, char ***argv )
 	    default:
 	      print_usage();
 	      rv = false;
-	      break;  
+	      break;
 	    }
 	}
       else 
@@ -362,7 +358,7 @@ opts_args_t::process_args ( int *argc, char ***argv )
             {
 	      //
 	      // job launcher path nonexistent
-	      // 
+	      //
 	      has_parse_error = true;
 	      rv = false;	
 	    }
@@ -370,15 +366,15 @@ opts_args_t::process_args ( int *argc, char ***argv )
     }
 
   //
-  // alternative way to set the engine's verbose level 
+  // alternative way to set the engine's verbose level
   //
-  char *l = getenv("LMON_ENGINE_VERBOSE_LEVEL");
-  if (l) 
+  char *l;
+  if ( (l = getenv("LMON_ENGINE_VERBOSE_LEVEL")) != NULL )
     {
       int il = atoi(l);
       self_trace_verbosity verbo;
 
-      switch (il) 
+      switch (il)
         {
         case 0:
           verbo = quiet;
@@ -420,7 +416,7 @@ opts_args_t::process_args ( int *argc, char ***argv )
 
   if ( !(my_opt->remote && (my_opt->verbose == 0 )) )
     print_copyright();
-  
+
   return rv;
 }
 
@@ -429,7 +425,7 @@ opts_args_t::process_args ( int *argc, char ***argv )
 /*!
  
 */
-bool 
+bool
 opts_args_t::construct_launch_string ()
 {
   if (!my_opt) 
@@ -447,39 +443,41 @@ opts_args_t::construct_launch_string ()
 #ifdef RM_BE_STUB_CMD
   char *pref;
   std::string bestub(RM_BE_STUB_CMD);
-  if (pref = getenv("LMON_PREFIX")) 
+  if (pref = getenv("LMON_PREFIX"))
     bestub = std::string(pref) + std::string("/bin/") + bestub;
 #endif
 
   std::string bulklauncher = my_opt->debugtarget;
+
 #ifdef RM_FE_COLOC_CMD
   char *bnbuf = strdup(bulklauncher.c_str());
   char *dt = basename(bnbuf);
 
-  if ((std::string(dt) != std::string("LE_model_checker.debug")) 
-      && (std::string(dt) != std::string("LE_model_checker")))
+  char *pref2; 
+  bulklauncher = RM_FE_COLOC_CMD;
+  if (pref2 = getenv("LMON_PREFIX"))
     {
-      char *pref2; 
-      bulklauncher = RM_FE_COLOC_CMD;
-      if (pref2 = getenv("LMON_PREFIX")) 
-        bulklauncher = std::string(pref) + std::string("/bin/") + bulklauncher;
+       bulklauncher = std::string(pref)
+                         + std::string("/bin/")
+                         + bulklauncher;
     }
 #endif
-  
-  bool initc = my_rmconfig->init( bulklauncher,
-				  my_opt->tool_daemon,
-				  my_opt->tool_daemon_opts
+  bool initc = my_rmconfig->init(std::string(TARGET_OS_ISA_STRING));
+  initc = my_rmconfig->init_rm_instance(bulklauncher,
+                            my_opt->tool_daemon,
+                            my_opt->tool_daemon_opts
 #ifdef RM_BE_STUB_CMD
-                                , bestub
+                           ,bestub
 #endif
-				 );
+                            );
 
   if(!initc)
     {
-      self_trace_t::trace ( true, 
+      self_trace_t::trace ( true,
         MODULENAME,
-	1,
-	"unable to initialize the RM map object for launching string construction.");
+        1,
+        "unable to initialize the RM map object "
+        "for launching string construction.");
 
       return false;
     }
@@ -499,16 +497,13 @@ opts_args_t::print_usage()
   using std::endl;
 
   cerr << "Usage: " << endl;
-  cerr << "  launchmon <options> srun -a <srun options>" << endl; 
+  cerr << "  launchmon <options> srun -a <srun options>" << endl;
   cerr << "      or " << endl;
   cerr << "  launchmon <options> -p srun_pid " << endl << endl;
   cerr << "options:" << endl;
   cerr << "\t\t-v, --verbose 0~2           sets the verbosity level." << endl;
   cerr << "\t\t-h, --help                  prints this message." << endl;
   cerr << "\t\t-r, --remote ip:port        invokes launchmon in API mode." << endl;
-#if PMGR_BASED
-  cerr << "\t\t-r, --pmgr ip:port          ip/port pair FEN pmgr created." << endl;
-#endif
   cerr << "\t\t-d, --daemonpath path       sets the tool daemon path." << endl;
   cerr << "\t\t-t, --daemonopts \"opts\"     sets the tool daemon option set." << endl;
   cerr << "\t\t-p, --pid pid               attaches to pid, the pid of running parallel "
@@ -550,10 +545,10 @@ opts_args_t::print_copyright()
 
 
 //!  opts_args_t::check_path
-/*!  
-          
+/*!
+
 */
-bool 
+bool
 opts_args_t::check_path ( std::string &base, std::string &path )
 {
   using namespace std;
@@ -567,21 +562,18 @@ opts_args_t::check_path ( std::string &base, std::string &path )
   mypath = strdup(getenv("PATH"));
   mypathstart = mypath;
 
-  //
-  // TODO: stat is OS-specific, move it this to OS-dependent layer  
-  //
-  while ( stat( path.c_str(), &pathchk ) != 0 ) 
-    {		  
+  while ( stat( path.c_str(), &pathchk ) != 0 )
+    {
       pth = strtok(mypathstart, ":");
-      if ( (base[0] != '/') && pth != NULL ) 
+      if ( (base[0] != '/') && pth != NULL )
 	{
 	  string dt = string(pth) + string("/") +  string(base);
 	  path = dt;
 	}
-      else 
+      else
         {
 	  {
-	    self_trace_t::trace ( LEVELCHK(quiet), 
+	    self_trace_t::trace ( LEVELCHK(quiet),
 	    MODULENAME,
 	    1,
 	    "the path[%s] does not exit.",
@@ -589,10 +581,10 @@ opts_args_t::check_path ( std::string &base, std::string &path )
 	  }
 	  rc = false;
 	  break;
-        }		
+        }
       mypathstart = NULL;	
     }
-  
+
   free(mypath);
 
   return rc;
@@ -604,7 +596,7 @@ opts_args_t::check_path ( std::string &base, std::string &path )
      the only member it doesn't do the deep copy is "remaining"
 
      Jun 09 2010, move this copy ctor to the private area to 
-     prevent this object from being copied	 
+     prevent this object from being copied
 */
 opts_args_t::opts_args_t ( const opts_args_t& o )
 {
@@ -617,9 +609,6 @@ opts_args_t::opts_args_t ( const opts_args_t& o )
     my_opt->tool_daemon = o.my_opt->tool_daemon;
     my_opt->tool_daemon_opts = o.my_opt->tool_daemon_opts;
     my_opt->remote_info = o.my_opt->remote_info;
-#if PMGR_BASED 
-    my_opt->pmgr_info = o.my_opt->pmgr_info;
-#endif
     my_opt->lmon_sec_info = o.my_opt->lmon_sec_info;
     my_opt->debugtarget = o.my_opt->debugtarget;
     my_opt->launchstring = o.my_opt->launchstring;
@@ -627,5 +616,5 @@ opts_args_t::opts_args_t ( const opts_args_t& o )
     my_opt->launcher_pid = o.my_opt->launcher_pid;
 
     MODULENAME = o.MODULENAME;
-  }  
+  }
 }

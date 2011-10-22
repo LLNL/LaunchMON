@@ -36,17 +36,20 @@
 #        Jun 13 2008 DHA: Created file.
 #
 
-RM_TYPE=@RMTP@
+export RM_TYPE=@TEST_RMTP@
+export MPI_JOB_LAUNCHER_PATH=@TJLPATH@
+export LMON_PREFIX=@LMONPREFIX@
+export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
+
 NUMNODES=@NNODES@
 NOHUP=""
-if test "x$RM_TYPE" = "xbgrm" ; then
+if test "x$RM_TYPE" = "xRC_bgrm" ; then
   NOHUP=nohup
   rm -f nohup.out
 fi
 
 NUMTASKS=`expr $NUMNODES \* @SMP@`
-                                                                                                                                               
-export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
+
 export LMON_INVALIDDAEMON_TEST=1
 
 $NOHUP fe_launch_smoketest@EXE@ `pwd`/simple_MPI@EXE@ $NUMTASKS $NUMNODES pdebug /invalid/be_kicker@EXE@

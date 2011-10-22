@@ -29,12 +29,17 @@
 #
 #
 #  Update Log:
+#        Oct 21 2011 DHA: Added dynamic RM detection support.
 #        Mar 06 2009 DHA: Changed bglrm to bgrm
 #        Dec 14 2008 DHA: configurable NUMNODES
 #        Sep 26 2008 DHA: Created file.
 #
 
-RM_TYPE=@RMTP@
+export RM_TYPE=@TEST_RMTP@
+export MPI_JOB_LAUNCHER_PATH=@TJLPATH@
+export LMON_PREFIX=@LMONPREFIX@
+export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
+
 NUMNODES=@NNODES@
 NOHUP=""
 if test "x$RM_TYPE" = "xbgrm" ; then
@@ -45,8 +50,6 @@ fi
 NUMTASKS=`expr $NUMNODES \* @SMP@`
 SIGNUM=18
 
-export LMON_PREFIX=@LMONPREFIX@
-export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
 export LMON_ADDITIONAL_FE_STALL=1
 export LMON_STATUS_CB_TEST=1
 

@@ -32,9 +32,6 @@
 ##        Jun 10 2007 DHA: Copied from the old Makefile.
 ##
 
-if WITH_PMGR_COLLECTIVE
-  OPT_PMGR_COLLECTIVE = pmgr_collective
-endif 
 if WITH_COBO
   OPT_COBO = cobo
 endif
@@ -46,7 +43,7 @@ if WITH_ALPS
 endif
   OPT_GCRYPT = libgpg-error
 
-SUBDIRS = $(OPT_PMGR_COLLECTIVE) $(OPT_COBO) $(OPT_CIOD) $(OPT_ALPS) $(OPT_GCRYPT)
+SUBDIRS = $(OPT_COBO) $(OPT_CIOD) $(OPT_ALPS) $(OPT_GCRYPT)
 
 all-local:
 	if test -f libgcrypt/Makefile; then \

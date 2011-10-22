@@ -33,6 +33,7 @@
  *  
  *
  *  Update Log:
+ *        Oct  07 2011 DHA: Deprecated PMGR Collective support
  *        May  11 2010 DHA: Added MEASURE_TRACING_COST for the PMGR layer
  *        Feb  05 2010 DHA: Added pmgr_register_hname to register the local 
  *                          hostname to the PMGR Collective layer. This is to work 
@@ -110,10 +111,6 @@ using namespace DebuggerInterface;
 #if MPI_BASED
 extern "C" {
 #include <mpi.h>
-}
-#elif PMGR_BASED
-extern "C" {
-#include <pmgr_collective_client.h>
 }
 #elif COBO_BASED
 extern "C" {
@@ -195,50 +192,6 @@ LMON_be_internal_init ( int* argc, char*** argv, char *myhn )
   MPI_Comm_size (MPI_COMM_WORLD, &ICCL_size);
   MPI_Comm_rank (MPI_COMM_WORLD, &ICCL_rank);
   ICCL_global_id = ICCL_rank;
-#elif PMGR_BASED
-
-# if MEASURE_TRACING_COST
-  /* Hack, but MEASURE_TRACING_COST doesn't propagate to the iccl layer 
-   * so we use the global variable trick here
-   */
-  __pmgr_ts = gettimeofdayD();
-# endif
-
-  /*
-   * with PMGR Collective Interface 
-   */
-  if ( ( rc = pmgr_init (argc,
-      			 argv,
-			 &ICCL_size,
-			 &ICCL_rank,
-			 &ICCL_global_id)) 
-       != PMGR_SUCCESS )
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true,
-		   "pmgr_init failed");
-      return LMON_EINVAL;
-    }
-
-  if (pmgr_register_hname (myhn) < 0)
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true,
-		   "pmgr_register_hname failed");
-      return LMON_EINVAL;
-    } 
- 
-  if ( ( rc = pmgr_open () ) != PMGR_SUCCESS ) 
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true,
-		   "pmgr_open failed");
-      return LMON_EINVAL;
-    }
-
-  if (ICCL_rank == -1)  
-    pmgr_getmyrank (&ICCL_rank);
-
-  if (ICCL_size == -1)
-    pmgr_getmysize (&ICCL_size); 
-
 #elif COBO_BASED
 
 # if MEASURE_TRACING_COST
@@ -360,15 +313,7 @@ LMON_be_internal_init ( int* argc, char*** argv, char *myhn )
 lmon_rc_e
 LMON_be_internal_getConnFd ( int *fd )
 {
-#if PMGR_BASED
-  if ( pmgr_getsockfd (fd) != PMGR_SUCCESS )
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, false,"no connection estabilished with FE");
-      return LMON_EDUNAV;
-    }
-
-  return LMON_OK;
-#elif COBO_BASED
+#if COBO_BASED
   if ( ICCL_rank == 0)
     {
       if ( cobo_get_parent_socket (fd) != COBO_SUCCESS )
@@ -449,14 +394,6 @@ LMON_be_internal_barrier ()
 
       return LMON_EINVAL;
     }
-#elif PMGR_BASED
-  if ( (rc = pmgr_barrier ()) != PMGR_SUCCESS )
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true,
-        "pmgr_barrier failed ");
-
-      return LMON_EINVAL;
-    }
 #elif COBO_BASED
   if ( (rc = cobo_barrier ()) != COBO_SUCCESS )
     {
@@ -494,16 +431,6 @@ LMON_be_internal_broadcast ( void* buf, int numbyte )
 			 MPI_COMM_WORLD)) < 0 )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true," MPI_Bcast failed");
-
-      return LMON_EINVAL;
-    }
-#elif PMGR_BASED
-  if ( (rc = pmgr_bcast ( buf,
-			  numbyte,
-		 	  LMON_BE_MASTER ))
-       != PMGR_SUCCESS )
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true," pmgr_bcast failed");
 
       return LMON_EINVAL;
     }
@@ -556,17 +483,6 @@ LMON_be_internal_gather (
 
       return LMON_EINVAL;
     }
-#elif PMGR_BASED
-  rc = pmgr_gather (sendbuf,
-	            numbyte_per_elem, 
-		    recvbuf,
-                    LMON_BE_MASTER);
-  if (rc != PMGR_SUCCESS )
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true,"pmgr_gather failed");
-
-      return LMON_EINVAL;
-    }
 #elif COBO_BASED
   rc = cobo_gather (sendbuf,
 	            numbyte_per_elem, 
@@ -615,18 +531,6 @@ LMON_be_internal_scatter (
   if (rc < 0 )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true," MPI_Scatter failed");
-
-      return LMON_EINVAL;
-    }
-#elif PMGR_BASED
-  rc = pmgr_scatter (sendbuf,
-                     numbyte_per_element,
-                     recvbuf,
-                     LMON_BE_MASTER);
- 
-  if (rc != PMGR_SUCCESS)
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true," pmgr_scatter failed");
 
       return LMON_EINVAL;
     }
@@ -729,21 +633,6 @@ LMON_be_internal_finalize ()
   if ( (rc = MPI_Finalize()) < 0 )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true," MPI_Finalize failed");
-
-      return LMON_EINVAL;
-    }
-#elif PMGR_BASED
-  if ( ( rc = pmgr_close () ) != PMGR_SUCCESS ) 
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true,
-		   "pmgr_close failed");
-
-      return LMON_EINVAL;
-    }
-
-  if ( (rc = pmgr_finalize ()) != PMGR_SUCCESS )
-    {
-      LMON_say_msg(LMON_BE_MSG_PREFIX, true," pmgr_finalize failed");
 
       return LMON_EINVAL;
     }

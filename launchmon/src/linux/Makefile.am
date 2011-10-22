@@ -33,13 +33,13 @@
 ##                         primities to the dynamic symbol table for
 ##                         dlopen to pick up.
 ##        Mar 06 2009 DHA: Added sdbg_linux_thr_db.[hxx|cxx] for 
-##                         runtime loading support 
+##                         runtime loading support.
 ##                         of the thread debug library.
 ##                         Deprecated LIBTHRDDB.
 ##        Jun 12 2008 DHA: Added header files to the dependency list
-##                         of launchmon_SOURCES. 
+##                         of launchmon_SOURCES.
 ##        Jun 06 2008 DHA: Taken from the old Makefile, converting
-##                         to automake Makefile.am 
+##                         to automake Makefile.am.
 ##        Mar 17 2008 DHA: Added PMGR Collective support.
 ##        Feb 09 2008 DHA: Added LLNS Copyright.
 ##        Dec 27 2006 DHA: Created file.
@@ -56,6 +56,7 @@ launchmon_SOURCES       = main.cxx \
                           lmon_api/lmon_say_msg.cxx \
                           sdbg_linux_thr_db.cxx \
                           sdbg_proc_service.cxx \
+                          ../sdbg_rm_map.cxx \
                           ../sdbg_self_trace.cxx \
                           ../sdbg_opt.cxx \
                           ../sdbg_base_bp.hxx \
@@ -77,7 +78,7 @@ launchmon_SOURCES       = main.cxx \
                           ../sdbg_base_launchmon.hxx \
                           ../sdbg_base_symtab_impl.hxx \
                           ../sdbg_opt.hxx \
-			  ../sdbg_rm_map.hxx \
+                          ../sdbg_rm_map.hxx \
                           sdbg_linux_bp.hxx \
                           sdbg_linux_launchmon.hxx  \
                           sdbg_linux_ptracer_impl.hxx  \
@@ -94,7 +95,8 @@ launchmon_SOURCES       = main.cxx \
                           sdbg_linux_thr_db.hxx
 
 launchmon_LDADD         = @LIBELF@ @LIBDL@
-launchmon_CFLAGS        = @LNCHR_BIT_FLAGS@ #$(AM_CFLAGS) 
+launchmon_CFLAGS        = @LNCHR_BIT_FLAGS@ #$(AM_CFLAGS)
 launchmon_CXXFLAGS      = @LNCHR_BIT_FLAGS@ #$(AM_CXXFLAGS)
-launchmon_LDFLAGS       = -rdynamic @LNCHR_BIT_FLAGS@ $(AM_LDFLAGS) 
+launchmon_LDFLAGS       = -rdynamic @LNCHR_BIT_FLAGS@ $(AM_LDFLAGS)
+
 ## EOF

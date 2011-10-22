@@ -14,6 +14,7 @@
 
 @SET_MAKE@
 
+
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -45,8 +46,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/x_ac_bootfabric.m4 \
 	$(top_srcdir)/config/x_ac_enable_verbose.m4 \
 	$(top_srcdir)/config/x_ac_gcrypt.m4 \
 	$(top_srcdir)/config/x_ac_mpicc.m4 \
-	$(top_srcdir)/config/x_ac_os_isa.m4 \
-	$(top_srcdir)/config/x_ac_rm.m4 \
+	$(top_srcdir)/config/x_ac_platform.m4 \
 	$(top_srcdir)/config/x_ac_testnnodes.m4 \
 	$(top_srcdir)/config/x_ac_tracing_cost.m4 \
 	$(top_srcdir)/configure.ac
@@ -55,6 +55,9 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
+am__installdirs = "$(DESTDIR)$(etcdir)" "$(DESTDIR)$(includedir)"
+etcSCRIPT_INSTALL = $(INSTALL_SCRIPT)
+SCRIPTS = $(etc_SCRIPTS)
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -69,7 +72,6 @@ am__vpath_adj = case $$p in \
     *) f=$$p;; \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
-am__installdirs = "$(DESTDIR)$(includedir)"
 nobase_includeHEADERS_INSTALL = $(install_sh_DATA)
 HEADERS = $(nobase_include_HEADERS)
 ETAGS = etags
@@ -77,7 +79,6 @@ CTAGS = ctags
 DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
-ALPS_INC_DIR = @ALPS_INC_DIR@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
@@ -116,10 +117,7 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-LD = @LD@
 LDFLAGS = @LDFLAGS@
-LIBALPS = @LIBALPS@
-LIBBITSUFFIX = @LIBBITSUFFIX@
 LIBCOMM = @LIBCOMM@
 LIBDL = @LIBDL@
 LIBELF = @LIBELF@
@@ -152,6 +150,7 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 RANLIB = @RANLIB@
 RM_TYPE = @RM_TYPE@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SMPFACTOR = @SMPFACTOR@
@@ -165,8 +164,6 @@ WITH_CIOD_FALSE = @WITH_CIOD_FALSE@
 WITH_CIOD_TRUE = @WITH_CIOD_TRUE@
 WITH_COBO_FALSE = @WITH_COBO_FALSE@
 WITH_COBO_TRUE = @WITH_COBO_TRUE@
-WITH_PMGR_COLLECTIVE_FALSE = @WITH_PMGR_COLLECTIVE_FALSE@
-WITH_PMGR_COLLECTIVE_TRUE = @WITH_PMGR_COLLECTIVE_TRUE@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
@@ -216,12 +213,31 @@ target_alias = @target_alias@
 tvcmd = @tvcmd@
 SUBDIRS = linux
 nobase_include_HEADERS = lmon_api/common.h \
-		         lmon_api/lmon_api_std.h \
-		  	 lmon_api/lmon_be.h \
-		  	 lmon_api/lmon_fe.h \
-		  	 lmon_api/lmon_lmonp_msg.h \
-		  	 lmon_api/lmon_mw.h \
-		  	 lmon_api/lmon_proctab.h
+                         lmon_api/lmon_api_std.h \
+                         lmon_api/lmon_be.h \
+                         lmon_api/lmon_fe.h \
+                         lmon_api/lmon_lmonp_msg.h \
+                         lmon_api/lmon_mw.h \
+                         lmon_api/lmon_proctab.h
+
+etcdir = ${prefix}/etc
+etc_SCRIPTS = rm_info.conf \
+                         rm_alps.conf \
+                         rm_bglrm.conf \
+                         rm_bgprm.conf \
+                         rm_bgqrm.conf \
+                         rm_mchecker.conf \
+                         rm_openrte.conf \
+                         rm_slurm.conf
+
+EXTRA_DIST = rm_info.conf \
+                         rm_alps.conf \
+                         rm_bglrm.conf \
+                         rm_bgprm.conf \
+                         rm_bgqrm.conf \
+                         rm_mchecler.conf \
+                         rm_openrte.conf \
+                         rm_slurm.conf
 
 all: all-recursive
 
@@ -255,6 +271,25 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+install-etcSCRIPTS: $(etc_SCRIPTS)
+	@$(NORMAL_INSTALL)
+	test -z "$(etcdir)" || $(mkdir_p) "$(DESTDIR)$(etcdir)"
+	@list='$(etc_SCRIPTS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  if test -f $$d$$p; then \
+	    f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
+	    echo " $(etcSCRIPT_INSTALL) '$$d$$p' '$(DESTDIR)$(etcdir)/$$f'"; \
+	    $(etcSCRIPT_INSTALL) "$$d$$p" "$(DESTDIR)$(etcdir)/$$f"; \
+	  else :; fi; \
+	done
+
+uninstall-etcSCRIPTS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(etc_SCRIPTS)'; for p in $$list; do \
+	  f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
+	  echo " rm -f '$(DESTDIR)$(etcdir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(etcdir)/$$f"; \
+	done
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -462,10 +497,10 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-recursive
-all-am: Makefile $(HEADERS)
+all-am: Makefile $(SCRIPTS) $(HEADERS)
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(includedir)"; do \
+	for dir in "$(DESTDIR)$(etcdir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-recursive
@@ -511,7 +546,7 @@ info: info-recursive
 
 info-am:
 
-install-data-am: install-nobase_includeHEADERS
+install-data-am: install-etcSCRIPTS install-nobase_includeHEADERS
 
 install-exec-am:
 
@@ -537,7 +572,8 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-info-am uninstall-nobase_includeHEADERS
+uninstall-am: uninstall-etcSCRIPTS uninstall-info-am \
+	uninstall-nobase_includeHEADERS
 
 uninstall-info: uninstall-info-recursive
 
@@ -546,13 +582,14 @@ uninstall-info: uninstall-info-recursive
 	ctags-recursive distclean distclean-generic distclean-libtool \
 	distclean-recursive distclean-tags distdir dvi dvi-am html \
 	html-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-man install-nobase_includeHEADERS \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	maintainer-clean-recursive mostlyclean mostlyclean-generic \
-	mostlyclean-libtool mostlyclean-recursive pdf pdf-am ps ps-am \
-	tags tags-recursive uninstall uninstall-am uninstall-info-am \
+	install-data-am install-etcSCRIPTS install-exec \
+	install-exec-am install-info install-info-am install-man \
+	install-nobase_includeHEADERS install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic maintainer-clean-recursive \
+	mostlyclean mostlyclean-generic mostlyclean-libtool \
+	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
+	uninstall uninstall-am uninstall-etcSCRIPTS uninstall-info-am \
 	uninstall-nobase_includeHEADERS
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

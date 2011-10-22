@@ -24,19 +24,19 @@
  * with this program; if not, write to the Free Software Foundation, Inc., 59 Temple 
  * Place, Suite 330, Boston, MA 02111-1307 USA
  *--------------------------------------------------------------------------------
- *					
+ *
  *
  *  Update Log:
  *        Jun 30 2010 DHA: Added faster engine parsing error detection support
- *                         Deprecated option_sanity_check(); 
+ *                         Deprecated option_sanity_check();
  *        Jun 09 2010 DHA: Added RM MAP support
  *        Feb 09 2008 DHA: Added LLNS Copyright
  *        Dec 05 2007 DHA: Added model checker support
  *        Jul 04 2006 DHA: Added self tracing support
- *        Jun 08 2006 DHA: Added attach-to-a-running-job support 
- *        Jun 07 2007 DHA: Populated more options (tool_daemon_opts, copyright) 
- *        Jun 06 2006 DHA: File created      
- */ 
+ *        Jun 08 2006 DHA: Added attach-to-a-running-job support
+ *        Jun 07 2007 DHA: Populated more options (tool_daemon_opts, copyright)
+ *        Jun 06 2006 DHA: File created
+ */
 
 //! FILE: sdbg_opt.hxx
 /*!
@@ -110,9 +110,6 @@ struct opt_struct_t {
   std::string launchstring;     // launch string to be expanded
   std::string tool_daemon_opts; // options to the lightweight debug engine
   std::string remote_info;      // ip:port
-#if PMGR_BASED
-  std::string pmgr_info;        // ip:port
-#endif
   std::string lmon_sec_info;    // shared secret:randomID
   pid_t       launcher_pid;     // the pid of a running parallel launcher process
   char      **remaining;        // options and arguments to be passed 
@@ -144,7 +141,7 @@ public:
 private:
   bool LEVELCHK(self_trace_verbosity level) 
        { return (self_trace_t::opt_module_trace.verbosity_level >= level); }
- 
+
   bool check_path(std::string &base, std::string &pth);
 
   bool has_parse_error;

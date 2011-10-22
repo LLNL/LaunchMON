@@ -351,7 +351,8 @@ public:
   breakpoint_base_t<VA,IT> * get_thread_death_hidden_bp ();
   breakpoint_base_t<VA,IT> * get_fork_hidden_bp ();
   const symbol_base_t<VA> * get_sym_attach_fifo ();
-  
+
+  rc_rm_t * rmgr() { return myopts? myopts->get_my_rmconfig() : NULL; }
   opts_args_t * get_myopts() { return myopts; }
 
   void set_myimage (image_base_t<VA,EXECHANDLER> *i);

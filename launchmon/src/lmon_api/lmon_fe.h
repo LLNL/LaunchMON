@@ -49,13 +49,13 @@
  *                          fe_shutdownDaemons.
  *                          Expanding LMON_fe_sendUsrData into
  *                          LMON_fe_sendUsrDataBe and LMON_fe_sendUsrDataMw
- *                          vice versa for LMON_fe_recvUsrDataBe and 
+ *                          vice versa for LMON_fe_recvUsrDataBe and
  *                          LMON_fe_recvUsrDataMw
- *        Aug  15 2007 DHA: LMON_fe_kill, LMON_fe_shutdownBe added      
+ *        Aug  15 2007 DHA: LMON_fe_kill, LMON_fe_shutdownBe added
  *        Aug  13 2007 DHA: LMON_fe_sendUsrData added
- *        Aug  10 2007 DHA: LMON_fe_detach added                          
+ *        Aug  10 2007 DHA: LMON_fe_detach added
  *        Jul  27 2007 DHA: Format change
- *        Dec  15 2006 DHA: Created file.          
+ *        Dec  15 2006 DHA: Created file.
  */
 
 
@@ -119,9 +119,9 @@ lmon_rc_e LMON_fe_recvUsrDataBe ( int sessionHandle, void* befe_data );
 
 lmon_rc_e LMON_fe_recvUsrDataMw ( int sessionHandle, void* mwfe_data );
 
-lmon_rc_e LMON_fe_detach ( int sessionHandle );                
+lmon_rc_e LMON_fe_detach ( int sessionHandle );
 
-lmon_rc_e LMON_fe_kill ( int sessionHandle );                
+lmon_rc_e LMON_fe_kill ( int sessionHandle );
 
 lmon_rc_e LMON_fe_shutdownDaemons ( int sessionHandle );
 
@@ -134,9 +134,9 @@ lmon_rc_e LMON_fe_regErrorCB ( int (*errorCB) (const char *format, va_list ap) )
 lmon_rc_e LMON_fe_getRMInfo (int sessionHandle, lmon_rm_info_t *info);
 
 lmon_rc_e LMON_fe_getProctable (
-                int sessionHandle, 
-                MPIR_PROCDESC_EXT* proctable, 
-                unsigned int* size, 
+                int sessionHandle,
+                MPIR_PROCDESC_EXT* proctable,
+                unsigned int* size,
                 unsigned int maxlen);
 
 lmon_rc_e LMON_fe_getProctableSize (

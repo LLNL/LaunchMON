@@ -3,11 +3,7 @@
 /* Define 1 for AIX_CODE_REQUIRED */
 #undef AIX_CODE_REQUIRED
 
-/* Define 1 if debugger interface related header files are available in the
-   system */
-#undef BG_HEADER_EXISTS
-
-/* Define 1 for BIT64 */
+/* 64bit */
 #undef BIT64
 
 /* Define 1 for COBO_BASED */
@@ -250,32 +246,17 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* Define 1 for PMGR_BASED */
-#undef PMGR_BASED
-
 /* Define 1 for PPC_ARCHITECTURE */
 #undef PPC_ARCHITECTURE
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
 
-/* "Definition for ALPS/APRUN" */
-#undef RM_ALPS_APRUN
-
 /* be starter stub location */
 #undef RM_BE_STUB_CMD
 
-/* Define 1 for RM_BG_MPIRUN */
-#undef RM_BG_MPIRUN
-
 /* bulk launcher location */
 #undef RM_FE_COLOC_CMD
-
-/* Define 1 for RM_ORTE_ORTERUN */
-#undef RM_ORTE_ORTERUN
-
-/* Define 1 for RM_SLURM_SRUN */
-#undef RM_SLURM_SRUN
 
 /* ssh or its equivalent found */
 #undef SSHCMD
@@ -283,8 +264,23 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
-/* launcher path */
-#undef TARGET_JOB_LAUNCHER_PATH
+/* Define 1 for SUB_ARCH_ALPS */
+#undef SUB_ARCH_ALPS
+
+/* Define 1 for SUB_ARCH_BGL */
+#undef SUB_ARCH_BGL
+
+/* Define 1 for SUB_ARCH_BGP */
+#undef SUB_ARCH_BGP
+
+/* Define 1 for SUB_ARCH_BGQ */
+#undef SUB_ARCH_BGQ
+
+/* Define os-isa string */
+#undef TARGET_OS_ISA_STRING
+
+/* Define rm string */
+#undef TARGET_RM_STRING
 
 /* Define test more coll support */
 #undef TEST_MORE_COLL

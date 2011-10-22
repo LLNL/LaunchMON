@@ -29,6 +29,7 @@
  *  ./fe_launch_smoketest.debug /bin/hostname 9 5 pdebug `pwd`/be_kicker.debug
  *
  *  Update Log:
+ *        Oct 21 2011 DHA: Added dynamic RM support
  *        Nov 12 2009 DHA: Change BG mpirun options to cover /P running under IBM LL
  *        Mar 04 2009 DHA: Added generic BlueGene support
  *        Jun 16 2008 DHA: Added LMON_fe_recvUsrDataBe at the end to 
@@ -39,7 +40,7 @@
  *        Mar 05 2008 DHA: Added invalid daemon path test.
  *        Feb 09 2008 DHA: Added LLNS Copyright.
  *        Jul 30 2007 DHA: Adjust this case for minor API changes  
- *        Dec 27 2006 DHA: Created file.          
+ *        Dec 27 2006 DHA: Created file.
  */
 
 #ifndef HAVE_LAUNCHMON_CONFIG_H
@@ -57,7 +58,7 @@
 #if HAVE_LIMITS_H
 # include <limits.h>
 #else
-# error limits.h is required 
+# error limits.h is required
 #endif
 
 #include <string>
@@ -73,9 +74,9 @@ extern "C" {
 #endif
 
 /*
- * OUR PARALLEL JOB LAUNCHER  
+ * OUR PARALLEL JOB LAUNCHER
  */
-const char* mylauncher    = TARGET_JOB_LAUNCHER_PATH;
+char mylauncher[PATH_MAX] = {0};
 
 int statusFunc ( int *status )
 {
@@ -132,31 +133,31 @@ main (int argc, char *argv[])
 
   if ( argc < 6 )
     {
-      fprintf ( stdout, 
+      fprintf ( stdout,
         "Usage: fe_launch_smoketest appcode numprocs numnodes partition daemonpath [daemonargs]\n" );
-      fprintf ( stdout, 
+      fprintf ( stdout,
         "[LMON FE] FAILED\n" );
       return EXIT_FAILURE;
     }
 
   if ( access(argv[1], X_OK) < 0 )
     {
-      fprintf ( stdout, 
-        "%s cannot be executed\n", 
+      fprintf ( stdout,
+        "%s cannot be executed\n",
         argv[1] );
-      fprintf ( stdout, 
+      fprintf ( stdout,
         "[LMON FE] FAILED\n" );
-      return EXIT_FAILURE;     
+      return EXIT_FAILURE;
     }
 
   if ( getenv ("LMON_INVALIDDAEMON_TEST") == NULL )
     {
       if ( access(argv[5], X_OK) < 0 )
         {
-          fprintf(stdout, 
-            "%s cannot be executed\n", 
+          fprintf(stdout,
+            "%s cannot be executed\n",
             argv[5]);
-          fprintf(stdout, 
+          fprintf(stdout,
             "[LMON FE] FAILED\n");
           return EXIT_FAILURE;
         }
@@ -165,54 +166,81 @@ main (int argc, char *argv[])
   if ( argc > 6 )
     daemon_opts = argv+6;
 
-#if RM_BG_MPIRUN
-  //
-  // This will exercise CO or SMP on BlueGene
-  //
-  launcher_argv = (char **) malloc(8*sizeof(char *));
-  launcher_argv[0] = strdup(mylauncher);
-  launcher_argv[1] = strdup("-verbose");
-  launcher_argv[2] = strdup("3");
-  launcher_argv[3] = strdup("-np");
-  launcher_argv[4] = strdup(argv[2]);
-  launcher_argv[5] = strdup("-exe"); 
-  launcher_argv[6] = strdup(argv[1]); 
-  launcher_argv[7] = NULL;
-  fprintf (stdout, "[LMON_FE] launching the job/daemons via %s\n", mylauncher);
-#elif RM_SLURM_SRUN
-  numprocs_opt     = string("-n") + string(argv[2]);
-  numnodes_opt     = string("-N") + string(argv[3]);
-  partition_opt    = string("-p") + string(argv[4]);
-  launcher_argv    = (char **) malloc (7*sizeof(char*));
-  launcher_argv[0] = strdup(mylauncher);
-  launcher_argv[1] = strdup(numprocs_opt.c_str());
-  launcher_argv[2] = strdup(numnodes_opt.c_str());
-  launcher_argv[3] = strdup(partition_opt.c_str());
-  launcher_argv[4] = strdup("-l");
-  launcher_argv[5] = strdup(argv[1]);
-  launcher_argv[6] = NULL;
-#elif RM_ALPS_APRUN
-  numprocs_opt     = string("-n") + string(argv[2]);
-  launcher_argv    = (char**) malloc(4*sizeof(char*));
-  launcher_argv[0] = strdup(mylauncher);
-  launcher_argv[1] = strdup(numprocs_opt.c_str());
-  launcher_argv[2] = strdup(argv[1]);
-  launcher_argv[3] = NULL;
-#elif RM_ORTE_ORTERUN
-  launcher_argv    = (char **) malloc(8*sizeof(char*));
-  launcher_argv[0] = strdup(mylauncher);
-  launcher_argv[1] = strdup("-mca");
-  launcher_argv[2] = strdup("debugger");
-  launcher_argv[3] = strdup("mpirx");
-  launcher_argv[4] = strdup("-np");
-  launcher_argv[5] = strdup(argv[2]);
-  launcher_argv[6] = strdup(argv[1]);
-  launcher_argv[7] = NULL;
-  fprintf (stdout, "[LMON_FE] launching the job/daemons via %s\n", mylauncher);
-#else
-# error add support for the RM of your interest here
-#endif
- 
+  char *rmenv = getenv("MPI_JOB_LAUNCHER_PATH");
+  if (!rmenv)
+    {
+      fprintf(stdout,
+        "MPI_JOB_LAUNCHER_PATH envVar must be given\n" );
+      return EXIT_FAILURE;
+    }
+
+  snprintf(mylauncher, PATH_MAX, "%s", rmenv);
+
+  rmenv = getenv("RM_TYPE");
+  if (!rmenv)
+    {
+      fprintf(stdout,
+        "RM_TYPE envVar must be given\n" );
+      return EXIT_FAILURE;
+    }
+
+  std::string rmenv_str = rmenv;
+
+  if ((rmenv_str == std::string("RC_bglrm")) 
+      || (rmenv_str == std::string("RC_bgprm")))
+    {
+      launcher_argv = (char **) malloc(8*sizeof(char *));
+      launcher_argv[0] = strdup(mylauncher);
+      launcher_argv[1] = strdup("-verbose");
+      launcher_argv[2] = strdup("3");
+      launcher_argv[3] = strdup("-np");
+      launcher_argv[4] = strdup(argv[2]);
+      launcher_argv[5] = strdup("-exe"); 
+      launcher_argv[6] = strdup(argv[1]); 
+      launcher_argv[7] = NULL;
+      fprintf (stdout, 
+                "[LMON_FE] launching the job/daemons via %s\n",
+                mylauncher);
+    }
+  else if (rmenv_str == std::string("RC_slurm"))
+    {
+      numprocs_opt     = string("-n") + string(argv[2]);
+      numnodes_opt     = string("-N") + string(argv[3]);
+      partition_opt    = string("-p") + string(argv[4]);
+      launcher_argv    = (char **) malloc (7*sizeof(char*));
+      launcher_argv[0] = strdup(mylauncher);
+      launcher_argv[1] = strdup(numprocs_opt.c_str());
+      launcher_argv[2] = strdup(numnodes_opt.c_str());
+      launcher_argv[3] = strdup(partition_opt.c_str());
+      launcher_argv[4] = strdup("-l");
+      launcher_argv[5] = strdup(argv[1]);
+      launcher_argv[6] = NULL;
+    }
+  else if (rmenv_str == std::string("RC_alps"))
+    {
+      numprocs_opt     = string("-n") + string(argv[2]);
+      launcher_argv    = (char**) malloc(4*sizeof(char*));
+      launcher_argv[0] = strdup(mylauncher);
+      launcher_argv[1] = strdup(numprocs_opt.c_str());
+      launcher_argv[2] = strdup(argv[1]);
+      launcher_argv[3] = NULL;
+    }
+  else if (rmenv_str == std::string("RC_orte"))
+    {
+      launcher_argv    = (char **) malloc(8*sizeof(char*));
+      launcher_argv[0] = strdup(mylauncher);
+      launcher_argv[1] = strdup("-mca");
+      launcher_argv[2] = strdup("debugger");
+      launcher_argv[3] = strdup("mpirx");
+      launcher_argv[4] = strdup("-np");
+      launcher_argv[5] = strdup(argv[2]);
+      launcher_argv[6] = strdup(argv[1]);
+      launcher_argv[7] = NULL;
+      fprintf (stdout,
+               "[LMON_FE] launching the job/daemons via %s\n",
+               mylauncher);
+    }
+
   if ( ( rc = LMON_fe_init ( LMON_VERSION ) ) 
               != LMON_OK )
     {
@@ -236,8 +264,9 @@ main (int argc, char *argv[])
     }
   else
    {
-      fprintf ( stdout, 
-         "\n[LMON FE] RM type is %d\n", rminfo.rm_type);
+      fprintf ( stdout,
+         "\n[LMON FE] %d RM types are supported\n",
+         rminfo.num_supported_types);
    }
 
   if ( getenv ("LMON_STATUS_CB_TEST"))
@@ -409,7 +438,8 @@ main (int argc, char *argv[])
   else
    {
       fprintf ( stdout, 
-         "\n[LMON FE] RM type is %d\n", rminfo.rm_type);
+         "\n[LMON FE] RM type is %d\n",
+           rminfo.rm_supported_types[rminfo.index_to_cur_instance]);
       fprintf ( stdout, 
          "\n[LMON FE] RM launcher's pid is %d\n", rminfo.rm_launcher_pid);
    }

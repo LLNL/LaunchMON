@@ -31,13 +31,13 @@
 #         Dec 12 2008 DHA: Remove X_AC_WITH_VER_LOGDIR and push the 
 #                          logdir support to --enable-verbose as an option
 #
-#         Sep 19 2008 DHA: File created. 
+#         Sep 19 2008 DHA: File created.
 #
 
-AC_DEFUN([X_AC_ENABLE_VERBOSE], [  
+AC_DEFUN([X_AC_ENABLE_VERBOSE], [
   AC_MSG_CHECKING([whether to enable verbose codes])
-  AC_ARG_ENABLE([verbose], 
-    AS_HELP_STRING(--enable-verbose@<:@=LOGDIR@:>@,enable verbose codes @<:@default=stdout@:>@), 
+  AC_ARG_ENABLE([verbose],
+    AS_HELP_STRING(--enable-verbose@<:@=LOGDIR@:>@,enable verbose codes @<:@default=stdout@:>@),
     [verbose_enabled=$enableval],
     [verbose_enabled="check"]
   )

@@ -50,30 +50,31 @@
 #else
 # error limits.h is required 
 #endif
-                                                                                                                                          
+
 #include <string>
 #include <map>
-                                                                                                                                          
+
 #include <lmon_api/lmon_proctab.h>
 #include <lmon_api/lmon_fe.h>
 
 const int MAXPROCOUNT  = 12000;
 
 /*
- * OUR PARALLEL JOB LAUNCHER 
+ * OUR PARALLEL JOB LAUNCHER
  */
-const char* mylauncher    = TARGET_JOB_LAUNCHER_PATH;
-std::map<std::string, int> usrdata; // this will have "hostname," "port" pair  
+char mylauncher[PATH_MAX];
+
+std::map<std::string, int> usrdata; // this will have "hostname," "port" pair
 std::map<std::string, int> recvdata; // this will have "hostname," "port" pair echoed back from BE
 
 
-static int 
+static int
 fill_usrdata ( )
 {
   using namespace std;
 
   int i;
-  
+
   //
   // 128 is an arbitrary number; i.e. emulating 
   // 128 ip/port pair vector
@@ -115,7 +116,7 @@ packfebe_cb ( void *udata,
               int *msgbuflen )
 {
   using namespace std;
-  
+
   char *trav  = (char *) msgbuf;
   int usedbuf = 0;
   int trun    = 0;
@@ -168,7 +169,7 @@ unpackbefe_cb  ( void* udatabuf,
       trav += strlen(trav)+1+sizeof(int);
     }
   
-  return 0;    
+  return 0;
 }
 
 
@@ -225,51 +226,80 @@ main (int argc, char* argv[])
 
   fill_usrdata (); // filling in user data 
 
-#if RM_SLURM_SRUN
-  numprocs_opt = string("-n") + string(argv[2]);
-  numnodes_opt = string("-N") + string(argv[3]);
-  partition_opt = string("-p") + string(argv[4]);
-    
-  launcher_argv = (char**) malloc(7*sizeof(char*));
-  launcher_argv[0] = strdup(mylauncher);
-  launcher_argv[1] = strdup(numprocs_opt.c_str());
-  launcher_argv[2] = strdup(numnodes_opt.c_str());
-  launcher_argv[3] = strdup(partition_opt.c_str());
-  launcher_argv[4] = strdup("-l");
-  launcher_argv[5] = strdup(argv[1]);
-  launcher_argv[6] = NULL;
-#elif RM_BG_MPIRUN 
-  launcher_argv = (char**) malloc(8*sizeof(char*));
-  launcher_argv[0] = strdup(mylauncher);
-  launcher_argv[1] = strdup("-verbose");
-  launcher_argv[2] = strdup("1");
-  launcher_argv[3] = strdup("-np");
-  launcher_argv[4] = strdup(argv[2]);
-  launcher_argv[5] = strdup("-exe");
-  launcher_argv[6] = strdup(argv[1]);
-  launcher_argv[7] = NULL;
-  fprintf (stdout, "[LMON FE] launching the job/daemons via %s\n", mylauncher);
-#elif RM_ALPS_APRUN
-  numprocs_opt     = string("-n") + string(argv[2]);
-  launcher_argv    = (char**) malloc(4*sizeof(char*));
-  launcher_argv[0] = strdup(mylauncher);
-  launcher_argv[1] = strdup(numprocs_opt.c_str());
-  launcher_argv[2] = strdup(argv[1]);
-  launcher_argv[3] = NULL;
-#elif RM_ORTE_ORTERUN
-  launcher_argv    = (char **) malloc(8*sizeof(char*));
-  launcher_argv[0] = strdup(mylauncher);
-  launcher_argv[1] = strdup("-mca");
-  launcher_argv[2] = strdup("debugger");
-  launcher_argv[3] = strdup("mpirx");
-  launcher_argv[4] = strdup("-np");
-  launcher_argv[5] = strdup(argv[2]);
-  launcher_argv[6] = strdup(argv[1]);
-  launcher_argv[7] = NULL;
-  fprintf (stdout, "[LMON_FE] launching the job/daemons via %s\n", mylauncher);
-#else
-# error add support for the RM of your interest here
-#endif
+  char *rmenv = getenv("MPI_JOB_LAUNCHER_PATH");
+  if (!rmenv)
+    {
+      fprintf(stdout,
+        "MPI_JOB_LAUNCHER_PATH envVar must be given\n" );
+      return EXIT_FAILURE;
+    }
+
+  snprintf(mylauncher, PATH_MAX, "%s", rmenv);
+
+  rmenv = getenv("RM_TYPE");
+  if (!rmenv)
+    {
+      fprintf(stdout,
+        "RM_TYPE envVar must be given\n" );
+      return EXIT_FAILURE;
+    }
+
+  std::string rmenv_str = rmenv;
+
+  if ((rmenv_str == std::string("RC_bglrm"))
+      || (rmenv_str == std::string("RC_bgprm")))
+    {
+      launcher_argv = (char **) malloc(8*sizeof(char *));
+      launcher_argv[0] = strdup(mylauncher);
+      launcher_argv[1] = strdup("-verbose");
+      launcher_argv[2] = strdup("3");
+      launcher_argv[3] = strdup("-np");
+      launcher_argv[4] = strdup(argv[2]);
+      launcher_argv[5] = strdup("-exe"); 
+      launcher_argv[6] = strdup(argv[1]); 
+      launcher_argv[7] = NULL;
+      fprintf (stdout, 
+                "[LMON_FE] launching the job/daemons via %s\n",
+                mylauncher);
+    }
+  else if (rmenv_str == std::string("RC_slurm"))
+    {
+      numprocs_opt     = string("-n") + string(argv[2]);
+      numnodes_opt     = string("-N") + string(argv[3]);
+      partition_opt    = string("-p") + string(argv[4]);
+      launcher_argv    = (char **) malloc (7*sizeof(char*));
+      launcher_argv[0] = strdup(mylauncher);
+      launcher_argv[1] = strdup(numprocs_opt.c_str());
+      launcher_argv[2] = strdup(numnodes_opt.c_str());
+      launcher_argv[3] = strdup(partition_opt.c_str());
+      launcher_argv[4] = strdup("-l");
+      launcher_argv[5] = strdup(argv[1]);
+      launcher_argv[6] = NULL;
+    }
+  else if (rmenv_str == std::string("RC_alps"))
+    {
+      numprocs_opt     = string("-n") + string(argv[2]);
+      launcher_argv    = (char**) malloc(4*sizeof(char*));
+      launcher_argv[0] = strdup(mylauncher);
+      launcher_argv[1] = strdup(numprocs_opt.c_str());
+      launcher_argv[2] = strdup(argv[1]);
+      launcher_argv[3] = NULL;
+    }
+  else if (rmenv_str == std::string("RC_orte"))
+    {
+      launcher_argv    = (char **) malloc(8*sizeof(char*));
+      launcher_argv[0] = strdup(mylauncher);
+      launcher_argv[1] = strdup("-mca");
+      launcher_argv[2] = strdup("debugger");
+      launcher_argv[3] = strdup("mpirx");
+      launcher_argv[4] = strdup("-np");
+      launcher_argv[5] = strdup(argv[2]);
+      launcher_argv[6] = strdup(argv[1]);
+      launcher_argv[7] = NULL;
+      fprintf (stdout, 
+               "[LMON_FE] launching the job/daemons via %s\n",
+               mylauncher);
+    }
 
   if ( ( rc = LMON_fe_init ( LMON_VERSION ) ) 
               != LMON_OK )
