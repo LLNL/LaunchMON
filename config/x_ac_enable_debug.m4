@@ -31,7 +31,7 @@
 #         Jun 12 2008 DHA: File created. 
 #
 
-AC_DEFUN([X_AC_ENABLE_DEBUG], [  
+AC_DEFUN([X_AC_ENABLE_DEBUG], [
   AC_MSG_CHECKING([whether to enable debug codes])
   AC_ARG_ENABLE([debug], 
     AS_HELP_STRING(--enable-debug,enable debug codes), [
