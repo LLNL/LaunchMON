@@ -1944,25 +1944,6 @@ LMON_set_options (
 	}
     }
 
-#if 0
-  if ( !opt.option_sanity_check() )
-    {
-      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-		     "opt.option_sanity_check failed ");
-
-      return LMON_EBDARG;
-    }
- 
-  if ( !opt.construct_launch_string() )
-    {
-      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-		     "opt.construct_launch_string failed ");
-      return LMON_EINVAL;
-    }
-
-  opt.print_copyright();
-#endif  
-
   lmon_daemon_env_t *trav = mydesc->daemonEnvList[0];
 
   while (trav != NULL)
@@ -2776,6 +2757,14 @@ bld_exec_lmon_launch_str ( bool isLocal,
 	  cmdstring += lstring;
 	  cmdstring += " ";
 	}
+
+      char *pref = getenv("LMON_PREFIX");
+      if ( pref )
+        {
+          cmdstring += std::string("LMON_PREFIX=")
+                     + std::string(pref) + std::string(" ");
+
+        }
 
       if ( getenv("LMON_DEBUG_LAUNCHMON_ENGINE") )
 	{
@@ -4521,7 +4510,7 @@ LMON_fe_launchAndSpawnDaemons (
   if ( ( remote_login_pid = fork() ) != 0 )
     {
       //
-      // A separate process got spawned, which will ether directly
+      // A separate process got spawned, which will either directly
       // execute the launchmon engine or perform a login to the given
       // host to invoke the launchmon engine. 
       //
