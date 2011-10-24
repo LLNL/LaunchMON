@@ -87,20 +87,18 @@ AC_DEFUN([X_AC_PLATFORM], [
   #                                                              #
   # Special Check is needed for Blue Gene Family and Cray Family #
   #                                                              #
-  if test "x$ac_target_os" = "x$linux" -a "x$ac_target_isa" = "xpower"; then
+  if test "x$ac_target_os" = "xlinux" -a "x$ac_target_isa" = "xpower"; then
     if test ! -z "/bgl/BlueLight/ppcfloor/bglsys/bin/mpirun" \
          -a -f "/bgl/BlueLight/ppcfloor/bglsys/bin/mpirun"; then
-        ac_target_isa="$(ac_target_isa)-bglrm"
         ac_target_rm="bglrm"
         AC_DEFINE(SUB_ARCH_BGL,1,[Define 1 for SUB_ARCH_BGL])
-        AC_SUBST(ARCHHEADER,"/bgsys/drivers/ppcfloor/arch/include")
-        AC_SUBST(ARCHLIB,"/bgsys/drivers/ppcfloor/lib64")
         AC_SUBST(CIODLOC, [tools/ciod])
     elif test ! -z "/bgsys/drivers/ppcfloor/bin/mpirun" \
          -a -f "/bgsys/drivers/ppcfloor/bin/mpirun"; then
-        ac_target_isa="$(ac_target_isa)-bgprm"
         ac_target_rm="bgprm"
         AC_DEFINE(SUB_ARCH_BGP,1,[Define 1 for SUB_ARCH_BGP])
+        AC_SUBST(ARCHHEADER,"/bgsys/drivers/ppcfloor/arch/include")
+        AC_SUBST(ARCHLIB,"/bgsys/drivers/ppcfloor/lib64")
         AC_SUBST(CIODLOC, [tools/ciod])
     elif test ! -z "/bgsys/drivers/ppcfloor/hlcs/bin/runjob" \
          -a -f "/bgsys/drivers/ppcfloor/hlcs/bin/runjob"; then
@@ -109,7 +107,6 @@ AC_DEFUN([X_AC_PLATFORM], [
         # change this to the absolute path to bgsys
         #
         AC_SUBST(CIODLOC, [tools/ciod])
-        ac_target_isa="$(ac_target_isa)"
         ac_target_rm="bgqrm"
     fi
   elif test "x$ac_target_os" = "x$linux" -a "x$ac_target_isa" = "x86_64"; then
@@ -128,8 +125,8 @@ AC_DEFUN([X_AC_PLATFORM], [
   AC_DEFINE_UNQUOTED(TARGET_OS_ISA_STRING, "$ac_target_os-$ac_target_isa", [Define os-isa string])
   AC_DEFINE_UNQUOTED(TARGET_RM_STRING, "$ac_target_rm" ,[Define rm string])
   AM_CONDITIONAL([WITH_ALPS], [test "x$ac_target_rm" = "alps"])
-  AM_CONDITIONAL([WITH_CIOD], [test "x$ac_target_rm" = "bglrm" \
-                                    -o "x$ac_target_rm" = "bgprm" \
-                                    -o "x$ac_target_rm" = "bgqrm"])
+  AM_CONDITIONAL([WITH_CIOD], [test "x$ac_target_rm" = "xbglrm" \
+                                    -o "x$ac_target_rm" = "xbgprm" \
+                                    -o "x$ac_target_rm" = "xbgqrm"])
 ])
 

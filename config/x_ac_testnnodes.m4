@@ -123,12 +123,64 @@ AC_DEFUN([X_AC_TEST_RM], [
     echo "$with_rm"
 
   elif test "x$with_rm" = "xbglrm" ; then
-    echo "$with_rm"
+    #
+    # Configure for Blue Gene P RM
+    #
+    rm_default_dirs="/bgl/BlueLight/ppcfloor/bglsys/bin"
+    for rm_dir in $rm_default_dirs; do
+      if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
+        continue;
+      fi
 
-  elif test "x$with_rm" = "xbgprm" ; then
-    echo "$with_rm"
+      if test ! -z "$rm_dir/mpirun" -a -f "$rm_dir/mpirun"; then
+        pth=`config/ap $rm_dir/mpirun`
+        ac_job_launcher_path=$pth
+        rm_found="yes"
+        AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
+        AC_SUBST(RM_TYPE, RC_bglrm)
+        break
+      fi
+    done
 
-  elif test "x$with_rm" = "xbgqrm" ; then
-    echo "$with_rm"
+  elif test "x$with_rm" = "xbgprm" -o "x$dflt_str" = "xcheck-linux-power"; then
+    #
+    # Configure for Blue Gene P RM
+    #
+    rm_default_dirs="/bgsys/drivers/ppcfloor/bin"
+    for rm_dir in $rm_default_dirs; do
+      if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
+        continue;
+      fi
+
+      if test ! -z "$rm_dir/mpirun" -a -f "$rm_dir/mpirun"; then
+        pth=`config/ap $rm_dir/mpirun`
+        ac_job_launcher_path=$pth
+        rm_found="yes"
+        AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
+        AC_SUBST(RM_TYPE, RC_bgprm)
+        break
+      fi
+    done
+
+  elif test "x$with_rm" = "xbgqrm" -o "x$dflt_str" = "xcheck-linux-power64"; then
+    #
+    # Configure for Blue Gene P RM
+    #
+    rm_default_dirs="/bgsys/drivers/ppcfloor/hlcs/bin"
+    for rm_dir in $rm_default_dirs; do
+      if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
+        continue;
+      fi
+
+      if test ! -z "$rm_dir/mpirun" -a -f "$rm_dir/mpirun"; then
+        pth=`config/ap $rm_dir/mpirun`
+        ac_job_launcher_path=$pth
+        rm_found="yes"
+        AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
+        AC_SUBST(RM_TYPE, RC_bgqrm)
+        break
+      fi
+    done
+
   fi
 ])
