@@ -192,7 +192,7 @@ main (int argc, char *argv[])
       launcher_argv = (char **) malloc(8*sizeof(char *));
       launcher_argv[0] = strdup(mylauncher);
       launcher_argv[1] = strdup("-verbose");
-      launcher_argv[2] = strdup("3");
+      launcher_argv[2] = strdup("1");
       launcher_argv[3] = strdup("-np");
       launcher_argv[4] = strdup(argv[2]);
       launcher_argv[5] = strdup("-exe"); 

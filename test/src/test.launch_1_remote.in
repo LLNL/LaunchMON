@@ -47,7 +47,7 @@ export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
 NUMNODES=2
 NOHUP=""
 
-if test "x$RM_TYPE" = "xbgrm" ; then
+if test "x$RM_TYPE" = "xRC_bglrm" -o "x$RM_TYPE" = "xRC_bgprm"; then
   echo "[LMON FE] until mpirun -partition option is fixed this test is disabled on BlueGene"
   exit 1
   NOHUP=nohup

@@ -40,7 +40,7 @@
 RM_TYPE=@TEST_RMTP@
 NUMNODES=@NNODES@
 
-if test "x$RM_TYPE" = "xRC_bgrm" ; then
+if test "x$RM_TYPE" = "xRC_bglrm" -o "x$RM_TYPE" = "xRC_bgprm"; then
   rm -f nohup.out
 fi
 
@@ -53,7 +53,7 @@ export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
  
 if test "x$RM_TYPE" = "xRC_slurm" ; then
   $MPI_JOB_LAUNCHER_PATH -n$NUMTASKS -N$NUMNODES -ppdebug `pwd`/hang_on_SIGUSR1@EXE@ &
-elif test "x$RM_TYPE" = "xRC_bgrm" ; then 
+elif test "x$RM_TYPE" = "xRC_bglrm" -o "x$RM_TYPE" = "xRC_bgprm"; then
   WAITAMOUNT=`expr $WAITAMOUNT \* 5`
   nohup $MPI_JOB_LAUNCHER_PATH -verbose 1 -np $NUMTASKS -exe `pwd`/hang_on_SIGUSR1@EXE@ -cwd `pwd` &
 elif test "x$RM_TYPE" = "xRC_alps" ; then

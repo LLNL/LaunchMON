@@ -45,7 +45,7 @@
  * use USR2 signal. 
  */ 
                                                                   
-#if RM_BG_MPIRUN
+#if SUB_ARCH_BGL || SUB_ARCH_BGP
 /* work around for a compiler problem on BlueGene/L */
 #undef SEEK_SET
 #undef SEEK_END

@@ -1984,7 +1984,7 @@ LMON_openBindAndListen ( int *sfd )
       return LMON_ESYS;
     }
 
-#if RM_BG_MPIRUN
+#if SUB_ARCH_BGL || SUB_ARCH_BGP || SUB_ARCH_BGQ
   //
   // BlueGene/L uses NIC whose name is suffixed with -io to communicate
   // packets to/from IO nodes.  
@@ -1996,7 +1996,7 @@ LMON_openBindAndListen ( int *sfd )
   // Changed RM_BGL_MPIRUN to RM_BG_MPIRUN to genericize BlueGene Support
   //
   strcat (hn, "-io");
-#elif RM_ALPS_APRUN
+#elif SUB_ARCH_ALPS
   //
   // Cray uses its own way to name a node, so overwriting 
   // hn with the name generated with their method

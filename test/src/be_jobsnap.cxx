@@ -66,7 +66,7 @@
 # error limits.h is required 
 #endif
 
-#if RM_BG_MPIRUN
+#if SUB_ARCH_BGL || SUB_ARCH_BGP
 # include "debugger_interface.h"
   using namespace DebuggerInterface;
 #else 
@@ -128,7 +128,7 @@ struct ProcStat {
   unsigned long stkIp;    /* %lu instruction pointer*/
 
   typedef union {
-#if RM_BG_MPIRUN
+#if SUB_ARCH_BGL || SUB_ARCH_BGP
     // conditional compilation to save space
     struct {
       double jobtime;
@@ -178,7 +178,7 @@ struct ProcStat {
 
 struct MemStat {
   typedef union {
-#if RM_BG_MPIRUN
+#if SUB_ARCH_BGL || SUB_ARCH_BGP
     // conditional compilation to save space
     struct {
       unsigned long brk;
@@ -205,7 +205,7 @@ struct MemStat {
   XMem xMem;
 };
 
-#if RM_BG_MPIRUN
+#if SUB_ARCH_BGL || SUB_ARCH_BGP
 /*
  * Utility routines to talk to CIOD
  */
@@ -441,7 +441,7 @@ main(int argc, char *argv[])
 
 
   for(i=0; i < proctab_size; i++) {
-#if RM_BG_MPIRUN
+#if SUB_ARCH_BGL || SUB_ARCH_BGP
       //
       // BGP specific process snapshot interface
       //
@@ -759,7 +759,7 @@ main(int argc, char *argv[])
       }
 
       ifst.close();
-#endif //RM_BG_MPIRUN vs LINUX with /proc
+#endif //SUB_ARCH_BGP vs LINUX with /proc
   } // local proctab loop
 
   //
@@ -834,7 +834,7 @@ main(int argc, char *argv[])
 	     << setw(8)  << gatheredTps[i].nThread
 	     << "  Ox" << setfill('0') << setw(16) << hex << gatheredTps[i].startStack
 	     << "  Ox" << setfill('0') << setw(16) << hex << gatheredTps[i].stkSp << setfill(' ')
-#if RM_BG_MPIRUN
+#if SUB_ARCH_BGL || SUB_ARCH_BGP
 	     << setw(15) << dec << (gatheredTms[i].xMem.BgpMemStat.brk - gatheredTms[i].xMem.BgpMemStat.heapStart)
 	     << setw(15) << (double) gatheredTps[i].xStat.BgpStat.jobtime
 	     << setw(15) << 0.0
@@ -868,7 +868,7 @@ main(int argc, char *argv[])
       //
       // this is only to support the regression test case
       //
-#if RM_BG_MPIRUN
+#if SUB_ARCH_BGL || SUB_ARCH_BGP
        for (i=0; i < proctab_size; i++) {
 	  //
           // please stop so that I can continue with a signal

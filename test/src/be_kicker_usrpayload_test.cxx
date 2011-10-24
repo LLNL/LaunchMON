@@ -69,7 +69,7 @@
 
 #include <lmon_api/lmon_be.h>
 
-#if RM_BG_MPIRUN
+#if SUB_ARCH_BGL || SUB_ARCH_BGP
 # include "debugger_interface.h"
   using namespace DebuggerInterface;
 #endif
@@ -191,7 +191,7 @@ main( int argc, char* argv[] )
   int i, rank, size;
   lmon_rc_e lrc;
 
-#if RM_BG_MPIRUN
+#if SUB_ARCH_BGL || SUB_ARCH_BGP
   signum = 0;
 #else
   signum = SIGCONT;
@@ -319,7 +319,7 @@ main( int argc, char* argv[] )
         proctab[i].mpirank);
     }
 
-#if RM_BG_MPIRUN
+#if SUB_ARCH_BGL || SUB_ARCH_BGP
   /* the tool wants to send a signal other than the default */
   if (signum != 0)
     {

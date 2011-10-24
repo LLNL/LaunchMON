@@ -44,7 +44,7 @@ export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
 NUMNODES=@NNODES@
 NOHUP=""
 
-if test "x$RM_TYPE" = "xRC_bgrm" ; then
+if test "x$RM_TYPE" = "xRC_bglrm" -o "x$RM_TYPE" = "xRC_bgprm"; then
   NOHUP=nohup
   rm -f nohup.out
 fi
