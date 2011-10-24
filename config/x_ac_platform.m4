@@ -92,6 +92,8 @@ AC_DEFUN([X_AC_PLATFORM], [
          -a -f "/bgl/BlueLight/ppcfloor/bglsys/bin/mpirun"; then
         ac_target_rm="bglrm"
         AC_DEFINE(SUB_ARCH_BGL,1,[Define 1 for SUB_ARCH_BGL])
+        AC_SUBST(ARCHHEADER,"/bgl/BlueLight/ppcfloor/bglsys/include")
+        AC_SUBST(ARCHLIB,"/bgl/BlueLight/ppcfloor/bglsys/lib64")
         AC_SUBST(CIODLOC, [tools/ciod])
     elif test ! -z "/bgsys/drivers/ppcfloor/bin/mpirun" \
          -a -f "/bgsys/drivers/ppcfloor/bin/mpirun"; then
