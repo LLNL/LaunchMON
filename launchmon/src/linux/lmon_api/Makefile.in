@@ -170,7 +170,6 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 RANLIB = @RANLIB@
 RM_TYPE = @RM_TYPE@
-SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SMPFACTOR = @SMPFACTOR@
@@ -236,7 +235,7 @@ GCRYPT_SUPPORT = -I$(top_srcdir)/@GCRYPTLOC@ \
                                -I$(top_srcdir)/@GPGERRLOC@
 
 INCLUDES = -I@ARCHHEADER@ \
-                                $(OPT_CIOD) \
+                                $(CIOD_SUPPORT) \
                                 $(GCRYPT_SUPPORT) \
                                -I.. -I../.. \
                                -I$(top_srcdir)/@COMMLOC@

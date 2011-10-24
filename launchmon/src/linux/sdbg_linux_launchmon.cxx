@@ -1317,9 +1317,11 @@ linux_launchmon_t::handle_mpir_variables (
                   std::list<std::string>::iterator iter;
                   for (iter = alist.begin(); iter != alist.end(); iter++)
                     {
-                      memcpy(traverse, (*iter).c_str(), (*iter).size());
-                      traverse += (*iter).size();
-                      traverse = '\0';
+                      memcpy((void *)traverse,
+                             (const void *)((*iter).c_str()),
+                             (size_t)((*iter).size()));
+                      traverse += ((*iter).size());
+                      (*traverse) = '\0';
                       traverse += 1;
                     }
 

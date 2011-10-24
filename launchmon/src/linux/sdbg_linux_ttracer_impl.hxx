@@ -200,7 +200,7 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_init (
 	thrlib_im->get_a_symbol (p.get_thread_creation_sym());
 
       bp->set_address_at (thread_create_bp_sym.get_relocated_address());
-#if RM_BG_MPIRUN
+#if PPC_ARCHITECTURE
       bp->set_use_indirection();
 #endif
       bp->set();

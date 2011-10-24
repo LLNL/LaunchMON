@@ -167,7 +167,7 @@
 #include "lmon_api/lmon_say_msg.hxx"
 #include "lmon_be_internal.hxx"
 
-#if RM_BG_MPIRUN
+#if SUB_ARCH_BGL || SUB_ARCH_BGP || SUB_ARCH_BGQ
 //
 // CIOD debug interface is required so that 
 // launchmon back-end API can provide the client 
@@ -486,10 +486,6 @@ resolvHNAlias ( std::string& hostsFilePath, std::string &alias, std::string &IP)
 //
 
 
-      #include <sys/types.h>
-       #include <sys/stat.h>
-       #include <fcntl.h>
-
 //! lmon_rc_e LMON_be_init
 /*!
     Please refer to the header file: lmon_be.h
@@ -547,7 +543,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
 
       return LMON_EINVAL;
     }
-#elif RM_ALPS_APRUN
+#elif SUB_ARCH_ALPS
   //
   // Without this, the no-verbose build will hang under ALPS 
   //
@@ -581,7 +577,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
   //
   // Registering bedata.my_hostname and bedata.my_ip
   //
-#if RM_BG_MPIRUN
+#if SUB_ARCH_BGL || SUB_ARCH_BGP || SUB_ARCH_BGQ
   //
   // BLUEGENE/L's RPDTAB contains raw IPs instead of hostnames.
   // 
@@ -644,7 +640,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
   LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
     "BES: inet_ntop converted host name representation from binary to text: %s", bedata.my_hostname);
 # endif
-#else /* RM_BG_MPIRUN */
+#else /* SUB_ARCH_BGL/P/Q */
   memset ( bedata.my_hostname, 0, LMON_BE_HN_MAX );
   if ( gethostname ( bedata.my_hostname, LMON_BE_HN_MAX ) < 0 )
     {
@@ -653,7 +649,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
 
       return LMON_ESYS;
     }
-#endif /* RM_BG_MPIRUN */
+#endif /* else SUB_ARCH_BGL/P/Q */
 
   if ( LMON_be_internal_init ( argc, argv, bedata.my_hostname ) != LMON_OK )
     {
@@ -1451,7 +1447,7 @@ LMON_be_handshake ( void *udata )
       for (i=0; i < proctab_size; i++)
         kill(proctab[i].pd.pid, SIGSTOP);
     }
-#elif RM_ORTE_ORTERUN || RM_ALPS_APRUN
+#elif SUB_ARCH_ALPS || RM_ORTE_ORTERUN 
   //
   // ORTE and ALPS don't not leave the app processes
   // in the SIGSTOP'ed state It uses a barrier mechanism 
@@ -1468,7 +1464,7 @@ LMON_be_handshake ( void *udata )
       for (i=0; i < proctab_size; i++)
         kill(proctab[i].pd.pid, SIGSTOP);
     }
-#elif RM_BG_MPIRUN
+#elif SUB_ARCH_BGL || SUB_ARCH_BGP || SUB_ARCH_BGQ
   /*
    * In the case of BlueGene, we want to register ATTACH msgs here
    * so that the job will stop when loaded. This can minimize the
@@ -1654,7 +1650,7 @@ LMON_be_handshake ( void *udata )
     LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
       "BES: primed the job for next operations"); 
 # endif
-#endif /* RM_BG_MPIRUN */
+#endif /* SUB_ARCH_BGL/P/Q */
 
   //
   // Clean up proctab

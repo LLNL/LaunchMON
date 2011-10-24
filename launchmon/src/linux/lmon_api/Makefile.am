@@ -46,7 +46,7 @@ GCRYPT_SUPPORT               = -I$(top_srcdir)/@GCRYPTLOC@ \
                                -I$(top_srcdir)/@GPGERRLOC@
 
 INCLUDES                     = -I@ARCHHEADER@ \
-                                $(OPT_CIOD) \
+                                $(CIOD_SUPPORT) \
                                 $(GCRYPT_SUPPORT) \
                                -I.. -I../.. \
                                -I$(top_srcdir)/@COMMLOC@
