@@ -108,6 +108,8 @@ AC_DEFUN([X_AC_PLATFORM], [
         #
         # change this to the absolute path to bgsys
         #
+        AC_SUBST(ARCHHEADER,"/bgsys/drivers/ppcfloor/ramdisk/include/services")
+        AC_SUBST(ARCHLIB,"/")
         AC_SUBST(CIODLOC, [tools/ciod])
         ac_target_rm="bgqrm"
     fi
