@@ -48,6 +48,8 @@
 #define BEGIN_SLAVE_ONLY    if ( bedata.myrank != LMON_BE_MASTER ) {
 #define END_SLAVE_ONLY      }
 
+#include "lmon_api/lmon_lmonp_msg.h"
+
 typedef enum _tracingmode_e {
   trm_attach = 0,
   trm_launch,
@@ -81,6 +83,11 @@ typedef struct _per_be_data_t {
    * is this launch case or attach case? 
    */
   int is_launch; /*  1: launch, 2: launch and dontstop, 0: attach, 3: attach and stop */
+
+  /*
+   * what rmtype is this
+   */
+  rm_catalogue_e rmtype_instance;
   
   /* 
    * user pack function 
@@ -122,5 +129,9 @@ extern lmon_rc_e LMON_be_internal_scatter ( void *sendbuf,
 		     void* recvbuf );
 
 extern lmon_rc_e LMON_be_internal_finalize ();
+
+extern lmon_rc_e LMON_be_internal_tester_init ( per_be_data_t *d);
+
+extern lmon_rc_e LMON_be_internal_tester_getBeData ( per_be_data_t **d );
 
 #endif // LMON_BE_COMM_HXX

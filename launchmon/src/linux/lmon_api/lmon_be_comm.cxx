@@ -121,6 +121,7 @@ extern "C" {
 static int ICCL_rank      = -1;
 static int ICCL_size      = -1;
 static int ICCL_global_id = -1;
+static per_be_data_t *bedataPtr = NULL;
 
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -129,6 +130,32 @@ static int ICCL_global_id = -1;
 //
 //
 //
+
+lmon_rc_e
+LMON_be_internal_tester_init ( per_be_data_t *d )
+{
+  if (!d)
+    {
+      return LMON_EINVAL;
+    } 
+
+  bedataPtr = d;
+  return LMON_OK;
+}
+
+
+lmon_rc_e
+LMON_be_internal_tester_getBeData ( per_be_data_t **d )
+{
+  if (!bedataPtr)
+    {
+      return LMON_EINVAL;
+    }
+
+  (*d) = bedataPtr;
+  return LMON_OK;
+}
+
 
 //! LMON_be_internal_init(int* argc, char*** argv)
 /*!
@@ -564,70 +591,6 @@ lmon_rc_e
 LMON_be_internal_finalize ()
 {
   int rc;
-
-#if RM_BG_MPIRUN
-  BG_Debugger_Msg dbgmsg(VERSION_MSG,0,0,0,0);
-  BG_Debugger_Msg dbgmsg2(END_DEBUG,0,0,0,0);
-  BG_Debugger_Msg ackmsg;
-  BG_Debugger_Msg ackmsg2;
-  dbgmsg.header.dataLength = sizeof(dbgmsg.dataArea.VERSION_MSG);
-  dbgmsg2.header.dataLength = sizeof(dbgmsg2.dataArea.END_DEBUG);
-
-  if ( !BG_Debugger_Msg::writeOnFd (BG_DEBUGGER_WRITE_PIPE, dbgmsg) )
-    {
-      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-        "VERSION_MSG command failed.");
-
-      return LMON_EINVAL;
-    }
-  if ( !BG_Debugger_Msg::readFromFd (BG_DEBUGGER_READ_PIPE, ackmsg) )
-    {
-      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-        "VERSION_MSG_ACK failed.");
-
-      return LMON_EINVAL;
-    }
-  if ( ackmsg.header.messageType != VERSION_MSG_ACK )
-    {
-      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-        "readFromFd received a wrong msg type: %d.",
-        ackmsg.header.messageType);
-
-      return LMON_EINVAL;
-    }
-  else 
-    {
-      if ( ackmsg.dataArea.VERSION_MSG_ACK.protocolVersion >= 3)
-        {
-# if VERBOSE
-          LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-            "BES: debugger protocol higher than or equal to 3.");
-# endif
-
-	  if ( !BG_Debugger_Msg::writeOnFd (BG_DEBUGGER_WRITE_PIPE, dbgmsg2) )
-            {
-      	      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-        	"END_DEBUG command failed.");
-
-      	      return LMON_EINVAL;
-    	    }
-  	  if ( !BG_Debugger_Msg::readFromFd (BG_DEBUGGER_READ_PIPE, ackmsg2) )
-    	    {
-      	      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-        	"VERSION_MSG_ACK failed.");
-
- 	      return LMON_EINVAL;	
- 	    }
-	  }
-        else
-          {
-# if VERBOSE
-            LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-              "BES: debugger protocol lower than or equal to 3.");
-# endif
-          }
-    }
-#endif
 
 #if MPI_BASED
   if ( (rc = MPI_Finalize()) < 0 )

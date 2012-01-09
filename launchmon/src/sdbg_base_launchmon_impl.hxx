@@ -681,14 +681,15 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_proctab_msg (
 
   //
   // This message can be rather long as the size is
-  // an lmonp header size + 16B per-task entry for each task
+  // an lmonp header size + 20B per-task entry for each task
   // + the string table size.
-  // The fixed 16 Byte per-task entry consists of 
-  // exec index, hostname index, pid, and rank, each of which
+  // The fixed 20 Byte per-task entry consists of 
+  // exec index, hostname index, pid, and rank, 
+  // and cnodeid, each of which
   // is 4 Byte.
   //
   msgsize = sizeof(lmonp_t) 
-            + 4*sizeof(int)*pcount + offset;
+            + 5*sizeof(int)*pcount + offset;
   lmonp_t *sendbuf = (lmonp_t *) malloc ( msgsize );
   memset ( sendbuf, 0, msgsize );
   if ( pcount < LMON_NTASKS_THRE) 
@@ -701,7 +702,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_proctab_msg (
 		  num_unique_exec,
 		  num_unique_hn,
 		  0,
-		  (4*sizeof(int)*pcount)+offset,
+		  (5*sizeof(int)*pcount)+offset,
 		  0);
     }
   else
@@ -714,7 +715,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_proctab_msg (
 		  num_unique_exec,
 		  num_unique_hn,
 		  pcount,
-		  (4*sizeof(int)*pcount)+offset,
+		  (5*sizeof(int)*pcount)+offset,
 		  0);
     }
 
@@ -746,6 +747,11 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_proctab_msg (
 	  
 	  memcpy ( payload_cp_ptr,
 		   &( (*vpos)->mpirank ),
+		   sizeof ( int ) );
+	  payload_cp_ptr += sizeof ( int ); 
+
+	  memcpy ( payload_cp_ptr,
+		   &( (*vpos)->cnodeid ),
 		   sizeof ( int ) );
 	  payload_cp_ptr += sizeof ( int ); 
 	}

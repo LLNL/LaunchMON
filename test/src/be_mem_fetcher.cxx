@@ -217,6 +217,14 @@ main( int argc, char* argv[] )
   LMON_be_procctl_init ( myBeData->rmtype_instance,
                          proctab, proctab_size, 1 );
 
+  unsigned int fetchunit;
+  unsigned int usecperunit;
+  
+  LMON_be_procctl_perf ( myBeData->rmtype_instance,
+                         proctab, proctab_size, 
+                         0x00000000015b4668, 409600,
+                         &fetchunit, &usecperunit);
+
   LMON_be_procctl_run ( myBeData->rmtype_instance,
                         signum,
                         proctab, proctab_size);

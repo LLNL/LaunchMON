@@ -84,6 +84,12 @@
 # error time.h and sys/time.h are required
 #endif
 
+//
+// For the performance study of 4K-byte block fetching
+// 10,000 x 4KB = 10,000 x 8B * 512
+//
+#define FETCH_ME_ARRAY_SIZE 5120000
+double FETCH_ME_DBL_ARRAY[FETCH_ME_ARRAY_SIZE];
 
 static int global_stall = 1;
 static int global_rank = -1;
@@ -105,6 +111,27 @@ LMON_say_msg ( const char* m, const char* output, ... )
   va_start(ap, output);
   vfprintf(stdout, log, ap);
   va_end(ap);
+}
+
+static void
+init_FETCH_ME_DBL_ARRAY()
+{
+  int i=0;
+  for (i=0; i < FETCH_ME_ARRAY_SIZE; ++i)
+    {
+      FETCH_ME_DBL_ARRAY[i] = (double) i+1;
+    }
+#if 0
+  char *tmp = (char*)FETCH_ME_DBL_ARRAY;
+  fprintf (stdout, "[LMON APP] address: 0x%x\n", FETCH_ME_DBL_ARRAY);
+  fprintf (stdout, "[LMON APP] 1st: 0x%x, %f\n", &FETCH_ME_DBL_ARRAY[0], FETCH_ME_DBL_ARRAY[0]);
+  fprintf (stdout, "[LMON APP] 1st: %x %x %x %x %x %x %x %x \n", tmp[0], tmp[1], tmp[2], tmp[3], 
+                                                                 tmp[4], tmp[5], tmp[6], tmp[7]);
+  tmp = (char*)&FETCH_ME_DBL_ARRAY[512];
+  fprintf (stdout, "[LMON APP] 512th: 0x%x %f\n", &FETCH_ME_DBL_ARRAY[512], FETCH_ME_DBL_ARRAY[512]);
+  fprintf (stdout, "[LMON APP] 1st: %x %x %x %x %x %x %x %x \n", tmp[0], tmp[1], tmp[2], tmp[3], 
+                                                                 tmp[4], tmp[5], tmp[6], tmp[7]);
+#endif
 }
 
 void 
@@ -146,6 +173,7 @@ main(int argc, char* argv[])
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+  init_FETCH_ME_DBL_ARRAY ();
   signal(SIGUSR1, sighandler);
   global_rank = rank;
   if (rank == 0) 

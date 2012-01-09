@@ -29,6 +29,7 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        Nov 28 2011 DHA: Added MPI-tool sync layer.
 ##        Jun 12 2008 DHA: Added header files to the dependency list
 ##                         of lmonfeapi_la_SOURCES.
 ##        Jun 06 2008 DHA: Taken from the old Makefile, converting
@@ -79,7 +80,11 @@ libmonfeapi_la_LIBADD        = @LIBPTHREAD@ @LIBCOMM@ @LIBGCRYPT@ @LIBGPGERR@ @L
 libmonbeapi_la_SOURCES       = lmon_be.cxx \
                                lmon_be_comm.cxx \
                                lmon_lmonp_msg.cxx \
-                               lmon_say_msg.cxx
+                               lmon_say_msg.cxx \
+                               lmon_be_sync_mpi.cxx \
+                               lmon_be_sync_mpi_generic.cxx \
+                               lmon_be_sync_mpi_bg.cxx \
+                               lmon_be_sync_mpi_bgq.cxx
 
 libmonbeapi_la_CFLAGS        = $(AM_CFLAGS)
 libmonbeapi_la_CXXFLAGS      = $(AM_CXXFLAGS)

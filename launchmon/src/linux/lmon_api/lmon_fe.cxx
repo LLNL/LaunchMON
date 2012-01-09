@@ -1819,6 +1819,24 @@ LMON_fe_beHandshakeSequence (
                          &use_type_msg,
                          sizeof ( use_type_msg ));
  
+
+  //
+  // rm_type
+  // 
+  lmonp_t rm_type_msg;
+  rm_catalogue_e rm_entry =
+    mydesc->rm_info.rm_supported_types[mydesc->rm_info.index_to_cur_instance];
+  set_msg_header ( &rm_type_msg,
+		   lmonp_fetobe,
+		   lmonp_febe_rm_type,
+		   (unsigned short) rm_entry,
+		   0, 0, 0, 0, 0, 0 );
+
+  write_lmonp_long_msg ( mydesc->commDesc[fe_be_conn].sessionAcceptSockFd,
+                         &rm_type_msg,
+                         sizeof ( rm_type_msg ));
+
+
   //
   // USRDATA MSG
   //  -- writing the lmonp_febe_usrdata message along with the user data 
@@ -4174,6 +4192,11 @@ LMON_fe_getProctable (
       // fetch a mpirank
       //
       memcpy ( &(proctable[i].mpirank),
+	       (void*) traverse,
+	       sizeof(int) );
+      traverse += sizeof (int);
+
+      memcpy ( &(proctable[i].cnodeid),
 	       (void*) traverse,
 	       sizeof(int) );
       traverse += sizeof (int);

@@ -29,9 +29,10 @@
  *  ./fe_launch_smoketest.debug /bin/hostname 9 5 pdebug `pwd`/be_kicker.debug
  *
  *  Update Log:
- *        Oct 21 2011 DHA: Added dynamic RM support
+ *        Oct 25 2011 DHA: Added BGQ support.
+ *        Oct 21 2011 DHA: Added dynamic RM support.
  *        Nov 12 2009 DHA: Change BG mpirun options to cover /P running under IBM LL
- *        Mar 04 2009 DHA: Added generic BlueGene support
+ *        Mar 04 2009 DHA: Added generic BlueGene support.
  *        Jun 16 2008 DHA: Added LMON_fe_recvUsrDataBe at the end to 
  *                         coordinate the testing result with back-end 
  *                         daemons better. 
@@ -186,7 +187,45 @@ main (int argc, char *argv[])
 
   std::string rmenv_str = rmenv;
 
-  if ((rmenv_str == std::string("RC_bglrm")) 
+  if ((rmenv_str == std::string("RC_bgqrm")))
+    {
+      launcher_argv = (char **) malloc(14*sizeof(char *));
+      launcher_argv[0] = strdup(mylauncher);
+      launcher_argv[1] = strdup("--verbose");
+      launcher_argv[2] = strdup("5");
+      launcher_argv[3] = strdup("--np");
+      launcher_argv[4] = strdup(argv[2]);
+      launcher_argv[5] = strdup("--exe"); 
+      launcher_argv[6] = strdup(argv[1]); 
+      // manually fill the block
+      launcher_argv[7] = strdup("--block");
+      launcher_argv[8] = strdup("R00-M0-N04"); 
+      // manually fill the corner
+      launcher_argv[9] = strdup("--corner");
+      launcher_argv[10] = strdup("R00-M0-N04-J07");
+      // manually fill the shape 
+      launcher_argv[11] = strdup("--shape");
+      launcher_argv[12] = strdup("1x1x1x1x1");
+      launcher_argv[13] = NULL;
+      fprintf (stdout, 
+        "[LMON_FE] launching the job/daemons via %s\n",
+        mylauncher);
+    }
+  else if ((rmenv_str == std::string("RC_bgq_slurm")))
+    {
+      launcher_argv = (char **) malloc(7*sizeof(char *));
+      launcher_argv[0] = strdup(mylauncher);
+      launcher_argv[1] = strdup("-N");
+      launcher_argv[2] = strdup(argv[3]);
+      launcher_argv[3] = strdup("-n");
+      launcher_argv[4] = strdup(argv[2]);
+      launcher_argv[5] = strdup(argv[1]);
+      launcher_argv[6] = NULL;
+      fprintf (stdout,
+        "[LMON_FE] launching the job/daemons via %s\n",
+        "mylauncher");
+    }
+  else if ((rmenv_str == std::string("RC_bglrm")) 
       || (rmenv_str == std::string("RC_bgprm")))
     {
       launcher_argv = (char **) malloc(8*sizeof(char *));

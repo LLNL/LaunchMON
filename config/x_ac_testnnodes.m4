@@ -35,7 +35,7 @@
 AC_DEFUN([X_AC_TESTNNODES], [
   AC_MSG_CHECKING([the number of compute nodes that standard test cases should use])
   AC_ARG_WITH([testnnodes],
-    AS_HELP_STRING(--with-testnnodes@<:@=NNodes@:>@,specify the number of compute nodes test cases should use @<:@BGL Note: use the number of IO nodes instead@:>@ @<:@default=2@:>@),
+    AS_HELP_STRING(--with-testnnodes@<:@=NNodes@:>@,specify the number of compute nodes test cases should use @<:@Blue Gene Note: use the number of IO nodes instead@:>@ @<:@default=2@:>@),
     [with_tnn=$withval],
     [with_tnn="check"])
 
@@ -164,16 +164,23 @@ AC_DEFUN([X_AC_TEST_RM], [
 
   elif test "x$with_rm" = "xbgqrm" -o "x$dflt_str" = "xcheck-linux-power64"; then
     #
-    # Configure for Blue Gene P RM
+    # Configure for Blue Gene Q RM
     #
-    rm_default_dirs="/bgsys/drivers/ppcfloor/hlcs/bin"
+    rm_default_dirs="/usr/bin /bgsys/drivers/ppcfloor/hlcs/bin"
     for rm_dir in $rm_default_dirs; do
       if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
         continue;
       fi
 
-      if test ! -z "$rm_dir/mpirun" -a -f "$rm_dir/mpirun"; then
-        pth=`config/ap $rm_dir/mpirun`
+      if test ! -z "$rm_dir/srun" -a -f "$rm_dir/srun"; then
+        pth=`config/ap $rm_dir/srun`
+        ac_job_launcher_path=$pth
+        rm_found="yes"
+        AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
+        AC_SUBST(RM_TYPE, RC_bgq_slurm)
+        break
+      elif test ! -z "$rm_dir/runjob" -a -f "$rm_dir/runjob"; then
+        pth=`config/ap $rm_dir/runjob`
         ac_job_launcher_path=$pth
         rm_found="yes"
         AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)

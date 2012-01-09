@@ -230,19 +230,24 @@ typedef enum _lmonp_fe_to_be_msg_e {
   lmonp_febe_attach_stop               = 6,
 
   /*
+   * FE->BE: rm_type 
+   */
+  lmonp_febe_rm_type                   = 7,
+
+  /*
    * BE->FE: BE hostnames message
    */
-  lmonp_befe_hostname                  = 7,
+  lmonp_befe_hostname                  = 8,
 
   /*
    * BE->FE: usrdata message
    */
-  lmonp_befe_usrdata                   = 8,
+  lmonp_befe_usrdata                   = 9,
 
   /*
    * BE->FE: BE ready message
    */
-  lmonp_be_ready                       = 9,
+  lmonp_be_ready                       = 10,
 
 } lmonp_fe_to_be_msg_e;
 
@@ -310,7 +315,7 @@ typedef enum  _my_lmon_kind_e {
 /* The first 32 bits                                                    */ 
 /*     0 - 2: MSG class: defines communication pair                     */
 /*    3 - 15: MSG type                                                  */
-/*   16 - 31: Initial Security KEY or num task info                     */
+/*   16 - 31: Initial Security KEY or num task info or RM Type          */
 /*                                                                      */
 /* The second 32 bits                                                   */
 /*    0 - 31: Additional security key info or                           */
@@ -355,6 +360,7 @@ typedef struct _lmonp_t {
   union u1{
     unsigned short security_key1        : 16; /* unused yet */
     unsigned short num_tasks            : 16;
+    unsigned short rm_type              : 16;
   } sec_or_jobsizeinfo;
 
   union u2{

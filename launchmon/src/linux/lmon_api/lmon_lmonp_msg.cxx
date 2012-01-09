@@ -648,11 +648,11 @@ get_strtab_begin ( lmonp_t *msg )
       {
         if (msg->sec_or_jobsizeinfo.num_tasks < LMON_NTASKS_THRE)
 	{
-	  ret += msg->sec_or_jobsizeinfo.num_tasks*sizeof(int)*4;
+	  ret += msg->sec_or_jobsizeinfo.num_tasks*sizeof(int)*5;
 	}
 	else
 	{
-	  ret += msg->long_num_tasks*sizeof(int)*4;
+	  ret += msg->long_num_tasks*sizeof(int)*5;
 	}
       }
     } 
@@ -681,11 +681,11 @@ get_strtab_begin ( lmonp_t *msg )
       {
         if (msg->sec_or_jobsizeinfo.num_tasks < LMON_NTASKS_THRE)
 	{
-	  ret += msg->sec_or_jobsizeinfo.num_tasks*sizeof(int)*4;
+	  ret += msg->sec_or_jobsizeinfo.num_tasks*sizeof(int)*5;
 	}
 	else
 	{
-	  ret += msg->long_num_tasks*sizeof(int)*4;
+	  ret += msg->long_num_tasks*sizeof(int)*5;
 	}
       }
     }
@@ -737,7 +737,9 @@ parse_raw_RPDTAB_msg (lmonp_t *proctabMsg, void *pMap)
       unsigned int *exec_ix_ptr = (unsigned int *) (mpirent + sizeof (int));
       int *pid_ptr = (int *) (mpirent + 2*sizeof(int));
       int *rank_ptr = (int *) (mpirent + 3*sizeof(int));
-      mpirent += 4*sizeof (int);
+      int *cn_ptr = (int *) (mpirent + 4*sizeof(int));
+      mpirent += 5*sizeof (int);
+
       string hntmpstr( strtab + (*hn_ix_ptr) );
       char *exeptr = ( strtab + (*exec_ix_ptr) );
 
@@ -751,6 +753,7 @@ parse_raw_RPDTAB_msg (lmonp_t *proctabMsg, void *pMap)
       anentry->pd.host_name = strdup ( hntmpstr.c_str () );
       anentry->pd.pid = ( *pid_ptr );
       anentry->mpirank = ( *rank_ptr );
+      anentry->cnodeid = ( *cn_ptr );
 	
       if ( (*pTab).find (hntmpstr) == (*pTab).end() )
 	{

@@ -67,6 +67,7 @@ typedef struct {
 typedef struct {
   MPIR_PROCDESC pd;
   int mpirank;
+  int cnodeid;
 } MPIR_PROCDESC_EXT;
 
 END_C_DECLS 

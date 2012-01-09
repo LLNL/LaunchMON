@@ -46,6 +46,12 @@
 # error stdarg.h is required
 #endif
 
+#if HAVE_STRING
+# include <string>
+#else
+# error string is required
+#endif
+
 #include <stdint.h>
 
 extern int (*errorCB) (const char *format, va_list ap);

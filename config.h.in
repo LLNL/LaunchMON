@@ -176,6 +176,9 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
+/* Define to 1 if you have the <sys/un.h> header file. */
+#undef HAVE_SYS_UN_H
+
 /* Define to 1 if you have the <sys/user.h> header file. */
 #undef HAVE_SYS_USER_H
 
@@ -218,6 +221,10 @@
 /* Define to 1 if `lstat' dereferences a symlink specified with a trailing
    slash. */
 #undef LSTAT_FOLLOWS_SLASHED_SYMLINK
+
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
+#undef LT_OBJDIR
 
 /* Define 1 for MEASURE_TRACING_COST */
 #undef MEASURE_TRACING_COST

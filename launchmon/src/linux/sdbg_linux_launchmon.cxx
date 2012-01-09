@@ -893,8 +893,15 @@ linux_launchmon_t::acquire_proctable (
       //
       // fetching the RPDTAB size
       //
-      const symbol_base_t<T_VA>& debug_ps 
+      symbol_base_t<T_VA> debug_ps 
 	= main_im->get_a_symbol ( p.get_launch_proctable_size() );
+
+      if (!debug_ps && p.get_myrmso_image())
+        {
+          debug_ps
+            = p.get_myrmso_image()->get_a_symbol(p.get_launch_proctable_size());
+        }
+
       T_VA procsize_addr = debug_ps.get_relocated_address();  
 
       get_tracer()->tracer_read( p, 
@@ -903,7 +910,14 @@ linux_launchmon_t::acquire_proctable (
 				 sizeof(local_pcount), 
 				 use_cxt );     
       set_pcount (local_pcount);
-      assert(get_pcount() > 0 );
+      if (get_pcount() <= 0 )
+        {
+	  self_trace_t::trace ( 
+             true, 
+	     MODULENAME, 1, 
+	     "MPIR_proctable_size is negative");  
+          return false;
+        }
 
       //
       // launcher_proctable holds the MPIR_PROCDESC array. Note that
@@ -925,8 +939,14 @@ linux_launchmon_t::acquire_proctable (
           return false;
         }
 
-      const symbol_base_t<T_VA>& debug_pt 
+      symbol_base_t<T_VA> debug_pt 
 	    = main_im->get_a_symbol ( p.get_launch_proctable() );
+      if (!debug_pt && p.get_myrmso_image())
+        {
+          debug_pt
+            = p.get_myrmso_image()->get_a_symbol(p.get_launch_proctable());
+        }
+
       T_VA proctable_addr = debug_pt.get_relocated_address();
       get_tracer()->tracer_read ( p, 
 				  proctable_addr, 
@@ -967,9 +987,19 @@ linux_launchmon_t::acquire_proctable (
                  = (char*) malloc(MAX_STRING_SIZE);
 	  an_entry->pd.executable_name 
                  = (char*) malloc(MAX_STRING_SIZE);
+#if SUB_ARCH_BGQ
+	  an_entry->cnodeid
+                 = launcher_proctable[i].pid;      
+#else
 	  an_entry->pd.pid 
                  = launcher_proctable[i].pid;      
+	  an_entry->cnodeid = -1;      
+#endif
 	  an_entry->mpirank = i; /* The mpi rank is the index into the global tab */
+
+#if SUB_ARCH_BGQ
+	  an_entry->pd.pid = i; /* The mpi rank is the index into the global tab */
+#endif
 
 	  //
 	  // memory-fetching to get the "host_name" 
@@ -1011,8 +1041,13 @@ linux_launchmon_t::acquire_proctable (
               r_mgr = p.get_myopts()->get_my_rmconfig()->get_resource_manager();
               std::string rid_sym = r_mgr.get_job_id().id.symbol_name;
 
-              const symbol_base_t<T_VA>& rid
+              symbol_base_t<T_VA> rid
                 = main_im->get_a_symbol(rid_sym);
+              if (!rid && p.get_myrmso_image())
+                {
+                  rid = p.get_myrmso_image()->get_a_symbol(rid_sym);
+                }
+
 
               if (r_mgr.get_job_id().dtype == cstring)
                 {
@@ -1237,17 +1272,19 @@ linux_launchmon_t::handle_mpir_variables (
         }
 
       //
-      // setting MPIR_debing_debugged
+      // setting MPIR_being_debugged
       //
       const symbol_base_t<T_VA>& debug_state
         = image.get_a_symbol (p.get_launch_being_debug());
-      debug_state_flag = debug_state.get_relocated_address();
-      get_tracer()->tracer_write ( p,
-                                   debug_state_flag,
-                                   &bdbg,
-                                   sizeof(bdbg),
-                                   use_cxt );
-
+      if (!(!debug_state))
+        {
+          debug_state_flag = debug_state.get_relocated_address();
+          get_tracer()->tracer_write ( p,
+                                       debug_state_flag,
+                                       &bdbg,
+                                       sizeof(bdbg),
+                                       use_cxt );
+        }
 
       if (p.rmgr()->is_coloc_sup())
         {
@@ -1259,77 +1296,81 @@ linux_launchmon_t::handle_mpir_variables (
           const int BG_EXECPATH_LENGTH = 256;
           const symbol_base_t<T_VA>& executablepath
             = image.get_a_symbol (p.get_launch_exec_path ());
-
-          T_VA ep_addr = executablepath.get_relocated_address();
-          std::string daemon_pth;
-          daemon_pth = p.rmgr()->get_coloc_paramset().rm_daemon_path;
-          size_t dpsize = daemon_pth.size() + 1;
-
-          if (dpsize > BG_EXECPATH_LENGTH)
-            {
-              self_trace_t::trace ( true,
-                MODULENAME,1,
-                "daemon path(%d) exceeds the buffer length: %d",
-                dpsize,
-                BG_EXECPATH_LENGTH);
-
-              return LAUNCHMON_FAILED;
-            }
-
-          get_tracer()->tracer_write(p,
-                                     ep_addr,
-                                     daemon_pth.c_str(),
-                                     dpsize,
-                                     use_cxt);
-
-          char *tokenize2 = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
-          char *sharedsecret = strtok (tokenize2, ":");
-          char *randomID = strtok (NULL, ":");
-          p.rmgr()->set_paramset(0,
-                                 0,
-                                 sharedsecret,
-                                 randomID,
-                                 -1,
-                                 NULL);
-
-          std::string expstr;
-          std::list<std::string> alist;
-          //
-          // Change this for vector<string> interface
-          //
-          alist = p.rmgr()->expand_launch_string(expstr);
-          char serverargs[BG_SERVERARG_LENGTH] = {0};
           const symbol_base_t<T_VA> &sa
             = image.get_a_symbol (p.get_launch_server_args ());
-          T_VA sa_addr = sa.get_relocated_address();
 
-          if (expstr != "")
-            {
-              if (expstr.size() >= BG_SERVERARG_LENGTH)
+          if (!(!executablepath) && !(!sa))
+            { 
+              T_VA ep_addr = executablepath.get_relocated_address();
+              std::string daemon_pth;
+              daemon_pth = p.rmgr()->get_coloc_paramset().rm_daemon_path;
+              size_t dpsize = daemon_pth.size() + 1;
+
+              if (dpsize > BG_EXECPATH_LENGTH)
                 {
-                  self_trace_t::trace (true,
-                    MODULENAME, 1,
-                    "Daemon args list too long to fit %s", expstr.c_str());
+                  self_trace_t::trace ( true,
+                    MODULENAME,1,
+                    "daemon path(%d) exceeds the buffer length: %d",
+                    dpsize,
+                    BG_EXECPATH_LENGTH);
+
+                  return LAUNCHMON_FAILED;
                 }
-              else
+
+              get_tracer()->tracer_write(p,
+                                         ep_addr,
+                                         daemon_pth.c_str(),
+                                         dpsize,
+                                         use_cxt);
+
+              char *tokenize2 
+                = strdup(p.get_myopts()->get_my_opt()->lmon_sec_info.c_str());
+              char *sharedsecret = strtok (tokenize2, ":");
+              char *randomID = strtok (NULL, ":");
+              p.rmgr()->set_paramset(0,
+                                     0,
+                                     sharedsecret,
+                                     randomID,
+                                     -1,
+                                     NULL);
+
+              std::string expstr;
+              std::list<std::string> alist;
+              //
+              // Change this for vector<string> interface
+              //
+              alist = p.rmgr()->expand_launch_string(expstr);
+              char serverargs[BG_SERVERARG_LENGTH] = {0};
+              T_VA sa_addr = sa.get_relocated_address();
+
+              if (expstr != "")
                 {
-                  char *traverse = serverargs;
-                  std::list<std::string>::iterator iter;
-                  for (iter = alist.begin(); iter != alist.end(); iter++)
+                  if (expstr.size() >= BG_SERVERARG_LENGTH)
                     {
-                      memcpy((void *)traverse,
+                      self_trace_t::trace (true,
+                        MODULENAME, 1,
+                        "Daemon args list too long to fit %s", expstr.c_str());
+                    }
+                  else
+                    {
+                      char *traverse = serverargs;
+                      std::list<std::string>::iterator iter;
+                      for (iter = alist.begin(); iter != alist.end(); iter++)
+                        {
+                          memcpy((void *)traverse,
                              (const void *)((*iter).c_str()),
                              (size_t)((*iter).size()));
-                      traverse += ((*iter).size());
-                      (*traverse) = '\0';
-                      traverse += 1;
-                    }
+                          traverse += ((*iter).size());
+                          (*traverse) = '\0';
+                          traverse += 1;
+                        }
 
-                  get_tracer()->tracer_write(p,
-                                             sa_addr,
-                                             serverargs,
-                                             BG_SERVERARG_LENGTH,
-                                             use_cxt);
+                      get_tracer()->tracer_write(p,
+                                                 sa_addr,
+                                                 serverargs,
+                                                 BG_SERVERARG_LENGTH,
+                                                 use_cxt);
+                    }
                 }
             }
 
@@ -1530,8 +1571,7 @@ linux_launchmon_t::check_dependent_SOs (
             bn = basename(cplname2);
 	    slname = lname;
 
-	    if ( (strncmp(LIBPTHREAD_IDEN,bn,strlen(LIBPTHREAD_IDEN)) == 0 ) 
-                  && (a_map.l_addr)) 
+	    if ( strncmp(LIBPTHREAD_IDEN,bn,strlen(LIBPTHREAD_IDEN)) == 0 ) 
               {
                 /*
                  * The linked map for the POSIX thread library is found
@@ -1547,8 +1587,7 @@ linux_launchmon_t::check_dependent_SOs (
 		    rc = true;
                   }
 	      } 
-	    else if ( (strncmp(LIBC_IDEN,bn,strlen(LIBC_IDEN)) == 0 ) 
-                  && (a_map.l_addr)) 
+	    else if (strncmp(LIBC_IDEN,bn,strlen(LIBC_IDEN)) == 0 ) 
               {
                 /*
                  * The linked map for the C runtime library is found
@@ -1605,6 +1644,8 @@ linux_launchmon_t::check_dependent_SOs (
                         // Some RM's base image doesn't "define" MPIR_Breakpoint
                         // In that case, we use the same symbol defined within the RM lib.  
                         //
+                        handle_mpir_variables(p, *(p.get_myrmso_image()));
+#if 0
                         const symbol_base_t<T_VA>& launch_bp_sym
                           = rmso_im->get_a_symbol (p.get_launch_breakpoint_sym());
 
@@ -1636,6 +1677,7 @@ linux_launchmon_t::check_dependent_SOs (
                                             *(p.get_launch_hidden_bp()),
                                             use_cxt );
                          }
+#endif
                       }
                   }
               }
@@ -2261,16 +2303,27 @@ linux_launchmon_t::handle_launch_bp_event (
       //
       // looking up MPIR_debug_state
       //
-      const symbol_base_t<T_VA> &debug_state_var 
+      symbol_base_t<T_VA> debug_state_var 
 	    = main_im->get_a_symbol (p.get_launch_debug_state());
+      if (!debug_state_var && p.get_myrmso_image())
+        {
+          debug_state_var 
+            = p.get_myrmso_image()->get_a_symbol(p.get_launch_debug_state());
+        }
+
       debug_state_addr = debug_state_var.get_relocated_address(); 
       get_tracer()->tracer_read ( p, 
 				  debug_state_addr,
 				  &bdbg,
 				  sizeof(bdbg),
 				  use_cxt );
-      const symbol_base_t<T_VA> &debug_state
+      symbol_base_t<T_VA> debug_state
             = main_im->get_a_symbol (p.get_launch_being_debug());
+      if (!debug_state && p.get_myrmso_image())
+        {
+          debug_state
+            = p.get_myrmso_image()->get_a_symbol(p.get_launch_being_debug());
+        }
 
 #if MEASURE_TRACING_COST
       endTS = gettimeofdayD ();
@@ -2355,11 +2408,11 @@ linux_launchmon_t::handle_launch_bp_event (
                 //
                 // unsetting "MPIR_being_debugged."
                 //
-                const symbol_base_t<T_VA>& being_debugged
-                  = p.get_myimage()->get_a_symbol (p.get_launch_being_debug());
+                //const symbol_base_t<T_VA>& being_debugged
+                //  = p.get_myimage()->get_a_symbol (p.get_launch_being_debug());
 
                 get_tracer()->tracer_write ( p,
-                                  being_debugged.get_relocated_address(),
+                                  debug_state.get_relocated_address(),
                                   &bdbg,
                                   sizeof(bdbg),
                                   true );
@@ -2512,8 +2565,14 @@ linux_launchmon_t::handle_detach_cmd_event
       //
       // unsetting "MPIR_being_debugged."
       //
-      const symbol_base_t<T_VA>& being_debugged
+      symbol_base_t<T_VA> being_debugged
         = p.get_myimage()->get_a_symbol (p.get_launch_being_debug());
+      if (!being_debugged && p.get_myrmso_image())
+        {
+          being_debugged
+            = p.get_myrmso_image()->get_a_symbol(p.get_launch_being_debug());
+        }
+
 
       get_tracer()->tracer_write ( p,
                                    being_debugged.get_relocated_address(),
@@ -2654,8 +2713,14 @@ linux_launchmon_t::handle_kill_cmd_event
       //
       // unsetting MPIR_being_debugged.
       //
-      const symbol_base_t<T_VA>& debug_state
+      symbol_base_t<T_VA> debug_state
         = p.get_myimage()->get_a_symbol (p.get_launch_being_debug());
+
+      if (!debug_state && p.get_myrmso_image())
+        {
+          debug_state
+            = p.get_myrmso_image()->get_a_symbol(p.get_launch_being_debug());
+        }
  
       debug_state_flag = debug_state.get_relocated_address();
       get_tracer()->tracer_write ( p,

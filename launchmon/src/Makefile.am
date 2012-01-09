@@ -50,6 +50,7 @@ etc_SCRIPTS            = rm_info.conf \
                          rm_bglrm.conf \
                          rm_bgprm.conf \
                          rm_bgqrm.conf \
+                         rm_bgq_slurm.conf \
                          rm_mchecker.conf \
                          rm_openrte.conf \
                          rm_slurm.conf
@@ -59,6 +60,7 @@ EXTRA_DIST             = rm_info.conf \
                          rm_bglrm.conf \
                          rm_bgprm.conf \
                          rm_bgqrm.conf \
-                         rm_mchecler.conf \
+                         rm_bgq_slurm.conf \
+                         rm_mchecker.conf \
                          rm_openrte.conf \
                          rm_slurm.conf

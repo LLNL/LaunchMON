@@ -295,6 +295,7 @@ bool glic_backtrace_wrapper (std::string &bt)
 
   const T_IT T_TRAP_INSTRUCTION               = 0x000000cc;
   const T_IT T_BLEND_MASK                     = 0xffffff00;
+  const T_IT IT_UNINIT_HEX                    = 0xdeadbeef;
   const T_VA T_UNINIT_HEX                     = 0xdeadbeef;
 
 #define SDBG_LINUX_DFLT_INSTANTIATION T_VA, \
@@ -325,6 +326,7 @@ bool glic_backtrace_wrapper (std::string &bt)
   typedef struct user_fpregs_struct             T_FRS;
   const T_IT T_TRAP_INSTRUCTION               = 0x00000000000000cc;
   const T_IT T_BLEND_MASK                     = 0xffffffffffffff00;
+  const T_IT IT_UNINIT_HEX                    = 0xdeadbeefdeadbeeffULL;
   const T_VA T_UNINIT_HEX                     = 0xdeadbeefdeadbeef;
 # else
   //
@@ -337,6 +339,7 @@ bool glic_backtrace_wrapper (std::string &bt)
   typedef struct user_fpregs_struct             T_FRS;
   const T_IT T_TRAP_INSTRUCTION               = 0x000000cc;
   const T_IT T_BLEND_MASK                     = 0xffffff00;
+  const T_IT IT_UNINIT_HEX                    = 0xdeadbeef;
   const T_VA T_UNINIT_HEX                     = 0xdeadbeef;
 # endif // BIT64
 
@@ -369,6 +372,7 @@ bool glic_backtrace_wrapper (std::string &bt)
   typedef struct pt_regs                        T_FRS;
   const T_IT T_TRAP_INSTRUCTION               = 0x7d821008;
   const T_IT T_BLEND_MASK                     = 0x00000000;
+  const T_IT IT_UNINIT_HEX                    = 0xdeadbeef;
   const T_VA T_UNINIT_HEX                     = 0xdeadbeefdeadbeefULL;
 # else
   typedef u_int32_t                             T_VA;
@@ -378,6 +382,7 @@ bool glic_backtrace_wrapper (std::string &bt)
   typedef struct pt_regs                        T_FRS;
   const T_IT T_TRAP_INSTRUCTION               = 0x7d821008;
   const T_IT T_BLEND_MASK                     = 0x00000000;
+  const T_IT IT_UNINIT_HEX                    = 0xdeadbeef;
   const T_VA T_UNINIT_HEX                     = 0xdeadbeef;
 # endif // BIT64
 

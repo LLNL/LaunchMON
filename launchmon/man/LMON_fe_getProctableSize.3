@@ -26,7 +26,12 @@ that this function returns is either the total number of entries in the RPDTAB
 or \fImaxlen\fR whichever is smaller. In either case, however, this function returns
 the total number of entries of the RPDTAB via the \fIsize\fR argument. 
 This function requires \fBMPIR_PROCDESC_EXT\fR type, a C struct
-extending \fBMPIR_PROCDESC\fR.  
+extending \fBMPIR_PROCDESC\fR. \fImpirank\fR is the MPI rank of the
+describing process. \fIcnodeid\fR is the compute node id of the
+compute node where the process is running. It is a platform-specific
+integer identification and thus a platform may or may not
+define it. Currently, it is defined only on Blue Gene /Q.
+
 .PP
 .nf
 .B typedef struct {
@@ -38,6 +43,7 @@ extending \fBMPIR_PROCDESC\fR.
 .B typedef struct {
 .B "   "MPIR_PROCDESC pd;
 .B "   "int mpirank;
+.B "   "int cnodeid;
 .B } MPIR_PROCDESC_EXT;
 .fi
 .PP

@@ -39,7 +39,10 @@ TESTNNODES                        = @TESTNNODES@
 TARGET_JOB_LAUNCHER_PATH          = @TARGET_JOB_LAUNCHER_PATH@
 RM_TYPE                           = @RM_TYPE@
 
-INCLUDES                          = -I$(top_srcdir)/launchmon/src -I$(top_srcdir)/@LMONAPILOC@
+INCLUDES                          = -I$(top_srcdir)/launchmon/src \
+                                    -I$(top_srcdir)/launchmon/src/linux \
+                                    -I$(top_srcdir)/launchmon/src/linux/lmon_api \
+                                    -I$(top_srcdir)/@LMONAPILOC@
 INCLUDES                          += -I$(top_srcdir)/@GCRYPTLOC@ -I$(top_srcdir)/@GPGERRLOC@
 if WITH_CIOD
 INCLUDES                          += -I@ARCHHEADER@ -I$(top_srcdir)/@CIODLOC@
@@ -53,6 +56,7 @@ test_PROGRAMS                     = fe_jobsnap \
 				    fe_launch_usrpayload_test \
 			   	    fe_attach_smoketest \
 				    be_kicker \
+                                    be_mem_fetcher \
 				    be_kicker_usrpayload_test \
 				    be_standalone_kicker \
 				    run_3mins \
@@ -105,6 +109,12 @@ be_standalone_kicker_CXXFLAGS     = $(AM_CXXFLAGS)
 be_standalone_kicker_LDFLAGS      = -L$(top_srcdir)/@LMONAPILOC@ 
 be_standalone_kicker_LDADD        = -lmonbeapi
 
+be_mem_fetcher_SOURCES            = be_mem_fetcher.cxx util.c
+be_mem_fetcher_CFLAGS             = $(AM_CFLAGS)
+be_mem_fetcher_CXXFLAGS           = $(AM_CXXFLAGS)
+be_mem_fetcher_LDFLAGS            = -L$(top_srcdir)/@LMONAPILOC@ 
+be_mem_fetcher_LDADD              = -lmonbeapi 
+
 fe_jobsnap_SOURCES                = fe_jobsnap.cxx util.c
 fe_jobsnap_CFLAGS                 = $(AM_CFLAGS)
 fe_jobsnap_CXXFLAGS               = $(AM_CXXFLAGS)
@@ -127,6 +137,7 @@ test_SCRIPTS                      = test.LE_model_checker_mainthread \
 				    test.launch_3_invalid_dmonpath \
 				    test.launch_5_usrpayload \
 				    test.attach_1 \
+                                    test.attach_1_mem_fetcher \
 				    test.attach_1_remote \
 				    test.attach_1_pdebugmax \
 				    test.attach_2_uneven \
@@ -153,6 +164,7 @@ EXTRA_DIST                        = test.LE_model_checker_mainthread.in \
                                     test.launch_3_invalid_dmonpath.in \
                                     test.launch_5_usrpayload.in \
                                     test.attach_1.in \
+                                    test.attach_1_mem_fetcher.in \
                                     test.attach_1_remote.in \
                                     test.attach_1_pdebugmax.in \
                                     test.attach_2_uneven.in \
@@ -211,6 +223,9 @@ test.launch_6_engine_failure: test.launch_6_engine_failure.in Makefile
 test.attach_1: test.attach_1.in Makefile
 	$(do_subst) < test.attach_1.in > test.attach_1
 	chmod +x test.attach_1
+test.attach_1_mem_fetcher: test.attach_1_mem_fetcher.in Makefile
+	$(do_subst) < test.attach_1_mem_fetcher.in > test.attach_1_mem_fetcher
+	chmod +x test.attach_1_mem_fetcher
 test.attach_1_pdebugmax: test.attach_1_pdebugmax.in Makefile
 	$(do_subst) < test.attach_1_pdebugmax.in > test.attach_1_pdebugmax
 	chmod +x test.attach_1_pdebugmax

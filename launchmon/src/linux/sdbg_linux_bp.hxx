@@ -69,7 +69,7 @@ public:
     { 
       unset_use_indirection();
       set_trap_instruction(T_TRAP_INSTRUCTION); 
-      set_orig_instruction(T_UNINIT_HEX);
+      set_orig_instruction(IT_UNINIT_HEX);
       set_address_at(T_UNINIT_HEX);
       set_indirect_address_at(T_UNINIT_HEX);
       set_blend_mask(T_BLEND_MASK);

@@ -230,6 +230,10 @@ resource_manager_t::fill_rm_type(const std::string &v)
     {
       rm = RC_bgqrm;
     }
+  else if (v == std::string("bgq_slurm"))
+    {
+      rm = RC_bgq_slurm;
+    }
   else if (v == std::string("modelchecker"))
     {
       rm = RC_mchecker_rm;
