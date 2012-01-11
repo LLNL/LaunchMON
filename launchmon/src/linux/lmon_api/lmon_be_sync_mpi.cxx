@@ -49,6 +49,7 @@
 #include "lmon_be_sync_mpi_bg.hxx"
 #include "lmon_be_sync_mpi_bgq.hxx"
 
+static int dontstop_fastpath = 0;
 
 //////////////////////////////////////////////////////////////////////////////////
 //
@@ -59,9 +60,18 @@ lmon_rc_e
 LMON_be_procctl_init ( rm_catalogue_e rmtype,
                        MPIR_PROCDESC_EXT *ptab,
                        int psize,
-                       int tester)
+                       int dontstop )
 {
   lmon_rc_e rc = LMON_EINVAL;
+
+  // 0: don't use fastpath
+  // 1: use fastpath
+  // anything else: inherit the state
+
+  if ( dontstop == 0 || dontstop == 1 )
+    {
+      dontstop_fastpath = dontstop;
+    }
 
 #if VERBOSE
   LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
@@ -93,7 +103,9 @@ LMON_be_procctl_init ( rm_catalogue_e rmtype,
       //
       // Call RM-specific init with BGQ CDTI interface
       //
-      rc = LMON_be_procctl_init_bgq ( ptab, psize, tester );
+      rc = (dontstop_fastpath) ? 
+              LMON_OK :
+              LMON_be_procctl_init_bgq ( ptab, psize );
       break;
 
     case RC_mchecker_rm:
@@ -146,7 +158,9 @@ LMON_be_procctl_stop ( rm_catalogue_e rmtype,
       //
       // Call RM-specific stop with BGQ CDTI interface
       //
-      rc = LMON_be_procctl_stop_bgq ( ptab, psize );
+      rc = (dontstop_fastpath) ?
+               LMON_OK :
+               LMON_be_procctl_stop_bgq ( ptab, psize );
       break;
 
     case RC_mchecker_rm:
@@ -200,7 +214,9 @@ LMON_be_procctl_run ( rm_catalogue_e rmtype,
       //
       // Call RM-specific run with BGQ CDTI interface
       //
-      rc = LMON_be_procctl_run_bgq ( signum, ptab, psize );
+      rc = (dontstop_fastpath) ? 
+              LMON_OK :
+              LMON_be_procctl_run_bgq ( signum, ptab, psize );
       break;
 
     case RC_mchecker_rm:
@@ -253,7 +269,9 @@ LMON_be_procctl_initdone( rm_catalogue_e rmtype,
       //
       // Call RM-specific initdone with BGQ CDTI interface
       //
-      rc = LMON_be_procctl_initdone_bgq(ptab, psize);
+      rc = (dontstop_fastpath) ? 
+              LMON_OK :
+              LMON_be_procctl_initdone_bgq(ptab, psize);
       break;
 
     case RC_mchecker_rm:
@@ -306,7 +324,9 @@ LMON_be_procctl_done(rm_catalogue_e rmtype,
       //
       // Call RM-specific init with BGQ CDTI interface
       //
-      rc = LMON_be_procctl_done_bgq(ptab, psize);
+      rc = (dontstop_fastpath) ? 
+	      LMON_OK :
+              LMON_be_procctl_done_bgq(ptab, psize);
       break;
 
     case RC_mchecker_rm:

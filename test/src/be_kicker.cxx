@@ -178,8 +178,8 @@ main( int argc, char* argv[] )
       return EXIT_FAILURE;
     }
  
-  if ( (lrc = LMON_be_getMyProctab (proctab, &proctab_size, proctab_size)) 
-              != LMON_OK )
+  if ( (lrc = LMON_be_getMyProctab (proctab, 
+                &proctab_size, proctab_size)) != LMON_OK )
     {    
       fprintf(stdout, 
         "[LMON BE(%d)] FAILED: LMON_be_getMyProctab\n", 
@@ -201,7 +201,8 @@ main( int argc, char* argv[] )
   // This routine should only be used by test cases like this
   //
   per_be_data_t *myBeData = NULL;
-  if ( (lrc = LMON_be_internal_tester_getBeData (&myBeData)) != LMON_OK )
+  if ( (lrc = LMON_be_internal_tester_getBeData (&myBeData)) 
+              != LMON_OK )
     {
       fprintf(stdout, 
         "[LMON BE(%d)] FAILED: LMON_be_internal_getBeDat returned an error\n",
@@ -214,8 +215,14 @@ main( int argc, char* argv[] )
   // Unless LMON_DONT_STOP_APP condition is met
   // LMON_be_procctl_init will leave the job stopped
   //
+  int fastpath_state = 2; //inherit the state
+
+  if ( signum !=0 && signum != SIGCONT)
+    {
+      fastpath_state = 0;
+    }
   LMON_be_procctl_init ( myBeData->rmtype_instance,
-                         proctab, proctab_size, 1 );
+                         proctab, proctab_size, fastpath_state );
 
   LMON_be_procctl_run ( myBeData->rmtype_instance,
                         signum,

@@ -40,7 +40,7 @@
 extern lmon_rc_e LMON_be_procctl_init ( rm_catalogue_e rmtype,
                    MPIR_PROCDESC_EXT *ptab,
                    int psize,
-                   int tester );
+		   int dontstop );
 
 extern lmon_rc_e LMON_be_procctl_stop ( rm_catalogue_e rmtype,
                    MPIR_PROCDESC_EXT *ptab,

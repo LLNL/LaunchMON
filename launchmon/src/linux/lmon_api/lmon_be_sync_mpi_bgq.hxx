@@ -38,8 +38,7 @@
 
 extern lmon_rc_e LMON_be_procctl_init_bgq (
                    MPIR_PROCDESC_EXT *ptab,
-                   int psize,
-                   int tester );
+                   int psize );
 
 extern lmon_rc_e LMON_be_procctl_stop_bgq (
                    MPIR_PROCDESC_EXT *ptab,

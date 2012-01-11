@@ -1263,7 +1263,7 @@ read_cios_longmsg ( int fd, void *msg, int buflen, int hdrlen,
 
 static lmon_rc_e
 attach_all ( uint8_t cdtiVer, uint32_t &sequenceId,
-                 uint64_t jobId, uint32_t toolId, int tester)
+                 uint64_t jobId, uint32_t toolId )
 {
   lmon_rc_e rc = LMON_EINVAL;
 
@@ -1274,18 +1274,11 @@ attach_all ( uint8_t cdtiVer, uint32_t &sequenceId,
       bgcios::toolctl::AttachMessage *attMsg = NULL;
       bgcios::toolctl::AttachAckMessage ackMsg;
 
-      if (tester)
-        {
-          attMsg = create_AttachAllMessage ( cdtiVer, i->first,
-				         sequenceId, jobId, toolId,
-				         "TSTR", 1 /* priority */ );
-        }
-      else
-        {
-          attMsg = create_AttachAllMessage ( cdtiVer, i->first,
-				         sequenceId, jobId, toolId,
-				         "LMON", 1 /* priority */ );
-        }
+
+      attMsg 
+	= create_AttachAllMessage ( cdtiVer, i->first,
+				    sequenceId, jobId, toolId,
+				    "LMON", 1 /* priority */ );
 
       if (lmon_write_raw ( i->second, (void *) attMsg,
                            sizeof(*attMsg)) == -1)
@@ -2280,8 +2273,7 @@ return_loc:
 
 lmon_rc_e
 LMON_be_procctl_init_bgq ( MPIR_PROCDESC_EXT *ptab,
-                           int psize,
-                           int tester )
+                           int psize )
 {
   int i;
   char *jobidStr;
@@ -2354,7 +2346,7 @@ LMON_be_procctl_init_bgq ( MPIR_PROCDESC_EXT *ptab,
   // Attach all ranks
   //
   if ( attach_all ( _cdtiVer, _seqNum,
-		    _jobid, _toolid, tester ) != LMON_OK )
+		    _jobid, _toolid ) != LMON_OK )
     {
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
         "attach_all returned an error code.");
@@ -2432,7 +2424,8 @@ LMON_be_procctl_run_bgq ( int signum,
 }
 
 
-lmon_rc_e LMON_be_procctl_perf_bgq (
+lmon_rc_e
+LMON_be_procctl_perf_bgq (
                    MPIR_PROCDESC_EXT *ptab,
                    int psize,
                    long unsigned int membase,

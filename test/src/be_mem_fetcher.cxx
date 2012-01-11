@@ -210,12 +210,8 @@ main( int argc, char* argv[] )
       return EXIT_FAILURE;
     }
 
-  //
-  // Unless LMON_DONT_STOP_APP condition is met
-  // LMON_be_procctl_init will leave the job stopped
-  //
   LMON_be_procctl_init ( myBeData->rmtype_instance,
-                         proctab, proctab_size, 1 );
+                         proctab, proctab_size, 1);
 
   unsigned int fetchunit;
   unsigned int usecperunit;

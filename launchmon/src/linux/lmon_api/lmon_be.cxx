@@ -1565,8 +1565,16 @@ LMON_be_handshake ( void *udata )
   // target RM. As part of init, the lower-layer leaves
   // the job in a stopped state.
   //
+  int dontstop_fastpath = 0;
+  if ( ( bedata.is_launch == trm_launch_dontstop ) 
+       || ( bedata.is_launch == trm_attach ) )
+    {
+      dontstop_fastpath = 1;
+    }
+
   if ( LMON_be_procctl_init ( bedata.rmtype_instance,
-         proctab, proctab_size, 0 ) != LMON_OK)
+         proctab, proctab_size,
+         dontstop_fastpath ) != LMON_OK)
     {
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
         "proc control initialization failed");
