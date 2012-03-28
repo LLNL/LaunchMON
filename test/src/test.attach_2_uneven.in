@@ -58,15 +58,9 @@ elif test "x$RM_TYPE" = "xRC_bglrm" -o "x$RM_TYPE" = "xRC_bgprm"; then
   nohup $MPI_JOB_LAUNCHER_PATH -verbose 1 -np $NUMTASKS -exe `pwd`/hang_on_SIGUSR1@EXE@ -cwd `pwd` &
 elif test "x$RM_TYPE" = "xRC_bgqrm"; then
   WAITAMOUNT=`expr $WAITAMOUNT`
-  export PAMI_MAXCONTEXTS=1
-  export BG_SHAREDMEMSIZE=64
-  export PAMI_VERBOSE=1
   $MPI_JOB_LAUNCHER_PATH --verbose 4 --np $NUMTASKS --exe `pwd`/hang_on_SIGUSR1@EXE@ --cwd `pwd` --env-all &
 elif test "x$RM_TYPE" = "xRC_bgq_slurm"; then
   WAITAMOUNT=`expr $WAITAMOUNT`
-  export PAMI_MAXCONTEXTS=1
-  export BG_SHAREDMEMSIZE=64
-  export PAMI_VERBOSE=1
   $MPI_JOB_LAUNCHER_PATH -N$NUMNODES -n $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
 elif test "x$RM_TYPE" = "xRC_alps" ; then
   WAITAMOUNT=`expr $WAITAMOUNT`
