@@ -326,7 +326,7 @@ bool glic_backtrace_wrapper (std::string &bt)
   typedef struct user_fpregs_struct             T_FRS;
   const T_IT T_TRAP_INSTRUCTION               = 0x00000000000000cc;
   const T_IT T_BLEND_MASK                     = 0xffffffffffffff00;
-  const T_IT IT_UNINIT_HEX                    = 0xdeadbeefdeadbeeffULL;
+  const T_IT IT_UNINIT_HEX                    = 0xdeadbeefdeadbeefULL;
   const T_VA T_UNINIT_HEX                     = 0xdeadbeefdeadbeef;
 # else
   //
