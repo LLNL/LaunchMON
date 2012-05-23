@@ -524,6 +524,11 @@ rc_rm_t::init(const std::string &os_isa_string)
       config_dir = std::string(pref) + config_dir;
       rm_info_conf_path = config_dir + rm_info_conf_path;
     }
+  else
+    {
+      config_dir = std::string(LMON_PREFIX) + config_dir;
+      rm_info_conf_path = config_dir + rm_info_conf_path;
+    }
 
   if (!read_supported_rm_confs(os_isa_string,
                                rm_info_conf_path,

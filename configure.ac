@@ -45,6 +45,7 @@ AC_SUBST(LMON_CURRENT, 2)
 AC_SUBST(LMON_REVISION, 0)
 AC_SUBST(LMON_AGE, 0)
 AC_CONFIG_AUX_DIR([config])
+AC_CONFIG_MACRO_DIR([config])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE(launchmon, 1.0)
@@ -124,7 +125,7 @@ AC_PATH_PROGS(tvcmd,totalview,[totalview],/usr/local/bin:/usr/bin:/bin)
 AC_DEFINE_UNQUOTED(ENVCMD,["$envcmd"],[env command found])
 AC_DEFINE_UNQUOTED(SSHCMD,["$sshcmd"],[ssh or its equivalent found])
 AC_DEFINE_UNQUOTED(TVCMD,["$tvcmd"],[totalview found])
-
+AC_DEFINE_UNQUOTED(LMON_PREFIX, ["$prefix"], [install prefix])
 
 dnl -----------------------------------------------
 dnl Checks for the libraries

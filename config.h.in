@@ -215,6 +215,9 @@
 /* Define 1 for LINUX_CODE_REQUIRED */
 #undef LINUX_CODE_REQUIRED
 
+/* install prefix */
+#undef LMON_PREFIX
+
 /* Define to header that first defines elf. */
 #undef LOCATION_OF_LIBELFHEADER
 
