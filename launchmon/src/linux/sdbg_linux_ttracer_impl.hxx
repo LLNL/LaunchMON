@@ -126,7 +126,7 @@ linux_thread_tracer_t<VA,WT,IT,GRS,FRS>::ttracer_init (
     }
 
 
-    set_tracer(pt);
+    this->set_tracer(pt);
     thrlib_im = p.get_mythread_lib_image();
 
     if ( (thrlib_im == NULL) || 

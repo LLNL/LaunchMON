@@ -162,8 +162,8 @@ linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::driver_main
 
      em = new event_manager_t<LINUX_DRIVER_TEMPLPARAM, td_thrinfo_t,elf_wrapper>();
      lm = new linux_launchmon_t();
-     set_evman(em);
-     set_lmon(lm);
+     this->set_evman(em);
+     this->set_lmon(lm);
   
      //
      // Start driving events, calling into the base driver layer 
