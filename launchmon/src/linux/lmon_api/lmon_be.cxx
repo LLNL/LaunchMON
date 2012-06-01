@@ -190,7 +190,7 @@ extern "C"
 lmon_rc_e
 LMON_be_tester_init ( )
 {
-  return LMON_be_internal_tester_init ( &bedata );
+  return LMON_daemon_internal_tester_init ( &bedata );
 }
 
 
@@ -246,7 +246,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
         "LMON BE fails to enable verbosity %d", lrc );
     }
 #else
-#if RM_ALPS_APRUN
+#if SUB_ARCH_ALPS
   //
   // Without this, the no-verbose build will hang under ALPS
   //

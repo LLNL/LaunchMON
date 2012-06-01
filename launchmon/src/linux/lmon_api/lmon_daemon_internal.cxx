@@ -1,7 +1,7 @@
 /*
  * $Header: dahn Exp $
  *--------------------------------------------------------------------------------
- * Copyright (c) 2008-2010, Lawrence Livermore National Security, LLC. Produced at 
+ * Copyright (c) 2008 ~ 2012, Lawrence Livermore National Security, LLC. Produced at 
  * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>. 
  * LLNL-CODE-409469. All rights reserved.
  *
@@ -35,6 +35,7 @@
  *  Update Log:
  *        Aug  02 2010 DHA: Changed the file name to lmon_daemon_internal.cxx
  *                          to support middleware daemons
+ *        Oct  07 2011 DHA: Deprecated PMGR Collective support
  *        May  11 2010 DHA: Added MEASURE_TRACING_COST for the PMGR layer
  *        Feb  05 2010 DHA: Added pmgr_register_hname to register the local 
  *                          hostname to the PMGR Collective layer. This is to work 
@@ -65,13 +66,13 @@
 #if HAVE_STDIO_H
 # include <cstdio>
 #else
-# error stdio.h is required
+# error cstdio is required
 #endif
 
 #if HAVE_STDLIB_H
 # include <cstdlib>
 #else
-# error stdlib.h is required
+# error cstdlib is required
 #endif
 
 #if HAVE_STRING_H
@@ -107,19 +108,10 @@ extern "C" {
 #include "lmon_api/lmon_say_msg.hxx"
 #include "lmon_daemon_internal.hxx"
 
-#if RM_BG_MPIRUN
-#include "debugger_interface.h"
-using namespace DebuggerInterface;
-#endif
-
 
 #if MPI_BASED
 extern "C" {
 #include <mpi.h>
-}
-#elif PMGR_BASED
-extern "C" {
-#include <pmgr_collective_client.h>
 }
 #elif COBO_BASED
 extern "C" {
@@ -130,6 +122,7 @@ extern "C" {
 static int ICCL_rank      = -1;
 static int ICCL_size      = -1;
 static int ICCL_global_id = -1;
+static per_be_data_t *bedataPtr = NULL;
 
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -138,6 +131,32 @@ static int ICCL_global_id = -1;
 //
 //
 //
+
+lmon_rc_e
+LMON_daemon_internal_tester_init ( per_be_data_t *d )
+{
+  if (!d)
+    {
+      return LMON_EINVAL;
+    } 
+
+  bedataPtr = d;
+  return LMON_OK;
+}
+
+
+lmon_rc_e
+LMON_daemon_internal_tester_getBeData ( per_be_data_t **d )
+{
+  if (!bedataPtr)
+    {
+      return LMON_EINVAL;
+    }
+
+  (*d) = bedataPtr;
+  return LMON_OK;
+}
+
 
 //! LMON_daemon_internal_init(int* argc, char*** argv)
 /*!
@@ -210,49 +229,6 @@ LMON_daemon_internal_init ( int* argc, char*** argv, char *myhn, int is_be )
   MPI_Comm_size (MPI_COMM_WORLD, &ICCL_size);
   MPI_Comm_rank (MPI_COMM_WORLD, &ICCL_rank);
   ICCL_global_id = ICCL_rank;
-#elif PMGR_BASED
-
-# if MEASURE_TRACING_COST
-  /* Hack, but MEASURE_TRACING_COST doesn't propagate to the iccl layer 
-   * so we use the global variable trick here
-   */
-  __pmgr_ts = gettimeofdayD();
-# endif
-
-  /*
-   * with PMGR Collective Interface 
-   */
-  if ( ( rc = pmgr_init (argc,
-                         argv,
-                         &ICCL_size,
-                         &ICCL_rank,
-                         &ICCL_global_id)) 
-       != PMGR_SUCCESS )
-    {
-      LMON_say_msg(LMON_DAEMON_MSG_PREFIX, true,
-        "pmgr_init failed");
-      return LMON_EINVAL;
-    }
-
-  if (pmgr_register_hname (myhn) < 0)
-    {
-      LMON_say_msg(LMON_DAEMON_MSG_PREFIX, true,
-        "pmgr_register_hname failed");
-      return LMON_EINVAL;
-    }
-
-  if ( ( rc = pmgr_open () ) != PMGR_SUCCESS ) 
-    {
-      LMON_say_msg(LMON_DAEMON_MSG_PREFIX, true,
-        "pmgr_open failed");
-      return LMON_EINVAL;
-    }
-
-  if (ICCL_rank == -1)
-    pmgr_getmyrank (&ICCL_rank);
-
-  if (ICCL_size == -1)
-    pmgr_getmysize (&ICCL_size);
 
 #elif COBO_BASED
 
@@ -387,15 +363,7 @@ LMON_daemon_internal_init ( int* argc, char*** argv, char *myhn, int is_be )
 lmon_rc_e
 LMON_daemon_internal_getConnFd ( int *fd )
 {
-#if PMGR_BASED
-  if ( pmgr_getsockfd (fd) != PMGR_SUCCESS )
-    {
-      LMON_say_msg(LMON_DAEMON_MSG_PREFIX, false,"no connection estabilished with FE");
-      return LMON_EDUNAV;
-    }
-
-  return LMON_OK;
-#elif COBO_BASED
+#if COBO_BASED
   if ( ICCL_rank == 0)
     {
       if ( cobo_get_parent_socket (fd) != COBO_SUCCESS )
@@ -476,14 +444,6 @@ LMON_daemon_internal_barrier ()
 
       return LMON_EINVAL;
     }
-#elif PMGR_BASED
-  if ( (rc = pmgr_barrier ()) != PMGR_SUCCESS )
-    {
-      LMON_say_msg(LMON_DAEMON_MSG_PREFIX, true,
-        "pmgr_barrier failed ");
-
-      return LMON_EINVAL;
-    }
 #elif COBO_BASED
   if ( (rc = cobo_barrier ()) != COBO_SUCCESS )
     {
@@ -521,16 +481,6 @@ LMON_daemon_internal_broadcast ( void *buf, int numbyte )
                          MPI_COMM_WORLD)) < 0 )
     {
       LMON_say_msg(LMON_DAEMON_MSG_PREFIX, true," MPI_Bcast failed");
-
-      return LMON_EINVAL;
-    }
-#elif PMGR_BASED
-  if ( (rc = pmgr_bcast( buf,
-                         numbyte,
-                         LMON_BE_MASTER ))
-       != PMGR_SUCCESS )
-    {
-      LMON_say_msg(LMON_DAEMON_MSG_PREFIX, true," pmgr_bcast failed");
 
       return LMON_EINVAL;
     }
@@ -580,17 +530,6 @@ LMON_daemon_internal_gather (
   if (rc < 0 )
     {
       LMON_say_msg(LMON_DAEMON_MSG_PREFIX, true,"MPI_Gather failed");
-
-      return LMON_EINVAL;
-    }
-#elif PMGR_BASED
-  rc = pmgr_gather (sendbuf,
-                    numbyte_per_elem, 
-                    recvbuf,
-                    LMON_BE_MASTER);
-  if (rc != PMGR_SUCCESS )
-    {
-      LMON_say_msg(LMON_DAEMON_MSG_PREFIX, true,"pmgr_gather failed");
 
       return LMON_EINVAL;
     }
@@ -645,18 +584,6 @@ LMON_daemon_internal_scatter (
 
       return LMON_EINVAL;
     }
-#elif PMGR_BASED
-  rc = pmgr_scatter (sendbuf,
-                     numbyte_per_element,
-                     recvbuf,
-                     LMON_BE_MASTER);
- 
-  if (rc != PMGR_SUCCESS)
-    {
-      LMON_say_msg(LMON_DAEMON_MSG_PREFIX, true," pmgr_scatter failed");
-
-      return LMON_EINVAL;
-    }
 #elif COBO_BASED
   rc = cobo_scatter (sendbuf,
                      numbyte_per_element,
@@ -688,92 +615,10 @@ LMON_daemon_internal_finalize (int is_be)
 {
   int rc;
 
-#if RM_BG_MPIRUN
-  if (is_be)
-    {
-      BG_Debugger_Msg dbgmsg(VERSION_MSG,0,0,0,0);
-      BG_Debugger_Msg dbgmsg2(END_DEBUG,0,0,0,0);
-      BG_Debugger_Msg ackmsg;
-      BG_Debugger_Msg ackmsg2;
-      dbgmsg.header.dataLength = sizeof(dbgmsg.dataArea.VERSION_MSG);
-      dbgmsg2.header.dataLength = sizeof(dbgmsg2.dataArea.END_DEBUG);
-
-      if ( !BG_Debugger_Msg::writeOnFd (BG_DEBUGGER_WRITE_PIPE, dbgmsg) )
-        {
-          LMON_say_msg ( LMON_DAEMON_MSG_PREFIX, true,
-            "VERSION_MSG command failed.");
-
-          return LMON_EINVAL;
-        }
-      if ( !BG_Debugger_Msg::readFromFd (BG_DEBUGGER_READ_PIPE, ackmsg) )
-        {
-          LMON_say_msg ( LMON_DAEMON_MSG_PREFIX, true,
-            "VERSION_MSG_ACK failed.");
-
-          return LMON_EINVAL;
-        }
-      if ( ackmsg.header.messageType != VERSION_MSG_ACK )
-        {
-          LMON_say_msg ( LMON_DAEMON_MSG_PREFIX, true,
-            "readFromFd received a wrong msg type: %d.",
-            ackmsg.header.messageType);
-
-          return LMON_EINVAL;
-        }
-      else
-        {
-          if ( ackmsg.dataArea.VERSION_MSG_ACK.protocolVersion >= 3)
-            {
-# if VERBOSE
-              LMON_say_msg ( LMON_DAEMON_MSG_PREFIX, false,
-                "BES: debugger protocol higher than or equal to 3.");
-# endif
-
-	      if ( !BG_Debugger_Msg::writeOnFd (BG_DEBUGGER_WRITE_PIPE, dbgmsg2) )
-                {
-      	          LMON_say_msg ( LMON_DAEMON_MSG_PREFIX, true,
-        	    "END_DEBUG command failed.");
-
-      	          return LMON_EINVAL;
-    	        }
-  	      if ( !BG_Debugger_Msg::readFromFd (BG_DEBUGGER_READ_PIPE, ackmsg2) )
-    	        {
-      	          LMON_say_msg ( LMON_DAEMON_MSG_PREFIX, true,
-        	    "VERSION_MSG_ACK failed.");
-
- 	          return LMON_EINVAL;	
- 	        }
-	      }
-            else
-              {
-# if VERBOSE
-                LMON_say_msg ( LMON_DAEMON_MSG_PREFIX, false,
-                  "BES: debugger protocol lower than or equal to 3.");
-# endif
-              }
-        }
-     } // if (is_be)
-#endif
-
 #if MPI_BASED
   if ( (rc = MPI_Finalize()) < 0 )
     {
       LMON_say_msg(LMON_DAEMON_MSG_PREFIX, true," MPI_Finalize failed");
-
-      return LMON_EINVAL;
-    }
-#elif PMGR_BASED
-  if ( ( rc = pmgr_close () ) != PMGR_SUCCESS ) 
-    {
-      LMON_say_msg(LMON_DAEMON_MSG_PREFIX, true,
-        "pmgr_close failed");
-
-      return LMON_EINVAL;
-    }
-
-  if ( (rc = pmgr_finalize ()) != PMGR_SUCCESS )
-    {
-      LMON_say_msg(LMON_DAEMON_MSG_PREFIX, true," pmgr_finalize failed");
 
       return LMON_EINVAL;
     }
