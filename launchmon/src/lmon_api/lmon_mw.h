@@ -1,7 +1,7 @@
 /*
- * $Header: /usr/gapps/asde/cvs-vault/sdb/launchmon/src/lmon_api/Attic/lmon_mw.h,v 1.1.2.3 2008/02/20 17:37:57 dahn Exp $
+ * $Header: $
  *--------------------------------------------------------------------------------
- * Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at 
+ * Copyright (c) 2008 - 2012, Lawrence Livermore National Security, LLC. Produced at 
  * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>. 
  * LLNL-CODE-409469. All rights reserved.
  *
@@ -27,16 +27,17 @@
  *
  *
  *  Update Log:
- *        Dec  23 2009 DHA: Removed header file macroes for header files that
- *                          would exit on almost all UNIX based platforms,
- *                               facilitaing binary distribution.
+ *        May 31 2012 DHA: Copied the file from the 0.8-middleware-support branch.
+ *        Dec 23 2009 DHA: Removed header file macroes for header files that
+ *                         would exit on almost all UNIX based platforms,
+ *                         facilitaing binary distribution.
  *        Aug 26 2009 DHA: lmon-config.h support
  *        Feb 09 2008 DHA: Added LLNS Copyright 
- *        Dec 27 2006 DHA: Created file.          
+ *        Dec 27 2006 DHA: Created file.
  */
 
-#ifndef LMON_API_LMON_BE_H
-#define LMON_API_LMON_BE_H
+#ifndef LMON_API_LMON_MW_H
+#define LMON_API_LMON_MW_H
 
 # include <sys/types.h>
 # include <unistd.h>
@@ -48,51 +49,48 @@ BEGIN_C_DECLS
 
 lmon_rc_e LMON_mw_amIMaster ();
 
-lmon_rc_e LMON_mw_init ( int ver, int *argc, char ***argv );
+lmon_rc_e LMON_mw_init(int ver, int *argc, char ***argv );
 
-lmon_rc_e LMON_mw_barrier ();
+lmon_rc_e LMON_mw_barrier();
 
-lmon_rc_e LMON_mw_gather ( 
+lmon_rc_e LMON_mw_gather( 
                 void *sendbuf,
                 int numbyte_per_elem,
-                void *recvbuf );
+                void *recvbuf);
 
-lmon_rc_e LMON_mw_scatter ( 
+lmon_rc_e LMON_mw_scatter(
                 void *sendbuf,
                 int numbyte_per_element,
-                void *recvbuf );
+                void *recvbuf);
 
-lmon_rc_e LMON_mw_broadcast ( 
-                void *buf, 
-                int numbyte );
+lmon_rc_e LMON_mw_broadcast(
+                void *buf,
+                int numbyte);
 
-lmon_rc_e LMON_mw_getSize ( int *size );
+lmon_rc_e LMON_mw_getSize(int *size);
 
-lmon_rc_e LMON_mw_getMyRank ( int *rank );
+lmon_rc_e LMON_mw_getMyRank(int *rank);
 
-lmon_rc_e LMON_mw_regPackForMwToFe (
+lmon_rc_e LMON_mw_regPackForMwToFe(
                 int (*packMwfe) 
                 ( void *udata,void *msgbuf,int msgbufmax,int *msgbuflen ) );
 
-lmon_rc_e LMON_mw_regUnpackForFeToMw (
-                int (*unpackFebe) 
-                ( void *udatabuf,int udatabuflen, void *udata  ) );
+lmon_rc_e LMON_mw_regUnpackForFeToMw(
+                int (*unpackFemw)
+                (void *udatabuf,int udatabuflen, void *udata));
 
-lmon_rc_e LMON_mw_handshake ( void *udata );
+lmon_rc_e LMON_mw_handshake(void *udata);
 
-lmon_rc_e LMON_mw_ready ( void *udata );
+lmon_rc_e LMON_mw_ready(void *udata);
 
-lmon_rc_e LMON_mw_finalize ();
+lmon_rc_e LMON_mw_finalize();
 
-lmon_rc_e LMON_mw_recvUsrData ( void *udata );
+lmon_rc_e LMON_mw_recvUsrData(void *udata);
 
-lmon_rc_e LMON_mw_sendUsrData ( void *udata );
+lmon_rc_e LMON_mw_sendUsrData(void *udata);
 
-lmon_rc_e LMON_mw_getMyProctab ( 
-                MPIR_PROCDESC_EXT *proctabbuf, 
-                int *size, 
-                int proctab_num_elem );
+lmon_rc_e LMON_mw_regErrorCB(int (*errorCB) (const char *format, va_list ap));
 
 END_C_DECLS
 
-#endif /* LMON_API_LMON_BE_H */
+#endif /* LMON_API_LMON_MW_H */

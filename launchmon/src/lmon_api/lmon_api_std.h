@@ -1,7 +1,7 @@
 /*
  * $Header: /usr/gapps/asde/cvs-vault/sdb/launchmon/src/lmon_api/lmon_api_std.h,v 1.5.2.4 2008/02/20 17:37:57 dahn Exp $
  *--------------------------------------------------------------------------------
- * Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at 
+ * Copyright (c) 2008 ~ 2012, Lawrence Livermore National Security, LLC. Produced at 
  * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>. 
  * LLNL-CODE-409469. All rights reserved.
  *
@@ -27,8 +27,12 @@
  *
  *
  *  Update Log:
+ *        May  31 2012 DHA: Merged with the middleware support from
+ *                          the 0.8-middleware-support branch.
  *        Oct 10 2011 DHA: Augmented _lmon_rm_info_t in support of the dynamic
  *                         resource manager detection scheme.
+ *        Jul 02 2010 DHA: Typedef'ed lmon_mw_mode_t in prep for MW support
+ *                         Added MW related macros
  *        Jun 28 2010 DHA: Added LMON_fe_getRMInfo support;
  *                         moved rm_catalogue_e to here and added
  *                         lmon_rm_info_t here
@@ -61,12 +65,21 @@ BEGIN_C_DECLS
 #define LMON_NTASKS_THRE      32769   /* nTasks cutoff to switching over to long_num_tasks */
 //#define LMON_NTASKS_THRE      1025
 #define LMON_HOSTS_FN_BASE    "hostnamefn"
+#define LMON_MW_COLOC         0x1
+#define LMON_MW_EXISTINGALLOC 0x1 << 1
+#define LMON_MW_NEWALLOC      0x1 << 2
+#define LMON_MW_HOSTLIST      0x1 << 3
+#define LMON_N_MW_TYPES       4       /* how many LMON_MW types? */
+#define IS_MW_COLOC(flag)     (flag & LMON_MW_COLOC)? 1:0
+#define IS_MW_EXISTINGALLOC(flag) (flag & LMON_MW_EXISTINGALLOC)? 1:0
+#define IS_MW_NEWALLOC(flag)  (flag & LMON_MW_NEWALLOC)? 1:0
+#define IS_MW_HOSTLIST(flag)  (flag & LMON_MW_HOSTLIST)? 1:0
 
 
 //! lmon_api_std.h
 /*!
     this file defines standard data structure necessary to 
-    implement LMON BE, MID and FE.
+    implement LMON BE, MW and FE.
 */
 typedef enum _lmon_rc_e {
   LMON_OK = 0,
@@ -85,7 +98,9 @@ typedef enum _lmon_rc_e {
   LMON_ENOPLD,
   LMON_EBDMSG,
   LMON_EDUNAV,
+  LMON_ETRUNC,
   LMON_EBUG,
+  LMON_NOTIMPL,
   LMON_YES,
   LMON_NO
 } lmon_rc_e;
@@ -128,6 +143,34 @@ typedef struct _lmon_daemon_local_t {
   const char *exename;
   struct _lmon_daemon_local_t *next;
 } lmon_daemon_local_t;
+
+
+typedef enum _dist_req_opt_e { 
+  subset_stride,
+  subset_hosts,
+  hostlists,
+  newalloc_nhosts,
+  req_none,
+  space_for_rent
+} dist_req_opt_e;
+
+typedef int lmon_mw_mode_t;
+
+typedef struct _dist_request_t {
+  lmon_mw_mode_t md;      /* which volume is this request? */
+  char *mw_daemon_path;   /* middleware daemon path */
+  char **d_argv;          /* Null-terminated daemon args */
+  int ndaemon;            /* if one daemon per node meets all the requirements, this can go away */
+  int block;              /* how many to fill a node at a time */
+  int cyclic;       /* cyclic? if ndaemon > nNode in the volume * block, cyclic=yes allows to iterate */
+  dist_req_opt_e optkind;
+  union u {
+    int stride_unit;
+    int nhosts;
+    char **subset_hl;
+    char **hl;
+  } option;
+} dist_request_t;
 
 END_C_DECLS
 

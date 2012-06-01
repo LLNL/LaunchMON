@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        May 30 2012 DHA: (ID: 3530680) Added utility functions that return
+ *                         information about various LMON message fields.
  *        Nov 08 2010 DHA: Added memset to set_msg_header to remove
  *                         write-into-uninitialized buf conditions
  *        Dec 23 2009 DHA: Added explict config.h inclusion 
@@ -131,6 +133,65 @@
 //
 //
 static std::string iamusedby("Not Set");
+
+//
+// The following name arrays must be updated whenever the LMONP
+// protocol is updated
+//
+static const char *lmonp_fe_to_fe_str[] =
+  {
+    "lmonp_conn_ack_no_error",
+    "lmonp_conn_ack_parse_error",
+    "lmonp_stop_at_launch_bp_spawned",
+    "lmonp_rminfo",
+    "lmonp_stop_at_launch_bp_abort",
+    "lmonp_proctable_avail",
+    "lmonp_resourcehandle_avail",
+    "lmonp_stop_at_first_exec",
+    "lmonp_stop_at_first_attach",
+    "lmonp_stop_at_loader_bp",
+    "lmonp_stop_at_thread_creation",
+    "lmonp_stop_at_thread_death",
+    "lmonp_stop_at_fork_bp",
+    "lmonp_stop_not_interested",
+    "lmonp_terminated",
+    "lmonp_exited",
+    "lmonp_detach_done",
+    "lmonp_kill_done",
+    "lmonp_stop_tracing",
+    "lmonp_bedmon_exited",
+    "lmonp_mwdmon_exited",
+    "lmonp_detach",
+    "lmonp_kill",
+    "lmonp_shutdownbe",
+    "lmonp_invalid"
+  };
+
+static const char *lmonp_fe_to_be_str[] =
+  {
+    "lmonp_febe_security_chk",
+    "lmonp_febe_proctab",
+    "lmonp_febe_usrdata",
+    "lmonp_febe_launch",
+    "lmonp_febe_launch_dontstop",
+    "lmonp_febe_attach",
+    "lmonp_febe_attach_stop",
+    "lmonp_febe_assist_mw_coloc",
+    "lmonp_febe_rm_type",
+    "lmonp_befe_hostname",
+    "lmonp_befe_usrdata",
+    "lmonp_be_ready"
+  };
+
+static const char *lmonp_fe_to_wm_str[] =
+  {
+    "lmonp_femw_security_chk",
+    "lmonp_femw_proctab",
+    "lmonp_femw_usrdata",
+    "lmonp_femw_hostname",
+    "lmonp_mwfe_usrdata",
+    "lmonp_mw_ready",
+  };
 
 
 ////////////////////////////////////////////////////////////////////
@@ -343,6 +404,88 @@ lmon_timedaccept ( int s, struct sockaddr *addr,
     }
 
  return ( lmon_accept (s, addr, addrlen) );
+}
+
+
+//! const char *lmon_msg_to_str
+/*!
+    returns a string corresponding to a field in an LMONP msg.
+*/
+const char *lmon_msg_to_str ( lmon_msg_field_selector_e s, 
+                       lmonp *msg ) 
+{
+  const char *ret_str = NULL;
+
+  if (!msg)
+    return ret_str; 
+
+  switch (s) 
+    {
+    case field_class:
+      switch (msg->msgclass) 
+        {
+          case lmonp_fetofe:
+            ret_str = "lmonp_fetofe";   
+            break; 
+
+          case lmonp_fetobe:
+            ret_str = "lmonp_fetobe";   
+            break;
+
+          case lmonp_fetomw:
+            ret_str = "lmonp_fetomw";   
+            break;
+
+          default:
+            break;
+        }
+      break;
+
+    case field_type:
+      if (msg->msgclass == lmonp_fetofe)
+        {
+          ret_str = lmonp_fe_to_fe_str[msg->type.fetofe_type];
+        }
+      else if (msg->msgclass == lmonp_fetobe)
+        {
+          ret_str = lmonp_fe_to_be_str[msg->type.fetobe_type];
+        }
+      else if (msg->msgclass == lmonp_fetomw)
+        {
+          ret_str = lmonp_fe_to_be_str[msg->type.fetomw_type];
+        }
+      break;
+
+  case field_security1:
+    ret_str = (const char *) malloc (16);
+    snprintf(ret_str, 16, "%d", msg->sec_or_jobsizeinfo.security_key1);
+    break;
+
+  case field_security2:
+    ret_str = (const char *) malloc (16);
+    snprintf(ret_str, 16, "%d", msg->sec_or_stringinfo.security_key2);
+    break;
+
+  case field_long_num_tasks:
+    ret_str = (const char *) malloc (16);
+    snprintf(ret_str, 16, "%d", msg->long_num_tasks);
+    break;
+
+  case field_lmon_payload_length:
+    ret_str = (const char *) malloc (16);
+    snprintf(ret_str, 16, "%d", msg->lmon_payload_length);
+    break;
+
+  case field_usr_payload_length:
+    ret_str = (const char *) malloc (16);
+    snprintf(ret_str, 16, "%d", msg->usr_payload_length);
+    break;
+
+  default:
+    break;
+  }
+
+  return ret_str;
 }
 
 
@@ -639,6 +782,92 @@ char *
 get_strtab_begin ( lmonp_t *msg )
 {
   char *ret = NULL;
+  switch (msg->msgclass)
+    {
+    case lmonp_fetofe:
+      {
+        if ( msg->type.fetofe_type == lmonp_proctable_avail )
+        ret = get_lmonpayload_begin ( msg );
+        if (ret)
+          {
+            if (msg->sec_or_jobsizeinfo.num_tasks < LMON_NTASKS_THRE)
+              {
+                ret += msg->sec_or_jobsizeinfo.num_tasks*sizeof(uint32_t)*4;
+              }
+            else
+              {
+                ret += msg->long_num_tasks*sizeof(uint32_t)*4;
+              }
+            }
+         break;
+      }
+    case lmonp_fetobe:
+      {
+        if ( msg->type.fetobe_type == lmonp_febe_proctab )
+          {
+            ret = get_lmonpayload_begin ( msg );
+            if (ret)
+             {
+               if (msg->sec_or_jobsizeinfo.num_tasks < LMON_NTASKS_THRE)
+                 {
+                   ret += msg->sec_or_jobsizeinfo.num_tasks*sizeof(uint32_t)*4;
+                 }
+               else
+                 {
+                   ret += msg->long_num_tasks*sizeof(uint32_t)*4;
+                 }
+              }
+           }
+         else if ( msg->type.fetobe_type == lmonp_befe_hostname )
+           {
+             ret = get_lmonpayload_begin ( msg );
+             if (ret)
+               {
+                 if (msg->sec_or_jobsizeinfo.num_tasks < LMON_NTASKS_THRE)
+                   {
+                     ret += msg->sec_or_jobsizeinfo.num_tasks*sizeof(uint32_t);
+                   }
+                 else
+                   {
+                     ret += msg->long_num_tasks*sizeof(uint32_t);
+                   }
+                }
+            }
+          break;
+      }
+    case lmonp_fetomw:
+      {
+        if ( msg->type.fetomw_type == lmonp_mwfe_hostname )
+          {
+            ret = get_lmonpayload_begin ( msg );
+            if (ret)
+              {
+                if (msg->sec_or_jobsizeinfo.num_tasks < LMON_NTASKS_THRE)
+                  {
+                    ret += (msg->sec_or_jobsizeinfo.num_tasks*sizeof(uint32_t));
+                  }
+                else
+                  {
+                    ret += (msg->long_num_tasks*sizeof(uint32_t));
+                  }
+              }
+           }
+         break;
+      }
+
+    default:
+      break;
+    }
+
+  return ret;
+}
+
+
+#if 0
+char *
+get_strtab_begin ( lmonp_t *msg )
+{
+  char *ret = NULL;
   if ( msg->msgclass == lmonp_fetobe )
   {
     if ( msg->type.fetobe_type == lmonp_febe_proctab )
@@ -693,6 +922,7 @@ get_strtab_begin ( lmonp_t *msg )
  
   return ret;
 }
+#endif
 
 
 //

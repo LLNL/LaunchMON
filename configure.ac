@@ -28,6 +28,7 @@ dnl  Place, Suite 330, Boston, MA 02111-1307 USA
 dnl --------------------------------------------------------------------------------
 dnl
 dnl   Update Log:
+dnl         Aug 03 2010 DHA: Added X_AC_MW_HOSTLIST support
 dnl         Dec 28 2009 DHA: Deprecated X_AC_PREFIX_CONFIG_H to better support
 dnl                          binary distribution
 dnl         Mar 20 2009 DHA: Increase LMON_CURRENT by one as we've added 
@@ -41,7 +42,6 @@ dnl
 
 AC_PREREQ(2.59)
 AC_INIT(LaunchMON, 1.0, ahn1@llnl.gov)
-AC_SUBST(LMON_CURRENT, 2)
 AC_SUBST(LMON_REVISION, 0)
 AC_SUBST(LMON_AGE, 0)
 AC_CONFIG_AUX_DIR([config])
@@ -110,6 +110,7 @@ dnl -----------------------------------------------
 X_AC_TESTNNODES
 X_AC_NCORE_SMP
 X_AC_TEST_RM
+X_AC_MW_HOSTLIST
 
 
 dnl -----------------------------------------------
@@ -121,9 +122,11 @@ AC_PROG_LIBTOOL
 AC_PROG_CC_C_O
 AC_PATH_PROGS(envcmd,env,[/bin/env], /usr/local/bin:/usr/bin:/bin)
 AC_PATH_PROGS(sshcmd,ssh rsh,[/usr/bin/ssh],/usr/local/bin:/usr/bin:/bin)
+AC_PATH_PROGS(rshcmd,rsh ssh,[/usr/bin/rsh],/usr/local/bin:/usr/bin:/bin)
 AC_PATH_PROGS(tvcmd,totalview,[totalview],/usr/local/bin:/usr/bin:/bin)
 AC_DEFINE_UNQUOTED(ENVCMD,["$envcmd"],[env command found])
 AC_DEFINE_UNQUOTED(SSHCMD,["$sshcmd"],[ssh or its equivalent found])
+AC_DEFINE_UNQUOTED(RSHCMD,["$rshcmd"],[rsh or its equivalent found])
 AC_DEFINE_UNQUOTED(TVCMD,["$tvcmd"],[totalview found])
 AC_DEFINE_UNQUOTED(LMON_PREFIX, ["$prefix"], [install prefix])
 

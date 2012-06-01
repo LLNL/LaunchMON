@@ -26,6 +26,11 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        May 31 2012 DHA: Merged with the middleware support 
+ *                         from the 0.8-middleware-support branch.
+ *        May 30 2012 DHA: (ID: 3530680) Added better debug info.
+ *        Jan 17 2011 JDG: Bug fix in LMON_fe_regPackForFeToMw, variable typo.
+ *        Jul 30 2010 DHA: Added LMON MW support with limited functionality
  *        Nov 01 2010 DHA: Fix small memory leaks in createSession
  *        Jun 30 2010 DHA: Added faster engine parsing error detection support
  *        Jun 28 2010 DHA: Added LMON_fe_getRMInfo support
@@ -237,6 +242,13 @@
 #include "sdbg_self_trace.hxx"
 #include "sdbg_opt.hxx"
 #include "sdbg_rm_map.hxx"
+#include "sdbg_base_spawner.hxx"
+//
+// spawners to support Middleware
+//
+#include "sdbg_rsh_spawner.hxx"
+#include "sdbg_rm_spawner.hxx"
+#include "lmon_api/lmon_coloc_spawner.hxx"
 #include "lmon_api/lmon_say_msg.hxx"
 
 #include <lmon_api/lmon_proctab.h>
@@ -513,10 +525,24 @@ typedef struct _lmon_session_desc_t {
    */
   lmonp_t *hntab_msg;
 
+
+  /*
+   * the raw hostname table msg received from the master MW daemon
+   */
+  lmonp_t *hntab_mw_msg;
+
+
   /* 
    * the host list constructed from proctab_msg
    */
   std::map<std::string,std::vector<MPIR_PROCDESC_EXT *>,lexGraphCmp> pMap;
+
+
+  /*
+   * the vector of spawner objects
+   */
+  std::vector<spawner_base_t *> spawner_vector;
+
 
   /*
    * status check callback for this function 
@@ -795,6 +821,7 @@ LMON_init_sess ( lmon_session_desc_t* s )
   // make_sure: s->pMap.size == 0
   s->resourceHandle = LMON_INIT;
 
+  // make_sure: s->spawner_vector.empty()
   s->statusCB = NULL;
 
   return 0;
@@ -860,11 +887,16 @@ LMON_destroy_sess ( lmon_session_desc_t* s )
   bzero(s->commDesc[fe_engine_conn].ipInfo, sizeof(MAX_LMON_STRING));
   close(s->commDesc[fe_engine_conn].sessionListenSockFd);
   close(s->commDesc[fe_engine_conn].sessionAcceptSockFd);
-
-  free(s->proctab_msg);
+ 
+  if (s->proctab_msg)
+    free(s->proctab_msg);
   s->proctab_msg = NULL; 
-  free(s->hntab_msg);
+  if (s->hntab_msg)
+    free(s->hntab_msg);
   s->hntab_msg = NULL; 
+  if (s->hntab_mw_msg)
+    free(s->hntab_mw_msg);
+
   s->resourceHandle = LMON_INIT;
 
   if (s->pMap.size() != 0) 
@@ -885,6 +917,17 @@ LMON_destroy_sess ( lmon_session_desc_t* s )
             }
         }
         s->pMap.clear(); 
+    }
+
+  if (!s->spawner_vector.empty())
+    {
+      std::vector<spawner_base_t *>::iterator iter;
+      for (iter=s->spawner_vector.begin(); 
+             iter != s->spawner_vector.end(); ++iter)
+        {
+          delete (*iter);
+        }
+      s->spawner_vector.clear();
     }
 
   s->statusCB = NULL;
@@ -914,7 +957,7 @@ LMON_fe_handleFeBeUsrData ( int sessionHandle,
   if ( (mydesc->registered == LMON_FALSE))
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-        "session is invalid, the job killed?");
+        "session is invalid, the job has been killed?");
       return LMON_EBDARG;
     }
   
@@ -942,7 +985,7 @@ LMON_fe_handleFeBeUsrData ( int sessionHandle,
 	  lmonp_t empty_udata_msg;
 	  
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-	     "did you forget to register a FEBE pack function?");
+	     "did you register a FEBE pack function?");
 		
 	  set_msg_header ( 
 		      &empty_udata_msg,
@@ -1018,7 +1061,7 @@ LMON_fe_handleFeMwUsrData (int sessionHandle,
        || (sessionHandle > MAX_LMON_SESSION) )    
     { 
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-        "session is invalid");
+        "session is invalid for LMON_fe_handleFeMwUsrData");
 
       return LMON_EBDARG;    
     }
@@ -1028,7 +1071,8 @@ LMON_fe_handleFeMwUsrData (int sessionHandle,
   if ( (mydesc->registered == LMON_FALSE))
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-        "session is invalid, the job killed?");
+        "session is invalid for LMON_fe_handleFeMwUsrData,"
+        " the job has been killed?");
 
       return LMON_EBDARG;
     }
@@ -1057,7 +1101,7 @@ LMON_fe_handleFeMwUsrData (int sessionHandle,
 	  lmonp_t empty_udata_msg;
 	  
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-	    "did you forget to register a FEMW pack function?");
+	    "did you register a FEMW pack function?");
 		
 	  set_msg_header ( 
 		      &empty_udata_msg,
@@ -1135,7 +1179,7 @@ LMON_fe_handleBeFeUsrData (int sessionHandle,
        || (sessionHandle > MAX_LMON_SESSION) )    
     { 
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-        "session is invalid");
+        "session is invalid for handling backend-frontend user payload");
 
       return LMON_EBDARG;    
     }
@@ -1145,7 +1189,8 @@ LMON_fe_handleBeFeUsrData (int sessionHandle,
   if ( (mydesc->registered == LMON_FALSE))
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-        "session is invalid, the job killed?");
+        "session is invalid for handling backend-frontend user payload,"
+        " the job has been killed?");
       return LMON_EBDARG;
     }
   
@@ -1185,7 +1230,7 @@ LMON_fe_handleBeFeUsrData (int sessionHandle,
 	  // do nothiing
 	  //
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-	    "did you forget to register a BEFE unpack function?");
+	    "did you register a BEFE unpack function?");
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
 	    "or pass a null pointer?");
 	  
@@ -1202,7 +1247,7 @@ LMON_fe_handleBeFeUsrData (int sessionHandle,
 			          befe_data )) < 0 )
             {
 	      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-		"the registered unpack function returned a negative return code");
+		"the unpack function you had registered returned a negative return code");
 
               lrc = LMON_ENEGCB;
             }
@@ -1233,7 +1278,7 @@ LMON_fe_handleMwFeUsrData (int sessionHandle,
        || (sessionHandle > MAX_LMON_SESSION) )    
     { 
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-         "session is invalid");
+         "session is invalid in handling middleware-frontent user payload");
 
       return LMON_EBDARG;    
     }
@@ -1243,7 +1288,8 @@ LMON_fe_handleMwFeUsrData (int sessionHandle,
   if ( (mydesc->registered == LMON_FALSE))
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-        "session is invalid, the job killed?");
+        "session is invalid in handling middleware-frontent user payload,"
+        " the job has been killed?");
 
       return LMON_EBDARG;
     }
@@ -1251,6 +1297,26 @@ LMON_fe_handleMwFeUsrData (int sessionHandle,
 
   read_lmonp_msgheader ( mydesc->commDesc[fe_mw_conn].sessionAcceptSockFd,
                         &msg );
+
+  if ( ( msg.msgclass != lmonp_fetomw )
+       || !(( msg.type.fetomw_type == lmonp_mwfe_ready ) 
+           || ( msg.type.fetomw_type == lmonp_mwfe_usrdata ))
+       || ( msg.lmon_payload_length != 0 ) )
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "invalid LMONP Msg received in LMON_fe_handleMwFeUsrData");
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "  A msg of {Class(%s),"
+                     "Type(%s),"
+                     "LMON_payload_size(%s),"
+                     "USR_payload_size(%s)} has been received.",
+        lmon_msg_to_str(field_class, &msg),
+        lmon_msg_to_str(field_type, &msg),
+        lmon_msg_to_str(field_lmon_payload_length, &msg),
+        lmon_msg_to_str(field_usr_payload_length, &msg));
+
+      return LMON_EBDMSG;
+    }
 
   if ( msg.usr_payload_length > 0 )
     {
@@ -1275,7 +1341,7 @@ LMON_fe_handleMwFeUsrData (int sessionHandle,
 	  // do nothiing
 	  //
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-	    "did you forget to register a BEFE unpack function?");
+	    "did you register a BEMW unpack function?");
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
 	    "or pass a null pointer?");
 	  
@@ -1292,7 +1358,7 @@ LMON_fe_handleMwFeUsrData (int sessionHandle,
 			             mwfe_data )) < 0 )
             {
 	      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-		"the registered unpack function returned a negative return code");
+		"the unpack function that you registered returned a negative return code");
 
               lrc = LMON_ECLLB;
             }
@@ -1352,14 +1418,18 @@ LMON_fe_acceptEngine ( int sessionHandle )
   if ( mydesc->commDesc[fe_engine_conn].sessionAcceptSockFd == -2 )
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-	"accepting a connection with an engine timed out");
+	"connection to the launchmon engine timed out");
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+	"the launchmon engine has been crashed or never been invoked?");
 
       return LMON_ETOUT;
     }
   else if ( mydesc->commDesc[fe_engine_conn].sessionAcceptSockFd < 0 )
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-	"accepting a connection with an engine failed");
+	"connection to the launchmon engine failed");
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+	"the launchmon engine has been crashed or never been invoked?");
 
       return LMON_ESYS;
     }
@@ -1367,7 +1437,9 @@ LMON_fe_acceptEngine ( int sessionHandle )
   if ( read_lmonp_msgheader(mydesc->commDesc[fe_engine_conn].sessionAcceptSockFd, &msg) < 0 )
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-	"read_lmonp_msg returned a negative return code");
+	"reading an LMON msg from the launchmon engine returns a negative return code");
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+	"LMONP protocol mismatch or problems while invoking the launchmon engine?");
 
       return LMON_ESYS;
     }
@@ -1375,14 +1447,18 @@ LMON_fe_acceptEngine ( int sessionHandle )
   if (msg.type.fetofe_type == lmonp_conn_ack_parse_error) 
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-	"the engine reported parse errors with its connect-back");
+	"the launchmon engine encountered an error while parsing its command line.");
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+	"has an incorrect pid been provided?");
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+	"please check the command line provided to the engine.");
    
       return LMON_EINVAL;
     }
   else if (msg.type.fetofe_type != lmonp_conn_ack_no_error) 
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-	"the engine sent a wrong msg type... a version mismatch?");
+	"the engine sent an unexpected msg type. LMONP version mismatch?");
    
       return LMON_EINVAL;
     }
@@ -1437,7 +1513,7 @@ LMON_assist_ICCL_BE_init (lmon_session_desc_t *mydesc)
   if (!mydesc->proctab_msg)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-        "proctab msg has not yet arrived! A race condition?");
+        "proctab msg has not yet arrived from the launchmon engine! A race condition?");
 
       return LMON_EBUG;
     }
@@ -1446,7 +1522,7 @@ LMON_assist_ICCL_BE_init (lmon_session_desc_t *mydesc)
       if ( parse_raw_RPDTAB_msg (mydesc->proctab_msg, &(mydesc->pMap)) < 0 )
         {
           LMON_say_msg (LMON_FE_MSG_PREFIX, false,
-            "parse_raw_RPDTAB_msg failed to parse RPDTAB");
+            "failed to parse MPIR_proctable");
 
           return LMON_ESYS;
         }
@@ -1555,6 +1631,187 @@ LMON_assist_ICCL_BE_init (lmon_session_desc_t *mydesc)
 }
 
 
+static lmon_rc_e
+LMON_assist_ICCL_MW_init (lmon_session_desc_t *mydesc)
+{
+#if MEASURE_TRACING_COST
+  double mw_ts = 0.0f;
+  double c_start_ts;
+  double c_end_ts;
+  c_start_ts = gettimeofdayD();
+  {
+    LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
+      "LMON_assist_ICCL_MW_init begins");
+  }
+#endif
+
+  std::vector<spawner_base_t *>::const_iterator spawner_iter;
+
+#ifdef COBO_BASED
+  for (spawner_iter = mydesc->spawner_vector.begin();
+         spawner_iter != mydesc->spawner_vector.end(); spawner_iter++)
+    {
+      // Spawn isn't blocking so that we can overlap the spawning 
+      // daemons across different volumns
+      // Operation will come to the completion when
+      // we throw COBO bootstrap on them as part of fe_mwHandshakeSequence
+      char ssec[128];
+      char secchk[128];
+      snprintf(ssec, 128, "--lmonsharedsec=%s", mydesc->shared_key);
+      snprintf(secchk, 128, "--lmonsecchk=%d", mydesc->randomID);
+      (*spawner_iter)->get_daemon_args().push_back(std::string(ssec));
+      (*spawner_iter)->get_daemon_args().push_back(std::string(secchk));
+      (*spawner_iter)->spawn();
+    }
+
+  std::vector<std::string> combinedHostList;
+
+  std::vector<spawner_base_t *>::const_iterator iter;
+  for (iter = mydesc->spawner_vector.begin();
+         iter != mydesc->spawner_vector.end(); ++iter)
+    {
+      (*iter)->combineHosts(combinedHostList);
+    }
+
+  //
+  // COBO BOOTSTRAP of MW daemons
+  //
+  //
+  int COBO_MW_BEGIN_PORT = COBO_BEGIN_PORT + COBO_PORT_RANGE;
+  int *portlist = (int *) malloc (COBO_PORT_RANGE * sizeof(int));
+  if (portlist == NULL)
+    {
+      LMON_say_msg (LMON_FE_MSG_PREFIX, false,
+        "malloc returned NULL");
+
+      return LMON_ENOMEM;
+    }
+
+  int i;
+  for (i=0; i < COBO_PORT_RANGE; ++i)
+    portlist[i] = COBO_MW_BEGIN_PORT+i;
+
+  const char **cobohl = NULL;
+  cobohl = (const char **) malloc(sizeof(const char*)*combinedHostList.size());
+  if (cobohl == NULL)
+    {
+      LMON_say_msg (LMON_FE_MSG_PREFIX, false,
+        "malloc returned NULL");
+
+      return LMON_ENOMEM;
+    }
+
+  int j=0;
+  std::vector<std::string>::const_iterator h_it;
+  for (h_it=combinedHostList.begin(); 
+         h_it != combinedHostList.end(); ++h_it)
+    {
+      cobohl[j] = (*h_it).c_str();
+      j++;
+    }
+
+  //
+  // session ID = 11 for now
+  //
+  if ( cobo_server_open(11, (char **) cobohl, combinedHostList.size(), portlist, COBO_PORT_RANGE)
+       != COBO_SUCCESS )
+    {
+       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+         "cobo_server_open failed for launchMwDaemons.");
+
+      return LMON_ESYS;
+    }
+
+   if ( cobo_server_get_root_socket(&(mydesc->commDesc[fe_mw_conn].sessionAcceptSockFd))
+        != COBO_SUCCESS)
+     {
+        LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+          "cobo_server_get_rootsocket failed for launchMwDaemons");
+
+       return LMON_ESYS;
+     }
+
+  free(portlist);
+  free(cobohl);
+  // combinedHostList will be freed by the dtor
+
+# if MEASURE_TRACING_COST
+   if ( lmon_read_raw(mydesc->commDesc[fe_mw_conn].sessionAcceptSockFd, (void*)&mw_ts, sizeof(double)) < 0 )
+     {
+       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+         "read on a socket failed during MEASURE_TRACING_COST.");
+
+       return LMON_ESYS;
+     }
+
+  c_end_ts = gettimeofdayD();
+  {
+    LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
+     "The LMON overhead of bootstrapping the ICCL layer for MW daemons is: %f secs",
+       (c_end_ts - c_start_ts));
+  }
+# endif
+
+  return LMON_OK;
+#else
+
+  return LMON_EDUNAV;
+#endif
+}
+
+
+static bool
+LMON_fe_is_secure(unsigned char *decryptedID, int k_len, lmon_session_desc_t *mydesc)
+{
+  int32_t int_decryptedID;
+  gcry_error_t gcrc;
+
+#if VERBOSE
+  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
+    "GCRYPT encrypt, %x:%x:%x:%x",
+    *(int *) decryptedID,
+    *(int *)(decryptedID+4),
+    *(int *)(decryptedID+8),
+    *(int *)(decryptedID+12));
+#endif
+
+  //
+  // We're currenting using a symmetric cryptography
+  //
+  if ( (gcrc = gcry_cipher_decrypt(mydesc->cipher_hndl,
+                                   (unsigned char*) decryptedID,
+                                   k_len,
+                                   NULL,
+                                   0 )) != GPG_ERR_NO_ERROR )
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "gcry_cipher_decrypt failed: %s", gcry_strerror (gcrc));
+
+      return false;
+    }
+
+#if VERBOSE
+  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
+    "GCRYPT decrypt, %x:%x:%x:%x",
+    *(int *) decryptedID,
+    *(int *)(decryptedID+4),
+    *(int *)(decryptedID+8),
+    *(int *)(decryptedID+12));
+#endif
+
+  memcpy ( (void*) &int_decryptedID, (void*) decryptedID, 4 );
+  if ( mydesc->randomID != int_decryptedID )
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "connection cannot be authorized, disconnecting...");
+
+      return false;
+    }
+
+  return true;
+}
+
+
 //! lmon_rc_e LMON_fe_beHandshakeSequence
 /*!
     -- assist BE's ICCL layer bootstrap (this can be NOOP most of the cases)
@@ -1599,7 +1856,7 @@ LMON_fe_beHandshakeSequence (
     {
       
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-		     "LMON_assist_ICCL_BE_init failed ");
+		     "back ends bootstrapping throgh LMON_assist_ICCL_BE_init failed ");
       
       return LMON_EINVAL;
     }
@@ -1609,7 +1866,7 @@ LMON_fe_beHandshakeSequence (
       //
       // ACCEPTING CONNECTION FROM THE MASTER BACKEND DAEMON
       //   we use the timed version of accept to prevent 
-      //   a indefinite hang. 
+      //   an indefinite hang. 
       //
       tout = getenv ( "LMON_BE_DAEMON_TIMEOUT" );
       if ( tout && ( (atoi(tout) > 0 ) && ( atoi(tout) <= MAX_TIMEOUT )))
@@ -1627,21 +1884,25 @@ LMON_fe_beHandshakeSequence (
       if ( mydesc->commDesc[fe_be_conn].sessionAcceptSockFd == -2 )
 	{
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-            "accepting a connection with the BE master timed out");
+            "connection to the back end master timed out");
+          LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+	    "the back ends have been crashed or never been invoked?");
 	  
 	  return LMON_ETOUT;
 	}
       else if ( mydesc->commDesc[fe_be_conn].sessionAcceptSockFd < 0 )
 	{
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-	    "accepting a connection with the BE master failed");
+	    "connection to the back end master failed");
+          LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+	    "the back ends have been crashed or never been invoked?");
 	  
 	  return LMON_ESYS;
 	}
     }
 
   dec_traverse = decryptedID;
-  for (i=0; i < 4; i++)
+  for (i=0; i < LMON_KEY_LENGTH/sizeof(int32_t); i++)
     {
       //
       // SECCHK MSG
@@ -1656,7 +1917,27 @@ LMON_fe_beHandshakeSequence (
 	   || ( msg.lmon_payload_length != 0 ) )
 	{
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-			 "received an invalid message ");
+			 "Received an invalid LMONP msg: "
+                         "Front-end back-end protocol mismatch? "
+                         "or back-end disconnected?");
+
+	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+			 "  A proper msg of "
+                            "{Class(%s)," 
+                             "Type(%s),"
+                             "LMON_payload_size(%s)} is expected."
+                         "lmonp_fetobe",
+                         "lmonp_febe_security_chk",
+                         lmon_msg_to_str(field_lmon_payload_length, &msg));
+
+	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+			 "  A msg of "
+                            "{Class(%s)," 
+                             "Type(%s),"
+                             "LMON_payload_size(%d)} has been received.",
+                         lmon_msg_to_str(field_class, &msg),
+                         lmon_msg_to_str(field_type, &msg),
+                         lmon_msg_to_str(field_lmon_payload_length, &msg));
       
 	  return LMON_EBDMSG;      
 	}
@@ -1667,49 +1948,28 @@ LMON_fe_beHandshakeSequence (
       int32_t tmpsec = msg.sec_or_stringinfo.security_key2;
       memcpy ( (void*) dec_traverse,
 	       (void*) &tmpsec, 
-	       4 );
-      dec_traverse += 4;
+	       sizeof(int32_t) );
+      dec_traverse += sizeof(int32_t);
     }
 
 #if VERBOSE
-  LMON_say_msg ( LMON_FE_MSG_PREFIX, false, 
-    "GCRYPT encrypt, %x:%x:%x:%x",
-    *(int *)decryptedID,
-    *(int *)(decryptedID+4),
-    *(int *)(decryptedID+8),
-    *(int *)(decryptedID+12));
+  LMON_say_msg ( LMON_FE_MSG_PREFIX, false, "BE authentication" );
 #endif
 
-  if ( (gcrc = gcry_cipher_decrypt ( mydesc->cipher_hndl,
-				     (unsigned char*) decryptedID,
-				     LMON_KEY_LENGTH,
-				     NULL,
-				     0 )) != GPG_ERR_NO_ERROR )
-    {
-      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-	    "gcry_cipher_decrypt failed: %s", gcry_strerror (gcrc));
-      
-      return LMON_EINVAL; 
-    }
-#if VERBOSE
-  LMON_say_msg ( LMON_FE_MSG_PREFIX, false, 
-    "GCRYPT decrypt, %x:%x:%x:%x",
-    *(int *)decryptedID,
-    *(int *)(decryptedID+4),
-    *(int *)(decryptedID+8),
-    *(int *)(decryptedID+12));
-#endif
-				   
-  memcpy ( (void*) &int_decryptedID, (void*) decryptedID, 4 );
-  if ( mydesc->randomID != int_decryptedID )
-    {
-      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-        "connection cannot be authorized, disconnecting...");
-      
-      close ( mydesc->commDesc[fe_be_conn].sessionAcceptSockFd );            
-      
-      return LMON_EINVAL; 
-    }
+  //
+  // is this connection secure?
+  //
+  if (!LMON_fe_is_secure(decryptedID, LMON_KEY_LENGTH, mydesc))
+     {
+       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "BE connection cannot be authorized... discontinuing the handshake");
+
+       close ( mydesc->commDesc[fe_be_conn].sessionAcceptSockFd );
+       //
+       // BE ICCL should detect the connection and start to clear itself up.
+       //
+       return LMON_ESYS;
+     }
 
   
   //
@@ -1720,7 +1980,8 @@ LMON_fe_beHandshakeSequence (
 			     &msg ) < 0 )
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-		   "read_lmonp_msgheader failed");
+		   "read_lmonp_msgheader failed"
+                   " while attempting to handshake with back end master");
 
       return LMON_ESYS;
     }
@@ -1731,7 +1992,29 @@ LMON_fe_beHandshakeSequence (
        || ( (msg.lmon_payload_length + msg.usr_payload_length) < 0 ) )
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-	"received an invalid message ");
+	             "Received an invalid LMONP msg: "
+                     "Front-end back-end protocol mismatch? "
+                     "or back-end disconnected?");
+
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+			 "  A proper msg of "
+                            "{Class(%s)," 
+                             "Type(%s),"
+                             "LMON_payload_size(%s)} is expected."
+                         "lmonp_fetobe",
+                         "lmonp_febe_hostname",
+                         ">=0")
+
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+			 "  A msg of "
+                            "{Class(%s)," 
+                             "Type(%s),"
+                             "LMON_payload_size(%s),"
+                             "USR_payload_size(%s)} has been received.",
+                         lmon_msg_to_str(field_class, &msg),
+                         lmon_msg_to_str(field_type, &msg),
+                         lmon_msg_to_str(field_lmon_payload_length, &msg),
+                         lmon_msg_to_str(field_usr_payload_length, &msg));
 
       return LMON_EBDMSG;
     }
@@ -1750,7 +2033,8 @@ LMON_fe_beHandshakeSequence (
 			   len) < 0 )
   {
     LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-		   "read_lmonp_payloads failed");
+		   "read_lmonp_payloads failed"
+                   "while attempting to handshake with back end master");
 
     return LMON_ESYS;
   }
@@ -1772,7 +2056,8 @@ LMON_fe_beHandshakeSequence (
 		      + mydesc->proctab_msg->usr_payload_length ) < 0 )
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-		   "write_lmonp_long_msg failed");
+		   "write_lmonp_long_msg failed"
+                   "while attempting to handshake with back end master");
 
       return LMON_ESYS;
     }
@@ -1842,19 +2127,224 @@ LMON_fe_beHandshakeSequence (
   //  -- writing the lmonp_febe_usrdata message along with the user data 
   //     if there are data to ship out
   //
-  LMON_fe_handleFeBeUsrData ( sessionHandle, febe_data );
+  lmon_rc_e lrc;
+  lrc = LMON_fe_handleFeBeUsrData( sessionHandle, febe_data );
+  if (lrc != LMON_OK && lrc != LMON_ENOPLD)
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "LMON_fe_handleFeBeUsrData returned an error code");
+      return lrc;
+    }
+
 
   //
   // READY MSG ( usrdata can be piggybacked )
   //  -- receiving the ready message from BE master
   //
-  LMON_fe_handleBeFeUsrData ( sessionHandle, befe_data );
- 
+  lrc = LMON_fe_handleBeFeUsrData( sessionHandle, befe_data );
+  if (lrc != LMON_OK && lrc != LMON_ENOPLD)
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "LMON_fe_handleBeFeUsrData returned an error code");
+      return lrc;
+    }
+
+
   //
   // Handshake has been successful
   //  
   return LMON_OK;
 }
+
+
+//! lmon_rc_e LMON_fe_mwHandshakeSequence
+/*!
+    -- accept the connection made by the master MW daemon (ICCL)
+         via LMON_assist_ICCL_MW_init
+    -- read a msg of lmonp_femw_security_chk (SECURITY)
+    -- read "lmonp_mwfe_hostname" message along with the BE hostname array (HOSTNAME)
+    -- write "lmonp_femw_usrdata" message along with the user data if there (USER COMM.)
+       are data to ship out
+    -- read "lmonp_mw_ready" message along with BE user data piggybacked (READY)
+*/
+static lmon_rc_e
+LMON_fe_mwHandshakeSequence (
+                int sessionHandle,
+                void *femw_data,     /* usrdata in        */
+                void *mwfe_data )    /* usrdata out       */
+{
+  lmon_rc_e lrc;
+  lmon_session_desc_t *mydesc;
+  unsigned int i;
+
+  mydesc = &(sess.sessionDescArray[sessionHandle]);
+
+  //
+  // TODO: need a timeout mechanism for COBO-based boostrapping 
+  //       talk to Adam Moody
+  //
+  lrc = LMON_assist_ICCL_MW_init (mydesc);
+  if ( lrc != LMON_OK )
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "LMON_assist_ICCL_MW_init failed ");
+
+      return lrc;
+    }
+
+  unsigned char encrypt_packet_buf[LMON_KEY_LENGTH];
+  unsigned char *encrypt_trav = encrypt_packet_buf;
+  lmonp_t msg;
+  for (i=0; i < LMON_KEY_LENGTH/sizeof(int32_t); i++)
+    {
+      //
+      // SECCHK MSG
+      //   -- read and assert lmonp_femw_security_chk type message
+      //
+      read_lmonp_msgheader(mydesc->commDesc[fe_mw_conn].sessionAcceptSockFd,
+                           &msg );
+
+      if ( (msg.msgclass != lmonp_fetomw)
+           || (msg.type.fetomw_type != lmonp_femw_security_chk)
+           || (msg.lmon_payload_length != 0)
+           || (msg.usr_payload_length != 0))
+        {
+          LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+                         "Received an invalid LMONP msg: "
+                         "Front-end middleware protocol mismatch? "
+                         "or middleware disconnected?");
+
+          LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+                         "  A proper msg of "
+                            "{Class(%s),"
+                             "Type(%s),"
+                             "LMON_payload_size(%s)} is expected."
+                         "lmonp_fetomw",
+                         "lmonp_femw_security_chk",
+                         "0");
+
+          LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+                         "  A msg of "
+                            "{Class(%s),"
+                             "Type(%s),"
+                             "LMON_payload_size(%d)} has been received.",
+                         lmon_msg_to_str(field_class, &msg),
+                         lmon_msg_to_str(field_type, &msg),
+                         lmon_msg_to_str(field_lmon_payload_length, &msg));
+
+           LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+             "discontinuing the handshake...");
+
+           return LMON_EBDMSG;
+        }
+
+      //
+      // Filling the buf of LMON_KEY_LENGTH bytes with receiving encripted payloads 
+      //
+      int32_t tmpsec = msg.sec_or_stringinfo.security_key2;
+      memcpy((void*) encrypt_trav, (void*) &tmpsec, sizeof(int32_t));
+      encrypt_trav += sizeof(int32_t);
+    }
+
+#if VERBOSE
+  LMON_say_msg ( LMON_FE_MSG_PREFIX, false, "MW authentication" ); 
+#endif
+
+  //
+  // is this connection secure?
+  //   -- read a msg of lmonp_femw_security_chk
+  //
+  if (!LMON_fe_is_secure(encrypt_packet_buf, LMON_KEY_LENGTH, mydesc))
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "BE connection cannot be authorized... discontinuing the handshake");
+
+      close ( mydesc->commDesc[fe_mw_conn].sessionAcceptSockFd );
+      //
+      // MW ICCL should detect the connection and start to clear itself up.
+      //
+      return LMON_ESYS;
+    }
+
+  //
+  // MW HOSTNAME MSG
+  //   -- handshake  message from MW master with BE HOSTNAME array
+  //
+  if ( read_lmonp_msgheader(mydesc->commDesc[fe_mw_conn].sessionAcceptSockFd,
+                            &msg ) < 0 )
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "read_lmonp_msgheader failed");
+
+      return LMON_ESYS;
+    }
+
+  if ( ( msg.msgclass != lmonp_fetomw )
+       || ( msg.type.fetomw_type != lmonp_mwfe_hostname )
+       || ( (msg.lmon_payload_length + msg.usr_payload_length) < 0 ) )
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+                         "Received an invalid LMONP msg: "
+                         "Front-end middleware protocol mismatch? "
+                         "or middleware disconnected?");
+
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+                         "  A proper msg of "
+                            "{Class(%s),"
+                             "Type(%s),"
+                             "LMON_payload_size(%s)} is expected."
+                         "lmonp_fetomw",
+                         "lmonp_femw_hostname",
+                         ">0");
+
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+                         "  A msg of "
+                            "{Class(%s),"
+                             "Type(%s),"
+                             "LMON_payload_size(%d)} has been received.",
+                         lmon_msg_to_str(field_class, &msg),
+                         lmon_msg_to_str(field_type, &msg),
+                         lmon_msg_to_str(field_lmon_payload_length, &msg));
+
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "discontinuing the handshake...");
+
+      return LMON_EBDMSG;
+    }
+
+  //
+  // USRDATA MSG
+  //  -- writing the lmonp_femw_usrdata message along with the user data 
+  //     if there are data to ship out
+  //
+  lrc = LMON_fe_handleFeMwUsrData(sessionHandle, femw_data);
+  if (lrc != LMON_OK && lrc != LMON_ENOPLD)
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "LMON_fe_handleFeMwUsrData returned an error code");
+      return lrc;
+    }
+
+  //
+  // READY MSG ( usrdata can be piggybacked )
+  //  -- receiving the ready message from MW master
+  //
+  lrc = LMON_fe_handleMwFeUsrData(sessionHandle, mwfe_data);
+  if (lrc != LMON_OK && lrc != LMON_ENOPLD)
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "LMON_fe_handleMwFeUsrData returned an error code");
+      return lrc;
+    }
+
+  //
+  // Handshake has been successful
+  //
+  return LMON_OK;
+}
+
+
+
 
 
 //! LMON_set_options
@@ -3422,7 +3912,6 @@ LMON_fe_regPackForFeToMw (
   
   if ( mydesc->spawned == LMON_FALSE ) 
     {
-
       if ( mydesc->mw_pack != NULL )
 	{
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
@@ -4204,7 +4693,7 @@ LMON_fe_getProctable (
   pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
 
   if (( i == maxlen ) && maxlen < (*size) )
-    return LMON_EINVAL;
+    return LMON_ETRUNC;
 
   return LMON_OK;
 }
@@ -4910,19 +5399,286 @@ LMON_fe_attachAndSpawnDaemons (
 }
 
 
+//! TODO: launchMwDaemons currently supports limited cases--i.e., one daemon per node
+/*! Upon receiving an non-supported case, this call returns LMON_NOTIMPL
+
+*/
 extern "C"
-lmon_rc_e LMON_fe_launchMwDaemons (
+lmon_rc_e LMON_fe_launchMwDaemons(
                 int sessionHandle,
-                int numNodes,
-                int numDaemons,
-                const char* commDaemon,
-                char* d_argv[],
-                void* femw_data,
-                void* mwfe_data )
+                dist_request_t req[],
+                int nreq,
+                void *femw_data,
+                void *mwfe_data)
 {
+  lmon_rc_e lrc;
+  lmon_session_desc_t* mydesc;
+
+  if ( (sessionHandle < 0)
+       || (sessionHandle > MAX_LMON_SESSION) )
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "session is invalid" );
+      return LMON_EBDARG;
+    }
+
+  if (nreq <=0 || nreq > LMON_N_MW_TYPES)
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "invalid nreq. Does nreq exceed the number of different MW volume kinds?" );
+      return LMON_EBDARG;
+    }
+
+  mydesc = &sess.sessionDescArray[sessionHandle];
+
   //
-  // Not yet implemented
+  // acquire the session lock
   //
+  pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
+
+
+  //
+  // spawner setup and call the spawn method of the spawners
+  //
+  int i;
+  for (i=0; i < nreq; ++i) {
+    //
+    // process each distribution requests and 
+    // push a right kind of spawner into the ordered spawner vector
+    //
+    lmon_mw_mode_t curmode = req[i].md;
+    std::vector<std::string> argvect;
+
+    int j=0;
+    while (req[i].d_argv && req[i].d_argv[j])
+      {
+        argvect.push_back(std::string(req[i].d_argv[j]));
+        j++;
+      }
+
+    if (IS_MW_COLOC(curmode))
+      {
+        if ((req[i].ndaemon == -1) && (req[i].block == -1)
+             && (req[i].cyclic == -1))
+          {
+            std::vector<std::string> hostvect;
+            std::map<std::string,std::vector<MPIR_PROCDESC_EXT *>,lexGraphCmp>
+               ::const_iterator miter;
+            for (miter = mydesc->pMap.begin();
+                   miter != mydesc->pMap.end(); miter++)
+              {
+                hostvect.push_back(miter->first);
+              }
+            spawner_base_t *colocSpawner
+              = new spawner_coloc_t(mydesc->commDesc[fe_be_conn].sessionAcceptSockFd,
+                                std::string(req[i].mw_daemon_path),
+                                argvect,
+                                hostvect);
+
+            mydesc->spawner_vector.push_back(colocSpawner);
+          }
+        else
+          {
+            lrc = LMON_NOTIMPL;
+            goto op_went_bad;
+          }
+      }
+    else if (IS_MW_EXISTINGALLOC(curmode))
+      {
+        // TODO: not implemented yet 
+        lrc = LMON_NOTIMPL;
+        goto op_went_bad;
+      }
+    else if (IS_MW_NEWALLOC(curmode))
+      {
+        // TODO: not implemented yet
+        lrc = LMON_NOTIMPL;
+        goto op_went_bad;
+      }
+    else if (IS_MW_HOSTLIST(curmode))
+      {
+        if ((req[i].ndaemon == -1) && (req[i].block == -1)
+             && (req[i].cyclic == -1))
+          {
+            if (req[i].optkind == hostlists)
+              {
+                std::vector<std::string> hostvect;
+                char **htrav =  req[i].option.hl;
+                int k=0;
+                while (htrav && htrav[k])
+                  {
+                     hostvect.push_back(std::string(htrav[k]));
+                     k++;
+                  }
+
+                spawner_base_t *rshSpawner
+                  = new spawner_rsh_t( std::string(req[i].mw_daemon_path),
+                                   argvect,
+                                   hostvect);
+
+                mydesc->spawner_vector.push_back(rshSpawner);
+              }
+            else
+              {
+                LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+                  "Bad optkind: req[%d]", i);
+                lrc = LMON_EBDARG;
+                goto op_went_bad;
+              }
+          }
+        else
+          {
+            lrc = LMON_NOTIMPL;
+            goto op_went_bad;
+          }
+      }
+    else
+      {
+        LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+          "Bad request: req[%d]", i);
+        lrc = LMON_EBDARG;
+        goto op_went_bad;
+      }
+  }
+
+  lrc = LMON_fe_mwHandshakeSequence (sessionHandle, femw_data, femw_data);
+  if (lrc != LMON_OK)
+    {
+      pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
+      goto op_went_bad;
+    }
+
+  mydesc->mw_spawned = LMON_TRUE;
+
+  pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
+  return LMON_OK;
+
+op_went_bad:
+  pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
+  return lrc;
+}
+
+
+extern "C" lmon_rc_e 
+LMON_fe_getMwHostlist(
+                int sessionHandle,
+                char **hostlist,
+                unsigned int *size,
+                unsigned int maxlen)
+{
+  lmon_session_desc_t* mydesc;
+
+  if ( (sessionHandle < 0)
+       || (sessionHandle > MAX_LMON_SESSION)) 
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+         "an argument is invalid" );
+
+      return LMON_EBDARG;
+    }
+
+  mydesc = &(sess.sessionDescArray[(sessionHandle)]);
+  pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
+  if ( (mydesc->registered == LMON_FALSE))
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "session is invalid, the job killed?");
+
+      pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
+      return LMON_EBDARG;
+    }
+
+  if ( mydesc->mw_spawned != LMON_TRUE )
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "middleware daemons have not been sapwned!");
+
+      pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
+      return LMON_EDUNAV;
+    }
+
+  std::vector<std::string> chosts;
+  std::vector<std::string>::const_iterator hiter;
+  (*size) = 0;
+  std::vector<spawner_base_t *>::const_iterator iter;
+  for (iter = mydesc->spawner_vector.begin();
+         iter != mydesc->spawner_vector.end(); ++iter)
+    {
+      (*iter)->combineHosts(chosts);
+    }
+
+  (*size) = chosts.size();
+  unsigned int i=0;
+
+  //
+  // This builds hostlist in ascending LMON MW rank order 
+  //
+  for (hiter = chosts.begin();
+         ((hiter != chosts.end()) && i <= maxlen); hiter++)
+    {
+      //
+      // Freeing is upto the caller
+      //
+      hostlist[i] = strdup((*hiter).c_str());
+      i++;
+    }
+
+  pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
+
+  if (( i == maxlen ) && maxlen < (*size) )
+    return LMON_ETRUNC;
+
+  return LMON_OK;
+
+}
+
+
+extern "C" lmon_rc_e
+LMON_fe_getMwHostlistSize(
+                int sessionHandle,
+                unsigned int *size)
+{
+  lmon_session_desc_t* mydesc;
+
+  if ( (sessionHandle < 0)
+       || (sessionHandle > MAX_LMON_SESSION)) 
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+         "an argument is invalid" );
+
+      return LMON_EBDARG;
+    }
+
+  mydesc = &(sess.sessionDescArray[(sessionHandle)]);
+  pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
+  if ( (mydesc->registered == LMON_FALSE))
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "session is invalid, the job killed?");
+
+      pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
+      return LMON_EBDARG;
+    }
+
+  if ( mydesc->mw_spawned != LMON_TRUE )
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "middleware daemons have not been sapwned!");
+
+      pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
+      return LMON_EDUNAV;
+    }
+
+  (*size) = 0;
+
+  std::vector<spawner_base_t *>::const_iterator iter;
+  for (iter = mydesc->spawner_vector.begin();
+         iter != mydesc->spawner_vector.end(); ++iter)
+    {
+      (*size) += (*iter)->get_hosts_vector().size();
+    }
+
+  pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
   return LMON_OK;
 }
 

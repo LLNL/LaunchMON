@@ -29,6 +29,7 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        Aug 03 2010 DHA: Added LMONHOSTLIST support
 ##        May 29 2009 DHA: Added fe_regErrorCB.in test
 ##        Jun 12 2008 DHA: Created file.
 ##
@@ -38,6 +39,7 @@ SMPFACTOR                         = @SMPFACTOR@
 TESTNNODES                        = @TESTNNODES@
 TARGET_JOB_LAUNCHER_PATH          = @TARGET_JOB_LAUNCHER_PATH@
 RM_TYPE                           = @RM_TYPE@
+LMONHOSTLIST                      = @LMONHL@
 
 INCLUDES                          = -I$(top_srcdir)/launchmon/src \
                                     -I$(top_srcdir)/launchmon/src/linux \
@@ -54,8 +56,10 @@ test_PROGRAMS                     = fe_jobsnap \
 				    LE_model_checker \
 				    fe_launch_smoketest \
 				    fe_launch_usrpayload_test \
+                                    fe_launch_middleware \
 			   	    fe_attach_smoketest \
 				    be_kicker \
+                                    be_kicker_mw \
                                     be_mem_fetcher \
 				    be_kicker_usrpayload_test \
 				    be_standalone_kicker \
@@ -103,6 +107,18 @@ be_kicker_usrpayload_test_CXXFLAGS = $(AM_CXXFLAGS)
 be_kicker_usrpayload_test_LDFLAGS = -L$(top_srcdir)/@LMONAPILOC@ 
 be_kicker_usrpayload_test_LDADD   = -lmonbeapi
 
+be_kicker_mw_SOURCES              = be_kicker_mw.cxx util.c
+be_kicker_mw_CFLAGS               = $(AM_CFLAGS)
+be_kicker_mw_CXXFLAGS             = $(AM_CXXFLAGS)
+be_kicker_mw_LDFLAGS              = -L$(top_srcdir)/@LMONAPILOC@ 
+be_kicker_mw_LDADD                = -lmonbeapi
+
+fe_launch_middleware_SOURCES       = fe_launch_middleware.cxx util.c
+fe_launch_middleware_CFLAGS        = $(AM_CFLAGS)
+fe_launch_middleware_CXXFLAGS      = $(AM_CXXFLAGS)
+fe_launch_middleware_LDFLAGS       = -L$(top_srcdir)/@LMONAPILOC@ 
+fe_launch_middleware_LDADD         = -lmonfeapi 
+
 be_standalone_kicker_SOURCES      = be_standalone_kicker.cxx
 be_standalone_kicker_CFLAGS       = $(AM_CFLAGS)
 be_standalone_kicker_CXXFLAGS     = $(AM_CXXFLAGS)
@@ -126,6 +142,12 @@ be_jobsnap_CXXFLAGS               = $(AM_CXXFLAGS)
 be_jobsnap_LDFLAGS                = -L$(top_srcdir)/@LMONAPILOC@
 be_jobsnap_LDADD                  = -lmonbeapi
 
+mw_comm_helper_SOURCES            = mw_comm_helper.cxx util.c
+mw_comm_helper_CFLAGS             = $(AM_CFLAGS)
+mw_comm_helper_CXXFLAGS           = $(AM_CXXFLAGS)
+mw_comm_helper_LDFLAGS            = -L$(top_srcdir)/@LMONAPILOC@
+mw_comm_helper_LDADD              = -lmonmwapi
+
 test_SCRIPTS                      = test.LE_model_checker_mainthread \
 				    test.LE_model_checker_pthread \
 			            test.LE_model_checker_large \
@@ -136,6 +158,9 @@ test_SCRIPTS                      = test.LE_model_checker_mainthread \
 				    test.launch_2_uneven \
 				    test.launch_3_invalid_dmonpath \
 				    test.launch_5_usrpayload \
+                                    test.launch_mw_1_hostlist \
+                                    test.launch_mw_2_coloc \
+                                    test.launch_mw_5_mixall \
 				    test.attach_1 \
                                     test.attach_1_mem_fetcher \
 				    test.attach_1_remote \
@@ -163,6 +188,9 @@ EXTRA_DIST                        = test.LE_model_checker_mainthread.in \
                                     test.launch_2_uneven.in \
                                     test.launch_3_invalid_dmonpath.in \
                                     test.launch_5_usrpayload.in \
+                                    test.launch_mw_1_hostlist.in \
+                                    test.launch_mw_2_coloc.in \
+                                    test.launch_mw_5_mixall.in \
                                     test.attach_1.in \
                                     test.attach_1_mem_fetcher.in \
                                     test.attach_1_remote.in \
@@ -180,6 +208,7 @@ EXTRA_DIST                        = test.LE_model_checker_mainthread.in \
 
 
 do_subst = sed -e 's,@LMON@,$(prefix)/bin/launchmon$(EXEEXT),g' \
+               -e 's,@LMONMWHL@,$(LMONHOSTLIST),g' \
 	       -e 's,@LMONPREFIX@,$(prefix),g' \
                -e 's,@TJLPATH@,$(TARGET_JOB_LAUNCHER_PATH),g' \
                -e 's,@TEST_RMTP@,$(RM_TYPE),g' \
@@ -220,6 +249,15 @@ test.launch_5_usrpayload: test.launch_5_usrpayload.in Makefile
 test.launch_6_engine_failure: test.launch_6_engine_failure.in Makefile
 	$(do_subst) < test.launch_6_engine_failure.in > test.launch_6_engine_failure
 	chmod +x test.launch_6_engine_failure
+test.launch_mw_1_hostlist: test.launch_mw_1_hostlist.in Makefile
+	$(do_subst) < test.launch_mw_1_hostlist.in > test.launch_mw_1_hostlist
+	chmod +x test.launch_mw_1_hostlist
+test.launch_mw_2_coloc: test.launch_mw_2_coloc.in Makefile
+	$(do_subst) < test.launch_mw_2_coloc.in > test.launch_mw_2_coloc
+	chmod +x test.launch_mw_2_coloc
+test.launch_mw_5_mixall: test.launch_mw_5_mixall.in Makefile
+	$(do_subst) < test.launch_mw_5_mixall.in > test.launch_mw_5_mixall
+	chmod +x test.launch_mw_5_mixall
 test.attach_1: test.attach_1.in Makefile
 	$(do_subst) < test.attach_1.in > test.attach_1
 	chmod +x test.attach_1

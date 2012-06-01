@@ -17,7 +17,7 @@ LMON_be_getMyProctab LMON_be_getMyProctabSize \- LaunchMON back-end API: resourc
 the \fIbuf\fR argument. The maximum number of table entries that \fIbuf\fR can
 hold is specified by \fImax\fR. This function constructs the calling daemon's 
 local target process table 
-using the global remote process descriptor table (RPDTAB) that is
+using the global remote process descriptor table that is
 distributed as part of front-end<->back-end handshake operations 
 (see \fBLMON_be_handshake\fR(3) and \fBLMON_be_ready\fR(3)).  This 
 function requires \fBMPIR_PROCDESC_EXT\fR type, a C struct
@@ -63,13 +63,16 @@ Out of memory.
 .B LMON_EDUNAV
 Requested information unavailable.
 .TP
+.B LMON_ETRUNC
+Returned \fIbuf\fR contains truncated remote process descriptor table.
+.TP
 .B LMON_EINVAL
-Encountered any other erroneous conditions. 
+Encountered other erroneous conditions. 
 
 .SH NOTE
 The overhead costs of these functions 
 can be high especially when a daemon invokes it for the first time at large scale. The first invocation
-requires the parsing of the entire global RPDTAB which can be expensive as RPDTAB grows 
+requires the parsing of the entire global remote process table which can be expensive as the table size grows 
 linearly with increasing scale. 
 These functions, 
 however, caches the parsed table during the first invocation,

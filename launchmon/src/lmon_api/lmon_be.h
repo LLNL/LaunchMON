@@ -1,7 +1,7 @@
 /*
  * $Header: /usr/gapps/asde/cvs-vault/sdb/launchmon/src/lmon_api/lmon_be.h,v 1.7.2.4 2008/02/21 09:26:38 dahn Exp $
  *--------------------------------------------------------------------------------
- * Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at 
+ * Copyright (c) 2008 ~ 2012, Lawrence Livermore National Security, LLC. Produced at 
  * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>. 
  * LLNL-CODE-409469. All rights reserved.
  *
@@ -27,6 +27,8 @@
  *	
  *
  *  Update Log:
+ *        May  31 2012 DHA: Picked LMON_be_assist_mw_coloc from 
+ *                          the 0.8-middleware-support branch.
  *        Dec  23 2009 DHA: Removed header file macroes for header files that
  *                          would exit on almost all UNIX based platforms,
  *                               facilitaing binary distribution.
@@ -79,6 +81,8 @@ lmon_rc_e LMON_be_finalize ();
 lmon_rc_e LMON_be_handshake ( void* udata );
 
 lmon_rc_e LMON_be_ready ( void* udata );
+
+lmon_rc_e LMON_be_assist_mw_coloc();
 
 lmon_rc_e LMON_be_getMyProctab ( 
                 MPIR_PROCDESC_EXT *proctabbuf, 

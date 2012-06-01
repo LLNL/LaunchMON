@@ -190,6 +190,13 @@ LMON_be_internal_init ( int* argc, char*** argv, char *myhn )
       }
     } /* for */
 
+  if (n_lmonopt != 2) {
+    LMON_say_msg(LMON_BE_MSG_PREFIX, true,
+		 "LaunchMON-specific arguments have not been passed to the daemon through the command-line arguments.");
+    LMON_say_msg(LMON_BE_MSG_PREFIX, true,
+		 "the command line that the user provided could have been truncated.");
+  }
+
   (*argc) -= n_lmonopt;
   nargv[(*argc)+0] = NULL;
   char tmpbuf[PATH_MAX];

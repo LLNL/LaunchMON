@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Jun 01 2012 DHA: Merged with the middleware-support branch.
  *        Oct 07 2011 DHA: Dynamic resource manager detection support.
  *        Oct 27 2010 DHA: Reorganize methods within this file.
  *        Oct 26 2010 DHA: Mods to use slightly changed abstraction

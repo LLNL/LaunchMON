@@ -20,17 +20,17 @@ LMON_fe_getProctable LMON_fe_getProctableSize LMON_fe_getResourceHandle \- Launc
 
 .SH DESCRIPTION
 The \fBLMON_fe_getProctable()\fR function returns the remote
-process descriptor table (RPDTAB) of the job associated with 
+process descriptor table of the job associated with 
 \fIsessionHandle\fR via the \fIproctab\fR argument. The number of table entries
-that this function returns is either the total number of entries in the RPDTAB 
+that this function returns is either the total number of entries in the table
 or \fImaxlen\fR whichever is smaller. In either case, however, this function returns
-the total number of entries of the RPDTAB via the \fIsize\fR argument. 
+the total number of entries of the table via the \fIsize\fR argument. 
 This function requires \fBMPIR_PROCDESC_EXT\fR type, a C struct
 extending \fBMPIR_PROCDESC\fR. \fImpirank\fR is the MPI rank of the
 describing process. \fIcnodeid\fR is the compute node id of the
 compute node where the process is running. It is a platform-specific
 integer identification and thus a platform may or may not
-define it. Currently, it is defined only on Blue Gene /Q.
+define it. Currently, it is defined only on IBM Blue Gene /Q platform.
 
 .PP
 .nf
@@ -49,7 +49,7 @@ define it. Currently, it is defined only on Blue Gene /Q.
 .PP
 
 The \fBLMON_fe_getProctableSize()\fR function returns the total number
-of entries in the RPDTAB via the \fIsize\fR argument.
+of entries in the remote process descriptor table via the \fIsize\fR argument.
 
 The \fBLMON_fe_getResourceHandle()\fR function 
 returns the resource handle associated with 
@@ -78,8 +78,11 @@ Invalid arguments.
 .B LMON_EDUNAV
 The requested information is unavailable.
 .TP
+.B LMON_ETRUNC
+Returned \fIbuf\fR contains truncated remote process descriptor table.
+.TP
 .B LMON_EINVAL
-Encountered any other errorenous conditions including \fIproctab\fR containing partial RPDTAB. 
+Encountered other errorenous conditions. 
 
 .SH AUTHOR
 Dong H. Ahn <ahn1@llnl.gov>

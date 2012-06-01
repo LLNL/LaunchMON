@@ -1,7 +1,7 @@
 /*
  * $Header: /usr/gapps/asde/cvs-vault/sdb/launchmon/src/lmon_api/lmon_fe.h,v 1.5.2.7 2008/02/21 19:34:32 dahn Exp $
  *--------------------------------------------------------------------------------
- * Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at 
+ * Copyright (c) 2008 ~ 2012, Lawrence Livermore National Security, LLC. Produced at 
  * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>. 
  * LLNL-CODE-409469. All rights reserved.
  *
@@ -28,6 +28,9 @@
  *
  *
  *  Update Log:
+ *        May  31 2012 DHA: Merged with the middleware support from
+ *                          the 0.8-middleware-support branch.
+ *        Jul  02 2010 DHA: Augmented LMON_fe_launchMwDaemons
  *        Jun  28 2010 DHA: Added LMON_fe_getRMInfo support.
  *        Dec  23 2009 DHA: Removed header file macroes for header files that
  *                          would exit on almost all UNIX based platforms,
@@ -169,13 +172,21 @@ lmon_rc_e LMON_fe_attachAndSpawnDaemons (
                 void* befe_data );
 
 lmon_rc_e LMON_fe_launchMwDaemons (
-                int sessionHandle, 
-                int numNodes,
-                int numDaemons,
-                const char* commDaemon,
-                char* d_argv[],
-                void* femw_data,
-                void* mwfe_data );
+                int sessionHandle,
+                dist_request_t req[],
+                int nreq,
+                void *femw_data,
+                void *mwfe_data );
+
+lmon_rc_e LMON_fe_getMwHostlist (
+                int sessionHandle,
+                char **mwhostlist,
+                unsigned int *size,
+                unsigned int maxlen );
+
+lmon_rc_e LMON_fe_getMwHostlistSize (
+                int sessionHandle,
+                unsigned int *size );
 
 END_C_DECLS
 

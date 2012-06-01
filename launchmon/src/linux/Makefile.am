@@ -56,7 +56,6 @@ launchmon_SOURCES       = main.cxx \
                           lmon_api/lmon_say_msg.cxx \
                           sdbg_linux_thr_db.cxx \
                           sdbg_proc_service.cxx \
-                          ../sdbg_rm_map.cxx \
                           ../sdbg_self_trace.cxx \
                           ../sdbg_opt.cxx \
                           ../sdbg_base_bp.hxx \
@@ -79,6 +78,7 @@ launchmon_SOURCES       = main.cxx \
                           ../sdbg_base_symtab_impl.hxx \
                           ../sdbg_opt.hxx \
                           ../sdbg_rm_map.hxx \
+                          ../sdbg_base_spawner.hxx \
                           sdbg_linux_bp.hxx \
                           sdbg_linux_launchmon.hxx  \
                           sdbg_linux_ptracer_impl.hxx  \

@@ -1,3 +1,18 @@
+2012-05-31 Dong H. Ahn <ahn1@llnl.gov>
+	* tools/libgpg-error/src/gpg-error.c:
+	Fix a bug where libgpg-errors is complaining about LC_ALL 
+	not being previous (ID: 3024575). The patch is provided
+	by Dane Gardner of Krell Institute: <gardner@krellinst.org>
+
+
+2012-05-30 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/lmon_api/lmon_lmonp_msg.h
+	launchmon/src/linux/lmon_api/lmon_fe.cxx
+	launchmon/src/linux/lmon_api/lmon_lmonp_msg.cxx
+	launchmon/src/linux/lmon_api/lmon_be_comm.cxx:
+	Fix the problem with "non-desriptive" error message (ID: 3530680). 
+
+
 2011-09-12 Dong H. Ahn <ahn1@llnl.gov>
 	* launchmon/src/sdbg_rm_map.hxx
 	launchmon/src/sdbg_base_launchmon_impl.hxx

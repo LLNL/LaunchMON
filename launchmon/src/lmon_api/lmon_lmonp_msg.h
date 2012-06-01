@@ -27,6 +27,10 @@
  *
  *
  *  Update Log:
+ *        May  31 2012 DHA: Picked LMON_be_assist_mw_coloc from 
+ *                          the 0.8-middleware-support branch.
+ *        May 31 2012 DHA: (ID: 3530680) Added data structures 
+ *                         for better debug message support.
  *        Jun 28 2010 DHA: Added lmonp_rminfo OP to the lmon_fetofe message class
  *        Jun 22 2010 DHA: Added lmonp_febe_launch_dontstop and lmonp_febe_attach_stop
  *                          OP to the lmon_fetobe class.
@@ -51,6 +55,18 @@ BEGIN_C_DECLS
 //
 //
  
+typedef enum _lmonp_msg_field_selector_e {
+
+  field_class                         = 0,
+  field_type,               
+  field_security1,
+  field_security2,
+  field_long_num_tasks,
+  field_lmon_payload_length,
+  field_usr_payload_length
+
+} lmon_msg_field_selector_e;
+
 
 typedef enum _lmonp_msg_class_e {
   /*
@@ -61,12 +77,12 @@ typedef enum _lmonp_msg_class_e {
   /*
    * msg class for FE client to/from BE master tool daemon
    */
-  lmonp_fetobe                         = 1,
+  lmonp_fetobe,
 
   /*
    * msg class for FE client to/from middleware tool daemon
    */
-  lmonp_fetomw                         = 2
+  lmonp_fetomw
 
 } lmonp_msg_class_e;
 
@@ -202,52 +218,57 @@ typedef enum _lmonp_fe_to_be_msg_e {
   /*
    * FE->BE: proctab message
    */
-  lmonp_febe_proctab                   = 1,
+  lmonp_febe_proctab,
 
   /*
    * FE->BE: usrdata message
    */
-  lmonp_febe_usrdata                   = 2,
+  lmonp_febe_usrdata,
 
   /*
    * FE->BE: launch
    */
-  lmonp_febe_launch                    = 3,
+  lmonp_febe_launch,
 
   /*
-   * FE->BE: launch
+   * FE->BE: launch with dontstop
    */
-  lmonp_febe_launch_dontstop           = 4,
-
-  /*
-   * FE->BE: attach 
-   */
-  lmonp_febe_attach                    = 5,
+  lmonp_febe_launch_dontstop,
 
   /*
    * FE->BE: attach 
    */
-  lmonp_febe_attach_stop               = 6,
+  lmonp_febe_attach,
+
+  /*
+   * FE->BE: attach with stop
+   */
+  lmonp_febe_attach_stop,
+
+   /*
+    * FE->BE: assist MW coloc
+    */
+  lmonp_febe_assist_mw_coloc,
 
   /*
    * FE->BE: rm_type 
    */
-  lmonp_febe_rm_type                   = 7,
+  lmonp_febe_rm_type,
 
   /*
    * BE->FE: BE hostnames message
    */
-  lmonp_befe_hostname                  = 8,
+  lmonp_befe_hostname,
 
   /*
    * BE->FE: usrdata message
    */
-  lmonp_befe_usrdata                   = 9,
+  lmonp_befe_usrdata,
 
   /*
    * BE->FE: BE ready message
    */
-  lmonp_be_ready                       = 10,
+  lmonp_be_ready,
 
 } lmonp_fe_to_be_msg_e;
 
@@ -257,17 +278,35 @@ typedef enum _lmonp_fe_to_be_msg_e {
  */ 
 typedef enum _lmonp_fe_to_mw_msg_e {
 
+  /*
+   * FE->MW: security check message
+   */
   lmonp_femw_security_chk            = 0,
 
-  lmonp_femw_proctab                 = 1,
+  /*
+   * FE->MW: proctab message (not used yet)
+   */
+  lmonp_femw_proctab,
 
-  lmonp_femw_usrdata                 = 2,
+  /*
+   * FE->MW: usrdata message
+   */
+  lmonp_femw_usrdata,
 
-  lmonp_femw_hostname                = 3,
+  /*
+   * FE->MW: MW hostnames message
+   */
+  lmonp_femw_hostname,
 
-  lmonp_mwfe_usrdata                 = 4,
+  /*
+   * MW->FE: usrdata message
+   */
+  lmonp_mwfe_usrdata,
 
-  lmonp_mw_ready                     = 5,
+  /*
+   * MW->FE: MW ready message
+   */
+  lmonp_mw_ready,
 
 } lmonp_fe_to_mw_msg_e;
 
@@ -384,11 +423,17 @@ typedef struct _lmonp_t {
 //
 //
 
+//! const char *lmon_msg_to_str
+/*!
+    returns a string corresponding to a field in an LMONP msg.
+*/
+const char *lmon_msg_to_str ( lmon_msg_field_selector_e s, 
+                       lmonp *msg );  
+
 //! void lmon_timedaccept
 /*!
     Timed accept 
 */
-
 int lmon_timedaccept ( int s, struct sockaddr *addr,
                        socklen_t *addrlen, int toutsec );
 
