@@ -1,45 +1,45 @@
-.TH LaunchMON 3 "JULY 2012" LaunchMON "LaunchMON Back-End API"
+.TH LaunchMON 3 "JULY 2012" LaunchMON "LaunchMON Middleware API"
 
 .SH NAME
-LMON_be_barrier LMON_be_broadcast LMON_be_gather LMON_be_scatter \- LaunchMON back-end API: collective communication functions.  
+LMON_mw_barrier LMON_mw_broadcast LMON_mw_gather LMON_mw_scatter \- LaunchMON Middleware API: collective communication functions.  
 
 .SH SYNOPSIS
-.B #include <lmon_be.h>
+.B #include <lmon_mw.h>
 .PP
-.BI "lmon_rc_e LMON_be_barrier ( );"
+.BI "lmon_rc_e LMON_mw_barrier ( );"
 .PP
-.BI "lmon_rc_e LMON_be_broadcast ( void *" buf ", int " numbytes " );"
+.BI "lmon_rc_e LMON_mw_broadcast ( void *" buf ", int " numbytes " );"
 .PP
-.BI "lmon_rc_e LMON_be_gather ( void *" sendbuf ", int " perElemNumbytes ", void *" recvbuf " );"
+.BI "lmon_rc_e LMON_mw_gather ( void *" sendbuf ", int " perElemNumbytes ", void *" recvbuf " );"
 .PP
-.BI "lmon_rc_e LMON_be_scatter ( void *" sendbuf ", int " perElemNumbytes ", void *" recvbuf " );"
+.BI "lmon_rc_e LMON_mw_scatter ( void *" sendbuf ", int " perElemNumbytes ", void *" recvbuf " );"
 .PP
-.B cc ... -lmonbeapi
+.B cc ... -lmonmwapi
 
 .SH DESCRIPTION
-\fBLMON_be_barrier()\fR, \fBLMON_be_broadcast()\fR, \fBLMON_be_gather()\fR,
-and \fBLMON_be_scatter()\fR provide collective communication services to 
-back-end tool daemons. Thus, these functions require all the back-end daemons 
+\fBLMON_mw_barrier()\fR, \fBLMON_mw_broadcast()\fR, \fBLMON_mw_gather()\fR,
+and \fBLMON_mw_scatter()\fR provide collective communication services to 
+middleware tool daemons. Thus, these functions require all of the middleware daemons 
 associated with a session (see \fBLMON_launchAndSpawnDaemons\fR(3)) 
 to participate in the calls for a successful transaction.  
 
-The \fBLMON_be_barrier()\fR function blocks the calling daemon until 
+The \fBLMON_mw_barrier()\fR function blocks the calling daemon until 
 all daemons have called it. 
 
-The \fBLMON_be_broadcast()\fR function broadcasts the data 
-from the master back-end daemon to the rest. \fIbuf\fR is the 
+The \fBLMON_mw_broadcast()\fR function broadcasts the data 
+from the master middleware daemon to the rest. \fIbuf\fR is the 
 starting address of the send buffer for the master and 
 the starting address of the receive buffer for the slave daemons. The \fInumbyte\fR 
 argument specifies the total number of bytes in \fIbuf\fR.
 
-The \fBLMON_be_gather ()\fR function allows the master daemon 
+The \fBLMON_mw_gather ()\fR function allows the master daemon 
 to gather data into \fIrecvbuf\fR which is hence only meaningful to
-the master. Each back-end daemon must provide its per-daemon data thru
+the master. Each middleware daemon must provide its per-daemon data thru
 the \fIsendbuf\fR argument. \fIperElemNumbytes\fR specifies the number 
 of bytes in \fIsendbuf\fR.
 
-The \fBLMON_be_scatter()\fR function allows the master daemon 
-to scatter \fIsendbuf\fR to all back-end daemons. Thus,
+The \fBLMON_mw_scatter()\fR function allows the master daemon 
+to scatter \fIsendbuf\fR to all of middleware daemons. Thus,
 \fIsendbuf\fR is only significant to the master. 
 Each daemon receives its own portion via the \fIrecvbuf\fR
 argument. \fIperElemNumbytes\fR specifies the number of bytes

@@ -1,26 +1,26 @@
-.TH LaunchMON 3 "JULY 2012" LaunchMON "LaunchMON Back-End API"
+.TH LaunchMON 3 "JULY 2012" LaunchMON "LaunchMON Middleware API"
 
 .SH NAME
-LMON_be_init LMON_be_finalize \- LaunchMON back-end API: back-end initialization/finalization functions. 
+LMON_mw_init LMON_mw_finalize \- LaunchMON Middleware API: Middleware initialization/finalization functions. 
 
 .SH SYNOPSIS
-.B #include <lmon_be.h>
+.B #include <lmon_mw.h>
 .PP
-.BI "lmon_rc_e LMON_be_init ( int " ver ", int *" pargc ", char ***" pargv " );"
+.BI "lmon_rc_e LMON_mw_init ( int " ver ", int *" pargc ", char ***" pargv " );"
 .PP
 .BI "lmon_rc_e LMON_be_finalize ( );"
 .PP
-.B cc ... -lmonbeapi
+.B cc ... -lmonmwapi
 
 .SH DESCRIPTION
-The \fBLMON_be_init()\fR function initializes the LaunchMON back-end. 
-Each back-end tool daemon must call this function before using any other
-back-end API calls. \fBLMON_be_init()\fR
+The \fBLMON_mw_init()\fR function initializes the LaunchMON Middleware. 
+Each middleware tool daemon must call this function before using any other
+middleware API calls. \fBLMON_mw_init()\fR
 performs the communication subsystem setup as well 
 as other sanity checks including a library-header version 
 mismatch check for its client daemon. 
 The caller must pass \fBLMON_VERSION\fR, 
-a macro defined in the \fBlmon_be.h\fR file, 
+a macro defined in the \fBlmon_mw.h\fR file, 
 to the \fIver\fR argument for proper version matching. 
 \fIpargc\fR and \fIpargv\fR are the pointers to the 
 argument count and the argument list that the client 
@@ -28,22 +28,15 @@ tool daemon gets passed at the \fImain\fR function.
 During the communication subsystem setup process, the runtime
 selects a single master, the daemon that coordinates 
 communications with other LaunchMON components on behalf of 
-the rest of back-end daemons. The client daemon
-must use the \fBLMON_be_amIMaster\fR(3) function to determine if it is 
+the rest of middleware daemons. The client daemon
+must use the \fBLMON_mw_amIMaster\fR(3) function to determine if it is 
 selected as the master daemon, should that information be needed.  
 
-The \fBLMON_be_finalize ()\fR function finalizes  LaunchMON 
-back-end resources including its communication subsystem. 
-Each back-end daemon must call this fuction to be finalized
-correctly. The behavior of any subsequent LaunchMON back-end API calls 
-after \fBLMON_be_finalize ()\fR is undefined. 
-
-.PP
-\fB[IBM BlueGene Note]\fR The \fBLMON_be_finalize ()\fR function
-sends an END_DEBUG message to CIOD for the CIOD debug protocol
-larger than or equal to 3. Sending this message tells
-CIOD to reset the environment to be able to allow another 
-tool to attach to the job. 
+The \fBLMON_mw_finalize ()\fR function finalizes LaunchMON 
+middleware resources including its communication subsystem. 
+Each middleware daemon must call this fuction to be finalized
+correctly. The behavior of any subsequent LaunchMON middleware API calls 
+after \fBLMON_mw_finalize ()\fR is undefined. 
 
 .SH RETURN VALUE
 These functions return \fBLMON_OK\fR

@@ -1,34 +1,34 @@
-.TH LaunchMON 3 "JULY 2012" LaunchMON "LaunchMON Back-End API"
+.TH LaunchMON 3 "JULY 2012" LaunchMON "LaunchMON Middleware API"
 
 .SH NAME
-LMON_be_getMyRank LMON_be_amIMaster LMON_be_getSize \- LaunchMON back-end API: data access functions for the communication subsystem. 
+LMON_mw_getMyRank LMON_mw_amIMaster LMON_mw_getSize \- LaunchMON Middleware API: data access functions for the communication subsystem. 
 
 .SH SYNOPSIS
-.B #include <lmon_be.h>
+.B #include <lmon_mw.h>
 .PP
-.BI "lmon_rc_e LMON_be_getMyRank ( int *" rank " );"
+.BI "lmon_rc_e LMON_mw_getMyRank ( int *" rank " );"
 .PP
-.BI "lmon_rc_e LMON_be_amIMaster ( );"
+.BI "lmon_rc_e LMON_mw_amIMaster ( );"
 .PP
-.BI "lmon_rc_e LMON_be_getSize ( int *" size " );"
+.BI "lmon_rc_e LMON_mw_getSize ( int *" size " );"
 .PP
-.B cc ... -lmonbeapi
+.B cc ... -lmonmwapi
 
 .SH DESCRIPTION
-\fBLMON_be_getMyRank()\fR, \fBLMON_be_amIMaster()\fR and \fBLMON_be_getSize()\fR
-provide the calling back-end daemon with information regarding
+\fBLMON_mw_getMyRank()\fR, \fBLMON_mw_amIMaster()\fR and \fBLMON_mw_getSize()\fR
+provide the calling middleware daemon with information regarding
 its communication subsystem. 
-The \fBLMON_be_getMyRank()\fR function returns the logical rank 
-of the calling daemon via the \fIrank\fR argument. The \fBLMON_be_amIMaster\fR
+The \fBLMON_mw_getMyRank()\fR function returns the logical rank 
+of the calling daemon via the \fIrank\fR argument. The \fBLMON_mw_amIMaster\fR
 returns \fBLMON_YES\fR if the caller is the master daemon;
-\fBLMON_NO\fR if a slave daemon. The \fBLMON_be_getSize()\fR function 
+\fBLMON_NO\fR if a slave daemon. The \fBLMON_mw_getSize()\fR function 
 returns the total number of daemons participating in the communication 
 subsystem thru the \fIsize\fR argument.
 
 .SH RETURN VALUE
-\fBLMON_be_getMyRank()\fR and \fBLMON_be_getSize()\fR return \fBLMON_OK\fR
+\fBLMON_mw_getMyRank()\fR and \fBLMON_mw_getSize()\fR return \fBLMON_OK\fR
 on success; otherwise, an LMON error code is returned 
-as described below. The \fBLMON_be_amIMaster()\fR function
+as described below. The \fBLMON_mw_amIMaster()\fR function
 returns \fBLMON_YES\fR if the caller is the master daemon;
 \fBLMON_NO\fR if a slave daemon. 
 
