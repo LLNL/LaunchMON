@@ -37,7 +37,7 @@
 AC_DEFUN([X_AC_BOOTFABRIC], [
   AC_MSG_CHECKING([communication fabric type for bootstrapping])
   AC_ARG_WITH([bootfabric],
-    AS_HELP_STRING(--with-bootfabric@<:@=FABRICTYPE@:>@,specify a communication fabric for bootstrapping of ditributed LaunchMON components @<:@cobo@:> @<:@default=cobo@:>@),
+    AS_HELP_STRING(--with-bootfabric@<:@=FABRICTYPE@:>@,specify a communication fabric for bootstrapping of ditributed LaunchMON components @<:@cobo|mpi@:>@ @<:@default=cobo@:>@),
     [with_fab=$withval],
     [with_fab="check"])
   AC_ARG_WITH([cobo-port],
