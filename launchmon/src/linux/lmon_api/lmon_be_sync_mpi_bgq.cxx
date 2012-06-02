@@ -98,7 +98,7 @@
 #include <fstream>
 #include <sstream>
 
-#include "lmon_be_internal.hxx"
+#include "lmon_daemon_internal.hxx"
 #include "lmon_api/lmon_proctab.h"
 #include "lmon_api/lmon_be_sync_mpi_bgq.hxx"
 #include "lmon_api/lmon_say_msg.hxx"

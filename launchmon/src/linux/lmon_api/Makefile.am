@@ -4,7 +4,7 @@
 ##
 ##
 ##--------------------------------------------------------------------------------
-## Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at
+## Copyright (c) 2008 ~ 2012, Lawrence Livermore National Security, LLC. Produced at
 ## the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>.
 ## LLNL-CODE-409469. All rights reserved.
 ##
@@ -57,7 +57,7 @@ lib_LTLIBRARIES              = libmonbeapi.la libmonfeapi.la libmonmwapi.la
 
 libmonfeapi_la_SOURCES       = lmon_fe.cxx \
                                lmon_lmonp_msg.cxx \
-                               lmon_coloc_spawner.cxx 
+                               lmon_coloc_spawner.cxx \
                                lmon_say_msg.cxx \
                                ../../sdbg_rm_map.cxx \
                                ../../sdbg_self_trace.cxx \
@@ -87,7 +87,6 @@ libmonfeapi_la_LIBADD        = @LIBPTHREAD@ @LIBCOMM@ @LIBGCRYPT@ @LIBGPGERR@ @L
 
 libmonbeapi_la_SOURCES       = lmon_be.cxx \
                                lmon_daemon_internal.cxx \
-                               lmon_be_comm.cxx \
                                lmon_coloc_spawner.cxx \
                                lmon_lmonp_msg.cxx \
                                lmon_say_msg.cxx \

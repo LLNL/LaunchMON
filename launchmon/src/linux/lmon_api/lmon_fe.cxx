@@ -247,7 +247,7 @@
 // spawners to support Middleware
 //
 #include "sdbg_rsh_spawner.hxx"
-#include "sdbg_rm_spawner.hxx"
+//#include "sdbg_rm_spawner.hxx"
 #include "lmon_api/lmon_coloc_spawner.hxx"
 #include "lmon_api/lmon_say_msg.hxx"
 
@@ -1198,7 +1198,7 @@ LMON_fe_handleBeFeUsrData (int sessionHandle,
                         &msg );
 
   if ( ( msg.msgclass != lmonp_fetobe )
-       || !(( msg.type.fetobe_type == lmonp_be_ready ) 
+       || !(( msg.type.fetobe_type == lmonp_befe_ready ) 
 	    || ( msg.type.fetobe_type == lmonp_befe_usrdata ))
        || ( msg.lmon_payload_length != 0 ) )
     {
@@ -2003,7 +2003,7 @@ LMON_fe_beHandshakeSequence (
                              "LMON_payload_size(%s)} is expected."
                          "lmonp_fetobe",
                          "lmonp_febe_hostname",
-                         ">=0")
+		         ">=0");
 
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
 			 "  A msg of "

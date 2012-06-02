@@ -45,7 +45,9 @@
 #include <string>
 #include "sdbg_base_spawner.hxx"
 #include "sdbg_rsh_spawner.hxx"
-#include "lmon_coloc_spawner.hxx"
+//#include "sdbg_rm_spawner.hxx"
+#include "lmon_api/lmon_lmonp_msg.h"
+#include "lmon_api/lmon_coloc_spawner.hxx"
 
 #define LMON_DAEMON_HN_MAX       108
 #define LMON_DAEMON_MASTER       0
@@ -107,6 +109,16 @@ typedef struct _per_be_data_t {
   per_daemon_data_t daemon_data;
 
   /*
+   * is this launch case or attach case? 
+   */
+  int is_launch; /*  1: launch, 2: launch and dontstop, 0: attach, 3: attach and stop */
+
+  /*
+   * what rmtype is this
+   */
+  rm_catalogue_e rmtype_instance;
+
+  /*
    * this points to the raw proctab message 
    */
   lmonp_t *proctab_msg; 
@@ -115,11 +127,6 @@ typedef struct _per_be_data_t {
    * the size of proctab_msg including its lmon_payload_length 
    */
   int proctab_msg_size; /* to hold the size of proctab_msg */  
-
-  /*
-   * is this launch case or attach case? 
-   */
-  int is_launch; /*  1: launch, 2: launch and dontstop, 0: attach, 3: attach and stop */
 
 } per_be_data_t;
 
@@ -136,6 +143,8 @@ typedef struct _per_mw_data_t {
 extern int LMON_daemon_return_ver();
 
 extern lmon_rc_e LMON_daemon_getSharedKeyAndID ( char *shared_key, int *id );
+extern lmon_rc_e LMON_daemon_internal_tester_init ( per_be_data_t *d );
+extern lmon_rc_e LMON_daemon_internal_tester_getBeData ( per_be_data_t **d );
 extern lmon_rc_e LMON_daemon_internal_init( int *argc, char ***argv,
                                             char *myhn, int is_be);
 

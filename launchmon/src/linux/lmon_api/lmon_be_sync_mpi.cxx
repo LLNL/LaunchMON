@@ -40,7 +40,7 @@
 #error This source file requires a LINUX-like OS
 #endif
 
-#include "lmon_be_internal.hxx"
+#include "lmon_daemon_internal.hxx"
 #include "../../sdbg_rm_map.hxx"
 #include "lmon_api/lmon_proctab.h"
 #include "lmon_api/lmon_say_msg.hxx"

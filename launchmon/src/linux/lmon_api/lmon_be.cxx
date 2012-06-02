@@ -245,8 +245,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
         "LMON BE fails to enable verbosity %d", lrc );
     }
-#else
-#if SUB_ARCH_ALPS
+#elif SUB_ARCH_ALPS
   //
   // Without this, the no-verbose build will hang under ALPS
   //
@@ -710,7 +709,7 @@ LMON_be_finalize ()
     }
 
   if ( LMON_be_procctl_done ( bedata.rmtype_instance,
-                             proctab,
+			      proctab,
                               proctab_size) != LMON_OK)
     {
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,

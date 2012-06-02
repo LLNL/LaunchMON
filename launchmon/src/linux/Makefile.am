@@ -58,6 +58,7 @@ launchmon_SOURCES       = main.cxx \
                           sdbg_proc_service.cxx \
                           ../sdbg_self_trace.cxx \
                           ../sdbg_opt.cxx \
+                          ../sdbg_rm_map.cxx \
                           ../sdbg_base_bp.hxx \
                           ../sdbg_base_launchmon_impl.hxx  \
                           ../sdbg_base_tracer.hxx \

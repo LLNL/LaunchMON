@@ -268,7 +268,7 @@ typedef enum _lmonp_fe_to_be_msg_e {
   /*
    * BE->FE: BE ready message
    */
-  lmonp_be_ready,
+  lmonp_befe_ready,
 
 } lmonp_fe_to_be_msg_e;
 
@@ -296,7 +296,7 @@ typedef enum _lmonp_fe_to_mw_msg_e {
   /*
    * FE->MW: MW hostnames message
    */
-  lmonp_femw_hostname,
+  lmonp_mwfe_hostname,
 
   /*
    * MW->FE: usrdata message
@@ -306,7 +306,7 @@ typedef enum _lmonp_fe_to_mw_msg_e {
   /*
    * MW->FE: MW ready message
    */
-  lmonp_mw_ready,
+  lmonp_mwfe_ready,
 
 } lmonp_fe_to_mw_msg_e;
 
@@ -428,7 +428,7 @@ typedef struct _lmonp_t {
     returns a string corresponding to a field in an LMONP msg.
 */
 const char *lmon_msg_to_str ( lmon_msg_field_selector_e s, 
-                       lmonp *msg );  
+			      lmonp_t *msg );  
 
 //! void lmon_timedaccept
 /*!

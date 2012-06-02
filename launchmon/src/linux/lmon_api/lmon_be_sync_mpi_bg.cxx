@@ -52,7 +52,7 @@
 # error sys/types.h is required
 #endif
 
-#include "lmon_be_internal.hxx"
+#include "lmon_daemon_internal.hxx"
 #include "lmon_api/lmon_proctab.h"
 #include "lmon_api/lmon_say_msg.hxx"
 #include "lmon_be_sync_mpi_bg.hxx"

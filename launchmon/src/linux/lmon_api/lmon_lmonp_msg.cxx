@@ -180,7 +180,7 @@ static const char *lmonp_fe_to_be_str[] =
     "lmonp_febe_rm_type",
     "lmonp_befe_hostname",
     "lmonp_befe_usrdata",
-    "lmonp_be_ready"
+    "lmonp_befe_ready"
   };
 
 static const char *lmonp_fe_to_wm_str[] =
@@ -188,9 +188,9 @@ static const char *lmonp_fe_to_wm_str[] =
     "lmonp_femw_security_chk",
     "lmonp_femw_proctab",
     "lmonp_femw_usrdata",
-    "lmonp_femw_hostname",
+    "lmonp_mwfe_hostname",
     "lmonp_mwfe_usrdata",
-    "lmonp_mw_ready",
+    "lmonp_mwfe_ready",
   };
 
 
@@ -412,7 +412,7 @@ lmon_timedaccept ( int s, struct sockaddr *addr,
     returns a string corresponding to a field in an LMONP msg.
 */
 const char *lmon_msg_to_str ( lmon_msg_field_selector_e s, 
-                       lmonp *msg ) 
+                       lmonp_t *msg ) 
 {
   const char *ret_str = NULL;
 
@@ -456,30 +456,39 @@ const char *lmon_msg_to_str ( lmon_msg_field_selector_e s,
         }
       break;
 
-  case field_security1:
-    ret_str = (const char *) malloc (16);
-    snprintf(ret_str, 16, "%d", msg->sec_or_jobsizeinfo.security_key1);
+  case field_security1: {
+    char *tmp_str = (char *) malloc (16);
+    snprintf(tmp_str, 16, "%d", msg->sec_or_jobsizeinfo.security_key1);
+    ret_str = (const char *) tmp_str;
     break;
+  }
 
-  case field_security2:
-    ret_str = (const char *) malloc (16);
-    snprintf(ret_str, 16, "%d", msg->sec_or_stringinfo.security_key2);
+  case field_security2: {
+    char *tmp_str = (char *) malloc (16);
+    snprintf(tmp_str, 16, "%d", msg->sec_or_stringinfo.security_key2);
+    ret_str = (const char *) tmp_str;
     break;
+  }
 
-  case field_long_num_tasks:
-    ret_str = (const char *) malloc (16);
-    snprintf(ret_str, 16, "%d", msg->long_num_tasks);
+  case field_long_num_tasks: {
+    char *tmp_str = (char *) malloc (16);
+    snprintf(tmp_str, 16, "%d", msg->long_num_tasks);
+    ret_str = (const char *) tmp_str;
     break;
+  }
+  case field_lmon_payload_length: {
+    char *tmp_str = (char *) malloc (16);
+    snprintf(tmp_str, 16, "%d", msg->lmon_payload_length);
+    ret_str = (const char *) tmp_str;
+    break;
+  }
 
-  case field_lmon_payload_length:
-    ret_str = (const char *) malloc (16);
-    snprintf(ret_str, 16, "%d", msg->lmon_payload_length);
+  case field_usr_payload_length: {
+    char *tmp_str = (char *) malloc (16);
+    snprintf(tmp_str, 16, "%d", msg->usr_payload_length);
+    ret_str = (const char *) tmp_str;
     break;
-
-  case field_usr_payload_length:
-    ret_str = (const char *) malloc (16);
-    snprintf(ret_str, 16, "%d", msg->usr_payload_length);
-    break;
+  }
 
   default:
     break;
