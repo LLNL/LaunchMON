@@ -139,15 +139,15 @@ x add launch string support such that it can be overwritten by users
   NOTE: 10/08/2011 scheduled for 1.0 release.
 x linux_launchmon_t::acquire_proctable performance problem at extreme
   scale?
+x Re-attaching to the BGL mpirun seems to fail 
+  (I just confirmed that TotalView also fails...)
++ add mutliprocess monitoring support, for now launchmon just monitor
+  a single process. But it is okay so far because there is only one
+  launcher process it needs to monitor.  
+  NOTE: 9/24/2008 not scheduled for 0.6 release.
++ make the selection of low-level communication layer dynamically
+  NOTE: 9/24/2008 not scheduled for 0.6 release.
 - Investigate how to time when to release the mpirun process properly 
-  so that BGL's APAI extension, which supports co-spawning,
+  so that BGL's MPIR extension, which supports co-spawning,
   does not produce a race condition. 
   NOTE: 9/24/2008 not scheduled for 0.6 release.
-- add mutliprocess monitoring support, for now launchmon just monitor
-  a single process. But it is okay so far because there is only one
-  srun process it needs to monitor.  
-  NOTE: 9/24/2008 not scheduled for 0.6 release.
-- make the selection of low-level communication layer dynamically
-  NOTE: 9/24/2008 not scheduled for 0.6 release.
-- Re-attaching to the BGL mpirun seems to fail 
-  (I just confirmed that TotalView also fails...)
