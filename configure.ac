@@ -42,8 +42,24 @@ dnl
 
 AC_PREREQ(2.59)
 AC_INIT(LaunchMON, 1.0, ahn1@llnl.gov)
+
+dnl
+dnl This implements 2nd LMON interface (increase current when the 
+dnl interface is changed, added, or removed.  
+dnl 
+AC_SUBST(LMON_CURRENT, 2)
+
+dnl
+dnl This is the 1st revision (increase revision when the 
+dnl implementation has been changed but the interface stays the same) 
+dnl 
 AC_SUBST(LMON_REVISION, 0)
+
+dnl
+dnl Increase age when the interface has been added not removed.
+dnl
 AC_SUBST(LMON_AGE, 0)
+
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
 AC_CONFIG_SRCDIR([configure.ac])
