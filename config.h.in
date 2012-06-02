@@ -225,10 +225,6 @@
    slash. */
 #undef LSTAT_FOLLOWS_SLASHED_SYMLINK
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
-#undef LT_OBJDIR
-
 /* Define 1 for MEASURE_TRACING_COST */
 #undef MEASURE_TRACING_COST
 
@@ -267,6 +263,9 @@
 
 /* bulk launcher location */
 #undef RM_FE_COLOC_CMD
+
+/* rsh or its equivalent found */
+#undef RSHCMD
 
 /* ssh or its equivalent found */
 #undef SSHCMD
