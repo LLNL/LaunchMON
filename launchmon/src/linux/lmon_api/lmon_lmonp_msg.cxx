@@ -61,6 +61,12 @@
 # error stdio.h is required
 #endif
 
+#if HAVE_STDINT_H
+# include <stdint.h>
+#else
+# error stdint.h is required
+#endif
+
 #if HAVE_ASSERT_H
 # include <cassert>
 #else
