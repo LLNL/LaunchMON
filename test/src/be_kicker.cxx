@@ -69,13 +69,17 @@
 #endif
                                                                     
 #include <lmon_api/lmon_be.h>
-#include "lmon_be_internal.hxx"
+#include "lmon_daemon_internal.hxx"
 #include "lmon_be_sync_mpi.hxx"
 
-#if SUB_ARCH_BGL || SUB_ARCH_BGP 
-# include "debugger_interface.h"
-  using namespace DebuggerInterface;
-#endif 
+enum be_subtest_e {
+  subtest_no = 0,
+  subtest_kill_detach_shutdown,
+  subtest_mw_coloc, 
+  subtest_reserved
+};
+
+const unsigned int kill_detach_shutdown_time = 60;
 
 /*
  * Multipurpose kicker daemon
@@ -93,7 +97,7 @@ main( int argc, char* argv[] )
   MPIR_PROCDESC_EXT* proctab;
   int proctab_size;
   int signum;
-  int kill_detach_shutdown_test; 
+  be_subtest_e subtest = subtest_no; 
   int i, rank,size;
   lmon_rc_e lrc;
 
@@ -102,8 +106,6 @@ main( int argc, char* argv[] )
 #else
   signum = SIGCONT;
 #endif 
-
-  kill_detach_shutdown_test = 0;
 
   if ( (lrc = LMON_be_init(LMON_VERSION, &argc, &argv)) 
               != LMON_OK )
@@ -121,7 +123,13 @@ main( int argc, char* argv[] )
 
   if ( argc > 2 )
     {
-      kill_detach_shutdown_test = atoi(argv[2]);
+      subtest = (be_subtest_e) atoi(argv[2]);
+      printf ("[LMON BE] signum: %d, argv[1]: %s\n", subtest, argv[2]);
+      if (subtest >= subtest_reserved) {
+         printf ("[LMON BE] Unknown subtest. Existing...\n");
+         LMON_be_finalize();
+         return EXIT_FAILURE;
+      }
     } 
 
   LMON_be_getMyRank(&rank);
@@ -201,7 +209,7 @@ main( int argc, char* argv[] )
   // This routine should only be used by test cases like this
   //
   per_be_data_t *myBeData = NULL;
-  if ( (lrc = LMON_be_internal_tester_getBeData (&myBeData)) 
+  if ( (lrc = LMON_daemon_internal_tester_getBeData (&myBeData)) 
               != LMON_OK )
     {
       fprintf(stdout, 
@@ -217,7 +225,7 @@ main( int argc, char* argv[] )
   //
   int fastpath_state = 2; //inherit the state
 
-  if ( signum !=0 && signum != SIGCONT)
+  if ( signum != 0 && signum != SIGCONT)
     {
       fastpath_state = 0;
     }
@@ -230,8 +238,45 @@ main( int argc, char* argv[] )
 
   sleep(1);
 
-  if ( kill_detach_shutdown_test != 0)
-    sleep (kill_detach_shutdown_test);
+  switch (subtest)
+    {
+    case subtest_kill_detach_shutdown:
+      sleep (kill_detach_shutdown_time);
+      break;
+
+    case subtest_mw_coloc:
+      {
+        //
+        // MW daemon co-location support
+        //
+        if (LMON_be_assist_mw_coloc() != LMON_OK)
+          {
+            fprintf(stdout,
+              "[LMON BE(%d)] FAILED: LMON_be_assist_mw_coloc failed \n", rank);
+            LMON_be_finalize();
+            return EXIT_FAILURE;
+          }
+
+        //
+        // Blocks until FE MWs are done; otherwise, COLOC will kill 
+        // MW daemons prematurely
+        //
+        if ( (( lrc = LMON_be_recvUsrData ( NULL )) == LMON_EBDARG)
+             || ( lrc == LMON_EINVAL )
+             || ( lrc == LMON_ENOMEM )
+             || ( lrc == LMON_ENEGCB ))
+           {
+             fprintf(stdout, "[LMON BE(%d)] FAILED(%d): LMON_be_recvUsrData\n",
+                     rank, lrc );
+             LMON_be_finalize();
+             return EXIT_FAILURE;
+           }
+
+         break;
+      }
+    default:
+        break;
+    }
 
   for (i=0; i < proctab_size; i++)
     {

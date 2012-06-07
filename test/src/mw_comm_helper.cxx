@@ -37,7 +37,7 @@
 #include <iostream>
 #include <lmon_api/lmon_mw.h>
 
-#define COMMUNICATION_UNIT          3
+#define COMMUNICATION_UNIT          7 
 #define SLEEP_FOR_COMM_SEC          3
 
 /*

@@ -4,7 +4,7 @@
 ##
 ##
 ##--------------------------------------------------------------------------------
-## Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at
+## Copyright (c) 2008 ~ 2012, Lawrence Livermore National Security, LLC. Produced at
 ## the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>.
 ## LLNL-CODE-409469. All rights reserved.
 ##
@@ -59,10 +59,10 @@ test_PROGRAMS                     = fe_jobsnap \
                                     fe_launch_middleware \
 			   	    fe_attach_smoketest \
 				    be_kicker \
-                                    be_kicker_mw \
                                     be_mem_fetcher \
 				    be_kicker_usrpayload_test \
 				    be_standalone_kicker \
+                                    mw_comm_helper \
 				    run_3mins \
 				    hang_on_SIGUSR1 \
 				    simple_MPI 
@@ -106,12 +106,6 @@ be_kicker_usrpayload_test_CFLAGS   = $(AM_CFLAGS)
 be_kicker_usrpayload_test_CXXFLAGS = $(AM_CXXFLAGS)
 be_kicker_usrpayload_test_LDFLAGS = -L$(top_srcdir)/@LMONAPILOC@ 
 be_kicker_usrpayload_test_LDADD   = -lmonbeapi
-
-be_kicker_mw_SOURCES              = be_kicker_mw.cxx util.c
-be_kicker_mw_CFLAGS               = $(AM_CFLAGS)
-be_kicker_mw_CXXFLAGS             = $(AM_CXXFLAGS)
-be_kicker_mw_LDFLAGS              = -L$(top_srcdir)/@LMONAPILOC@ 
-be_kicker_mw_LDADD                = -lmonbeapi
 
 fe_launch_middleware_SOURCES       = fe_launch_middleware.cxx util.c
 fe_launch_middleware_CFLAGS        = $(AM_CFLAGS)

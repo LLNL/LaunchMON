@@ -28,6 +28,8 @@
  *
  *
  *  Update Log:
+ *        Jun 01 2012 DHA: Copied from 0.8-middleware-support branch and merged
+ *                         with 1.0-BGQ
  *        Aug 03 2020 DHA: Created file.
  */
 
@@ -62,16 +64,13 @@ extern "C" {
   int begin_timer ();
   int time_stamp ( const char* description );
   int statusFunc ( int *status );
-  void fill_mpirun_args(const char *nP, const char *nN,
-                   const char *part, const char *app,
-                   const char *mylauncher, char ***launcher_argv);
 }
 
 
 /*
  * OUR PARALLEL JOB LAUNCHER  
  */
-const char *mylauncher    = TARGET_JOB_LAUNCHER_PATH;
+char mylauncher[PATH_MAX] = {0};
 
 int
 main (int argc, char *argv[])
@@ -92,6 +91,11 @@ main (int argc, char *argv[])
   char *part               = NULL;
   char *mw_daemon          = NULL;
   char *be_daemon          = NULL;
+
+  string numprocs_opt;
+  string numnodes_opt;
+  string partition_opt;
+
   lmon_rc_e rc             = LMON_OK;
 
   if ( argc < MIN_NARGS )
@@ -109,6 +113,7 @@ main (int argc, char *argv[])
   part = argv[4];
   mw_daemon = argv[5];
   be_daemon = argv[6];
+
   if ( argc > MIN_NARGS )
     {
       daemon_opts = argv+MIN_NARGS;
@@ -124,7 +129,119 @@ main (int argc, char *argv[])
       return EXIT_FAILURE;
     }
 
-  fill_mpirun_args (nP, nN, part, application, mylauncher, &launcher_argv);
+  char *rmenv = getenv("MPI_JOB_LAUNCHER_PATH");
+  if (!rmenv)
+    {
+      fprintf(stdout,
+        "MPI_JOB_LAUNCHER_PATH envVar must be given\n" );
+      return EXIT_FAILURE;
+    }
+
+  snprintf(mylauncher, PATH_MAX, "%s", rmenv);
+
+  rmenv = getenv("RM_TYPE");
+  if (!rmenv)
+    {
+      fprintf(stdout,
+        "RM_TYPE envVar must be given\n" );
+      return EXIT_FAILURE;
+    }
+
+  std::string rmenv_str = rmenv;
+
+  if ((rmenv_str == std::string("RC_bgqrm")))
+    {
+      launcher_argv = (char **) malloc(14*sizeof(char *));
+      launcher_argv[0] = strdup(mylauncher);
+      launcher_argv[1] = strdup("--verbose");
+      launcher_argv[2] = strdup("5");
+      launcher_argv[3] = strdup("--np");
+      launcher_argv[4] = strdup(argv[2]);
+      launcher_argv[5] = strdup("--exe"); 
+      launcher_argv[6] = strdup(argv[1]); 
+      // manually fill the block
+      launcher_argv[7] = strdup("--block");
+      launcher_argv[8] = strdup("R00-M0-N04"); 
+      // manually fill the corner
+      launcher_argv[9] = strdup("--corner");
+      launcher_argv[10] = strdup("R00-M0-N04-J07");
+      // manually fill the shape 
+      launcher_argv[11] = strdup("--shape");
+      launcher_argv[12] = strdup("1x1x1x1x1");
+      launcher_argv[13] = NULL;
+      fprintf (stdout, 
+        "[LMON_FE] launching the job/daemons via %s\n",
+        mylauncher);
+    }
+  else if ((rmenv_str == std::string("RC_bgq_slurm")))
+    {
+      launcher_argv = (char **) malloc(7*sizeof(char *));
+      launcher_argv[0] = strdup(mylauncher);
+      launcher_argv[1] = strdup("-N");
+      launcher_argv[2] = strdup(argv[3]);
+      launcher_argv[3] = strdup("-n");
+      launcher_argv[4] = strdup(argv[2]);
+      launcher_argv[5] = strdup(argv[1]);
+      launcher_argv[6] = NULL;
+      fprintf (stdout,
+        "[LMON_FE] launching the job/daemons via %s\n",
+        "mylauncher");
+    }
+  else if ((rmenv_str == std::string("RC_bglrm")) 
+      || (rmenv_str == std::string("RC_bgprm")))
+    {
+      launcher_argv = (char **) malloc(8*sizeof(char *));
+      launcher_argv[0] = strdup(mylauncher);
+      launcher_argv[1] = strdup("-verbose");
+      launcher_argv[2] = strdup("1");
+      launcher_argv[3] = strdup("-np");
+      launcher_argv[4] = strdup(argv[2]);
+      launcher_argv[5] = strdup("-exe"); 
+      launcher_argv[6] = strdup(argv[1]); 
+      launcher_argv[7] = NULL;
+      fprintf (stdout, 
+                "[LMON_FE] launching the job/daemons via %s\n",
+                mylauncher);
+    }
+  else if (rmenv_str == std::string("RC_slurm"))
+    {
+      numprocs_opt     = string("-n") + string(argv[2]);
+      numnodes_opt     = string("-N") + string(argv[3]);
+      partition_opt    = string("-p") + string(argv[4]);
+      launcher_argv    = (char **) malloc (7*sizeof(char*));
+      launcher_argv[0] = strdup(mylauncher);
+      launcher_argv[1] = strdup(numprocs_opt.c_str());
+      launcher_argv[2] = strdup(numnodes_opt.c_str());
+      launcher_argv[3] = strdup(partition_opt.c_str());
+      launcher_argv[4] = strdup("-l");
+      launcher_argv[5] = strdup(argv[1]);
+      launcher_argv[6] = NULL;
+    }
+  else if (rmenv_str == std::string("RC_alps"))
+    {
+      numprocs_opt     = string("-n") + string(argv[2]);
+      launcher_argv    = (char**) malloc(4*sizeof(char*));
+      launcher_argv[0] = strdup(mylauncher);
+      launcher_argv[1] = strdup(numprocs_opt.c_str());
+      launcher_argv[2] = strdup(argv[1]);
+      launcher_argv[3] = NULL;
+    }
+  else if (rmenv_str == std::string("RC_orte"))
+    {
+      launcher_argv    = (char **) malloc(8*sizeof(char*));
+      launcher_argv[0] = strdup(mylauncher);
+      launcher_argv[1] = strdup("-mca");
+      launcher_argv[2] = strdup("debugger");
+      launcher_argv[3] = strdup("mpirx");
+      launcher_argv[4] = strdup("-np");
+      launcher_argv[5] = strdup(argv[2]);
+      launcher_argv[6] = strdup(argv[1]);
+      launcher_argv[7] = NULL;
+      fprintf (stdout,
+               "[LMON_FE] launching the job/daemons via %s\n",
+               mylauncher);
+    }
+
   fprintf (stderr, "[LMON_FE] launching the job/daemons via %s\n", mylauncher);
 
   //

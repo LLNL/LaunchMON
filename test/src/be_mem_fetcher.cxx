@@ -69,13 +69,9 @@
 #endif
                                                                     
 #include <lmon_api/lmon_be.h>
-#include "lmon_be_internal.hxx"
+#include "lmon_daemon_internal.hxx"
 #include "lmon_be_sync_mpi.hxx"
 
-#if SUB_ARCH_BGL || SUB_ARCH_BGP 
-# include "debugger_interface.h"
-  using namespace DebuggerInterface;
-#endif 
 
 /*
  * Multipurpose kicker daemon
@@ -201,7 +197,7 @@ main( int argc, char* argv[] )
   // This routine should only be used by test cases like this
   //
   per_be_data_t *myBeData = NULL;
-  if ( (lrc = LMON_be_internal_tester_getBeData (&myBeData)) != LMON_OK )
+  if ( (lrc = LMON_daemon_internal_tester_getBeData (&myBeData)) != LMON_OK )
     {
       fprintf(stdout, 
         "[LMON BE(%d)] FAILED: LMON_be_internal_getBeDat returned an error\n",

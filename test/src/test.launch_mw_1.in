@@ -3,7 +3,7 @@
 #
 #
 #--------------------------------------------------------------------------------
-# Copyright (c) 2008 - 2010, Lawrence Livermore National Security, LLC. Produced at
+# Copyright (c) 2008 - 2012, Lawrence Livermore National Security, LLC. Produced at
 # the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>.
 # LLNL-CODE-409469. All rights reserved.
 #
@@ -31,6 +31,8 @@
 #  one daemon per node, which unlocks the initial hang of all tasks.
 #
 #  Update Log:
+#        Jun 01 2012 DHA: Copied from 0.8-middleware-support branch and merged
+#                         with 1.0-BGQ
 #        Oct 21 2011 DHA: Added dynamic RM detection support.
 #        Aug 03 2010 DHA: Created file.
 #

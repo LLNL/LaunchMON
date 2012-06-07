@@ -31,6 +31,7 @@
 #  shut down BE daemons .
 #
 #  Update Log:
+#        Jun 05 2012 DHA: Added subtest support
 #        Oct 21 2011 DHA: Added dynamic RM detection support.
 #        Mar 06 2009 DHA: Changed bglrm to bgrm
 #        Dec 14 2008 DHA: configurable NUMNODES
@@ -77,6 +78,6 @@ PID=`echo $!`
  
 sleep $WAITAMOUNT #wait until the job gets stalled 
  
-fe_attach_smoketest@EXE@ $PID `pwd`/be_kicker@EXE@ $SIGNUM 60
+fe_attach_smoketest@EXE@ $PID `pwd`/be_kicker@EXE@ $SIGNUM 1
  
 sleep $WAITAMOUNT
