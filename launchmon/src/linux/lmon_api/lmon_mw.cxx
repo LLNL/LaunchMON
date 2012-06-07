@@ -893,7 +893,7 @@ LMON_mw_ready(void *udata)
         set_msg_header (
                     readymsg,
                     lmonp_fetomw,
-                    (int) lmonp_mwfe_usrdata,
+                    (int) lmonp_mwfe_ready,
                     0,0,0,0,0,0,
                     LMON_MAX_USRPAYLOAD);
 
@@ -922,6 +922,11 @@ LMON_mw_ready(void *udata)
                (sizeof (lmonp_t)
                +readymsg->lmon_payload_length  
                +readymsg->usr_payload_length));
+
+#if VERBOSE
+    LMON_say_msg ( LMON_MW_MSG_PREFIX, false,
+        "mw ready msg has been sent");
+#endif
 
   END_MASTER_ONLY
 
@@ -1130,6 +1135,11 @@ LMON_mw_sendUsrData(void *udata)
         goto something_bad;
       }
     free (usrmsg);
+
+#if VERBOSE
+    LMON_say_msg(LMON_BE_MSG_PREFIX, false,
+        "Master MW daemon sent a user data");
+#endif
 
   END_MASTER_ONLY
 

@@ -96,19 +96,39 @@ LMON_be_procctl_run_generic ( int signum,
                               int psize )
 {
   lmon_rc_e rc = LMON_OK;
-  int sendsig = (signum == 0)? SIGCONT : signum;
+  bool sigcont = (signum == 0)? true : false;
+
   int i;
 
   for (i=0; i < psize; ++i)
     {
-      if ( ( kill ( ptab[i].pd.pid, sendsig ) != 0 )
+      if ( ( kill ( ptab[i].pd.pid, SIGCONT ) != 0 )
            && rc == LMON_OK)
         {
           LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
             "Sending SIGCONT to %d returned an error (errno: %d).", 
-            ptab[i].pd.pid, strerror(errno) );
+            ptab[i].pd.pid,
+            strerror(errno) );
           errno = 0;
           rc = LMON_EINVAL;
+        }
+    }
+
+  if (!sigcont) 
+    {
+      for (i=0; i < psize; ++i)
+        {
+          if ( ( kill (ptab[i].pd.pid, signum ) != 0 )
+               && rc == LMON_OK)
+            {
+              LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+                "Sending a signal (%d) to %d returned an error (errno: %d).", 
+                signum,
+                ptab[i].pd.pid, 
+                strerror(errno) );
+              errno = 0;
+              rc = LMON_EINVAL;
+            }
         }
     }
 

@@ -1380,8 +1380,8 @@ LMON_be_assist_mw_coloc()
     }
 
 #if VERBOSE
-   LMON_say_msg ( LMON_MW_MSG_PREFIX, false,
-     "MW daemon assisted MW spawn");
+   LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+     "BE daemon assisted in MW daemon spawn");
 #endif
 
   return LMON_OK;
@@ -1566,6 +1566,22 @@ LMON_be_recvUsrData ( void* udata )
       {
 	LMON_say_msg(LMON_BE_MSG_PREFIX, true, 
           "the received message doesn't match with the expected type");
+
+        LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+          "  The expected type is {Class(lmonp_fetobe),"
+                       "Type(lmonp_febe_usrdata),"
+                       "LMON_payload_size(0),"
+                       "USR_payload_size(>=0)}.");
+
+        LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+          "  A recv'ed msg of {Class(%s),"
+                       "Type(%s),"
+                       "LMON_payload_size(%s),"
+                       "USR_payload_size(%s)} has been received.",
+                       lmon_msg_to_str(field_class, &recvmsg),
+                       lmon_msg_to_str(field_type, &recvmsg),
+                       lmon_msg_to_str(field_lmon_payload_length, &recvmsg),
+                       lmon_msg_to_str(field_usr_payload_length, &recvmsg));
 
 	lrc = LMON_EBDMSG;
         goto something_bad; 

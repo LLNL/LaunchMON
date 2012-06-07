@@ -350,7 +350,7 @@ private:
   bool parse_and_fill_rm(const std::string &rm_conf_path,
                  resource_manager_t &a_rm);
 
-  const std::string expand_a_letter(const char p);
+  const std::string expand_a_letter(const char p, bool *split_maybe_needed);
 
   resource_manager_t resource_manager;
 

@@ -70,6 +70,14 @@ typedef struct {
   int cnodeid;
 } MPIR_PROCDESC_EXT;
 
+
+//! N_Fields_MPIR_PROCDESC_EXT
+/*!
+    make sure N_Fields_MPIR_PROCDESC_EXT tells the aggregate number of fields
+    in the MPIR_PROCDESC_EXT data structure.
+*/
+#define N_Fields_MPIR_PROCDESC_EXT 5
+
 END_C_DECLS 
 
 #endif /* LMON_API_LMON_PROC_TAB_H */

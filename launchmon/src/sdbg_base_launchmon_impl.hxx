@@ -679,17 +679,17 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_proctab_msg (
 	}
     }
 
+
   //
   // This message can be rather long as the size is
-  // an lmonp header size + 20B per-task entry for each task
-  // + the string table size.
-  // The fixed 20 Byte per-task entry consists of 
-  // exec index, hostname index, pid, and rank, 
-  // and cnodeid, each of which
-  // is 4 Byte.
+  // an lmonp header size + (N_Fields_MPIR_PROCDESC_EXT x sizeof(int) 
+  // per-task entry for each task + the string table size.
+  // The fixed per-task entry consists of exec index, 
+  // hostname index, pid, and rank, and cnodeid, each of which
+  // is sizeof(int).
   //
   msgsize = sizeof(lmonp_t) 
-            + 5*sizeof(int)*pcount + offset;
+            + N_Fields_MPIR_PROCDESC_EXT*sizeof(int)*pcount + offset;
   lmonp_t *sendbuf = (lmonp_t *) malloc ( msgsize );
   memset ( sendbuf, 0, msgsize );
   if ( pcount < LMON_NTASKS_THRE) 
@@ -702,7 +702,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_proctab_msg (
 		  num_unique_exec,
 		  num_unique_hn,
 		  0,
-		  (5*sizeof(int)*pcount)+offset,
+		  (N_Fields_MPIR_PROCDESC_EXT*sizeof(int)*pcount)+offset,
 		  0);
     }
   else
@@ -715,14 +715,16 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_proctab_msg (
 		  num_unique_exec,
 		  num_unique_hn,
 		  pcount,
-		  (5*sizeof(int)*pcount)+offset,
+		  (N_Fields_MPIR_PROCDESC_EXT*sizeof(int)*pcount)+offset,
 		  0);
     }
 
   char *payload_cp_ptr = get_lmonpayload_begin (sendbuf);
 
+
   //
-  // serializing the process table into a send buffer.
+  // Serializing the process table into a send buffer.
+  // Number of memcpy must be equal to N_Fields_MPIR_PROCDESC_EXT
   //
   for ( pos = proctable_copy.begin(); 
             pos != proctable_copy.end(); ++pos )
@@ -730,28 +732,28 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_proctab_msg (
       for(vpos = pos->second.begin(); 
                vpos != pos->second.end(); ++vpos )
         {
-	  memcpy ( payload_cp_ptr,
-		   &( execHostName[string((*vpos)->pd.host_name)] ),
+	  memcpy ( (void *) payload_cp_ptr,
+                   (void *) &(execHostName[string((*vpos)->pd.host_name)]),
 		   sizeof ( unsigned int ) );
 	  payload_cp_ptr += sizeof ( unsigned int );
 	  
-	  memcpy ( payload_cp_ptr,
-		   &( execHostName[string((*vpos)->pd.executable_name)] ),
+	  memcpy ( (void *) payload_cp_ptr,
+                   (void *) &(execHostName[string((*vpos)->pd.executable_name)]),
 		   sizeof ( unsigned int ) );
 	  payload_cp_ptr += sizeof ( unsigned int );
 	  
-	  memcpy ( payload_cp_ptr,
-		   &( (*vpos)->pd.pid ),
+	  memcpy ( (void *) payload_cp_ptr,
+		   (void *) &((*vpos)->pd.pid),
 		   sizeof (int) );
 	  payload_cp_ptr += sizeof ( int );
 	  
-	  memcpy ( payload_cp_ptr,
-		   &( (*vpos)->mpirank ),
+	  memcpy ( (void *) payload_cp_ptr,
+		   (void *) &((*vpos)->mpirank),
 		   sizeof ( int ) );
 	  payload_cp_ptr += sizeof ( int ); 
 
-	  memcpy ( payload_cp_ptr,
-		   &( (*vpos)->cnodeid ),
+	  memcpy ( (void *) payload_cp_ptr,
+		   (void *) &((*vpos)->cnodeid),
 		   sizeof ( int ) );
 	  payload_cp_ptr += sizeof ( int ); 
 	}
@@ -765,7 +767,8 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_proctab_msg (
               EHpos != orderedEHName.end(); ++EHpos )
     {
       int leng = strlen ((*EHpos)) + 1;
-      memcpy ( payload_cp_ptr, ( *EHpos ),
+      memcpy ( (void *) payload_cp_ptr, 
+               (void *) ( *EHpos ),
 	       leng );
       payload_cp_ptr += leng;
     }

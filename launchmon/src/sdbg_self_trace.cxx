@@ -68,34 +68,34 @@
 #include "sdbg_self_trace.hxx"
 
 self_trace_entry_t self_trace_t::launchmon_module_trace 
-     =  { quiet, "Launchmon", "launchmon" };
+     =  { quiet, "<Launchmon>", "launchmon" };
 
 self_trace_entry_t self_trace_t::tracer_module_trace 
-     = { quiet, "ProcTracer", "tracer" };
+     = { quiet, "<ProcTracer>", "tracer" };
 
 self_trace_entry_t self_trace_t::symtab_module_trace 
-     = { quiet, "Symtable", "symtab" };
+     = { quiet, "<Symtable>", "symtab" };
 
 self_trace_entry_t self_trace_t::thread_tracer_module_trace 
-     = { quiet, "ThreadTracer", "ttracer" };
+     = { quiet, "<ThreadTracer>", "ttracer" };
 
 self_trace_entry_t self_trace_t::machine_module_trace 
-     = { quiet, "Machine", "machine"};
+     = { quiet, "<Machine>", "machine"};
 
 self_trace_entry_t self_trace_t::event_module_trace
-     = { quiet, "EventMan", "event"};
+     = { quiet, "<EventMgr>", "event"};
 
 self_trace_entry_t self_trace_t::driver_module_trace
-     = { quiet, "Driver", "driver"};
+     = { quiet, "<Driver>", "driver"};
 
 self_trace_entry_t self_trace_t::opt_module_trace
-     = { quiet, "OptionParsing", "option"};
+     = { quiet, "<OptionParser>", "option"};
 
 self_trace_entry_t self_trace_t::rm_module_trace
-     = { quiet, "ResourceManager", "resmgr"};
+     = { quiet, "<ResourceMgr>", "resmgr"};
 
 self_trace_entry_t self_trace_t::sighandler_module_trace
-     = { quiet, "SigHandler", "sighandler"};
+     = { quiet, "<SigHandler>", "sighandler"};
 
 
 FILE *self_trace_t::tracefptr = stdout;

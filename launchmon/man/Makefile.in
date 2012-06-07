@@ -228,7 +228,16 @@ man_MANS = LMON_be_getMyProctabSize.3 \
 	   LMON_fe_putToBeDaemonEnv.3 \
 	   LMON_fe_regErrorCB.3 \
 	   LMON_fe_regStatusCB.3 \
-	   LMON_fe_getRMInfo.3
+	   LMON_fe_getRMInfo.3 \
+           LMON_mw_amIMaster.3 \
+           LMON_mw_barrier.3 \
+           LMON_mw_broadcast.3 \
+           LMON_mw_finalize.3 \
+           LMON_mw_gather.3 \
+           LMON_mw_getMyRank.3 \
+           LMON_mw_getSize.3 \
+           LMON_mw_init.3 \
+           LMON_mw_scatter.3
 
 EXTRA_DIST = $(man_MANS)
 all: all-am

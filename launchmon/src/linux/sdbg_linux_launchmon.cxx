@@ -679,25 +679,25 @@ linux_launchmon_t::launch_tool_daemons (
 
       free(tokenize2);
 
+      std::string expandstr;
+      std::list<std::string> alist
+        = p.rmgr()->expand_launch_string(expandstr);
+
+      {
+        self_trace_t::trace (
+          //LEVELCHK(level1),
+          true,
+          MODULENAME,0,
+          "launching daemons with: %s",
+          expandstr.c_str());
+       }
+
       //
       // For non-colocation RM, we need to fork/exec
       //
       set_toollauncherpid  (fork());
       if ( !get_toollauncherpid ())
         {
-          std::string expandstr;
-          std::list<std::string> alist
-            = p.rmgr()->expand_launch_string(expandstr);
-
-          {
-           self_trace_t::trace (
-              //LEVELCHK(level1),
-              true,
-              MODULENAME,0,
-              "launching daemons with: %s",
-              expandstr.c_str());
-          }
-
           char **av = (char **) malloc((alist.size() + 1)*sizeof(char *));
           size_t indx=0;
           std::list<std::string>::iterator iter;

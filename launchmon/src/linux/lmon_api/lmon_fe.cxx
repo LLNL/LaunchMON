@@ -1449,7 +1449,7 @@ LMON_fe_acceptEngine ( int sessionHandle )
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
 	"the launchmon engine encountered an error while parsing its command line.");
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-	"has an incorrect pid been provided?");
+	"for example, has an incorrect pid been provided?");
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
 	"please check the command line provided to the engine.");
    
@@ -2312,6 +2312,26 @@ LMON_fe_mwHandshakeSequence (
       return LMON_EBDMSG;
     }
 
+  unsigned int len = msg.lmon_payload_length + msg.usr_payload_length;
+
+  mydesc->hntab_mw_msg = (lmonp_t*) malloc(len+sizeof(msg));
+  if ( mydesc->hntab_mw_msg == NULL )
+    return LMON_ENOMEM;
+
+  memcpy(mydesc->hntab_mw_msg, &msg, sizeof(msg));
+  char *tv = (char*) mydesc->hntab_mw_msg;
+  tv += sizeof(msg);
+  if ( read_lmonp_payloads(mydesc->commDesc[fe_mw_conn].sessionAcceptSockFd,
+                           tv,
+                           len) < 0 )
+  {
+    LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+                   "read_lmonp_payloads failed"
+                   "while attempting to handshake with middleware master");
+
+    return LMON_ESYS;
+  }
+
   //
   // USRDATA MSG
   //  -- writing the lmonp_femw_usrdata message along with the user data 
@@ -2877,6 +2897,8 @@ LMON_fetofe_watchdog_thread ( void *arg )
 	  //
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
 	     "read_lmonp_msg returned a negative return code");
+	  LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+	     "front end's connection to launchmon engine is disconnected?");
 
 	  break;	  
 	}

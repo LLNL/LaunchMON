@@ -801,11 +801,13 @@ get_strtab_begin ( lmonp_t *msg )
           {
             if (msg->sec_or_jobsizeinfo.num_tasks < LMON_NTASKS_THRE)
               {
-                ret += msg->sec_or_jobsizeinfo.num_tasks*sizeof(uint32_t)*4;
+                ret += msg->sec_or_jobsizeinfo.num_tasks
+                       * sizeof(uint32_t) * N_Fields_MPIR_PROCDESC_EXT;
               }
             else
               {
-                ret += msg->long_num_tasks*sizeof(uint32_t)*4;
+                ret += msg->long_num_tasks
+                       * sizeof(uint32_t) * N_Fields_MPIR_PROCDESC_EXT;
               }
             }
          break;
@@ -819,11 +821,13 @@ get_strtab_begin ( lmonp_t *msg )
              {
                if (msg->sec_or_jobsizeinfo.num_tasks < LMON_NTASKS_THRE)
                  {
-                   ret += msg->sec_or_jobsizeinfo.num_tasks*sizeof(uint32_t)*4;
+                   ret += msg->sec_or_jobsizeinfo.num_tasks
+                          * sizeof(uint32_t) * N_Fields_MPIR_PROCDESC_EXT;
                  }
                else
                  {
-                   ret += msg->long_num_tasks*sizeof(uint32_t)*4;
+                   ret += msg->long_num_tasks*sizeof(uint32_t)
+                          * N_Fields_MPIR_PROCDESC_EXT;
                  }
               }
            }

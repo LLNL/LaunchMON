@@ -73,6 +73,17 @@
 # error list is required
 #endif
 
+// Jun 07 2012 DHA TODO: We need to check boost/tokenizer.hpp; 
+// doing so generates whole lot of errors on some platforms
+// so I'm skipping that check for now. We need to 
+// revisit that issue.
+// Effectively, the following currently assumes that boost is ubiquitious 
+//#if HAVE_BOOST_TOKENIZER_HPP
+# include <boost/tokenizer.hpp>
+//#else
+//# error boost/tokenizer is required; no alternative tokenizer
+//#endif
+
 #include <iostream>
 
 #include "sdbg_rm_map.hxx"
@@ -681,10 +692,34 @@ rc_rm_t::expand_launch_string(std::string &expanded_string)
       if ((perc_sign_ix < std::string::npos)
            && ((perc_sign_ix+1) < (*itr).size()))
         {
-          std::string exp_substr = expand_a_letter((*itr)[perc_sign_ix+1]);
+          bool split_case = false;
+          std::string exp_substr = expand_a_letter((*itr)[perc_sign_ix+1], 
+                                                   &split_case);
           if (exp_substr != std::string("na"))
             {
               (*itr).replace(perc_sign_ix, 2, exp_substr);
+            }
+
+          if (split_case) 
+            {
+              boost::tokenizer<> boost_token(*itr); 
+              boost::tokenizer<>::iterator boost_itr;
+              std::list<std::string> sub_list; 
+              for (boost_itr = boost_token.begin(); 
+                     boost_itr != boost_token.end(); boost_itr++)
+                {
+                  sub_list.push_back(*boost_itr);
+                }
+
+              if (sub_list.size() > 1) 
+                {
+                  // insert the new sublist into the master list
+                  tokens.splice(itr, sub_list);
+                  // erase the current element and make sure
+                  // to update the itr to its previous iter so that
+                  // current for-loop can progress.
+                  tokens.erase(itr--);
+                }
             }
         }
     }
@@ -1087,9 +1122,10 @@ rc_rm_t::parse_and_fill_rm(const std::string &rm_conf_path,
 
 
 const std::string
-rc_rm_t::expand_a_letter(const char p)
+rc_rm_t::expand_a_letter(const char p, bool *split_maybe_needed)
 {
   std::stringstream ssm;
+  *split_maybe_needed = false;
 
   switch (p)
     {
@@ -1119,6 +1155,7 @@ rc_rm_t::expand_a_letter(const char p)
 
     case 'o':
       ssm << coloc_paramset.rm_daemon_args;
+      *split_maybe_needed = true;
       break;
 
     case 's':
