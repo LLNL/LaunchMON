@@ -1041,9 +1041,9 @@ LMON_daemon_gethostname(bool bgion, char *my_hostname, int hlen, char *my_ip, in
           aliases.push_back(my_hostnameFQDNStr);
         }
 
-      if (inet_ntop(hent->h_addrtype, hent->h_addr, my_ip, ilen) != -1) 
+      if (inet_ntop(hent->h_addrtype, hent->h_addr, my_ip, ilen) != NULL) 
         {
-          my_ipStr(my_ip); 
+          my_ipStr = my_ip; 
           aliases.push_back(my_ipStr);
         }
 
@@ -1053,7 +1053,7 @@ LMON_daemon_gethostname(bool bgion, char *my_hostname, int hlen, char *my_ip, in
           if ((al != my_hostnameStr) || (al != my_hostnameFQDNStr))
             {
               aliases.push_back(al);
-              if ((al.find(".") == std::npos)
+              if ((al.find('.') == std::string::npos)
                   && (my_hostnameFQDNStr != notAvail)) 
                 {
                   aliases.push_back(al + std::string(".") + my_hostnameFQDNStr);
@@ -1064,7 +1064,7 @@ LMON_daemon_gethostname(bool bgion, char *my_hostname, int hlen, char *my_ip, in
          {
            char tmp_ip[LMON_DAEMON_HN_MAX];
            if (inet_ntop(hent->h_addrtype, hent->h_addr_list[i], 
-                          tmp_ip, LMON_DAEMON_HN_MAX) != -1)
+                          tmp_ip, LMON_DAEMON_HN_MAX) != NULL)
              {
                std::string al_ip(tmp_ip);
                if (al_ip != my_ipStr)
@@ -1082,7 +1082,7 @@ bool is_bluegene_ion()
 {
   bool rc = false;
   if ((access ("/proc/personality.sh", R_OK) != -1)
-      || access ("/jobs/tools/protocol", R_OK) != -1))
+      || (access ("/jobs/tools/protocol", R_OK) != -1))
     {
       rc = true;
     }
