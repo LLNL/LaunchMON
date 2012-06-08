@@ -978,21 +978,21 @@ resolvHNAlias ( std::string& hostsFilePath, std::string &alias, std::string &IP)
 lmon_rc_e
 LMON_daemon_gethostname(bool bgion, char *my_hostname, int hlen, char *my_ip, int ilen, std::vector<std::string>& aliases)
 {
-  if (bgion)
+  memset ( my_hostname, 0, hlen );
+  memset ( my_ip, 0, ilen );
+
+  if ( gethostname ( my_hostname, hlen ) < 0 )
     {
-      memset ( my_hostname, 0, hlen );
-      memset ( my_ip, 0, ilen );
+      LMON_say_msg(LMON_DAEMON_MSG_PREFIX, true,
+        "gethostname failed");
 
-      if ( gethostname ( my_hostname, hlen ) < 0 )
-        {
-          LMON_say_msg(LMON_DAEMON_MSG_PREFIX, true,
-            "gethostname failed");
+      return LMON_ESYS;
+    }
 
-          return LMON_ESYS;
-        }
-
-      struct hostent *hent = gethostbyname(my_hostname);
-      if ( hent == NULL )
+  struct hostent *hent = gethostbyname(my_hostname);
+  if (hent == NULL)
+    {
+      if (bgion)
         {
           std::string resIP;
           std::string pFile("/proc/personality.sh");
@@ -1015,86 +1015,77 @@ LMON_daemon_gethostname(bool bgion, char *my_hostname, int hlen, char *my_ip, in
           snprintf(my_ip, ilen, "%s", resIP.c_str());
           snprintf(my_hostname, hlen, "%s", resIP.c_str());
         }
-      else
+      else 
         {
-          //snprintf(my_hostname, hlen, "%s", hent->h_name); 
-          std::string my_hostnameStr(my_hostname); 
-          aliases.push_back(my_hostnameStr);
-          if (!inet_ntop(hent->h_addrtype, hent->h_addr, my_ip, ilen)) 
-            {
-              LMON_say_msg ( LMON_DAEMON_MSG_PREFIX, true, "inet_ntop returned NULL");
-              return LMON_ESYS;
-            }
-          std::string my_ipStr(my_ip); 
-          aliases.push_back(my_ipStr);
-
-          int i =0;
-          for (i=0; hent->h_aliases[i] != NULL; i++)
-            {
-              std::string al(hent->h_aliases[i]);
-              if (al != my_hostnameStr) 
-                {
-                  aliases.push_back(al);
-                }
-            }
-          for (i=0; hent->h_addr_list[i] != NULL; i++)
-            {
-              char tmp_ip[LMON_DAEMON_HN_MAX];
-              if (!inet_ntop(hent->h_addrtype, hent->h_addr_list[i], tmp_ip, LMON_DAEMON_HN_MAX))
-                {
-                  return LMON_ESYS;
-                }
-              std::string al_ip(tmp_ip);
-              if (al_ip != my_ipStr)
-                {
-                  aliases.push_back(al_ip);
-                }
-            }
+          LMON_say_msg ( LMON_DAEMON_MSG_PREFIX, true,
+                         "BES: gethostbyname returned NULL.");
+          return LMON_ESYS;
         }
     }
-  else
+  else // hent returns valid data 
     {
-      memset ( my_hostname, 0, hlen );
-      if ( gethostname ( my_hostname, hlen ) < 0 )
-        {
-          LMON_say_msg(LMON_DAEMON_MSG_PREFIX, true,
-            "gethostname failed");
+      int i=0;
+      std::string my_hostnameStr(my_hostname);
+      std::string notAvail("na");
+      std::string my_ipStr(notAvail);
+      char my_domainname[LMON_DAEMON_HN_MAX];
+      std::string my_domainnameStr(notAvail);
+      std::string my_hostnameFQDNStr(notAvail);
 
-          return LMON_ESYS;
+      aliases.push_back(my_hostnameStr);
+      if (getdomainname(my_domainname, LMON_DAEMON_HN_MAX) != -1)
+        {
+          my_domainnameStr = my_domainname;
+          my_hostnameFQDNStr = my_hostnameStr + std::string(".")
+                               + my_domainnameStr; 
+          aliases.push_back(my_hostnameFQDNStr);
         }
 
-      struct hostent *hent = gethostbyname(my_hostname);
-      if (hent == NULL)
+      if (inet_ntop(hent->h_addrtype, hent->h_addr, my_ip, ilen) != -1) 
         {
-          LMON_say_msg ( LMON_DAEMON_MSG_PREFIX, true, 
-                         "gethostbyname returned NULL" );
+          my_ipStr(my_ip); 
+          aliases.push_back(my_ipStr);
+        }
 
-          return LMON_ESYS;
-        }
-      snprintf(my_hostname, hlen, "%s", hent->h_name); 
-      if (!inet_ntop(hent->h_addrtype, hent->h_addr, my_ip, ilen)) 
+      for (i=0; hent->h_aliases[i] != NULL; i++)
         {
-          LMON_say_msg ( LMON_DAEMON_MSG_PREFIX, true, "inet_ntop returned NULL");
-          return LMON_ESYS;
-        }
-    }
+          std::string al(hent->h_aliases[i]);
+          if ((al != my_hostnameStr) || (al != my_hostnameFQDNStr))
+            {
+              aliases.push_back(al);
+              if ((al.find(".") == std::npos)
+                  && (my_hostnameFQDNStr != notAvail)) 
+                {
+                  aliases.push_back(al + std::string(".") + my_hostnameFQDNStr);
+                }
+             }
+         }
+       for (i=0; hent->h_addr_list[i] != NULL; i++)
+         {
+           char tmp_ip[LMON_DAEMON_HN_MAX];
+           if (inet_ntop(hent->h_addrtype, hent->h_addr_list[i], 
+                          tmp_ip, LMON_DAEMON_HN_MAX) != -1)
+             {
+               std::string al_ip(tmp_ip);
+               if (al_ip != my_ipStr)
+                 {
+                   aliases.push_back(al_ip);
+                 }
+             }
+         }
+     }
 
   return LMON_OK;
 }
 
 bool is_bluegene_ion()
 {
-#if SUB_ARCH_BGL || SUB_ARCH_BGP || SUB_ARCH_BGQ
-  bool rc = true;
-#if 0
-  if (access ("/proc/personality.sh", R_OK) < 0)
+  bool rc = false;
+  if ((access ("/proc/personality.sh", R_OK) != -1)
+      || access ("/jobs/tools/protocol", R_OK) != -1))
     {
-      LMON_say_msg ( LMON_DAEMON_MSG_PREFIX, true, "access denied");
-      rc = false;
+      rc = true;
     }
-#endif
+
   return rc;
-#else
-  return false;
-#endif
 }
