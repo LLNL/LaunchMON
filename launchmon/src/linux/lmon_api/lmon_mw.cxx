@@ -268,7 +268,8 @@ LMON_mw_init(int ver, int *argc, char ***argv )
                                mwdata.daemon_data.my_hostname,
                                LMON_DAEMON_HN_MAX,
                                mwdata.daemon_data.my_ip,
-                               LMON_DAEMON_HN_MAX ) )
+                               LMON_DAEMON_HN_MAX,
+                               mwdata.daemon_data.host_aliases ) )
            != LMON_OK )
     {
       LMON_say_msg(LMON_MW_MSG_PREFIX, true,

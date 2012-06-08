@@ -1150,15 +1150,10 @@ open_domain_socket ()
 
       bzero ( &saddr, socklen );
       saddr.sun_family = AF_UNIX;
-#if 0
-      result = snprintf ( saddr.sun_path, sizeof ( saddr.sun_path ),
-        "/jobs/%lu/toolctl_node/%d",
-        _jobid, 262144);
-#else
+
       result = snprintf ( saddr.sun_path, sizeof ( saddr.sun_path ),
         "/jobs/%lu/toolctl_node/%d",
         _jobid, i->first);
-#endif
 
       if (result >= sizeof ( saddr.sun_path ))
         {
@@ -1170,8 +1165,8 @@ open_domain_socket ()
 
 #if VERBOSE
       char cmd[1024];
-      sprintf(cmd, "ls -l /jobs/%lu/toolctl_node/", _jobid);
-      system(cmd);
+      //sprintf(cmd, "ls -l /jobs/%lu/toolctl_node/", _jobid);
+      //system(cmd);
       LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
         "socket has been created for %s ", (char *) saddr.sun_path );
 #endif
@@ -2327,8 +2322,8 @@ LMON_be_procctl_init_bgq ( MPIR_PROCDESC_EXT *ptab,
 
 #if VERBOSE
   LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-    "_cdtiVer(%d), _seqNum(%d), _jobid(%d), _toolid(%d) ",
-    _cdtiVer, _seqNum, _jobid, _toolid);
+    "_cdtiVer(%d), _seqNum(%d), _jobid(%d), _toolid(%d) psize(%d) IOToolMap.CN2Ranks.size(%d)",
+    _cdtiVer, _seqNum, _jobid, _toolid, psize, IOToolMap.CN2Ranks.size());
 #endif
 
   //
@@ -2387,6 +2382,11 @@ LMON_be_procctl_init_bgq ( MPIR_PROCDESC_EXT *ptab,
     }
 #endif
 
+#if VERBOSE
+  LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+    "BGQ proc control init done ");
+#endif
+
   return LMON_OK;
 }
 
@@ -2419,6 +2419,11 @@ LMON_be_procctl_run_bgq ( int signum,
 
       return LMON_EINVAL;
     }
+
+#if VERBOSE
+  LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+    "BGQ proc control run done ");
+#endif
 
   return LMON_OK;
 }
@@ -2481,6 +2486,10 @@ LMON_be_procctl_initdone_bgq ( MPIR_PROCDESC_EXT *ptab,
       return LMON_EINVAL;
     }
 
+#if VERBOSE
+  LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+    "BGQ proc control initdone ");
+#endif
   return LMON_OK;
 
 }
@@ -2496,6 +2505,11 @@ LMON_be_procctl_done_bgq ( MPIR_PROCDESC_EXT *ptab,
 
       return LMON_EINVAL;
     }
+
+#if VERBOSE
+  LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+    "BGQ proc control done ");
+#endif
 
   return LMON_OK;
 }

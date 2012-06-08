@@ -93,6 +93,7 @@ typedef struct _per_daemon_data_t {
    */
   char my_hostname[LMON_DAEMON_HN_MAX];
   char my_ip[LMON_DAEMON_HN_MAX];
+  std::vector<std::string> host_aliases; 
 
   /*
    * for mw colocation assistant
@@ -164,7 +165,7 @@ extern lmon_rc_e LMON_daemon_internal_scatter( void *sendbuf,
 extern lmon_rc_e LMON_daemon_internal_finalize(int is_be);
 extern lmon_rc_e LMON_daemon_getWhereToConnect( struct sockaddr_in *servaddr );
 extern lmon_rc_e LMON_daemon_gethostname(bool bgion,
-                     char *my_hostname, int hlen, char *my_ip, int ilen);
+                     char *my_hostname, int hlen, char *my_ip, int ilen, std::vector<std::string> &aliases);
 
 extern lmon_rc_e LMON_daemon_enable_verbose(const char *vdir, 
                      const char *local_hostname, int is_be);

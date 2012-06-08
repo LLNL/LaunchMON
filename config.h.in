@@ -225,6 +225,10 @@
    slash. */
 #undef LSTAT_FOLLOWS_SLASHED_SYMLINK
 
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
+#undef LT_OBJDIR
+
 /* Define 1 for MEASURE_TRACING_COST */
 #undef MEASURE_TRACING_COST
 

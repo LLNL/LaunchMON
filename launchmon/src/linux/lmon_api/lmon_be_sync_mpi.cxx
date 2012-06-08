@@ -76,7 +76,7 @@ LMON_be_procctl_init ( rm_catalogue_e rmtype,
 #if VERBOSE
   LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
     "Platform-independent proc control init"
-    " visited with rmtype(%d)", rmtype );
+    " visited with rmtype(%d) psize(%d), dontstop_fastpath(%d)", rmtype, psize, dontstop_fastpath );
 #endif
 
   switch(rmtype)
@@ -98,7 +98,6 @@ LMON_be_procctl_init ( rm_catalogue_e rmtype,
       rc = LMON_be_procctl_init_bg ( ptab, psize );
       break;
 
-#if SUB_ARCH_BGQ
     case RC_bgqrm:
     case RC_bgq_slurm:
       //
@@ -109,7 +108,6 @@ LMON_be_procctl_init ( rm_catalogue_e rmtype,
               LMON_be_procctl_init_bgq ( ptab, psize );
       break;
 
-#endif
     case RC_mchecker_rm:
     case RC_none:
 #if VERBOSE
@@ -155,7 +153,6 @@ LMON_be_procctl_stop ( rm_catalogue_e rmtype,
       rc = LMON_be_procctl_stop_bg ( ptab, psize );
       break;
 
-#if SUB_ARCH_BGQ
     case RC_bgqrm:
     case RC_bgq_slurm:
       //
@@ -166,7 +163,6 @@ LMON_be_procctl_stop ( rm_catalogue_e rmtype,
                LMON_be_procctl_stop_bgq ( ptab, psize );
       break;
 
-#endif
     case RC_mchecker_rm:
     case RC_none:
 #if VERBOSE
@@ -191,7 +187,7 @@ LMON_be_procctl_run ( rm_catalogue_e rmtype,
 #if VERBOSE
   LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
     "Platform-independent proc control run"
-    " visited with rmtype(%d)", rmtype );
+    " visited with rmtype(%d) dontstop_fastpath(%d)", rmtype, dontstop_fastpath );
 #endif
 
   switch(rmtype)
@@ -213,7 +209,6 @@ LMON_be_procctl_run ( rm_catalogue_e rmtype,
       rc = LMON_be_procctl_run_bg ( signum, ptab, psize );
       break;
 
-#if SUB_ARCH_BGQ
     case RC_bgqrm:
     case RC_bgq_slurm:
       //
@@ -223,7 +218,6 @@ LMON_be_procctl_run ( rm_catalogue_e rmtype,
               LMON_OK :
               LMON_be_procctl_run_bgq ( signum, ptab, psize );
       break;
-#endif
 
     case RC_mchecker_rm:
     case RC_none:
@@ -270,7 +264,6 @@ LMON_be_procctl_initdone( rm_catalogue_e rmtype,
       rc = LMON_be_procctl_initdone_bg(ptab, psize);
       break;
 
-#if SUB_ARCH_BGQ
     case RC_bgqrm:
     case RC_bgq_slurm:
       //
@@ -280,7 +273,6 @@ LMON_be_procctl_initdone( rm_catalogue_e rmtype,
               LMON_OK :
               LMON_be_procctl_initdone_bgq(ptab, psize);
       break;
-#endif
 
     case RC_mchecker_rm:
     case RC_none:
@@ -305,7 +297,7 @@ LMON_be_procctl_done(rm_catalogue_e rmtype,
 #if VERBOSE
   LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
     "Platform-independent proc control done"
-    " visited with rmtype(%d)", rmtype );
+    " visited with rmtype(%d) dontstop_faststop", rmtype, dontstop_fastpath );
 #endif
 
   switch(rmtype)
@@ -327,7 +319,6 @@ LMON_be_procctl_done(rm_catalogue_e rmtype,
       rc = LMON_be_procctl_done_bg(ptab, psize);
       break;
 
-#if SUB_ARCH_BGQ
     case RC_bgqrm:
     case RC_bgq_slurm:
       //
@@ -337,7 +328,6 @@ LMON_be_procctl_done(rm_catalogue_e rmtype,
 	      LMON_OK :
               LMON_be_procctl_done_bgq(ptab, psize);
       break;
-#endif
 
     case RC_mchecker_rm:
     case RC_none:
@@ -392,7 +382,6 @@ LMON_be_procctl_perf ( rm_catalogue_e rmtype,
                                    fetchunit, usecperunit);
       break;
 
-#if SUB_ARCH_BGQ
     case RC_bgqrm:
     case RC_bgq_slurm:
       //
@@ -403,7 +392,6 @@ LMON_be_procctl_perf ( rm_catalogue_e rmtype,
                                     fetchunit, usecperunit);
 
       break;
-#endif
 
     case RC_mchecker_rm:
     case RC_none:

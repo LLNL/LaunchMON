@@ -118,13 +118,13 @@ main( int argc, char* argv[] )
   if (argc > 1) 
     {
       signum = atoi(argv[1]);
-      printf ("[LMON BE] signum: %d, argv[1]: %s\n", signum, argv[1]);
+      printf ("[LMON BE] signum: %d, argv[1]: %s argc(%d)\n", signum, argv[1], argc);
     }
 
   if ( argc > 2 )
     {
       subtest = (be_subtest_e) atoi(argv[2]);
-      printf ("[LMON BE] signum: %d, argv[1]: %s\n", subtest, argv[2]);
+      printf ("[LMON BE] subtest: %d, argv[2]: %s\n", subtest, argv[2]);
       if (subtest >= subtest_reserved) {
          printf ("[LMON BE] Unknown subtest. Existing...\n");
          LMON_be_finalize();
@@ -229,6 +229,7 @@ main( int argc, char* argv[] )
     {
       fastpath_state = 0;
     }
+
   LMON_be_procctl_init ( myBeData->rmtype_instance,
                          proctab, proctab_size, fastpath_state );
 

@@ -283,7 +283,8 @@ LMON_be_init ( int ver, int *argc, char ***argv )
                                bedata.daemon_data.my_hostname,
                                LMON_DAEMON_HN_MAX,
                                bedata.daemon_data.my_ip,
-                               LMON_DAEMON_HN_MAX)
+                               LMON_DAEMON_HN_MAX,
+                               bedata.daemon_data.host_aliases)
            != LMON_OK )
     {
       LMON_say_msg(LMON_BE_MSG_PREFIX, true,
@@ -1424,12 +1425,31 @@ LMON_be_getMyProctab (
 
     }
 
-  key = bedata.daemon_data.my_hostname;
+  std::vector<std::string>::const_iterator itr;
+  map<string, vector<MPIR_PROCDESC_EXT* > >::const_iterator viter;
+  *size = 0;
 
-  string myhostname (key);
-  (*size) = (int) proctab_cache[myhostname].size ();
-  map<string, vector<MPIR_PROCDESC_EXT* > >::const_iterator viter 
-    = proctab_cache.find (myhostname);
+  for (itr = bedata.daemon_data.host_aliases.begin(); 
+         itr != bedata.daemon_data.host_aliases.end(); itr++)
+    {
+      viter = proctab_cache.find(*itr);
+      if (viter != proctab_cache.end())
+        {
+          *size = viter->second.size();
+#if VERBOSE
+          LMON_say_msg (LMON_BE_MSG_PREFIX, false,
+            "found an entry with an alias %s.", (*itr).c_str());
+#endif
+          break;
+        }
+#if VERBOSE
+      else
+        {
+          LMON_say_msg (LMON_BE_MSG_PREFIX, false,
+            "couldn't find an entry with an alias %s... trying the next alias", (*itr).c_str());
+        }
+#endif
+    } 
 
   for ( i=0; (i < (*size)) && (i < proctab_num_elem); ++i )
     {
@@ -1481,10 +1501,32 @@ LMON_be_getMyProctabSize ( int *size )
         }
     }
 
-  key = bedata.daemon_data.my_hostname;
+  std::vector<std::string>::const_iterator itr;
+  map<string, vector<MPIR_PROCDESC_EXT* > >::const_iterator viter;
+  *size = 0;
 
-  string myhostname (key);
-  (*size) = (int) proctab_cache[myhostname].size ();
+  for (itr = bedata.daemon_data.host_aliases.begin(); 
+         itr != bedata.daemon_data.host_aliases.end(); itr++)
+    {
+      viter = proctab_cache.find(*itr);
+      if (viter != proctab_cache.end())
+        {
+          *size = viter->second.size();
+#if VERBOSE
+          LMON_say_msg (LMON_BE_MSG_PREFIX, false,
+            "found an entiry with an alias %s.", (*itr).c_str());
+#endif
+          break;
+        }
+#if VERBOSE
+      else
+        {
+          LMON_say_msg (LMON_BE_MSG_PREFIX, false,
+            "couldn't find an entiry with an alias %s... trying the next alias", (*itr).c_str());
+        }
+#endif
+
+    }
 
   return LMON_OK;  
 }
