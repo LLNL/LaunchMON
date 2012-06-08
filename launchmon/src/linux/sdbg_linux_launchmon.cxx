@@ -685,8 +685,7 @@ linux_launchmon_t::launch_tool_daemons (
 
       {
         self_trace_t::trace (
-          //LEVELCHK(level1),
-          true,
+          LEVELCHK(level1),
           MODULENAME,0,
           "launching daemons with: %s",
           expandstr.c_str());

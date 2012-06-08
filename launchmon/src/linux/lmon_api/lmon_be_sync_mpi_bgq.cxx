@@ -2534,8 +2534,22 @@ LMON_be_procctl_stop_bgq ( MPIR_PROCDESC_EXT *ptab,
 
 
 lmon_rc_e
-LMON_be_procctl_run_bgq ( MPIR_PROCDESC_EXT *ptab,
+LMON_be_procctl_run_bgq ( int signum,
+                          MPIR_PROCDESC_EXT *ptab,
                           int psize)
+{
+  return LMON_EINVAL;
+}
+
+
+lmon_rc_e
+LMON_be_procctl_perf_bgq (
+                   MPIR_PROCDESC_EXT *ptab,
+                   int psize,
+                   long unsigned int membase,
+                   unsigned int numbytes,
+                   unsigned int *fetchunit,
+                   unsigned int *usecperunit)
 {
   return LMON_EINVAL;
 }

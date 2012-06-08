@@ -1028,36 +1028,26 @@ LMON_daemon_gethostname(bool bgion, char *my_hostname, int hlen, char *my_ip, in
       std::string my_hostnameStr(my_hostname);
       std::string notAvail("na");
       std::string my_ipStr(notAvail);
-      char my_domainname[LMON_DAEMON_HN_MAX];
-      std::string my_domainnameStr(notAvail);
-      std::string my_hostnameFQDNStr(notAvail);
 
       aliases.push_back(my_hostnameStr);
-      if (getdomainname(my_domainname, LMON_DAEMON_HN_MAX) != -1)
-        {
-          my_domainnameStr = my_domainname;
-          my_hostnameFQDNStr = my_hostnameStr + std::string(".")
-                               + my_domainnameStr; 
-          aliases.push_back(my_hostnameFQDNStr);
-        }
-
       if (inet_ntop(hent->h_addrtype, hent->h_addr, my_ip, ilen) != NULL) 
         {
           my_ipStr = my_ip; 
           aliases.push_back(my_ipStr);
         }
 
+      std::string h_nameStr(notAvail); 
+      if ((h_nameStr = hent->h_name) != my_hostnameStr)
+        {
+          aliases.push_back(h_nameStr);
+        }
+
       for (i=0; hent->h_aliases[i] != NULL; i++)
         {
           std::string al(hent->h_aliases[i]);
-          if ((al != my_hostnameStr) || (al != my_hostnameFQDNStr))
+          if ((al != my_hostnameStr) && (al != h_nameStr))
             {
               aliases.push_back(al);
-              if ((al.find('.') == std::string::npos)
-                  && (my_hostnameFQDNStr != notAvail)) 
-                {
-                  aliases.push_back(al + std::string(".") + my_hostnameFQDNStr);
-                }
              }
          }
        for (i=0; hent->h_addr_list[i] != NULL; i++)
