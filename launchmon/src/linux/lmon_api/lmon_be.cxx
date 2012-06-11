@@ -1514,7 +1514,7 @@ LMON_be_getMyProctabSize ( int *size )
           *size = viter->second.size();
 #if VERBOSE
           LMON_say_msg (LMON_BE_MSG_PREFIX, false,
-            "found an entiry with an alias %s.", (*itr).c_str());
+            "found an entry with an alias %s.", (*itr).c_str());
 #endif
           break;
         }
@@ -1522,7 +1522,7 @@ LMON_be_getMyProctabSize ( int *size )
       else
         {
           LMON_say_msg (LMON_BE_MSG_PREFIX, false,
-            "couldn't find an entiry with an alias %s... trying the next alias", (*itr).c_str());
+            "couldn't find an entry with an alias %s... trying the next alias", (*itr).c_str());
         }
 #endif
 
