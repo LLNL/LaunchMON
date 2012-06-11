@@ -47,9 +47,12 @@ endif
 GCRYPT_SUPPORT               = -I$(top_srcdir)/@GCRYPTLOC@ \
                                -I$(top_srcdir)/@GPGERRLOC@
 
+MYBOOST_SUPPORT              = -I$(top_srcdir)/@MYBOOSTLOC@
+
 INCLUDES                     = -I@ARCHHEADER@ \
                                 $(CIOD_SUPPORT) \
                                 $(GCRYPT_SUPPORT) \
+                                $(MYBOOST_SUPPORT) \
                                -I.. -I../.. \
                                -I$(top_srcdir)/@COMMLOC@
 
