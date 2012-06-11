@@ -100,6 +100,12 @@ X_AC_GCRYPT
 
 
 dnl -----------------------------------------------
+dnl with MY BOOST support?
+dnl -----------------------------------------------
+X_AC_MYBOOST
+
+
+dnl -----------------------------------------------
 dnl enable tracing cost measurement codes? 
 dnl -----------------------------------------------
 X_AC_TRACING_COST

@@ -46,8 +46,12 @@
 ##
 
 SUBDIRS                 = lmon_api
-INCLUDES                = -I.. -I@ARCHHEADER@
+
+MYBOOST_SUPPORT         = -I$(top_srcdir)/@MYBOOSTLOC@
+
+INCLUDES                = $(MYBOOST_SUPPORT) -I.. -I@ARCHHEADER@
 #BITS                    = @LIBBITSUFFIX@
+
 bin_PROGRAMS            = launchmon
 launchmon_SOURCES       = main.cxx \
                           sdbg_linux_launchmon.cxx \
