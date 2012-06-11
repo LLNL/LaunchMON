@@ -368,13 +368,13 @@ main (int argc, char *argv[])
       //
       // COLOC Volume
       //
-      req[0].md = LMON_MW_COLOC;
-      req[0].mw_daemon_path = strdup (mw_daemon);
-      req[0].d_argv = NULL;
-      req[0].ndaemon = -1;
-      req[0].block = -1;
-      req[0].cyclic = -1;
-      req[0].optkind = req_none;
+      req[1].md = LMON_MW_COLOC;
+      req[1].mw_daemon_path = strdup (mw_daemon);
+      req[1].d_argv = NULL;
+      req[1].ndaemon = -1;
+      req[1].block = -1;
+      req[1].cyclic = -1;
+      req[1].optkind = req_none;
 
       //
       // HOSTLIST Volume
@@ -394,21 +394,21 @@ main (int argc, char *argv[])
           hostvect.push_back(token);
           token = strtok (NULL, delim);
         }
-      req[1].md = LMON_MW_HOSTLIST;
-      req[1].mw_daemon_path = strdup (mw_daemon);
-      req[1].d_argv = NULL;
-      req[1].ndaemon = -1;
-      req[1].block = -1;
-      req[1].cyclic = -1;
-      req[1].optkind = hostlists;
-      req[1].option.hl = (char **) malloc (sizeof(char *) * (hostvect.size() + 1));
+      req[0].md = LMON_MW_HOSTLIST;
+      req[0].mw_daemon_path = strdup (mw_daemon);
+      req[0].d_argv = NULL;
+      req[0].ndaemon = -1;
+      req[0].block = -1;
+      req[0].cyclic = -1;
+      req[0].optkind = hostlists;
+      req[0].option.hl = (char **) malloc (sizeof(char *) * (hostvect.size() + 1));
       std::vector<std::string>::const_iterator it;
       for (it=hostvect.begin(); it != hostvect.end(); ++it)
         {
-          req[1].option.hl[i] = strdup((*it).c_str());
+          req[0].option.hl[i] = strdup((*it).c_str());
           i++;
         }
-      req[1].option.hl[i] = NULL;
+      req[0].option.hl[i] = NULL;
 
     }
   else

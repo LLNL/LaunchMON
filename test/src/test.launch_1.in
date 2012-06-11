@@ -52,7 +52,7 @@ fi
 
 NUMTASKS=`expr $NUMNODES \* @SMP@`
 
-fe_launch_smoketest@EXE@ `pwd`/simple_MPI@EXE@ $NUMTASKS $NUMNODES pdebug `pwd`/be_kicker@EXE@
+$NOHUP fe_launch_smoketest@EXE@ `pwd`/simple_MPI@EXE@ $NUMTASKS $NUMNODES pdebug `pwd`/be_kicker@EXE@
 
 if test -f nohup.out; then
   sleep $NUMNODES
