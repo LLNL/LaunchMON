@@ -702,8 +702,12 @@ rc_rm_t::expand_launch_string(std::string &expanded_string)
 
           if (split_case) 
             {
-              boost::tokenizer<> boost_token(*itr); 
-              boost::tokenizer<>::iterator boost_itr;
+              std::string sep1("");
+              std::string sep2(" ");
+              std::string sep3("\"\'");
+              boost::escaped_list_separator<char> esc(sep1,sep2,sep3);
+              boost::tokenizer<boost::escaped_list_separator<char> > boost_token((*itr), esc); 
+              boost::tokenizer<boost::escaped_list_separator<char> >::iterator boost_itr;
               std::list<std::string> sub_list; 
               for (boost_itr = boost_token.begin(); 
                      boost_itr != boost_token.end(); boost_itr++)
