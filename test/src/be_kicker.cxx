@@ -264,6 +264,7 @@ main( int argc, char* argv[] )
             return EXIT_FAILURE;
           }
 
+#if 0
         //
         // Blocks until FE MWs are done; otherwise, COLOC will kill 
         // MW daemons prematurely
@@ -278,6 +279,7 @@ main( int argc, char* argv[] )
              LMON_be_finalize();
              return EXIT_FAILURE;
            }
+#endif
 
          break;
       }
