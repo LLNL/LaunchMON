@@ -1646,7 +1646,7 @@ Optional Packages:
                           on Cray; bgprm on linux-power; bgqrm on
                           linux-power64]
   --with-mw-hostlist[=host1:host2]
-                          specify the list of hosts that middelware testing
+                          specify the list of hosts that middleware testing
                           should use
   --with-pic              try to use only PIC/non-PIC objects [default=use
                           both]

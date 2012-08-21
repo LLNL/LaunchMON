@@ -196,7 +196,7 @@ AC_DEFUN([X_AC_TEST_RM], [
 AC_DEFUN([X_AC_MW_HOSTLIST], [
   AC_MSG_CHECKING([a set of hosts that middleware testing should use])
   AC_ARG_WITH([mw-hostlist],
-    AS_HELP_STRING(--with-mw-hostlist@<:@=host1:host2@:>@,specify the list of hosts that middelware testing should use),
+    AS_HELP_STRING(--with-mw-hostlist@<:@=host1:host2@:>@,specify the list of hosts that middleware testing should use),
     [with_hostlist=$withval],
     [with_hostlist="check"])
 
