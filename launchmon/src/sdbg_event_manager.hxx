@@ -54,7 +54,7 @@ public:
   monitor_proc_thread_t (const monitor_proc_thread_t &m);
   ~monitor_proc_thread_t ();
   
-  bool wait_for_all (pid_t& p, debug_event_t& rc);
+  bool wait_for_all (debug_event_t& rc);
 };
 
 

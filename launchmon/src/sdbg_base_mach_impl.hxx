@@ -225,6 +225,8 @@ thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::operator=
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::thread_base_t() 
   : master_thread(false), 
+    traced(false),
+    event_registered(false),
     master_pid(0),
     state(LMON_RM_CREATED),
     gprset(NULL), 
@@ -409,10 +411,8 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::process_base_t ()
     myopts(NULL),
     launch_hidden_bp(NULL),
     loader_hidden_bp(NULL),
-    thread_creation_hidden_bp(NULL),
-    thread_death_hidden_bp(NULL),
-    fork_hidden_bp(NULL),
-    sym_attach_fifo(NULL) 
+    sym_attach_fifo(NULL),
+    new_child_pid(0) 
 { 
   /* more init ? */
 }
@@ -456,15 +456,6 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::~process_base_t ()
 
   if (loader_hidden_bp)
     delete loader_hidden_bp;	
-
-  if (thread_creation_hidden_bp)
-    delete thread_creation_hidden_bp;
-
-  if (thread_death_hidden_bp)
-    delete thread_death_hidden_bp;	
-
-  if (fork_hidden_bp)
-    delete fork_hidden_bp;
 
   if (sym_attach_fifo)
     delete sym_attach_fifo;
@@ -592,27 +583,6 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_loader_hidden_bp ()
 }
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-breakpoint_base_t<VA,IT> * 
-process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_thread_creation_hidden_bp ()
-{
-  return thread_creation_hidden_bp;
-}
-
-template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-breakpoint_base_t<VA,IT> * 
-process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_thread_death_hidden_bp ()
-{
-  return thread_death_hidden_bp;
-}
-
-template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-breakpoint_base_t<VA,IT> *
-process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_fork_hidden_bp ()
-{
-  return fork_hidden_bp;
-}
-
-template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 const symbol_base_t<VA> *
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_sym_attach_fifo ()
 {
@@ -669,27 +639,6 @@ template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 }
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_thread_creation_hidden_bp
-(breakpoint_base_t<VA,IT>* b)
-{
-  thread_creation_hidden_bp = b;
-}
-
-template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_thread_death_hidden_bp
-(breakpoint_base_t<VA,IT>* b) 
-{
-  thread_death_hidden_bp = b;
-}
-
-template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_fork_hidden_bp
-(breakpoint_base_t<VA,IT>* b)
-{
-  fork_hidden_bp = b;
-}
-
-template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_sym_attach_fifo
 (symbol_base_t<VA>* o)
 {
@@ -709,15 +658,22 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_pid ( bool context_sensitive )
   pid_t retpid = THREAD_KEY_INVALID;
   if (context_sensitive) 
     {
-      if (thread_ctx_stack.empty())
-	{
-	  retpid = THREAD_KEY_INVALID;
-	}
+      if (new_child_pid != 0)
+        {
+          retpid = new_child_pid;
+        }
+      else
+        {
+          if (thread_ctx_stack.empty())
+	    {
+	      retpid = THREAD_KEY_INVALID;
+	    }
 
-      if ( thrlist.find(thread_ctx_stack.top()) != thrlist.end() )
-	{
-	  retpid = thrlist.find(thread_ctx_stack.top())->second->thr2pid();
-	}
+          if ( thrlist.find(thread_ctx_stack.top()) != thrlist.end() )
+	    {
+	      retpid = thrlist.find(thread_ctx_stack.top())->second->thr2pid();
+	    }
+        }
     }
   else
     {
@@ -759,10 +715,14 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::make_context ( const int key )
       thread_ctx_stack.push(key);
       rc = true;
     }
-  else 
+  else if ( new_child_pid == 0)
+    {
+      new_child_pid = key;
+    }
+  else
     {
       e = func + 
-	"no thread with the key value found ";
+	"no thread with the key value found and new child pid is already being used";
       throw (machine_exception_t(e));
     }
 
@@ -809,8 +769,8 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_lwp_state
         {
 #if 0
           //
-          // many illegal transitions will be because we
-          // process the head event in the waitpid queue...
+          // many illegal transitions will be there because this 
+          // processes the head event in the waitpid queue... which can be out of order
           //
           self_trace_t::trace ( true,
             "process base",0,
@@ -842,16 +802,24 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::check_and_undo_context ( const int key 
   bool rc = false;
   string e;
   string func = "[process_base_t::check_and_undo_context]";
-  if (!thread_ctx_stack.empty() && (thread_ctx_stack.top() == key)) 
+  if (new_child_pid == key)
     {
-      thread_ctx_stack.pop();
+      new_child_pid = 0;
       rc = true;
     }
-  else 
+  else
     {
-      e = func + 
-	"thread_ctx_stack.top() is different from the passed key";
-      throw (machine_exception_t(e));
+      if (!thread_ctx_stack.empty() && (thread_ctx_stack.top() == key)) 
+        {
+          thread_ctx_stack.pop();
+          rc = true;
+        }
+      else 
+        {
+          e = func + 
+	    "thread_ctx_stack.top() is different from the passed key";
+          throw (machine_exception_t(e));
+        }
     }
   return rc;
 }

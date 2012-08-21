@@ -210,6 +210,8 @@ setup_debugger ( void* arg )
 }
 
 
+#include <sys/types.h>
+
 void * 
 abort_debugger ( void* arg )
 {
@@ -218,7 +220,7 @@ abort_debugger ( void* arg )
       MPIR_debug_state = MPIR_DEBUG_ABORTING;	
       MPIR_Breakpoint();
     }
-  
+
   return NULL;
 }
 
@@ -227,23 +229,29 @@ void *
 do_something ( void* arg )
 {
   int cnt = 0;
+  long tid = ((long)arg);
+
+  if (tid == 24) 
+    {
+      setup_debugger(arg);
+    }
 
   while (1) {
    
     sleep(1);
  
     cnt++;
-    fprintf ( stdout, "." );
-    fflush ( stdout );
+    //fprintf ( stdout, ".",tid );
+    //fflush ( stdout );
 	
-    if ( cnt == 10 ) 
+    if ( cnt == 3 ) 
       {
 	break;
       }
   }       
    
-  fprintf ( stdout, "\n");
-  return NULL;
+  fprintf ( stdout, "tid[%ld]done \n", tid);
+  pthread_exit(NULL);
 }
 
 
@@ -367,8 +375,8 @@ int modelchecker_run( int argc, char* argv[])
 
   if ( myopt.thr == slavethread )
     {
-      pthread_t thr[7];
-      int i;
+      pthread_t thr[256];
+      long i;
 	  
       fprintf ( stdout, "[LaunchMON MODEL CHECKER]: Starting mpirun model checker...\n");
       fprintf ( stdout, "[LaunchMON MODEL CHECKER]: Process Count: %d\n", 
@@ -376,20 +384,17 @@ int modelchecker_run( int argc, char* argv[])
       fprintf ( stdout, "[LaunchMON MODEL CHECKER]: Pthreads calling MPIR_Breakpoint %d\n", 
 		myopt.thr);
 	  
-      for (i=0; i < 6; i++) 	  
-	pthread_create(&thr[i], NULL, do_something, (void *) &i);
+      for (i=0; i < 256; i++) 	  
+	pthread_create(&thr[i], NULL, do_something, (void *) i);
 
-      pthread_create(&thr[6], NULL, setup_debugger, (void *) argv[0]);
+      //pthread_create(&thr[1023], NULL, setup_debugger, (void *) argv[0]);
 	
-      for (i=0; i < 7; i++)
+      for (i=0; i < 256; i++)
 	pthread_join(thr[i], NULL);
 	
       fprintf ( stdout, "[LaunchMON MODEL CHECKER]: Finishing up...\n");
       pthread_create(&thr[0], NULL, abort_debugger, (void *) argv[0]);
-      
-      for (i=0; i < 1; i++)
-	pthread_join(thr[i], NULL);
-
+      pthread_join(thr[0], NULL);
     }
   else
     {
@@ -410,6 +415,7 @@ int modelchecker_run( int argc, char* argv[])
   fprintf ( stdout,
     "[LMON LE: OK] Please check if launchmon fetched all RPDTAB entries of %d tasks\n", myopt.pcount);
   fprintf ( stdout, "****************************************************************\n\n");
+
   return 0;
 }
 

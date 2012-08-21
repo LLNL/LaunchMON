@@ -493,6 +493,37 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read_string (
 } // linux_ptracer_t::tracer_read_string
 
 
+//! PUBLIC: tracer_get_event_msg
+/*!
+    Method that fetch information about the last debug event 
+*/
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+tracer_error_e 
+linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_get_event_msg ( 
+                 process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
+                 VA addr, 
+                 void* buf, 
+                 bool use_cxt ) throw (tracer_exception_t)
+{
+  using namespace std;
+
+  WT r;
+  string e;
+  string func = "[linux_ptracer_t::tracer_get_event_msg]";
+  pid_t tpid = p.get_pid(use_cxt);
+
+  r = Pptrace (PTRACE_GETEVENTMSG, tpid, NULL, buf);
+  if ( r == -1 && errno != 0 )
+    { 
+      e = func + ERRMSG_PTRACE + strerror (errno);
+      throw linux_tracer_exception_t(e, convert_error_code (errno));
+    }
+
+  return SDBG_TRACE_OK;
+}
+
+
+
 //! PUBLIC: tracer_write
 /*!
     Method that write into a thread or a process
@@ -793,6 +824,98 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_detach (
 } // linux_ptracer_t::tracer_detach
 
 
+//! PUBLIC: tracer_unsetoptions
+/*!
+
+*/
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+tracer_error_e 
+linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_unsetoptions ( 
+                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
+		 bool use_cxt, 
+		 pid_t newtid=-1 ) throw (linux_tracer_exception_t)
+{
+  using namespace std;
+
+  WT r;
+  string e;
+  string func = "[linux_ptracer_t::tracer_unsetoptions]";
+  pid_t who_to_attach_to = p.get_pid(use_cxt);
+  WT options = 0;
+
+  if (newtid != -1) 
+    {
+      who_to_attach_to = newtid;
+    }
+
+  if ( (r = Pptrace (PTRACE_SETOPTIONS, who_to_attach_to, 
+                     NULL, (void *) options)) != 0 )
+    {    
+      {
+        self_trace_t::trace ( true,
+        MODULENAME, 0,
+        "unsetoptions returned non-zero for %d...",
+        who_to_attach_to);
+      }
+      errno = 0;
+#if 0
+      e = func + ERRMSG_PTRACE + strerror (errno);
+      throw linux_tracer_exception_t(e, convert_error_code (errno));
+#endif
+    }
+
+  return SDBG_TRACE_OK;
+}
+
+
+//! PUBLIC: tracer_setoptions
+/*!
+
+*/
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+tracer_error_e 
+linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setoptions ( 
+                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
+		 bool use_cxt, 
+		 pid_t newtid=-1 ) throw (linux_tracer_exception_t)
+{
+  using namespace std;
+
+  WT r;
+  string e;
+  string func = "[linux_ptracer_t::tracer_setoptions]";
+  pid_t who_to_attach_to = p.get_pid(use_cxt);
+  WT options = 0;
+
+  options |= PTRACE_O_TRACECLONE;
+  options |= PTRACE_O_TRACEVFORK;
+  options |= PTRACE_O_TRACEFORK;
+
+  if (newtid != -1) 
+    {
+      who_to_attach_to = newtid;
+    }
+
+  if ( (r = Pptrace (PTRACE_SETOPTIONS, who_to_attach_to, 
+                     NULL, (void *) options)) != 0 )
+    {    
+      {
+        self_trace_t::trace ( true,
+        MODULENAME, 0,
+        "setoptions returned non-zero for %d...",
+        who_to_attach_to);
+      }
+      errno = 0;
+#if 0
+      e = func + ERRMSG_PTRACE + strerror (errno);
+      throw linux_tracer_exception_t(e, convert_error_code (errno));
+#endif
+    }
+
+  return SDBG_TRACE_OK;
+}
+
+
 //! PUBLIC: tracer_attach
 /*!
 
@@ -811,11 +934,11 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_attach (
   string func = "[linux_ptracer_t::tracer_attach]";
   pid_t who_to_attach_to = p.get_pid(use_cxt);
 
-
   if (newtid != -1) 
     {
       who_to_attach_to = newtid;
     }
+
   if ( (r = Pptrace (PTRACE_ATTACH, who_to_attach_to, 0, 0)) != 0 ) 
     {    
       {
@@ -824,13 +947,10 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_attach (
         "attach returned non-zero for %d, continue...",
         who_to_attach_to);
       }
-      errno = 0;
-#if 0
+
       e = func + ERRMSG_PTRACE + strerror (errno);
       throw linux_tracer_exception_t(e, convert_error_code (errno));
-#endif
     }
-  
 
   //
   // We must not set "stop" state here because it will be marked
@@ -927,7 +1047,7 @@ template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e 
 linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::enable_breakpoint ( 
                  process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-		 breakpoint_base_t<VA, IT>& bp, bool use_cxt )
+		 breakpoint_base_t<VA, IT>& bp, bool use_cxt, bool change_state )
   throw (linux_tracer_exception_t)
 {
   IT blend;
@@ -995,7 +1115,8 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::enable_breakpoint (
   //
   // BP state transitioned to enabled
   //
-  bp.enable();
+  if (change_state) 
+    bp.enable();
 
   return SDBG_TRACE_OK;
 
@@ -1011,7 +1132,7 @@ template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e 
 linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::disable_breakpoint ( 
                  process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-		 breakpoint_base_t<VA, IT>& bp, bool use_cxt )
+		 breakpoint_base_t<VA, IT>& bp, bool use_cxt, bool change_state )
   throw (linux_tracer_exception_t)
 {
   IT origInst;
@@ -1043,7 +1164,8 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::disable_breakpoint (
   //
   // BP state transitioned to disabled 
   //
-  bp.disable();
+  if (change_state) 
+    bp.disable();
 
   return SDBG_TRACE_OK;
 

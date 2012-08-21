@@ -483,6 +483,54 @@ main (int argc, char *argv[])
          "\n[LMON FE] RM launcher's pid is %d\n", rminfo.rm_launcher_pid);
    }
 
+  if ( (getenv ("LMON_FE_SHUTDOWNBE_TEST")) != NULL )
+    {
+      if ( ( rc = LMON_fe_shutdownDaemons ( aSession ) ) != LMON_OK )
+        {
+           fprintf ( stdout, "[LMON FE]LMON_fe_shutdownBe FAILED\n");
+           return EXIT_FAILURE;
+        }
+      else
+        {
+           system ("ps x");
+           fprintf ( stdout, "[LMON FE] CHECK for LMON_fe_kill\n");
+           fprintf ( stdout, "[LMON FE] PASS Criteria: you must not see the launcher process(es) that control(s) kicker daemons\n");
+           return EXIT_SUCCESS;
+        }
+    }
+
+  if ( (getenv ("LMON_FE_KILL_TEST")) != NULL )
+    {
+      sleep(10);
+      if ( ( rc = LMON_fe_kill ( aSession ) ) != LMON_OK )
+        {
+           fprintf ( stdout, "[LMON FE] LMON_fe_kill FAILED\n");
+           return EXIT_FAILURE;
+        }
+      else
+        {
+           system ("ps x");
+           fprintf ( stdout, "[LMON FE] CHECK for LMON_fe_kill\n");
+           fprintf ( stdout, "[LMON FE] PASS Criteria: you must not see the launcher process(es) nor the launchmon process.\n");
+           return EXIT_SUCCESS;
+        }
+    }
+
+  if ( (getenv ("LMON_FE_DETACH_TEST")) != NULL )
+    {
+      if ( ( rc = LMON_fe_detach ( aSession ) ) != LMON_OK )
+        {
+           fprintf ( stdout, "[LMON FE] LMON_fe_kill FAILED\n");
+           return EXIT_FAILURE;
+        }
+      else
+        {
+           system ("ps x");
+           fprintf ( stdout, "[LMON FE] CHECK for LMON_fe_detach\n");
+           fprintf ( stdout, "[LMON FE] PASS Criteria: launcher process(es) must not be traced.\n");
+        }
+    }
+
   rc = LMON_fe_recvUsrDataBe ( aSession, NULL );
 
   if ( (rc == LMON_EBDARG ) 
@@ -493,7 +541,15 @@ main (int argc, char *argv[])
       return EXIT_FAILURE;
     } 
 
-  //sleep (3); /* wait until all BE outputs are printed */
+  rc = LMON_fe_sendUsrDataBe ( aSession, NULL );
+
+  if ( (rc == LMON_EBDARG ) 
+       || ( rc == LMON_ENOMEM )
+       || ( rc == LMON_EINVAL ) )
+    {
+      fprintf ( stdout, "[LMON FE] FAILED\n");
+      return EXIT_FAILURE;
+    } 
 
   if (getenv ("LMON_ADDITIONAL_FE_STALL"))
     {

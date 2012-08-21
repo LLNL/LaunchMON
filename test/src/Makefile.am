@@ -152,6 +152,10 @@ test_SCRIPTS                      = test.LE_model_checker_mainthread \
 				    test.launch_2_uneven \
 				    test.launch_3_invalid_dmonpath \
 				    test.launch_5_usrpayload \
+				    test.launch_6_engine_failure \
+                                    test.launch_7_kill \
+                                    test.launch_7_shutdownbe \
+                                    test.launch_7_detach \
                                     test.launch_mw_1_hostlist \
                                     test.launch_mw_2_coloc \
                                     test.launch_mw_5_mixall \
@@ -165,8 +169,8 @@ test_SCRIPTS                      = test.LE_model_checker_mainthread \
 				    test.attach_3_callsafterfail \
 				    test.attach_4_kill \
 				    test.attach_4_shutdownbe \
+                                    test.attach_4_detach \
 				    test.jobsnap_1 \
-				    test.launch_6_engine_failure \
 				    test.fe_regErrorCB \
 				    test.fe_regStatusCB
 
@@ -182,6 +186,10 @@ EXTRA_DIST                        = test.LE_model_checker_mainthread.in \
                                     test.launch_2_uneven.in \
                                     test.launch_3_invalid_dmonpath.in \
                                     test.launch_5_usrpayload.in \
+				    test.launch_6_engine_failure.in \
+                                    test.launch_7_kill.in \
+                                    test.launch_7_shutdownbe.in \
+                                    test.launch_7_detach.in \
                                     test.launch_mw_1_hostlist.in \
                                     test.launch_mw_2_coloc.in \
                                     test.launch_mw_5_mixall.in \
@@ -195,8 +203,8 @@ EXTRA_DIST                        = test.LE_model_checker_mainthread.in \
                                     test.attach_3_callsafterfail.in \
                                     test.attach_4_kill.in \
                                     test.attach_4_shutdownbe.in \
+                                    test.attach_4_detach.in \
                                     test.jobsnap_1.in \
-				    test.launch_6_engine_failure.in \
 				    test.fe_regErrorCB.in \
 				    test.fe_regStatusCB.in
 
@@ -243,6 +251,15 @@ test.launch_5_usrpayload: test.launch_5_usrpayload.in Makefile
 test.launch_6_engine_failure: test.launch_6_engine_failure.in Makefile
 	$(do_subst) < test.launch_6_engine_failure.in > test.launch_6_engine_failure
 	chmod +x test.launch_6_engine_failure
+test.launch_7_kill: test.launch_7_kill.in Makefile
+	$(do_subst) < test.launch_7_kill.in > test.launch_7_kill
+	chmod +x test.launch_7_kill
+test.launch_7_shutdownbe: test.launch_7_shutdownbe.in Makefile
+	$(do_subst) < test.launch_7_shutdownbe.in > test.launch_7_shutdownbe
+	chmod +x test.launch_7_shutdownbe
+test.launch_7_detach: test.launch_7_detach.in Makefile
+	$(do_subst) < test.launch_7_detach.in > test.launch_7_detach
+	chmod +x test.launch_7_detach
 test.launch_mw_1_hostlist: test.launch_mw_1_hostlist.in Makefile
 	$(do_subst) < test.launch_mw_1_hostlist.in > test.launch_mw_1_hostlist
 	chmod +x test.launch_mw_1_hostlist
@@ -282,6 +299,9 @@ test.attach_4_kill: test.attach_4_kill.in Makefile
 test.attach_4_shutdownbe: test.attach_4_shutdownbe.in Makefile
 	$(do_subst) < test.attach_4_shutdownbe.in > test.attach_4_shutdownbe
 	chmod +x test.attach_4_shutdownbe
+test.attach_4_detach: test.attach_4_detach.in Makefile
+	$(do_subst) < test.attach_4_detach.in > test.attach_4_detach
+	chmod +x test.attach_4_detach
 test.jobsnap_1: test.jobsnap_1.in Makefile
 	$(do_subst) < test.jobsnap_1.in > test.jobsnap_1
 	chmod +x test.jobsnap_1

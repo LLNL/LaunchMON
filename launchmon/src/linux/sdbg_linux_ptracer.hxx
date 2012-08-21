@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Jul 31 2012 DHA: Added setoptions/setunoptions
  *        Dec 16 2009 DHA: Added demangling support for C++ function names
  *                         and moved get_backtrace into sdbg_linux_ptracer.hxx
  *                         to use it for all other modules in the linux layer.
@@ -49,6 +50,8 @@ extern "C" {
 
 #include "sdbg_base_tracer.hxx"
 #include "sdbg_self_trace.hxx"
+
+const int LINUX_TRACER_EVENT_CLONE = PTRACE_EVENT_CLONE;
 
 
 //! class linux_tracer_exception_t : public tracer_exception_t
@@ -141,6 +144,11 @@ public:
       VA addr, void* buf, int size, bool use_cxt )
     throw (linux_tracer_exception_t);
 
+  virtual tracer_error_e tracer_get_event_msg
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
+      VA addr, void* buf, bool use_cxt )
+    throw (tracer_exception_t);   
+
   virtual tracer_error_e tracer_write      
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
       VA addr, const void* buf, int size, bool use_cxt )	
@@ -172,6 +180,14 @@ public:
   virtual tracer_error_e tracer_detach  
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt );
 
+  virtual tracer_error_e tracer_setoptions
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt, pid_t newtid )
+    throw (linux_tracer_exception_t);
+
+  virtual tracer_error_e tracer_unsetoptions
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt, pid_t newtid )
+    throw (linux_tracer_exception_t);
+
   virtual tracer_error_e tracer_attach  
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt, pid_t newtid )
     throw (linux_tracer_exception_t);
@@ -184,12 +200,12 @@ public:
 
   virtual tracer_error_e enable_breakpoint 
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
-      breakpoint_base_t<VA, IT>& bp, bool use_cxt )
+      breakpoint_base_t<VA, IT>& bp, bool use_cxt, bool change_state=true )
     throw (linux_tracer_exception_t);
 
   virtual tracer_error_e disable_breakpoint 
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, 
-      breakpoint_base_t<VA, IT>& bp, bool use_cxt )
+      breakpoint_base_t<VA, IT>& bp, bool use_cxt, bool change_state=true )
     throw (linux_tracer_exception_t);
 
   virtual tracer_error_e convert_error_code(int err)

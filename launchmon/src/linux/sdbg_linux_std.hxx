@@ -153,33 +153,6 @@ const char * const LOADER_R_DEBUG           = "_r_debug";
     called after exec
 */
 const char * const LOADER_START             = "_start";
-
-//! NPTL_CREATE_SYM:
-/*!
-    Symbol within the POSIX thread library, which is invokded when a 
-    new thread is created
-*/
-const char * const NPTL_CREATE_SYM          = "__nptl_create_event";
-
-//! NPTL_CREATE_SYM:
-/*!
-    Symbol within the POSIX thread library, which is invokded when a 
-    thread dies/exits
-*/
-const char * const NPTL_DEATH_SYM           = "__nptl_death_event";
-
-//! FORK_SYM:
-/*!
-    Symbol within the libc for the normal fork call 
-*/
-const char * const FORK_SYM                 = "__fork";
-
-//! VFORK_SYM:
-/*!
-    Symbol within the libc for the virtual fork call 
-*/
-const char * const VFORK_SYM                = "__vfork";
-
 const char * const LIBC_IDEN                = "libc.";
 const char * const LIBPTHREAD_IDEN          = "libpthread."; 
 const char * const RESOURCE_HANDLER_SYM     = "totalview_jobid";
@@ -190,6 +163,14 @@ const char * const LIBTHREAD_DB             = "libthread_db.so.1";
 const int MAX_LIB_PATH                      = 128;
 const int MAX_STRING_SIZE                   = 1024;
 const int BPCHAINMAX                        = 128;
+
+//! my_thrinfo_t
+/*! new thread-specific data structure that is far simpler
+    than td_thrinfo_t.
+*/
+struct my_thrinfo_t {
+  pid_t ti_lid;
+};
 
 inline 
 bool glic_backtrace_wrapper (std::string &bt)
@@ -303,7 +284,7 @@ bool glic_backtrace_wrapper (std::string &bt)
                                       T_IT, \
                                       T_GRS,\
                                       T_FRS,\
-                                      td_thrinfo_t,\
+                                      my_thrinfo_t,\
                                       elf_wrapper
 
 #elif X86_64_ARCHITECTURE
@@ -348,7 +329,7 @@ bool glic_backtrace_wrapper (std::string &bt)
                                       T_IT, \
                                       T_GRS,\
                                       T_FRS,\
-                                      td_thrinfo_t,\
+                                      my_thrinfo_t,\
                                       elf_wrapper
 
 
@@ -391,7 +372,7 @@ bool glic_backtrace_wrapper (std::string &bt)
                                       T_IT, \
                                       T_GRS,\
                                       T_FRS,\
-                                      td_thrinfo_t,\
+                                      my_thrinfo_t,\
                                       elf_wrapper
 #endif // ARCHITECTURES
 #endif // SDBG_LINUX_STD_HXX

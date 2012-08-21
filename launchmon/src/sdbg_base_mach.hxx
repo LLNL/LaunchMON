@@ -179,24 +179,40 @@ enum debug_event_e {
   EV_INVALID
 };
 
+enum eventing_entity_e {
+  EV_ENTITY_THREAD,
+  EV_ENTITY_PROCESS,
+  EV_ENTITY_NONE
+};
+
+
 class debug_event_t {
 
 public:
   debug_event_t()                          { ev = EV_INVALID; u.exitcode = -1; }
   ~debug_event_t()                         { }
   void set_ev (const enum debug_event_e e) { ev = e; }
+  void set_en (const enum eventing_entity_e t) { en = t; }
   void set_signum (const int s)            { u.signum = s; }
   void set_exitcode (const int ec)         { u.exitcode = ec; }
-  const debug_event_e get_ev() const       { return ev; }
-  const int get_signum() const             { return u.signum; }
-  const int get_exitcode() const           { return u.exitcode; }
+  void set_rawstatus (const int st)        { rawstatus = st; }
+  void set_id (const int i)                { id = i; }
+  const debug_event_e get_ev () const      { return ev; }
+  const eventing_entity_e get_en () const  { return en; }
+  const int get_signum () const            { return u.signum; }
+  const int get_exitcode () const          { return u.exitcode; }
+  const int get_rawstatus () const         { return rawstatus; }
+  const int get_id () const                { return id; }
 
 private:
   debug_event_e ev;
+  eventing_entity_e en;
   union {
     int signum;
     int exitcode;
   } u; 
+  int rawstatus;
+  int id;
 };
 
 
@@ -260,6 +276,8 @@ public:
   void copy_thread_info(const NT& ct);  
 
   define_gset(bool,master_thread)
+  define_gset(bool,traced)
+  define_gset(bool,event_registered)
   define_gset(pid_t,master_pid)
   define_gset(lwp_state_e,state)
 
@@ -276,6 +294,8 @@ private:
                   const thread_base_t &rhs); 
 
   bool master_thread; // indicator for the master thread
+  bool traced;        // indicator that this thread has been attached
+  bool event_registered; // indicator that this thread has a pending event
   pid_t master_pid;   // process id of the containing proc
   NT thread_info;     // parameterized thread info
   lwp_state_e state;  // thread's modeled state
@@ -347,9 +367,6 @@ public:
   image_base_t<VA,EXECHANDLER> * get_myrmso_image();
   breakpoint_base_t<VA,IT> * get_launch_hidden_bp ();
   breakpoint_base_t<VA,IT> * get_loader_hidden_bp ();
-  breakpoint_base_t<VA,IT> * get_thread_creation_hidden_bp ();
-  breakpoint_base_t<VA,IT> * get_thread_death_hidden_bp ();
-  breakpoint_base_t<VA,IT> * get_fork_hidden_bp ();
   const symbol_base_t<VA> * get_sym_attach_fifo ();
 
   rc_rm_t * rmgr() { return myopts? myopts->get_my_rmconfig() : NULL; }
@@ -362,9 +379,6 @@ public:
   void set_myrmso_image (image_base_t<VA,EXECHANDLER> *i);
   void set_launch_hidden_bp(breakpoint_base_t<VA,IT> *b);
   void set_loader_hidden_bp(breakpoint_base_t<VA,IT> *b);
-  void set_thread_creation_hidden_bp(breakpoint_base_t<VA,IT> *b);
-  void set_thread_death_hidden_bp(breakpoint_base_t<VA,IT> *b); 
-  void set_fork_hidden_bp(breakpoint_base_t<VA,IT> *b);
   void set_myopts(opts_args_t *o) { myopts = o; }
   void set_sym_attach_fifo(symbol_base_t<VA> *o);
 
@@ -382,15 +396,13 @@ public:
   define_gset(std::string,launch_exec_path)
   define_gset(std::string,launch_server_args)
   define_gset(std::string,launch_attach_fifo)
-  define_gset(std::string,thread_creation_sym)
-  define_gset(std::string,thread_death_sym)
   define_gset(std::string,loader_breakpoint_sym)
   define_gset(std::string,loader_start_sym)
   define_gset(std::string,loader_r_debug_sym)
   define_gset(std::string,resource_handler_sym)
-  define_gset(std::string,fork_sym)
   //define_gset(int,key_to_thread_context)
   define_gset(int,rid)
+  define_gset(int,new_child_pid)
   int get_cur_thread_ctx();  
  
 protected:
@@ -432,9 +444,6 @@ private:
   //
   breakpoint_base_t<VA,IT> *launch_hidden_bp;
   breakpoint_base_t<VA,IT> *loader_hidden_bp;
-  breakpoint_base_t<VA,IT> *thread_creation_hidden_bp;
-  breakpoint_base_t<VA,IT> *thread_death_hidden_bp;
-  breakpoint_base_t<VA,IT> *fork_hidden_bp; 
 
   symbol_base_t<VA> *sym_attach_fifo;
 
@@ -451,19 +460,17 @@ private:
   std::string launch_exec_path;
   std::string launch_server_args;
   std::string launch_attach_fifo;
-  std::string thread_creation_sym;
-  std::string thread_death_sym;
   std::string loader_breakpoint_sym;
   std::string loader_start_sym;
   std::string loader_r_debug_sym;
   std::string resource_handler_sym; 
-  std::string fork_sym;
 
   // WARNING: Do not attempt to copy thrclist to another list
   // of the same type. It will copy the pointers but not pointees.
   // It is tricky to implement polymorphism using STL containers.
   std::map<int, thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*, ltstr> thrlist;
   std::stack<int> thread_ctx_stack;
+  int new_child_pid;
 };
 
 #endif // SDBG_BASE_MACH_HXX

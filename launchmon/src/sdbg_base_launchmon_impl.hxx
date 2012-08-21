@@ -95,6 +95,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::launchmon_base_t (
   //
 }
 
+
 //!
 /*!  launchmon_base_t<> operator= 
       
@@ -150,6 +151,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::launchmon_base_t ()
     warm_period = (double) atoi (warm_interval);
 }
 
+
 //!
 /*!  launchmon_base_t<> destructor 
       
@@ -191,6 +193,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::~launchmon_base_t ()
     }
 }
 
+
 //!
 /*!  launchmon_base_t<> request_detach
      stops all threads and mark the detach flag to the process 
@@ -229,6 +232,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::request_detach
   return true;
 }
 
+
 //!
 /*!  launchmon_base_t<> request_kill
      stops all threads and mark the kill flag to the process 
@@ -266,6 +270,33 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::request_kill
 
   return true;
 }
+
+
+//!
+/*!  launchmon_base_t<> request_kill
+     stops all threads and mark the kill flag to the process 
+    
+*/
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+bool
+launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::request_cont_launch_bp
+(process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p)
+{
+  for ( p.thr_iter = p.get_thrlist().begin();
+        p.thr_iter != p.get_thrlist().end(); p.thr_iter++ )
+    {
+      if (p.thr_iter->second->get_event_registered())
+        {
+          p.make_context ( p.thr_iter->first );
+          get_tracer()->tracer_continue(p, true);
+          p.thr_iter->second->set_event_registered(false); 
+          p.check_and_undo_context ( p.thr_iter->first );
+        }
+    }
+
+  return true;
+}
+
 
 //!
 /*!  launchmon_base_t<> accessors
@@ -323,145 +354,6 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_engine_state (int s)
     }
 
   return;
-}
-
-//! decipher_an_event:
-/*!
-    deciphers an event of debug_event_t and returns a 
-    corresponding launchmon_event_e code.
-*/
-template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-launchmon_event_e 
-launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::decipher_an_event 
-(process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, const debug_event_t &event)
-{
-
-  launchmon_event_e return_ev = LM_INVALID;
-  bool use_context = true;
-
-  switch ( event.get_ev () ) {
-
-  //
-  // all debug events that come from waitpid have to
-  // go through this switch statement.
-  //
-
-  case EV_STOPPED:
-    {
-      //
-      // set the FSM state of the focus thread to STOPPED
-      // when a race condition occurs, it will simply print
-      // out a warning message. But that kind of race condition
-      // will be very very low
-      //
-      p.set_lwp_state (LMON_RM_STOPPED, use_context);
-      tracer->tracer_getregs ( p, use_context );
-      VA pc = p.get_gprset(use_context)->get_pc();
-
-      {
-        self_trace_t::trace ( LEVELCHK(level3), 
-	  MODULENAME, 0,
-	  "converting [pc=0x%x] of tid=%d into an debug event.",
-	  pc, p.get_cur_thread_ctx());
-      }
-
-      if ( p.get_never_trapped() )
-        {
-          //
-          // This is the first trap ... easy
-          //
-	  return_ev = (p.get_myopts()->get_my_opt()->attach )
-	    ? LM_STOP_AT_FIRST_ATTACH
-	    : LM_STOP_AT_FIRST_EXEC;
-        }
-      else if ( p.get_please_detach()) 
-	{
-          //
-          // This method gives priority to the detach request, thereby
-          // eliminating race conditions that can occur: e.g., a BP stop event 
-          // of a process/thread, (not a detach-stop event) after a detach request 
-          // is considered to be LM_STOP_FOR_DETACH. It doesn't matter 
-          // why p/t stopped once a detach request is made; the detach handler
-          // should be invoked.  
-          //
-	  return_ev = LM_STOP_FOR_DETACH;
-	}
-      else if ( p.get_please_kill ())
-	{
-          //
-          // This method gives priority to the detach request, thereby
-          // eliminating race conditions that can occur: e.g., a BP stop event 
-          // of a process/thread, (not a detach-stop event) after a kill request 
-          // is considered to be LM_STOP_FOR_KILl. It doesn't matter 
-          // why p/t stopped once a kill request is made; the kill handler
-          // should be invoked.  
-          //
-	  return_ev = LM_STOP_FOR_KILL;
-	}
-      else if ( p.get_launch_hidden_bp() 
-	        && ( p.get_launch_hidden_bp()->is_pc_part_of_bp_op(pc)))
-	{
-	  return_ev = LM_STOP_AT_LAUNCH_BP;
-	}
-      else if ( p.get_loader_hidden_bp() 
-                && ( p.get_loader_hidden_bp()->is_pc_part_of_bp_op(pc)))
-	{
-	  return_ev = LM_STOP_AT_LOADER_BP;
-	}
-      else if ( p.get_thread_creation_hidden_bp() 
-                && ( p.get_thread_creation_hidden_bp()->is_pc_part_of_bp_op(pc)))
-	{
-	  return_ev = LM_STOP_AT_THREAD_CREATION;  
-	}
-      else if ( p.get_thread_death_hidden_bp() 
-                && ( p.get_thread_death_hidden_bp()->is_pc_part_of_bp_op(pc)))
-	{
-	  return_ev = LM_STOP_AT_THREAD_DEATH;
-	}
-      else if ( p.get_fork_hidden_bp() 
-                && ( p.get_fork_hidden_bp()->is_pc_part_of_bp_op(pc)))
-	{
-	  return_ev = LM_STOP_AT_FORK_BP;
-	}
-      else if ( event.get_signum () != SIGTRAP )
-        {
-          //
-          // Other event are signals; we resend a signal unless it's TRAP
-          //
-          return_ev = LM_RELAY_SIGNAL;
-        }
-      else  
-        {
-          //
-          // P/T stopped because of an event that we don't care about much
-          //
-	  return_ev = LM_STOP_NOT_INTERESTED;
-        }
-    }
-    break;
-
-  case EV_EXITED:
-    //
-    // set the FSM state of the focus thread to EXITED
-    //
-    p.set_lwp_state (LMON_RM_EXITED, use_context);
-    return_ev = LM_EXITED;
-    break;
-
-  case EV_TERMINATED:
-    //
-    // set the FSM state of the focus thread to EXITED
-    //
-    p.set_lwp_state (LMON_RM_EXITED, use_context);
-    return_ev = LM_EXITED;
-    break; 
-
-  default:
-    return_ev = LM_INVALID;
-    break;
-  } 
-
-  return return_ev;
 }
 
 
@@ -523,24 +415,31 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::invoke_handler (
     break;
 
   //
-  // handles a thread-creation event.
+  // handle a request to create a new thread data structure
   //
-  case LM_STOP_AT_THREAD_CREATION:
-    rc = handle_thrcreate_bp_event (p);
+  case LM_REQUEST_NEW_THREAD:
+    rc = handle_thrcreate_request (p, data);
     break;
 
   //
-  // handles a thread-death event.
+  // handles a thread-creation event.
   //
-  case LM_STOP_AT_THREAD_DEATH:
-    rc = handle_thrdeath_bp_event (p);
+  case LM_STOP_AT_THREAD_CREATION:
+    rc = handle_thrcreate_trap_event (p);
+    break;
+
+  //
+  // handles a new thread pickup event.
+  //
+  case LM_STOP_NEW_THREAD_TRACE:
+    rc = handle_newthread_trace_event (p);
     break;
 
   //
   // handles a fork event.
   //
-  case LM_STOP_AT_FORK_BP:
-    rc = handle_fork_bp_event(p);
+  case LM_STOP_NEW_FORKED_PROCESS:
+    rc = handle_newproc_forked_event(p);
     break;
 
   //
@@ -1017,7 +916,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
                     MODULENAME,
                     0,
                     "front-end requested detach...");
-                  request_detach(p, FE_requested_detach);
+                  request_detach ( p, FE_requested_detach );
                   break;
 		}
 	      case lmonp_kill:
@@ -1029,7 +928,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
                     MODULENAME,
                     0,
                     "front-end requested kill...");
-                  request_kill(p, FE_requested_kill); 
+                  request_kill ( p, FE_requested_kill ); 
                   break;
                 }  
               case lmonp_shutdownbe:
@@ -1041,17 +940,26 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::handle_incoming_socket_event (
                     MODULENAME,
                     0,
                     "front-end requested deamon shutdown...");
-                  request_detach(p, FE_requested_shutdown_dmon);
+                  request_detach ( p, FE_requested_shutdown_dmon );
                   break;
 		}
-             default:
-	       {
+              case lmonp_cont_launch_bp:
+                {
+                  self_trace_t::trace ( LEVELCHK(level1),
+                    MODULENAME,
+                    0,
+                    "front-end requests unlocking the launcher from launch-bp...");
+                  request_cont_launch_bp ( p );
+                  break;
+                }
+              default:
+	        {
                   self_trace_t::trace ( LEVELCHK(level1),
                     MODULENAME, 1,
                     "ill-formed msg");
 
-		 goto ret_fail; 
-	       }
+		  goto ret_fail; 
+	        }
             } // switch	
           }
         } // if (pollret 

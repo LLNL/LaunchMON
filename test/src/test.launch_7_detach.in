@@ -3,7 +3,7 @@
 #
 #
 #--------------------------------------------------------------------------------
-# Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at
+# Copyright (c) 2008 ~ 2012, Lawrence Livermore National Security, LLC. Produced at
 # the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>.
 # LLNL-CODE-409469. All rights reserved.
 #
@@ -27,49 +27,32 @@
 # Place, Suite 330, Boston, MA 02111-1307 USA
 #--------------------------------------------------------------------------------
 #
-#  Attach the tool to a running program and unlock the hang. 
+#  Launch a fully populated job at $NUMTASK and co-locate daemons, 
+#  one daemon per node, which unlocks the initial hang of all tasks. 
 #
 #  Update Log:
-#        Oct 21 2011 DHA: Added dynamic RM detection support.
-#        Mar 06 2009 DHA: Changed bglrm to bgrm
-#        Jun 16 2008 DHA: Created file.
+#        Aug 2 2012 DHA: Created file.
 #
- 
-NUMNODES=16
-NUMTASKS=`expr $NUMNODES \* @SMP@`
-WAITAMOUNT=$NUMNODES 
-if test $NUMNODES -lt 10 ; then
-  WAITAMOUNT=20
-fi
-SIGNUM=10
-MPI_JOB_LAUNCHER_PATH=@TJLPATH@
-RM_TYPE=@TEST_RMTP@
+
+export RM_TYPE=@TEST_RMTP@
+export MPI_JOB_LAUNCHER_PATH=@TJLPATH@
 export LMON_PREFIX=@LMONPREFIX@
 export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
+export LMON_FE_DETACH_TEST=1
 
+NUMNODES=@NNODES@
+NOHUP=""
 if test "x$RM_TYPE" = "xRC_bglrm" -o "x$RM_TYPE" = "xRC_bgprm"; then
-  echo "[LMON FE] Test Not Implemented Yet"
-  exit 1
+  NOHUP=nohup
+  rm -f nohup.out
 fi
- 
-if test "x$RM_TYPE" = "xRC_slurm" ; then
-  $MPI_JOB_LAUNCHER_PATH -n$NUMTASKS -N$NUMNODES -ppdebug `pwd`/hang_on_SIGUSR1@EXE@ &
-elif test "x$RM_TYPE" = "xRC_bglrm" -o "x$RM_TYPE" = "xRC_bgprm"; then
-  $MPI_JOB_LAUNCHER_PATH -verbose 0 -np $NUMTASKS -exe `pwd`/hang_on_SIGUSR1@EXE@ -cwd `pwd` &
-elif test "x$RM_TYPE" = "xRC_alps" ; then
-  WAITAMOUNT=`expr $WAITAMOUNT`
-  $MPI_JOB_LAUNCHER_PATH -n $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
-elif test "x$RM_TYPE" = "xRC_orte" ; then
-  WAITAMOUNT=`expr $WAITAMOUNT`
-  $MPI_JOB_LAUNCHER_PATH -gmca orte_enable_debug_cospawn_while_running 1 -np $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
-else
-  echo "This RM is not supported yet" 
+
+NUMTASKS=`expr $NUMNODES \* @SMP@`
+
+$NOHUP fe_launch_smoketest@EXE@ `pwd`/simple_MPI@EXE@ $NUMTASKS $NUMNODES pdebug `pwd`/be_kicker@EXE@
+
+if test -f nohup.out; then
+  sleep $NUMNODES
+  cat nohup.out
 fi
- 
-PID=`echo $!` 
- 
-sleep $WAITAMOUNT #wait until the job gets stalled 
- 
-fe_attach_smoketest@EXE@ $PID `pwd`/be_kicker@EXE@ $SIGNUM 
- 
-sleep $WAITAMOUNT
+

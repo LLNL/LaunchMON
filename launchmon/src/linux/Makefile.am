@@ -69,7 +69,6 @@ launchmon_SOURCES       = main.cxx \
                           ../sdbg_self_trace.hxx \
                           ../sdbg_base_driver.hxx \
                           ../sdbg_base_mach.hxx \
-                          ../sdbg_base_ttracer.hxx \
                           ../sdbg_signal_hlr.hxx \
                           ../sdbg_base_driver_impl.hxx  \
                           ../sdbg_base_mach_impl.hxx  \
@@ -92,12 +91,9 @@ launchmon_SOURCES       = main.cxx \
                           sdbg_linux_driver.hxx  \
                           sdbg_linux_mach.hxx \
                           sdbg_linux_std.hxx \
-                          sdbg_linux_ttracer.hxx \
                           sdbg_linux_driver_impl.hxx \
                           sdbg_linux_ptracer.hxx \
-                          sdbg_linux_symtab.hxx \
-                          sdbg_linux_ttracer_impl.hxx \
-                          sdbg_linux_thr_db.hxx
+                          sdbg_linux_symtab.hxx 
 
 launchmon_LDADD         = @LIBELF@ @LIBDL@
 launchmon_CFLAGS        = @LNCHR_BIT_FLAGS@ #$(AM_CFLAGS)

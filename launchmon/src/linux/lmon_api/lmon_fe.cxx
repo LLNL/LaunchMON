@@ -1823,6 +1823,8 @@ LMON_fe_is_secure(unsigned char *decryptedID, int k_len, lmon_session_desc_t *my
     -- write "lmonp_febe_usrdata" message along with the user data if there
        are data to ship out
     -- read "lmonp_be_ready" message along with BE user data piggybacked
+    -- write "lmonp_cont_launch_bp" message to the engine indicating
+       the be handshake is done
 */
 static lmon_rc_e 
 LMON_fe_beHandshakeSequence ( 
@@ -2136,6 +2138,65 @@ LMON_fe_beHandshakeSequence (
       return lrc;
     }
 
+  //
+  // CONTINUE LAUNCH MSG 
+  //
+  lmonp_t cont_req_msg;
+  if ( read_lmonp_msgheader( mydesc->commDesc[fe_be_conn].sessionAcceptSockFd,
+			     &cont_req_msg) < 0 )
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+		   "read_lmonp_msgheader failed"
+                   " while attempting to receive continue launch message from back end master");
+
+      return LMON_ESYS;
+    }
+
+
+  if ( ( cont_req_msg.msgclass != lmonp_fetobe )
+       || ( cont_req_msg.type.fetobe_type != lmonp_befe_cont_launch_bp))
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+	             "Received an invalid LMONP msg: "
+                     "Front-end back-end protocol mismatch? "
+                     "or back-end disconnected?");
+
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+			 "  A proper msg of "
+                            "{Class(%s)," 
+                             "Type(%s),"
+                             "LMON_payload_size(%s)} is expected."
+                         "lmonp_fetobe",
+                         "lmonp_befe_cont_launch_bp",
+		         "==0");
+
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+			 "  A msg of "
+                            "{Class(%s)," 
+                             "Type(%s),"
+                             "LMON_payload_size(%s),"
+                             "USR_payload_size(%s)} has been received.",
+                         lmon_msg_to_str(field_class, &cont_req_msg),
+                         lmon_msg_to_str(field_type, &cont_req_msg),
+                         lmon_msg_to_str(field_lmon_payload_length, &cont_req_msg),
+                         lmon_msg_to_str(field_usr_payload_length, &cont_req_msg));
+
+      return LMON_EBDMSG;
+    }
+
+  //
+  // Release the continue message to the engine that it is now safe to continue 
+  // out of launch-bp
+  //
+  lmonp_t engineMsg; 
+  init_msg_header (&engineMsg);
+  engineMsg.msgclass = lmonp_fetofe;
+  engineMsg.type.fetofe_type = lmonp_cont_launch_bp;
+
+  write_lmonp_long_msg ( mydesc->commDesc[fe_engine_conn].sessionAcceptSockFd,
+                         &engineMsg,
+                         sizeof(engineMsg) );
+
 
   //
   // READY MSG ( usrdata can be piggybacked )
@@ -2148,7 +2209,6 @@ LMON_fe_beHandshakeSequence (
         "LMON_fe_handleBeFeUsrData returned an error code");
       return lrc;
     }
-
 
   //
   // Handshake has been successful
@@ -2910,13 +2970,7 @@ LMON_fetofe_watchdog_thread ( void *arg )
 	  //
 	  // The events indicating "app tasks and tool daemons are spawned
 	  //
-#if 0
-	  pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
-	  mydesc->spawned = LMON_TRUE;
 	  //
-	  // Let the main thread know, the LaunchMON Engins says 
-	  pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
-#endif
 #if VERBOSE 
 	  LMON_say_msg ( LMON_FE_MSG_PREFIX, false,
 	     "launch_bp or first_attach done...");
@@ -3126,15 +3180,13 @@ LMON_fetofe_watchdog_thread ( void *arg )
     }
 
   watchdog_asynch_termination:
-    /*
-     * Looking forward, we will probably have to provide a way to 
-     * notify this event to the tool client, either as a call back
-     * or as a polling mechanism. 
-     */
+
+#if 0
     pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
     LMON_destroy_sess (mydesc);
     LMON_init_sess (mydesc);
     pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
+#endif
 
   watchdog_done: 
     pthread_exit(NULL); 
@@ -3940,7 +3992,7 @@ LMON_fe_regPackForFeToMw (
 	    "middleware pack was already registered. replacing it with the new func...");
 	}
 
-      mydesc->pack = packFemw;
+      mydesc->mw_pack = packFemw;
     }
   else
     {
@@ -4321,8 +4373,8 @@ LMON_fe_detach ( int sessionHandle )
    * at this point all locks must have been released
    *
    */
-  LMON_destroy_sess (mydesc);
-  LMON_init_sess (mydesc);
+  //LMON_destroy_sess (mydesc);
+  //LMON_init_sess (mydesc);
   pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
 
   return lrc;

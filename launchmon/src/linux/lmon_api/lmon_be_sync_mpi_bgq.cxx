@@ -1887,46 +1887,46 @@ stop_all ( uint8_t cdtiVer, uint32_t &sequenceId,
             }
 
 	  if ( lmon_read_raw ( IOToolMap.CN2Sock[cn->first], (void *) &notifyMsg,
-			       sizeof(notifyMsg)) == -1 )
-	    {
-	      LMON_say_msg(LMON_BE_MSG_PREFIX, true,
-		"Error reading from a Unix domain socket");
+	  	           sizeof(notifyMsg)) == -1 )
+	      {
+	        LMON_say_msg(LMON_BE_MSG_PREFIX, true,
+	          "Error reading from a Unix domain socket");
 
-	      goto return_loc;
-	    }
+	        goto return_loc;
+	      }
 
 #if VERBOSE
           LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-            "Recv NotifyMessage from CN(%d) rank(%d) for stop signal",
-            cn->first, *i );
+                "Recv NotifyMessage from CN(%d) rank(%d) for stop signal",
+                cn->first, *i );
 #endif
 
-	  if ( notifyMsg.header.returnCode != bgcios::Success )
-	    {
-	      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-		 "An error was returned in AttachMessageAck (%d)",
-		 notifyMsg.header.returnCode);
+	    if ( notifyMsg.header.returnCode != bgcios::Success )
+	      {
+	        LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+		     "An error was returned in AttachMessageAck (%d)",
+		     notifyMsg.header.returnCode);
 
-	      goto return_loc;
-	    }
+	        goto return_loc;
+	      }
 
-	  if ( notifyMsg.notifyMessageType 
-               != bgcios::toolctl::NotifyMessageType_Signal )
-	    {
-	      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-		"NotifyMessageType_Signal wasn't delivered (%d)",
-		notifyMsg.notifyMessageType);
+	    if ( notifyMsg.notifyMessageType 
+                 != bgcios::toolctl::NotifyMessageType_Signal )
+	      {
+	        LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+		    "NotifyMessageType_Signal wasn't delivered (%d)",
+		    notifyMsg.notifyMessageType);
 
-	      goto return_loc;
-	    }
+	        goto return_loc;
+	      }
 
-	  if ( notifyMsg.type.signal.signum != SIGSTOP )
-	    {
-	      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-		"Notified signal isn't SIGSTOP!");
+	    if ( notifyMsg.type.signal.signum != SIGSTOP )
+	      {
+	        LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+		    "Notified signal isn't SIGSTOP!");
 
-	      goto return_loc;
-	    }
+	        goto return_loc;
+	      }
 
 	  delete stopMsg;
 	  stopMsg = NULL;
@@ -2337,6 +2337,10 @@ LMON_be_procctl_init_bgq ( MPIR_PROCDESC_EXT *ptab,
       return LMON_EINVAL;
     }
 
+#if VERBOSE
+  LMON_say_msg ( LMON_BE_MSG_PREFIX, false, "done open_domain_socekt." );
+#endif
+
   //
   // Attach all ranks
   //
@@ -2348,6 +2352,10 @@ LMON_be_procctl_init_bgq ( MPIR_PROCDESC_EXT *ptab,
 
       return LMON_EINVAL;
     }
+
+#if VERBOSE
+  LMON_say_msg ( LMON_BE_MSG_PREFIX, false, "done attach_all." );
+#endif
 
   //
   // Acquire control authority
@@ -2361,6 +2369,10 @@ LMON_be_procctl_init_bgq ( MPIR_PROCDESC_EXT *ptab,
       return LMON_EINVAL;
     }
 
+#if VERBOSE
+  LMON_say_msg ( LMON_BE_MSG_PREFIX, false, "done acquire_control_athority.");
+#endif
+
   //
   // Stop all processes
   //
@@ -2372,19 +2384,9 @@ LMON_be_procctl_init_bgq ( MPIR_PROCDESC_EXT *ptab,
       return LMON_EINVAL;
     }
 
-#if 0
-  if ( hold_all_threads ( _cdtiVer, _seqNum, _jobid, _toolid ) != LMON_OK )
-    {
-      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-        "hold_all_threads returned an error code.");
-
-      return LMON_EINVAL;
-    }
-#endif
-
 #if VERBOSE
   LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-    "BGQ proc control init done ");
+    "BGQ proc control init done.");
 #endif
 
   return LMON_OK;

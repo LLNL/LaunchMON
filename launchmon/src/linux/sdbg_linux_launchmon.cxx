@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Jul 31 2012 DHA: Added a fix for a thread race-related hang problem.
  *        Jun 01 2012 DHA: Merged with the middleware-support branch.
  *        Oct 07 2011 DHA: Dynamic resource manager detection support.
  *        Oct 27 2010 DHA: Reorganize methods within this file.
@@ -168,7 +169,7 @@ extern "C" {
 #include "sdbg_base_mach.hxx"
 #include "sdbg_base_mach_impl.hxx"
 #include "sdbg_base_tracer.hxx"
-#include "sdbg_base_ttracer.hxx"
+
 #include "sdbg_base_launchmon.hxx"
 #include "sdbg_base_launchmon_impl.hxx"
 #include "sdbg_rm_map.hxx"
@@ -179,8 +180,6 @@ extern "C" {
 #include "sdbg_linux_launchmon.hxx"
 #include "sdbg_linux_ptracer.hxx"
 #include "sdbg_linux_ptracer_impl.hxx"
-#include "sdbg_linux_ttracer.hxx"
-#include "sdbg_linux_ttracer_impl.hxx"
 
 #if MEASURE_TRACING_COST
 static double accum = 0.0;
@@ -1140,7 +1139,7 @@ linux_launchmon_t::acquire_proctable (
 bool 
 linux_launchmon_t::disable_all_BPs ( 
                  process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p, 
-		 bool use_cxt )
+		 bool use_cxt, bool change_state )
 {
   try 
     {
@@ -1152,7 +1151,8 @@ linux_launchmon_t::disable_all_BPs (
 	 tr->disable_breakpoint ( 
            p, 
 	   *(p.get_launch_hidden_bp()), 
-	   use_cxt);
+	   use_cxt,
+           change_state);
 	}
 
       if ( p.get_loader_hidden_bp() ) 
@@ -1160,31 +1160,8 @@ linux_launchmon_t::disable_all_BPs (
 	 tr->disable_breakpoint ( 
            p, 
            *(p.get_loader_hidden_bp()), 
-	   use_cxt);
-	}
-
-      if ( p.get_thread_creation_hidden_bp() ) 
-	{
-	  tr->disable_breakpoint ( 
-            p,
-	    *(p.get_thread_creation_hidden_bp()), 
-	    use_cxt);
-	}  
-
-      if ( p.get_thread_death_hidden_bp() ) 
-	{ 
-	  tr->disable_breakpoint ( 
-            p, 
-	    *(p.get_thread_death_hidden_bp()),
-	    use_cxt);	
-	}
-
-      if ( p.get_fork_hidden_bp() ) 
-	{ 
-	  tr->disable_breakpoint ( 
-            p, 
-	    *(p.get_fork_hidden_bp()), 
-            use_cxt);
+	   use_cxt,
+           change_state);
 	}
 
       return true;
@@ -1413,7 +1390,8 @@ linux_launchmon_t::handle_mpir_variables (
 bool 
 linux_launchmon_t::enable_all_BPs ( 
 	         process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p, 
-		 bool use_cxt )
+		 bool use_cxt,
+                 bool change_state )
 {
   try 
     {
@@ -1424,7 +1402,8 @@ linux_launchmon_t::enable_all_BPs (
 	  tr->enable_breakpoint ( 
             p, 
 	    *(p.get_launch_hidden_bp()), 
-	    use_cxt);
+	    use_cxt,
+            change_state);
 	}
 
       if (p.get_loader_hidden_bp()) 
@@ -1432,31 +1411,8 @@ linux_launchmon_t::enable_all_BPs (
 	  tr->enable_breakpoint ( 
             p, 
 	    *(p.get_loader_hidden_bp()), 
-	    use_cxt);
-	}
-
-      if (p.get_thread_creation_hidden_bp()) 
-	{
-	  tr->enable_breakpoint ( 
-            p, 
-	    *(p.get_thread_creation_hidden_bp()), 
-	    use_cxt);
-	}
-
-      if (p.get_thread_death_hidden_bp()) 
-	{ 
-	  tr->enable_breakpoint ( 
-            p, 
-	    *(p.get_thread_death_hidden_bp()), 
-	    use_cxt);
-	}
-
-      if (p.get_fork_hidden_bp()) 
-	{
-	  tr->enable_breakpoint ( 
-            p, 
-            *(p.get_fork_hidden_bp()), 
-	    use_cxt);
+	    use_cxt,
+            change_state);
 	}
 
       return true;
@@ -1583,7 +1539,7 @@ linux_launchmon_t::check_dependent_SOs (
 		    thr_im->read_linkage_symbols();
 	            thr_im->set_image_base_address(a_map.l_addr);
 		    thr_im->compute_reloc(); 
-		    get_ttracer()->ttracer_init(p, get_tracer()); 
+
 		    rc = true;
                   }
 	      } 
@@ -1599,18 +1555,6 @@ linux_launchmon_t::check_dependent_SOs (
                     libc_im->read_linkage_symbols();
                     libc_im->set_image_base_address(a_map.l_addr);	 	
 		    libc_im->compute_reloc();
-		    const symbol_base_t<T_VA>& fork_bp_sym 
-		      = libc_im->get_a_symbol (p.get_fork_sym());
-		    frbp = new linux_breakpoint_t();
-		    frbp->set_address_at(fork_bp_sym.get_relocated_address());
-#if PPC_ARCHITECTURE
-                    frbp->set_use_indirection();
-#endif
-		    frbp->set();
-		    p.set_fork_hidden_bp(frbp);
-		    get_tracer()->enable_breakpoint(p,
-		                                    (*p.get_fork_hidden_bp()),
-		                                    use_cxt );
                   }
               }
             else if ( p.rmgr()->need_check_launcher_so() )
@@ -1645,39 +1589,6 @@ linux_launchmon_t::check_dependent_SOs (
                         // In that case, we use the same symbol defined within the RM lib.  
                         //
                         handle_mpir_variables(p, *(p.get_myrmso_image()));
-#if 0
-                        const symbol_base_t<T_VA>& launch_bp_sym
-                          = rmso_im->get_a_symbol (p.get_launch_breakpoint_sym());
-
-                        if (!(!launch_bp_sym) && launch_bp_sym.is_defined())
-                          {
-                            if ( p.get_launch_hidden_bp() )
-                              {
-                                if (p.get_launch_hidden_bp()->is_enabled())
-                                  {
-                                    //
-                                    // If bp already inserted, remove it.
-                                    //
-                                    get_tracer()->disable_breakpoint( p,
-                                      *(p.get_launch_hidden_bp()),
-                                      use_cxt);
-                                  }
-                                delete p.get_launch_hidden_bp();
-                                p.set_launch_hidden_bp(NULL);
-                              }
-                            breakpoint_base_t<T_VA, T_IT> *la_bp
-                              = new linux_breakpoint_t();
-                            la_bp->set_address_at(launch_bp_sym.get_relocated_address());
-#if PPC_ARCHITECTURE
-                            la_bp->set_use_indirection();
-#endif
-                            la_bp->set();
-                            p.set_launch_hidden_bp(la_bp);
-                            get_tracer()->enable_breakpoint(p,
-                                            *(p.get_launch_hidden_bp()),
-                                            use_cxt );
-                         }
-#endif
                       }
                   }
               }
@@ -1722,8 +1633,7 @@ linux_launchmon_t::check_dependent_SOs (
 
 */
 linux_launchmon_t::linux_launchmon_t () 
-  : continue_method(normal_continue),
-    MODULENAME(self_trace_t::launchmon_module_trace.module_name)
+  : MODULENAME(self_trace_t::launchmon_module_trace.module_name)
 {
   // more initialization here
 }
@@ -1759,7 +1669,6 @@ linux_launchmon_t::init ( opts_args_t *opt )
   //
   // registering a linux thread tracer
   //
-  set_ttracer(new linux_thread_tracer_t<T_VA,T_WT,T_IT,T_GRS,T_FRS>());
 
   //
   // API initialization
@@ -1769,6 +1678,161 @@ linux_launchmon_t::init ( opts_args_t *opt )
   set_last_seen(gettimeofdayD()); 
 
   return lrc;
+}
+
+
+
+//! decipher_an_event:
+/*!
+    deciphers an event of debug_event_t and returns a 
+    corresponding launchmon_event_e code.
+*/
+launchmon_event_e 
+linux_launchmon_t::decipher_an_event 
+(process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p, const debug_event_t &event)
+{
+
+  launchmon_event_e return_ev = LM_INVALID;
+  bool use_context = true;
+
+  switch ( event.get_ev () ) {
+
+  //
+  // all debug events that come from waitpid have to
+  // go through this switch statement.
+  //
+
+  case EV_STOPPED:
+    {
+      //
+      // set the FSM state of the focus thread to STOPPED
+      // when a race condition occurs, it will simply print
+      // out a warning message. But that kind of race condition
+      // will be very very low
+      //
+      p.set_lwp_state (LMON_RM_STOPPED, use_context);
+      get_tracer()->tracer_getregs ( p, use_context );
+      T_VA pc = p.get_gprset(use_context)->get_pc();
+
+      {
+        self_trace_t::trace ( LEVELCHK(level3), 
+	  MODULENAME, 0,
+	  "converting [pc=0x%x] of tid=%d into an debug event.",
+	  pc, p.get_cur_thread_ctx());
+      }
+
+      if ( p.get_never_trapped() )
+        {
+          //
+          // This is the first trap ... easy
+          //
+	  return_ev = (p.get_myopts()->get_my_opt()->attach )
+	    ? LM_STOP_AT_FIRST_ATTACH
+	    : LM_STOP_AT_FIRST_EXEC;
+        }
+      else if ( p.get_please_detach()) 
+	{
+          //
+          // This method gives priority to the detach request, thereby
+          // eliminating race conditions that can occur: e.g., a BP stop event 
+          // of a process/thread, (not a detach-stop event) after a detach request 
+          // is considered to be LM_STOP_FOR_DETACH. It doesn't matter 
+          // why p/t stopped once a detach request is made; the detach handler
+          // should be invoked.  
+          //
+	  return_ev = LM_STOP_FOR_DETACH;
+	}
+      else if ( p.get_please_kill ())
+	{
+          //
+          // This method gives priority to the detach request, thereby
+          // eliminating race conditions that can occur: e.g., a BP stop event 
+          // of a process/thread, (not a detach-stop event) after a kill request 
+          // is considered to be LM_STOP_FOR_KILl. It doesn't matter 
+          // why p/t stopped once a kill request is made; the kill handler
+          // should be invoked.  
+          //
+	  return_ev = LM_STOP_FOR_KILL;
+	}
+      else if ( p.get_launch_hidden_bp() 
+	        && ( p.get_launch_hidden_bp()->is_pc_part_of_bp_op(pc)))
+	{
+	  return_ev = LM_STOP_AT_LAUNCH_BP;
+	}
+      else if ( p.get_loader_hidden_bp() 
+                && ( p.get_loader_hidden_bp()->is_pc_part_of_bp_op(pc)))
+	{
+	  return_ev = LM_STOP_AT_LOADER_BP;
+	}
+      else if ( event.get_signum () == SIGTRAP )
+        {
+	  //
+	  // Parent gets SIGTRAP when a new thread is created
+	  // Used to be: return_ev = LM_STOP_NOT_INTERESTED;
+	  int upper16;
+          upper16 = event.get_rawstatus() >> 16; 
+	  if (upper16 == LINUX_TRACER_EVENT_CLONE) 
+            {
+              return_ev = LM_STOP_AT_THREAD_CREATION;
+            }  
+          else
+            {
+              //
+              // SIGTRAP due to fork for example
+              //
+              return_ev = LM_STOP_NOT_INTERESTED;
+            }
+        }
+      else if ( event.get_signum () == SIGSTOP ) 
+        {
+          return_ev = LM_RELAY_SIGNAL;
+
+          if (p.get_thrlist().find( p.get_pid(use_context) )
+                != p.get_thrlist().end()) 
+            {
+              if (!(p.get_thrlist()[p.get_pid(use_context)]->get_traced()))
+                {
+                  return_ev = LM_STOP_NEW_THREAD_TRACE;
+                }
+            }
+          else
+            {
+              self_trace_t::trace (
+                true, // print always 
+                MODULENAME,
+                0,
+               "event decode requires a thread data structure already available!");
+            }
+        }
+      else 
+        {
+          return_ev = LM_RELAY_SIGNAL;
+        }
+    }
+    break;
+
+  case EV_EXITED:
+    //
+    // set the FSM state of the focus thread to EXITED
+    //
+    p.set_lwp_state (LMON_RM_EXITED, use_context);
+    return_ev = LM_EXITED;
+    break;
+
+  case EV_TERMINATED:
+    //
+    // set the FSM state of the focus thread to EXITED
+    //
+    p.set_lwp_state (LMON_RM_EXITED, use_context);
+    return_ev = LM_EXITED;
+    break; 
+
+  default:
+    return_ev = LM_INVALID;
+    break;
+  } 
+
+  return return_ev;
 }
 
 
@@ -2200,6 +2264,9 @@ linux_launchmon_t::handle_trap_after_exec_event (
       // now this process has get past the first fork/exec
       //
       p.set_never_trapped ( false );
+
+      get_tracer()->tracer_setoptions (p, use_cxt, -1);
+
       get_tracer()->tracer_continue (p, use_cxt);
  
       {
@@ -2247,7 +2314,6 @@ linux_launchmon_t::handle_trap_after_exec_event (
     The event handler for a launch breakpoint hit event.
     Most RM MPIR APAI implementations use MPIR_Breakpoint for this.
 */
-
 launchmon_rc_e 
 linux_launchmon_t::handle_launch_bp_event ( 
                  process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p )
@@ -2377,7 +2443,18 @@ linux_launchmon_t::handle_launch_bp_event (
     	        launch_tool_daemons(p);
 
                 set_engine_state(bdbg);
-	        get_tracer()->tracer_continue (p, use_cxt);
+
+                if (get_API_mode())
+                  {
+                    p.get_thrlist()[p.get_cur_thread_ctx()]->set_event_registered ( true );
+                    // shouldn't continue this eventing thread 
+                    // if the engine is drived via API 
+                    // until all set up is done and FEN sends the "unlock" command.
+                  } 
+                else
+                  { 
+	            get_tracer()->tracer_continue (p, use_cxt);
+                  }
 	        break;
               }
 	    case MPIR_DEBUG_ABORTING:
@@ -2552,6 +2629,7 @@ linux_launchmon_t::handle_detach_cmd_event
             {
               // operates on a slave thread
               p.make_context ( p.thr_iter->first );
+              get_tracer()->tracer_unsetoptions ( p, true, -1 );
               get_tracer()->tracer_detach ( p, true ); 
               p.check_and_undo_context ( p.thr_iter->first );
 	    }
@@ -2585,6 +2663,7 @@ linux_launchmon_t::handle_detach_cmd_event
       //
       // calls detach twice in case there are
       // multiple stop event queued up into waitpid
+      get_tracer()->tracer_unsetoptions ( p, false, -1 );
       get_tracer()->tracer_detach ( p, false );
 
        self_trace_t::trace ( LEVELCHK(level1),
@@ -2701,6 +2780,7 @@ linux_launchmon_t::handle_kill_cmd_event
             {
               // operates on a slave thread
               p.make_context ( p.thr_iter->first );
+              get_tracer()->tracer_unsetoptions ( p, true, -1 );
               get_tracer()->tracer_detach( p, true );
               p.check_and_undo_context ( p.thr_iter->first );
             }
@@ -2732,6 +2812,7 @@ linux_launchmon_t::handle_kill_cmd_event
       //
       // detach from all the main thread
       //
+      get_tracer()->tracer_unsetoptions ( p, false, -1 );
       get_tracer()->tracer_detach ( p, false );
      
       {
@@ -2900,7 +2981,7 @@ linux_launchmon_t::handle_loader_bp_event (
     handle a process fork event
 */
 launchmon_rc_e 
-linux_launchmon_t::handle_fork_bp_event ( 
+linux_launchmon_t::handle_newproc_forked_event ( 
                  process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p )
 {
   try 
@@ -2913,24 +2994,19 @@ linux_launchmon_t::handle_fork_bp_event (
 
       bool use_cxt = true; 
   
-      if (!(is_bp_prologue_done(p, p.get_fork_hidden_bp()))) {
-#if MEASURE_TRACING_COST
-        endTS = gettimeofdayD ();
-        accum += endTS - beginTS;
-	countHandler++;
-#endif 
-	return LAUNCHMON_OK;
-      }
-  
       {
 	self_trace_t::trace ( LEVELCHK(level2), 
 			      MODULENAME,0,
-			      "fork event handler invoked.");
+			      "newproc forked event handler invoked.");
       }
 
-      disable_all_BPs(p, use_cxt);  
-      get_tracer()->tracer_syscall(p, use_cxt);
-      continue_method = syscall_continue;
+      //
+      // Because the context would have been set up for the newly
+      // forked process, following process control actions will
+      // only affect the new process 
+      //
+      disable_all_BPs (p, use_cxt, false);  
+      get_tracer()->tracer_continue (p, use_cxt);
 
       {
 	self_trace_t::trace ( LEVELCHK(level2), 
@@ -3011,6 +3087,7 @@ linux_launchmon_t::handle_exit_event (
 	      "a main thread has exited.");
 	  }
 
+	  //cout << "main thread exited: " << p.get_cur_thread_ctx() << endl;
 	  //
 	  // LMON API SUPPORT: a message via a pipe to the watchdog thread
 	  // 
@@ -3088,67 +3165,120 @@ linux_launchmon_t::handle_term_event (
       "termination event handler completed.");
   }
 	
+  cout << "main thread terminated: " << p.get_cur_thread_ctx() << endl;
+
 #if MEASURE_TRACING_COST
   endTS = gettimeofdayD ();
   accum += endTS - beginTS;
   countHandler++;
 #endif
 
-  set_last_seen (gettimeofdayD ());
+  set_last_seen( gettimeofdayD() );
 
   return LAUNCHMON_OK;
 }
 
 
-//! PUBLIC: handle_thrcreate_bp_event 
+//! PUBLIC: handle_thrcreate_request
 /*!
     handle a thread-creation event 
 */
 launchmon_rc_e 
-linux_launchmon_t::handle_thrcreate_bp_event ( 
+linux_launchmon_t::handle_thrcreate_request ( 
+                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p, int newlwpid )
+{
+  try 
+    {
+      using namespace std;
+#if MEASURE_TRACING_COST
+      beginTS = gettimeofdayD (); 
+#endif
+
+      my_thrinfo_t tinfo;
+      memset(&tinfo, '\0', sizeof(tinfo));
+      tinfo.ti_lid = (lwpid_t) newlwpid;
+
+      if ( p.get_thrlist().find( tinfo.ti_lid )
+           == p.get_thrlist().end() )
+        {
+          // this thread has not been seen
+#if X86_ARCHITECTURE || X86_64_ARCHITECTURE
+          thread_base_t<SDBG_LINUX_DFLT_INSTANTIATION> *thrinfo
+            = new linux_x86_thread_t();
+#elif PPC_ARCHITECTURE
+          thread_base_t<SDBG_LINUX_DFLT_INSTANTIATION> *thrinfo
+            = new linux_ppc_thread_t();
+#endif
+          thrinfo->copy_thread_info(tinfo);
+          // if the process doesn't contain tid of the given thread,
+          // those threads must be the new threads
+          p.get_thrlist().insert (make_pair (tinfo.ti_lid, thrinfo) );
+        }
+
+       set_last_seen( gettimeofdayD() );
+
+       return LAUNCHMON_OK;
+    }
+  catch ( symtab_exception_t e ) 
+    {
+      e.report();
+      return LAUNCHMON_FAILED;
+    }
+  catch ( tracer_exception_t e ) 
+    {
+      e.report();
+      return LAUNCHMON_FAILED;
+    }
+  catch ( thread_tracer_exception_t e ) 
+    {
+      e.report();
+      return LAUNCHMON_FAILED;
+    }
+  catch ( machine_exception_t e )
+    {
+      e.report();
+      return LAUNCHMON_FAILED;
+    }     
+}
+
+
+//! PUBLIC: handle_thrcreate_trap_event
+/*!
+    handle a thread-creation event 
+*/
+launchmon_rc_e 
+linux_launchmon_t::handle_thrcreate_trap_event ( 
                  process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p )
 {
   try 
     {
       using namespace std;
-
 #if MEASURE_TRACING_COST
-     beginTS = gettimeofdayD (); 
-#endif
-      
-      bool use_cxt = true; 
-      
-      if (!(is_bp_prologue_done(p, p.get_thread_creation_hidden_bp()))) {
-#if MEASURE_TRACING_COST
-        endTS = gettimeofdayD (); 
-        accum += endTS - beginTS;
-        countHandler++; 
-#endif
-	return LAUNCHMON_OK;
-      }
-
-      {
-	self_trace_t::trace ( LEVELCHK(level2), 
-	  MODULENAME,0,
-	  "thread creation event handler invoked");
-      }     
-
-      get_ttracer()->ttracer_attach(p);
-      get_tracer()->tracer_continue(p,use_cxt);
-
-      {
-	self_trace_t::trace ( LEVELCHK(level2), 
-	  MODULENAME,0,
-	  "thread creation event handler completed");
-      }    
-     
-#if MEASURE_TRACING_COST
-      endTS = gettimeofdayD (); 
-      accum += endTS - beginTS;
-      countHandler++; 
+      beginTS = gettimeofdayD (); 
 #endif
 
-      set_last_seen (gettimeofdayD ());
+      bool use_cxt = true;
+      T_WT newlwpid = -1;
+
+      get_tracer()->tracer_get_event_msg( p, 
+                                          NULL, 
+                                          (void *) &newlwpid, 
+                                          true);
+
+      if (newlwpid < 0) 
+        {
+          self_trace_t::trace (true, 
+          MODULENAME,1,
+          "negative thread id has been returned! Ignoring.");
+        }
+
+      //cout << "<" << newlwpid << ">" << endl;
+
+      handle_thrcreate_request(p, (int) newlwpid);
+
+      get_tracer()->tracer_continue(p, use_cxt); 
+      set_last_seen( gettimeofdayD() );
+
       return LAUNCHMON_OK;
     }
   catch ( symtab_exception_t e ) 
@@ -3174,58 +3304,48 @@ linux_launchmon_t::handle_thrcreate_bp_event (
 }
 
 
-//! PUBLIC: handle_thrdeath_bp_event 
+//! PUBLIC: handle_newthread_trace_event
 /*!
-   handle a thread-death event 
+    handle a thread-creation event 
 */
 launchmon_rc_e 
-linux_launchmon_t::handle_thrdeath_bp_event ( 
-                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p ) 
+linux_launchmon_t::handle_newthread_trace_event ( 
+                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p )
 {
   try 
     {
+      using namespace std;
 #if MEASURE_TRACING_COST
-      beginTS = gettimeofdayD (); 
+     beginTS = gettimeofdayD ();
 #endif
 
-      bool use_cxt = true; 
-
-      if ( !(is_bp_prologue_done(p, p.get_thread_death_hidden_bp()))) 
-        {
-#if MEASURE_TRACING_COST
-           endTS = gettimeofdayD (); 
-           accum += endTS - beginTS;
-           countHandler++; 
-#endif
-	   return LAUNCHMON_OK;
-        }
+      bool use_cxt = true;
 
       {
-	self_trace_t::trace ( LEVELCHK(level2), 
-	  MODULENAME,0,
-	  "thread death event handler invoked");      
+        self_trace_t::trace ( LEVELCHK(level2),
+          MODULENAME,0,
+          "irrelevant stop event handler invoked");
       }
 
-      //
-      // UNIMPLEMENTED!!
-      //
-      self_trace_t::trace ( true, 
-	  MODULENAME,1,
-	  "UNIMPLEMENTED %d : %d", p.get_pid(true),  p.get_pid(false));
-      get_tracer()->tracer_continue(p,use_cxt);
+      get_tracer()->tracer_setoptions (p, use_cxt, -1);
+      p.get_thrlist()[p.get_cur_thread_ctx()]->set_traced(true);
+      //cout << "[" << p.get_cur_thread_ctx() << "]" << endl;
+      get_tracer()->tracer_continue (p, use_cxt);
+
       {
-	self_trace_t::trace ( LEVELCHK(level2), 
-	  MODULENAME,0,
-	  "thread death event handler completed");
-      }   
+        self_trace_t::trace ( LEVELCHK(level2),
+          MODULENAME,0,
+          "irrelevant stop event handler completed");
+      }
 
 #if MEASURE_TRACING_COST
-      endTS = gettimeofdayD (); 
+      endTS = gettimeofdayD ();
       accum += endTS - beginTS;
-      countHandler++; 
+      countHandler++;
 #endif
 
       set_last_seen (gettimeofdayD ());
+
       return LAUNCHMON_OK;
     }
   catch ( symtab_exception_t e ) 
@@ -3242,7 +3362,7 @@ linux_launchmon_t::handle_thrdeath_bp_event (
     {
       e.report();
       return LAUNCHMON_FAILED;
-    }  
+    }
   catch ( machine_exception_t e )
     {
       e.report();
@@ -3276,29 +3396,7 @@ linux_launchmon_t::handle_not_interested_event (
 	  "irrelevant stop event handler invoked");
       }
 
-      switch (continue_method) 
-	{
-	case normal_continue:
-	  {
-	    get_tracer()->tracer_continue (p, use_cxt);
-	    break;
-	  }
-	case syscall_continue:
-	  {
-	    continue_method = in_between;
-	    get_tracer()->tracer_syscall (p, use_cxt);
-	    break;
-	  }
-	case in_between:
-	  {
-	    continue_method = normal_continue;
-	    enable_all_BPs(p, use_cxt);
-	    get_tracer()->tracer_continue (p, use_cxt);
-	    break;
-	  }
-	default:
-	  break;
-	}
+      get_tracer()->tracer_continue (p, use_cxt);
 
       {
 	self_trace_t::trace ( LEVELCHK(level2), 
@@ -3362,8 +3460,8 @@ linux_launchmon_t::handle_relay_signal_event (
       if ( sig != SIGSTOP )
 	what_to_send = sig;
 
+      get_tracer()->tracer_setoptions (p, true, -1);
       get_tracer()->tracer_deliver_signal (p, what_to_send, use_cxt);
-
 
       {
 	self_trace_t::trace ( LEVELCHK(level2), 

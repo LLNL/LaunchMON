@@ -198,6 +198,11 @@ typedef enum _lmonp_fe_to_fe_msg_e {
   lmonp_shutdownbe,
 
   /*
+   * FE->engine: please continue from the launch-bp command
+   */
+  lmonp_cont_launch_bp,
+
+  /*
    * end of enumerator marker
    */
   lmonp_invalid
@@ -264,6 +269,11 @@ typedef enum _lmonp_fe_to_be_msg_e {
    * BE->FE: usrdata message
    */
   lmonp_befe_usrdata,
+
+  /*
+   * BE->FE: continue launch from bp request message
+   */
+  lmonp_befe_cont_launch_bp,
 
   /*
    * BE->FE: BE ready message

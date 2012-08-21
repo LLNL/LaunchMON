@@ -52,16 +52,6 @@
 #include "lmon_api/lmon_proctab.h"
 
 
-//! tracing_method 
-/*!
-    tracing method enum for fork and vfork event tracing
-*/
-enum tracing_method {
-  normal_continue,
-  in_between,
-  syscall_continue
-};
-
 //! class linux_launchmon_t<>
 /*!
     implements launchmon algorithm
@@ -80,6 +70,10 @@ public:
   //
   //
   virtual launchmon_rc_e init ( opts_args_t *opt );
+
+  virtual launchmon_event_e decipher_an_event ( 
+                process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p, 
+		const debug_event_t &e );
 
   virtual 
   launchmon_rc_e handle_attach_event
@@ -118,15 +112,19 @@ public:
                  ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
   
   virtual 
-  launchmon_rc_e handle_thrcreate_bp_event 
+  launchmon_rc_e handle_thrcreate_request
+                 ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p, int newlwpid );
+
+  virtual 
+  launchmon_rc_e handle_thrcreate_trap_event 
                  ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
 
   virtual 
-  launchmon_rc_e handle_thrdeath_bp_event 
+  launchmon_rc_e handle_newthread_trace_event 
                  ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
   
   virtual 
-  launchmon_rc_e handle_fork_bp_event
+  launchmon_rc_e handle_newproc_forked_event
                  ( process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
 
   virtual 
@@ -155,10 +153,14 @@ private:
 		   breakpoint_base_t<T_VA,T_IT> *bp );
 
   bool disable_all_BPs (
-                process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p, bool );
+                process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p, 
+                bool use_context,
+                bool change_state=true );
 
   bool enable_all_BPs ( 
-                process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p, bool );
+                process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p, 
+                bool use_context,
+                bool change_state=true );
 
   bool check_dependent_SOs ( 
                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
@@ -185,10 +187,6 @@ private:
   // Private Data:
   //
   //
-
-  // sets tracing method between syscall continue and regular continue
-  //
-  tracing_method continue_method;
 
   // For self tracing
   //

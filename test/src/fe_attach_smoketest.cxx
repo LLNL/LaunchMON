@@ -425,6 +425,22 @@ main (int argc, char* argv[])
         }
     }
 
+  if ( (getenv ("LMON_FE_DETACH_TEST")) != NULL )
+    {
+      if ( ( rc = LMON_fe_detach ( aSession ) ) != LMON_OK )
+        {
+           fprintf ( stdout, "[LMON FE] LMON_fe_kill FAILED\n");
+           return EXIT_FAILURE;
+        }
+      else
+        {
+           system ("ps x");
+           fprintf ( stdout, "[LMON FE] CHECK for LMON_fe_detach\n");
+           fprintf ( stdout, "[LMON FE] PASS Criteria: launcher process(es) must not be traced.\n");
+           return EXIT_SUCCESS;
+        }
+    }
+
   rc = LMON_fe_recvUsrDataBe ( aSession, NULL );
                                                                                                                                                
   if ( (rc == LMON_EBDARG )
@@ -434,7 +450,17 @@ main (int argc, char* argv[])
       fprintf ( stdout, "[LMON FE] FAILED\n");
       return EXIT_FAILURE;
     }
-                                                                                                                                               
+
+  rc = LMON_fe_sendUsrDataBe ( aSession, NULL );
+
+  if ( (rc == LMON_EBDARG )
+       || ( rc == LMON_ENOMEM )
+       || ( rc == LMON_EINVAL ) )
+    {
+      fprintf ( stdout, "[LMON FE] FAILED\n");
+      return EXIT_FAILURE;
+    }
+
   sleep (3); /* wait until all BE outputs are printed */
                                                                                                                                                
   fprintf ( stdout,

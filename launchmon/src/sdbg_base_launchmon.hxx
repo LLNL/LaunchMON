@@ -116,11 +116,12 @@ enum launchmon_event_e {
   LM_STOP_AT_FIRST_ATTACH,
   LM_STOP_AT_LOADER_BP,
   LM_STOP_AT_THREAD_CREATION,
-  LM_STOP_AT_THREAD_DEATH,
-  LM_STOP_AT_FORK_BP,
+  LM_STOP_NEW_THREAD_TRACE,
+  LM_STOP_NEW_FORKED_PROCESS,
   LM_STOP_NOT_INTERESTED,
   LM_STOP_FOR_DETACH,
   LM_STOP_FOR_KILL,
+  LM_REQUEST_NEW_THREAD,
   LM_RELAY_SIGNAL,
   LM_TERMINATED,
   LM_EXITED,
@@ -176,14 +177,6 @@ public:
 		const int data );
 
   //
-  // Method that translates a low-level event e to launchmon_event_e
-  //
-  //
-  virtual launchmon_event_e decipher_an_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, 
-		const debug_event_t &e );
-
-  //
   // Method that send an event msg to the Front-end runtime
   //
   //
@@ -194,6 +187,14 @@ public:
   // specific initialization procedures. 
   //
   virtual launchmon_rc_e init ( opts_args_t *opt )           =0;
+
+  //
+  // Method that translates a low-level event e to launchmon_event_e
+  //
+  //
+  virtual launchmon_event_e decipher_an_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, 
+		const debug_event_t &e )                     =0;
  
   //
   // defines a set of actions for attaching to a running job 
@@ -204,7 +205,6 @@ public:
   // (e.g. MPIR_Breakpoint) is hit
   virtual launchmon_rc_e handle_launch_bp_event ( 
                 process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
-
 
   //
   // defines a set of actions when the detach command is
@@ -247,22 +247,28 @@ public:
   virtual launchmon_rc_e handle_term_event ( 
                 process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
 
+  virtual
+  launchmon_rc_e handle_thrcreate_request
+                 ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, int newlwpid ) =0;
+
+
   //
   // defines a set of actions when a new thread creation event
   // is notified. 
-  virtual launchmon_rc_e handle_thrcreate_bp_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
+  virtual
+  launchmon_rc_e handle_thrcreate_trap_event
+                 ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) = 0;
 
   //
-  // defines a set of actions when a thread death event
+  // defines a set of actions when a new thread stop is reported 
   // is notified.
-  virtual launchmon_rc_e handle_thrdeath_bp_event ( 
+  virtual launchmon_rc_e handle_newthread_trace_event ( 
                 process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
 
   //
   // defines a set of actions when a new process is forked 
-  // from the target process.
-  virtual launchmon_rc_e handle_fork_bp_event ( 
+  // and stopped.
+  virtual launchmon_rc_e handle_newproc_forked_event ( 
                 process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
 
   //
@@ -318,6 +324,7 @@ public:
                 pcont_req_reason reason);
   bool request_kill(process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, 
                 pcont_req_reason reason);
+  bool request_cont_launch_bp(process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p); 
 
 private:
 

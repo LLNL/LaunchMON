@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Jul 31 2012 DHA: Added setoptions/unsetoptions
  *        Oct 26 2010 DHA: Changed method names from insert|pullout_breakpoint
  *                         to enable|disable_breakpoint. Slight linux
  *                         implementation change as part of refactoring in
@@ -190,6 +191,11 @@ public:
       VA addr, void* buf, int size, bool use_cxt )
     throw (tracer_exception_t)                                 =0; 
 
+  virtual tracer_error_e tracer_get_event_msg
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
+      VA addr, void* buf, bool use_cxt )
+    throw (tracer_exception_t)                                 =0;
+
   virtual tracer_error_e tracer_write      
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
       VA addr, const void* buf, int size, bool use_cxt) 
@@ -221,6 +227,16 @@ public:
   virtual tracer_error_e tracer_detach
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt)=0;
 
+  virtual tracer_error_e tracer_setoptions
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
+      bool use_cxt, pid_t newtid )
+    throw (tracer_exception_t)                                 =0;
+
+  virtual tracer_error_e tracer_unsetoptions
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
+      bool use_cxt, pid_t newtid )
+    throw (tracer_exception_t)                                 =0;
+
   virtual tracer_error_e tracer_attach
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
       bool use_cxt, pid_t newtid )
@@ -234,12 +250,12 @@ public:
 
   virtual tracer_error_e enable_breakpoint 
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-      breakpoint_base_t<VA, IT>& bp, bool use_cxt )
+      breakpoint_base_t<VA, IT>& bp, bool use_cxt, bool change_state=true )
     throw (tracer_exception_t)                                 =0;
 
   virtual tracer_error_e disable_breakpoint 
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-      breakpoint_base_t<VA, IT>& bp, bool use_cxt ) 
+      breakpoint_base_t<VA, IT>& bp, bool use_cxt, bool change_state=true ) 
     throw (tracer_exception_t)                                 =0;
 
   virtual tracer_error_e convert_error_code ( int err )

@@ -84,7 +84,7 @@ linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::~linux_driver_t ()
     
 */
 template <LINUX_DRIVER_TEMPLATELIST> 
-process_base_t<LINUX_DRIVER_TEMPLPARAM,td_thrinfo_t,elf_wrapper>*
+process_base_t<LINUX_DRIVER_TEMPLPARAM,my_thrinfo_t,elf_wrapper>*
 linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::create_process ( 
                  pid_t pid, 
 		 const std::string& mi, 
@@ -93,7 +93,7 @@ linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::create_process (
 		 const std::string& mc )
 {
   
-  process_base_t<LINUX_DRIVER_TEMPLPARAM,td_thrinfo_t,elf_wrapper>* 
+  process_base_t<LINUX_DRIVER_TEMPLPARAM,my_thrinfo_t,elf_wrapper>* 
     return_proc;
 
 #if X86_ARCHITECTURE || X86_64_ARCHITECTURE
@@ -117,12 +117,12 @@ linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::create_process (
     
 */
 template <LINUX_DRIVER_TEMPLATELIST> 
-process_base_t<LINUX_DRIVER_TEMPLPARAM,td_thrinfo_t,elf_wrapper>*
+process_base_t<LINUX_DRIVER_TEMPLPARAM,my_thrinfo_t,elf_wrapper>*
 linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::create_process ( 
 		 pid_t pid, 
 		 const std::string &mi )
 {
-  process_base_t<LINUX_DRIVER_TEMPLPARAM,td_thrinfo_t,elf_wrapper> *return_proc;
+  process_base_t<LINUX_DRIVER_TEMPLPARAM,my_thrinfo_t,elf_wrapper> *return_proc;
 
   //
   // different architectures require different sublayer 
@@ -157,10 +157,10 @@ linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::driver_main
    {
      driver_error_e error_code;
 
-     event_manager_t<LINUX_DRIVER_TEMPLPARAM, td_thrinfo_t ,elf_wrapper>* em;
-     launchmon_base_t<LINUX_DRIVER_TEMPLPARAM,td_thrinfo_t,elf_wrapper>* lm;
+     event_manager_t<LINUX_DRIVER_TEMPLPARAM,my_thrinfo_t,elf_wrapper>* em;
+     launchmon_base_t<LINUX_DRIVER_TEMPLPARAM,my_thrinfo_t,elf_wrapper>* lm;
 
-     em = new event_manager_t<LINUX_DRIVER_TEMPLPARAM, td_thrinfo_t,elf_wrapper>();
+     em = new event_manager_t<LINUX_DRIVER_TEMPLPARAM,my_thrinfo_t,elf_wrapper>();
      lm = new linux_launchmon_t();
      this->set_evman(em);
      this->set_lmon(lm);
@@ -168,7 +168,7 @@ linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::driver_main
      //
      // Start driving events, calling into the base driver layer 
      //
-     error_code = driver_base_t<LINUX_DRIVER_TEMPLPARAM, td_thrinfo_t,elf_wrapper>::drive ( argc, argv );
+     error_code = driver_base_t<LINUX_DRIVER_TEMPLPARAM, my_thrinfo_t,elf_wrapper>::drive ( argc, argv );
 
      return ( ( error_code == SDBG_DRIVER_OK) ? 0 : 1 );
    }

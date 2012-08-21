@@ -170,6 +170,7 @@ static const char *lmonp_fe_to_fe_str[] =
     "lmonp_detach",
     "lmonp_kill",
     "lmonp_shutdownbe",
+    "lmonp_cont_launch_bp",
     "lmonp_invalid"
   };
 
@@ -186,6 +187,7 @@ static const char *lmonp_fe_to_be_str[] =
     "lmonp_febe_rm_type",
     "lmonp_befe_hostname",
     "lmonp_befe_usrdata",
+    "lmonp_befe_cont_launch_bp",
     "lmonp_befe_ready"
   };
 
@@ -880,68 +882,6 @@ get_strtab_begin ( lmonp_t *msg )
 
   return ret;
 }
-
-
-#if 0
-char *
-get_strtab_begin ( lmonp_t *msg )
-{
-  char *ret = NULL;
-  if ( msg->msgclass == lmonp_fetobe )
-  {
-    if ( msg->type.fetobe_type == lmonp_febe_proctab )
-    {
-      ret = get_lmonpayload_begin ( msg ); 
-      if (ret)
-      {
-        if (msg->sec_or_jobsizeinfo.num_tasks < LMON_NTASKS_THRE)
-	{
-	  ret += msg->sec_or_jobsizeinfo.num_tasks*sizeof(int)*5;
-	}
-	else
-	{
-	  ret += msg->long_num_tasks*sizeof(int)*5;
-	}
-      }
-    } 
-    else if ( msg->type.fetobe_type == lmonp_befe_hostname )
-    {
-      ret = get_lmonpayload_begin ( msg );
-      if (ret)
-      {
-        if (msg->sec_or_jobsizeinfo.num_tasks < LMON_NTASKS_THRE)
-	{
-	  ret += msg->sec_or_jobsizeinfo.num_tasks*sizeof(int);
-	}
-	else
-	{
-	  ret += msg->long_num_tasks*sizeof(int);
-	}
-      } 
-    }
-  }
-  else if ( msg->msgclass == lmonp_fetofe )
-  {
-    if ( msg->type.fetofe_type == lmonp_proctable_avail )
-    {
-      ret = get_lmonpayload_begin ( msg );
-      if (ret)
-      {
-        if (msg->sec_or_jobsizeinfo.num_tasks < LMON_NTASKS_THRE)
-	{
-	  ret += msg->sec_or_jobsizeinfo.num_tasks*sizeof(int)*5;
-	}
-	else
-	{
-	  ret += msg->long_num_tasks*sizeof(int)*5;
-	}
-      }
-    }
-  }
- 
-  return ret;
-}
-#endif
 
 
 //

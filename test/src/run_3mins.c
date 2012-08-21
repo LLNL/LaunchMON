@@ -62,9 +62,9 @@ pass_its_neighbor(const int rank, const int size, int* buf)
 {  
   MPI_Request request[2];
   MPI_Status status[2];
-  char hn[MAX_BUF_LEN];
-  gethostname (hn, MAX_BUF_LEN);
-  printf ("%s\n", hn);
+  //char hn[MAX_BUF_LEN];
+  //gethostname (hn, MAX_BUF_LEN);
+  //printf ("%s\n", hn);
 
   MPI_Irecv((void*)buf, 1, MPI_INT, 
    	    ((rank+size-1)%size), 

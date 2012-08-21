@@ -57,7 +57,7 @@
 */
 template <LINUX_DRIVER_TEMPLATELIST>
 class linux_driver_t 
-  : public driver_base_t<LINUX_DRIVER_TEMPLPARAM,td_thrinfo_t,elf_wrapper> 
+  : public driver_base_t<LINUX_DRIVER_TEMPLPARAM,my_thrinfo_t,elf_wrapper> 
 {
 
 public:
@@ -74,14 +74,14 @@ public:
   //
   int driver_main (int argc, char *argv[]);
 
-  virtual process_base_t<LINUX_DRIVER_TEMPLPARAM,td_thrinfo_t,elf_wrapper>* 
+  virtual process_base_t<LINUX_DRIVER_TEMPLPARAM,my_thrinfo_t,elf_wrapper>* 
       create_process (pid_t pid, 
 		      const std::string& mi,
 		      const std::string& md, 
 		      const std::string& mt,
 		      const std::string& mc);
   
-  virtual process_base_t<LINUX_DRIVER_TEMPLPARAM,td_thrinfo_t,elf_wrapper>* 
+  virtual process_base_t<LINUX_DRIVER_TEMPLPARAM,my_thrinfo_t,elf_wrapper>* 
       create_process ( pid_t pid, const std::string &mi);
 };
 

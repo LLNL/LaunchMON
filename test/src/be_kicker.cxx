@@ -76,10 +76,12 @@ enum be_subtest_e {
   subtest_no = 0,
   subtest_kill_detach_shutdown,
   subtest_mw_coloc, 
+  subtest_fail_mode,
   subtest_reserved
 };
 
 const unsigned int kill_detach_shutdown_time = 60;
+const unsigned int fail_mode_test_time = 180;
 
 /*
  * Multipurpose kicker daemon
@@ -245,6 +247,10 @@ main( int argc, char* argv[] )
       sleep (kill_detach_shutdown_time);
       break;
 
+    case subtest_fail_mode:
+      sleep (fail_mode_test_time);
+      break;
+
     case subtest_mw_coloc:
       {
         //
@@ -300,6 +306,21 @@ main( int argc, char* argv[] )
        LMON_be_finalize();
        return EXIT_FAILURE;
      }
+
+  //
+  // recving an ack back
+  if ( (( lrc = LMON_be_recvUsrData ( NULL )) == LMON_EBDARG)
+       || ( lrc == LMON_EINVAL )
+       || ( lrc == LMON_ENOMEM )
+       || ( lrc == LMON_ENEGCB ))
+     {
+       fprintf(stdout, "[LMON BE(%d)] FAILED(%d): LMON_be_recvUsrData\n",
+               rank, lrc );
+       LMON_be_finalize();
+       return EXIT_FAILURE;
+     }
+
+
 
   LMON_be_finalize();
 

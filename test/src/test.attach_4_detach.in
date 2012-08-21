@@ -3,7 +3,7 @@
 #
 #
 #--------------------------------------------------------------------------------
-# Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at
+# Copyright (c) 2008 ~ 2012, Lawrence Livermore National Security, LLC. Produced at
 # the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>.
 # LLNL-CODE-409469. All rights reserved.
 #
@@ -31,12 +31,7 @@
 #  and kill the BE daemons.
 #
 #  Update Log:
-#        Jun 05 2012 DHA: Added subtest support
-#        Oct 21 2011 DHA: Added dynamic RM detection support.
-#        Dec 17 2009 DHA: Added tminimum waittime
-#        Mar 06 2009 DHA: Changed bglrm to bgrm
-#        Dec 14 2008 DHA: configurable NUMNODES
-#        Jun 17 2008 DHA: Created file.
+#        Aug 02 2012 DHA: Created file.
 #
  
 RM_TYPE=@TEST_RMTP@
@@ -51,7 +46,7 @@ SIGNUM=10
 MPI_JOB_LAUNCHER_PATH=@TJLPATH@
 export LMON_PREFIX=@LMONPREFIX@
 export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
-export LMON_FE_KILL_TEST=1
+export LMON_FE_DETACH_TEST=1
 
 if test "x$RM_TYPE" = "xRC_slurm" ; then
   $MPI_JOB_LAUNCHER_PATH -n$NUMTASKS -N$NUMNODES -ppdebug `pwd`/hang_on_SIGUSR1@EXE@ &

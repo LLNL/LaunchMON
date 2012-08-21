@@ -1163,6 +1163,7 @@ LMON_be_handshake ( void *udata )
   // ** Begin Tool <--> MPI synchronization **
   //
   //
+  
   MPIR_PROCDESC_EXT* proctab;
   int proctab_size;
 
@@ -1193,6 +1194,27 @@ LMON_be_handshake ( void *udata )
 
       return LMON_EDUNAV;
     }
+
+  //
+  // We're almost ready: so we tell FEN to release RM from MPIR_Breakpoint 
+  //
+  //
+  BEGIN_MASTER_ONLY(bedata)
+    lmonp_t cont_launch_msg;
+    set_msg_header ( &cont_launch_msg,
+                     lmonp_fetobe,
+                     lmonp_befe_cont_launch_bp,
+                     0,0,0,0,0,0,0 );
+    if ( ( write_lmonp_long_msg ( servsockfd,
+                                  &cont_launch_msg,
+                                  sizeof (cont_launch_msg) )) < 0 )
+      {
+        LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+              "write_lmonp_long_msg failed while sending lmonp_befe_cont_launch_bp msg");
+
+        return LMON_ESYS;
+      }
+  END_MASTER_ONLY 
 
   //
   // Call procctl_init which then calls into OS-dependent

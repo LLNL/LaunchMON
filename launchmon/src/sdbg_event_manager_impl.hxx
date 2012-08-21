@@ -123,44 +123,68 @@ monitor_proc_thread_t<SDBG_DEFAULT_TEMPLPARAM>::~monitor_proc_thread_t()
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 bool 
 monitor_proc_thread_t<SDBG_DEFAULT_TEMPLPARAM>::wait_for_all (
-                 pid_t& p, debug_event_t& rc)
+                 debug_event_t& rc)
 {
   pid_t rpid;
   int status;
+  bool rs = false;
+  eventing_entity_e entity = EV_ENTITY_THREAD;
 
-  rpid =  waitpid (-1, &status, WNOHANG | WUNTRACED);
+  rpid = waitpid (-1, &status, WNOHANG | WUNTRACED);
+  if (rpid <= 0) 
+    { 
+      rpid =  waitpid (-1, &status, WNOHANG | __WCLONE);
+    }
+  else 
+    {
+      entity = EV_ENTITY_PROCESS;
+    }
 
-  if (rpid <= 0)
-    rpid = waitpid (-1, &status, WNOHANG | WUNTRACED | __WCLONE ); 
-
-  p = rpid;
- 
   if ( rpid <= 0 )
     {
       rc.set_ev(EV_NOCHILD);
-      return false;
+      rc.set_en (EV_ENTITY_NONE);
+      rc.set_id (rpid);
+      return rs;
     }
+
+  rc.set_en (entity);
+  rc.set_id (rpid);
 
   if (WIFEXITED(status)) 
     {
       rc.set_ev (EV_EXITED);
       rc.set_exitcode (WEXITSTATUS(status));
-      return true;
+      rc.set_rawstatus (status);
+      rs = true;
     }
   else if (WIFSIGNALED(status)) 
     {
+      //
+      // Child terminiated with a signal 
+      //
       rc.set_ev (EV_TERMINATED);
       rc.set_signum (WTERMSIG(status));
-      return true;	
+      rc.set_rawstatus (status);
+      rs = true;	
     }
   else if (WIFSTOPPED(status)) 
     {
+      //
+      // Child stopped w/ signal
+      // Thread note: when a new thread is created, the parent must get 
+      // SIGTRAP
       rc.set_ev (EV_STOPPED);
       rc.set_signum (WSTOPSIG(status));
-      return true;
+      rc.set_rawstatus (status);
+      rs = true;
     }
   else
-    return false;
+    {
+      rc.set_rawstatus (status);
+    }
+
+  return rs;
 }
 
 
@@ -212,32 +236,29 @@ event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::poll_processes (
   pid_t rpid; 
   launchmon_rc_e rc = LAUNCHMON_OK;  
   launchmon_event_e ev;
-  typename 
-     map<int, thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*, ltstr>::const_iterator 
-       lpos;
 
-    {
-      if ( ev_monitor->wait_for_all ( rpid, event ) ) 
-	{ 
-	  //
-	  // Once rpid is returned from wait_for_all, it is filled
-	  // with pid who reported "interesting" debug event
-	  //
-	  //
-
-	  {
-	    self_trace_t::trace ( LEVELCHK(level3), 
-	      MODULENAME,
-	      0,
-	      "an event reported for tid = %d",
-	      rpid);
-	  }
-
+  if ( ev_monitor->wait_for_all ( event ) ) 
+    { 
+      if ( event.get_en() == EV_ENTITY_PROCESS )
+        {
           //
-          // error handling semantics for C.2
+          // A process event is reported
           //
-          if ( rpid == lm.get_toollauncherpid () )
+          if ( event.get_id() == p.get_pid(false) )
             {
+              //
+              // The target RM_process reported
+              //
+              p.make_context ( event.get_id());
+              ev = lm.decipher_an_event ( p, event );
+              rc = lm.invoke_handler ( p, ev, event.get_signum() );
+              p.check_and_undo_context ( event.get_id() );
+            }
+          else if ( event.get_id() == lm.get_toollauncherpid () )
+            {
+              // RM_process that launched tool daemons reported
+              // error handling semantics for C.2
+              //
               if ( ( event.get_ev () == EV_EXITED )
                    || ( event.get_ev () == EV_TERMINATED ))
                 {
@@ -252,65 +273,51 @@ event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::poll_processes (
               // so that the following loop body won't be executed.
               //
             }
- 
+          else
+            {
+              //
+              // a unknown new process reported 
+              //
+              if (event.get_ev() == EV_STOPPED)
+                {
+                  p.make_context (event.get_id());
+                  rc = lm.invoke_handler ( p, 
+                                           LM_STOP_NEW_FORKED_PROCESS,
+                                           event.get_id() );
+                  p.check_and_undo_context (event.get_id());
+                }
+            }  
+        }
+      else if ( event.get_en() == EV_ENTITY_THREAD ) 
+        {
+          //
+          // A thread of the target RM_process reported
+          //
 	  map<int, thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*, ltstr>& tl 
 	    = p.get_thrlist();
 
-	  for (lpos=tl.begin(); lpos!=tl.end(); lpos++) 
-	    {	
-	      //
-	      // searching for the thread list to see if any thread id
-	      // matches with rpid
-	      //
-	      //
-
+          if (tl.find(event.get_id()) == tl.end())
+            {
               //
-              // copying the thread id to a local variable to prevent a  
-              // condition where lpos gets removed on a thread exit event
-              // by an "exit" handler invocation below.
-              //   
-              int thread_id = lpos->first; 
-	      if (thread_id == rpid) 
-		{
-		  {
-		    //
-		    // WARNING: if this logging is too expensive in this 
-		    // loop, remove for the sake of performance.
-		    //
-		    self_trace_t::trace ( LEVELCHK(level3), 
-	              MODULENAME,
-	              0,
-		      "tid is found in the thread list");
-		  }
-
-		  //
-		  // setting the context telling the launchmon subsystem
-		  // that what thread it has to operate on
-		  //
-		  p.make_context(thread_id);
-		  
-		  //
-		  // converting a raw event to launchmon event by looking
-		  // at process context such as PC
-		  //
-		  ev = lm.decipher_an_event(p, event);
-		  
-		  //
-		  // invoking a handler accordingly
-		  //
-		  rc = lm.invoke_handler ( p, ev, event.get_signum ());
-		  
-		  //
-		  // sanity check and undo the effect of "make_context"
-		  //
-		  p.check_and_undo_context(thread_id);
-
-		  break;
-		}
-	    }
-	}
+              // Possibly an unknown thread to pick up
+              //
+              if (event.get_ev() == EV_STOPPED)
+                { 
+                  rc = lm.invoke_handler ( p, 
+                                           LM_REQUEST_NEW_THREAD, 
+                                           event.get_id() );
+                }
+            }
+ 
+          if (tl.find(event.get_id()) != tl.end())
+            {
+              p.make_context(event.get_id());
+              ev = lm.decipher_an_event(p, event); 
+              rc = lm.invoke_handler ( p, ev, event.get_signum ());
+              p.check_and_undo_context(event.get_id());
+            }
+        }
     }
-
   return ( ( rc==LAUNCHMON_OK ) ? true : false );
 }
 
