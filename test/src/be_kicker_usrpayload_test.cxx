@@ -68,6 +68,9 @@
 #include <map>
 
 #include <lmon_api/lmon_be.h>
+#include "lmon_daemon_internal.hxx"
+#include "lmon_be_sync_mpi.hxx"
+
 
 #if SUB_ARCH_BGL || SUB_ARCH_BGP
 # include "debugger_interface.h"
@@ -252,6 +255,15 @@ main( int argc, char* argv[] )
       return EXIT_FAILURE;
     } 
 
+
+  if ( (lrc = LMON_be_tester_init ( ) )
+              != LMON_OK )
+    {
+      fprintf(stdout,
+        "[LMON BE] FAILED: LMON_be_tester_init\n");
+      return EXIT_FAILURE;
+    }
+
     if ( (lrc = LMON_be_getMyProctabSize(&proctab_size)) 
                 != LMON_OK )
     {
@@ -319,94 +331,30 @@ main( int argc, char* argv[] )
         proctab[i].mpirank);
     }
 
-#if SUB_ARCH_BGL || SUB_ARCH_BGP
-  /* the tool wants to send a signal other than the default */
-  if (signum != 0)
+  per_be_data_t *myBeData = NULL;
+  if ( (lrc = LMON_daemon_internal_tester_getBeData (&myBeData))
+              != LMON_OK )
     {
-      for (i=0; i < proctab_size; i++)
-        {
-          BG_Debugger_Msg dbgmsg(KILL,proctab[i].pd.pid,0,0,0);
-          dbgmsg.dataArea.KILL.signal = SIGSTOP;
-          BG_Debugger_Msg ackmsg;
-          BG_Debugger_Msg ackmsg2;
- 
-          if ( !BG_Debugger_Msg::writeOnFd (BG_DEBUGGER_WRITE_PIPE, dbgmsg ))
-            {
-              fprintf(stdout,
-                "[LMON BE(%d)] FAILED: KILL command.\n", rank);
-                return EXIT_FAILURE;
-            }
-          if ( !BG_Debugger_Msg::readFromFd (BG_DEBUGGER_READ_PIPE, ackmsg ))
-            {
-              fprintf(stdout,
-                "[LMON BE(%d)] FAILED: KILL_ACK command.\n", rank);
-                return EXIT_FAILURE;
-            }
-          if ( ackmsg.header.messageType != KILL_ACK)
-            {
-              fprintf(stdout,
-                  "[LMON BE(%d)] FAILED: readFromFd received a wrong msg type: %d.\n",
-                    rank,ackmsg.header.messageType);
-              return EXIT_FAILURE;
-            }
-          if ( !BG_Debugger_Msg::readFromFd (BG_DEBUGGER_READ_PIPE, ackmsg2 ))
-            {
-              fprintf(stdout,
-                "[LMON BE(%d)] FAILED: SIGNAL_ENCOUNTERED command.\n", rank);
-              return EXIT_FAILURE;
-            }
-          if ( ackmsg2.header.messageType != SIGNAL_ENCOUNTERED)
-            {
-              fprintf(stdout,
-                  "[LMON BE(%d)] FAILED: readFromFd received a wrong msg type: %d.\n",
-                    rank,ackmsg.header.messageType);
-              return EXIT_FAILURE;
-            }
-        }
-      }
+      fprintf(stdout,
+        "[LMON BE(%d)] FAILED: LMON_be_internal_getBeDat returned an error\n",
+        rank );
+      LMON_be_finalize();
+      return EXIT_FAILURE;
+    } 
 
-      for (i=0; i < proctab_size; i++)
-        {
-          BG_Debugger_Msg dbgmsg(CONTINUE,proctab[i].pd.pid,0,0,0);
-          BG_Debugger_Msg ackmsg;  
-          dbgmsg.dataArea.CONTINUE.signal = signum;
-          dbgmsg.header.dataLength = sizeof(dbgmsg.dataArea.CONTINUE);
+  int fastpath_state = 2; //inherit the state
 
-          if ( !BG_Debugger_Msg::writeOnFd (BG_DEBUGGER_WRITE_PIPE, dbgmsg ))
-            {
-              fprintf(stdout,  
-                "[LMON BE(%d)] FAILED: CONTINUE command.\n", rank);
-                return EXIT_FAILURE;
-            }
-          if ( !BG_Debugger_Msg::readFromFd (BG_DEBUGGER_READ_PIPE, ackmsg ))  
-            {
-              fprintf(stdout,  
-                "[LMON BE(%d)] FAILED: CONTINUE_ACK command.\n", rank);
-                return EXIT_FAILURE;
-            }
-          if ( ackmsg.header.messageType != CONTINUE_ACK)
-            {
-              fprintf(stdout,  
-                  "[LMON BE(%d)] FAILED: readFromFd received a wrong msg type: %d.\n",
-                    rank,ackmsg.header.messageType);
-              return EXIT_FAILURE;
-            }
-          if ( ackmsg.header.nodeNumber != (unsigned int) proctab[i].pd.pid )
-            {
-              fprintf(stdout,  
-                  "[LMON BE(%d)] FAILED: the CONTINUE_ACK msg contains a wrong nodeNumber.\n", rank);
-              return EXIT_FAILURE;
-            }  
-         }
-#else
-  for(i=0; i < proctab_size; i++)
+  if ( signum != 0 && signum != SIGCONT)
     {
-#if 0
-      printf("[LMON BE(%d)] kill %d, %d\n", rank, proctab[i].pd.pid, signum );
-#endif
-      kill(proctab[i].pd.pid, signum);
+      fastpath_state = 0;
     }
-#endif
+
+  LMON_be_procctl_init ( myBeData->rmtype_instance,
+                         proctab, proctab_size, fastpath_state );
+
+  LMON_be_procctl_run ( myBeData->rmtype_instance,
+                        signum,
+                        proctab, proctab_size);
 
   for (i=0; i < proctab_size; i++)
     {

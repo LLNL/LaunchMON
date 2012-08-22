@@ -264,23 +264,6 @@ main( int argc, char* argv[] )
             return EXIT_FAILURE;
           }
 
-#if 0
-        //
-        // Blocks until FE MWs are done; otherwise, COLOC will kill 
-        // MW daemons prematurely
-        //
-        if ( (( lrc = LMON_be_recvUsrData ( NULL )) == LMON_EBDARG)
-             || ( lrc == LMON_EINVAL )
-             || ( lrc == LMON_ENOMEM )
-             || ( lrc == LMON_ENEGCB ))
-           {
-             fprintf(stdout, "[LMON BE(%d)] FAILED(%d): LMON_be_recvUsrData\n",
-                     rank, lrc );
-             LMON_be_finalize();
-             return EXIT_FAILURE;
-           }
-#endif
-
          break;
       }
     default:
