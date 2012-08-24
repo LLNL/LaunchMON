@@ -283,6 +283,22 @@ main (int argc, char* argv[])
         "[LMON_FE] launching the job/daemons via %s\n",
         "mylauncher");
     }
+  else if ((rmenv_str == std::string("RC_bglrm"))
+      || (rmenv_str == std::string("RC_bgprm")))
+    {
+      launcher_argv = (char **) malloc(8*sizeof(char *));
+      launcher_argv[0] = strdup(mylauncher);
+      launcher_argv[1] = strdup("-verbose");
+      launcher_argv[2] = strdup("1");
+      launcher_argv[3] = strdup("-np");
+      launcher_argv[4] = strdup(argv[2]);
+      launcher_argv[5] = strdup("-exe");
+      launcher_argv[6] = strdup(argv[1]);
+      launcher_argv[7] = NULL;
+      fprintf (stdout,
+                "[LMON_FE] launching the job/daemons via %s\n",
+                mylauncher);
+    }
   else if (rmenv_str == std::string("RC_slurm"))
     {
       numprocs_opt     = string("-n") + string(argv[2]);

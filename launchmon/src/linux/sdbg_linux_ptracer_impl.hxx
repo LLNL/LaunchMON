@@ -71,6 +71,16 @@ extern "C" {
 
 #if HAVE_SYS_PTRACE_H
 # include <sys/ptrace.h>
+//
+// W/R on a system that has 
+//
+# ifndef PTRACE_SETOPTIONS
+#  define PTRACE_SETOPTIONS       0x4200
+# endif
+# ifndef PTRACE_GETEVENTMSG
+#  define PTRACE_GETEVENTMSG      0x4201
+# endif
+
 #else
 # error sys/ptrace.h is required
 #endif
@@ -512,7 +522,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_get_event_msg (
   string func = "[linux_ptracer_t::tracer_get_event_msg]";
   pid_t tpid = p.get_pid(use_cxt);
 
-  r = Pptrace (PTRACE_GETEVENTMSG, tpid, NULL, buf);
+  r = Pptrace ((__ptrace_request)PTRACE_GETEVENTMSG, tpid, NULL, buf);
   if ( r == -1 && errno != 0 )
     { 
       e = func + ERRMSG_PTRACE + strerror (errno);
@@ -848,7 +858,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_unsetoptions (
       who_to_attach_to = newtid;
     }
 
-  if ( (r = Pptrace (PTRACE_SETOPTIONS, who_to_attach_to, 
+  if ( (r = Pptrace ((__ptrace_request)PTRACE_SETOPTIONS, who_to_attach_to, 
                      NULL, (void *) options)) != 0 )
     {    
       {
@@ -896,7 +906,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setoptions (
       who_to_attach_to = newtid;
     }
 
-  if ( (r = Pptrace (PTRACE_SETOPTIONS, who_to_attach_to, 
+  if ( (r = Pptrace ((__ptrace_request)PTRACE_SETOPTIONS, who_to_attach_to, 
                      NULL, (void *) options)) != 0 )
     {    
       {
@@ -1254,7 +1264,7 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::baretracer (
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 long 
 linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::Pptrace ( 
-                 enum __ptrace_request request, 
+                 __ptrace_request request, 
 		 pid_t pid, 
 		 void *addr, 
 		 void *data )

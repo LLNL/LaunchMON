@@ -54,7 +54,7 @@ fi
 
 NUMTASKS=`expr $NUMNODES \* @SMP@`
 WAITAMOUNT=$NUMNODES 
-if test $NUMNODES -lt 10 ; then
+if test $NUMNODES -lt 20 ; then
   WAITAMOUNT=20
 fi
 SIGNUM=10

@@ -3006,7 +3006,7 @@ linux_launchmon_t::handle_newproc_forked_event (
       // only affect the new process 
       //
       disable_all_BPs (p, use_cxt, false);  
-      get_tracer()->tracer_continue (p, use_cxt);
+      get_tracer()->tracer_detach(p, use_cxt);
 
       {
 	self_trace_t::trace ( LEVELCHK(level2), 
@@ -3261,7 +3261,7 @@ linux_launchmon_t::handle_thrcreate_trap_event (
       T_WT newlwpid = -1;
 
       get_tracer()->tracer_get_event_msg( p, 
-                                          NULL, 
+                                          0, 
                                           (void *) &newlwpid, 
                                           true);
 

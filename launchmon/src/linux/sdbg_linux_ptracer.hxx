@@ -219,7 +219,7 @@ private:
   bool LEVELCHK(self_trace_verbosity level) 
        { return (self_trace_t::tracer_module_trace.verbosity_level >= level); }
 
-  long Pptrace ( enum __ptrace_request request, 
+  long Pptrace ( __ptrace_request request, 
 		 pid_t pid, 
 		 void *addr, 
 		 void *data);
