@@ -71,16 +71,6 @@ extern "C" {
 
 #if HAVE_SYS_PTRACE_H
 # include <sys/ptrace.h>
-//
-// W/R on a system that has 
-//
-# ifndef PTRACE_SETOPTIONS
-#  define PTRACE_SETOPTIONS       0x4200
-# endif
-# ifndef PTRACE_GETEVENTMSG
-#  define PTRACE_GETEVENTMSG      0x4201
-# endif
-
 #else
 # error sys/ptrace.h is required
 #endif

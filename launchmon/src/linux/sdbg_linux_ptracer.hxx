@@ -43,6 +43,27 @@
 extern "C" {
 #if HAVE_SYS_PTRACE_H
 # include <sys/ptrace.h>
+//
+// W/R on a system that has
+//
+# ifndef PTRACE_SETOPTIONS
+#  define PTRACE_SETOPTIONS       0x4200
+# endif
+# ifndef PTRACE_GETEVENTMSG
+#  define PTRACE_GETEVENTMSG      0x4201
+# endif
+# ifndef PTRACE_O_TRACEFORK
+#  define PTRACE_O_TRACEFORK      0x00000002
+# endif
+# ifndef PTRACE_O_TRACEVFORK
+#  define PTRACE_O_TRACEVFORK     0x00000004
+# endif
+# ifndef PTRACE_O_TRACECLONE
+#  define PTRACE_O_TRACECLONE     0x00000008
+# endif
+# ifndef PTRACE_EVENT_CLONE
+#  define PTRACE_EVENT_CLONE      3
+# endif
 #else
 # error sys/ptrace.h is required 
 #endif
