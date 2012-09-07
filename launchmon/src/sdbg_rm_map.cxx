@@ -222,6 +222,20 @@ resource_manager_t::operator=(const resource_manager_t &r)
 }
 
 
+const std::vector<rm_id_t>& 
+resource_manager_t::get_const_launcher_ids() const
+{
+  return launcher_ids;
+}
+
+
+const std::vector<std::string>& 
+resource_manager_t::get_const_launchers() const
+{
+  return launchers;
+}
+
+
 void
 resource_manager_t::fill_rm_type(const std::string &v)
 {
@@ -256,6 +270,10 @@ resource_manager_t::fill_rm_type(const std::string &v)
   else if (v == std::string("slurm"))
     {
       rm = RC_slurm;
+    }
+  else if (v == std::string("gupc"))
+    {
+      rm = RC_gupc;
     }
   else
     {
@@ -579,34 +597,6 @@ rc_rm_t::init(const std::string &os_isa_string)
 
 
 bool
-rc_rm_t::init_rm_instance(const std::string &launchr_path,
-              const std::string &tool_daemon_path,
-              const std::string &tool_daemon_opts,
-              const std::string be_stub_path)
-{
-  bool found_matched_rm = true;
-  std::vector<resource_manager_t>::iterator r_i;
-
-  for (r_i = supported_rms.begin();
-           r_i != supported_rms.end(); r_i++)
-    {
-      if (is_launcher_name_equal(launchr_path.c_str(), (*r_i)))
-        {
-          resource_manager = (*r_i);
-          found_matched_rm = true;
-          break;
-        }
-    }
-
-  coloc_paramset.rm_daemon_path = tool_daemon_path;
-  coloc_paramset.rm_daemon_args = tool_daemon_opts;
-  coloc_paramset.rm_daemon_stub = be_stub_path;
-
-  return found_matched_rm;
-}
-
-
-bool
 rc_rm_t::set_paramset (int n_nodes,
                        int n_daemons,
                        char *secret,
@@ -650,15 +640,36 @@ rc_rm_t::expand_launch_string(std::string &expanded_string)
 
   if (mth == launch_helper_method)
     {
-      if (getenv("LMON_DEBUG_BES"))
+      if ( getenv("LMON_DEBUG_BES") 
+           &&  resource_manager.get_launch_helper().launcher_command 
+               != std::string("LMON_REMOTE_LOGIN"))
         {
+          //
+          // Can't support debugging if the launch method is LMON_REMOTE_LOGIN
+          //
           tokens.push_back(std::string(TVCMD));
           tokens.push_back(resource_manager.get_launch_helper().launcher_command);
           tokens.push_back(std::string("-a"));
         }
       else
         {
-          tokens.push_back(resource_manager.get_launch_helper().launcher_command);
+          if ( resource_manager.get_launch_helper().launcher_command 
+              == std::string("LMON_REMOTE_LOGIN") )
+            {
+              char *rmthd = getenv("LMON_REMOTE_LOGIN");
+              if (rmthd)
+                {
+                   tokens.push_back(std::string(rmthd));
+                }
+              else
+                {
+                  tokens.push_back(std::string(SSHCMD));
+                }
+            }
+         else
+           {
+             tokens.push_back(resource_manager.get_launch_helper().launcher_command);
+           }
         }
     }
 
@@ -848,12 +859,18 @@ rc_rm_t::get_resource_manager()
 }
 
 
-const coloc_str_param_t & 
+coloc_str_param_t & 
 rc_rm_t::get_coloc_paramset()
 {
   return coloc_paramset;
 }
 
+
+const coloc_str_param_t & 
+rc_rm_t::get_const_coloc_paramset()
+{
+  return coloc_paramset;
+}
 
 const char *
 rc_rm_t::get_hostnames_fn()
@@ -883,12 +900,18 @@ rc_rm_t::set_attach_fifo_path(const std::string &fifo_path)
 }
 
 
+void
+rc_rm_t::set_resource_manager(const resource_manager_t &rmgr)
+{
+  resource_manager = rmgr;
+}
+
+
 ///////////////////////////////////////////////////////////////////
 //
 // PRIVATE METHODS of the rc_rm_t-related class
 //
 ///////////////////////////////////////////////////////////////////
-
 
 
 int
@@ -906,30 +929,6 @@ resource_manager_t::resolve_signal(const std::string &v)
     }
 
   return ret_sig;
-}
-
-
-bool
-rc_rm_t::is_launcher_name_equal(const std::string &lnchrpath,
-                                resource_manager_t &a_rm)
-{
-  char *bnbuf = strdup(lnchrpath.c_str());
-  char *launcher_name = basename(bnbuf);
-  bool match = false;
-  std::vector<std::string>::iterator r_i;
-
-  for (r_i = a_rm.get_launchers().begin();
-           r_i != a_rm.get_launchers().end(); r_i++)
-    {
-      if (launcher_name == (*r_i))
-        {
-          match = true;
-          break;
-        }
-   }
-
-  free(bnbuf);
-  return match;
 }
 
 
@@ -1166,6 +1165,15 @@ rc_rm_t::expand_a_letter(const char p, bool *split_maybe_needed)
       ssm << coloc_paramset.sharedsec;
       break;
 
+    case 'h':
+      //
+      // for now, we only support localhost as an expansion choice for 
+      // %h. This is to support GUPC. But this can be extended later 
+      // for a more complex model.  
+      //
+      ssm << "localhost";
+      break;
+
     default:
       ssm << "na";
       self_trace_t::trace ( LEVELCHK(level1),
@@ -1176,3 +1184,4 @@ rc_rm_t::expand_a_letter(const char p, bool *split_maybe_needed)
 
   return ssm.str();
 }
+

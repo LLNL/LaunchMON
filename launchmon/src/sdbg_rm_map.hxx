@@ -79,6 +79,7 @@
 
 #include <lmon_api/lmon_api_std.h>
 
+#include "sdbg_base_symtab.hxx"
 #include "sdbg_self_trace.hxx"
 
 #define RM_INFO_CONFIG "rm_info.conf"
@@ -244,6 +245,9 @@ public:
   define_gset(std::string&, launcher_so_name)
   define_gset(std::string&, attach_fifo_path)
 
+  const std::vector<rm_id_t>& get_const_launcher_ids() const; 
+  const std::vector<std::string>& get_const_launchers() const; 
+
   void fill_rm_type(const std::string &v);
   void fill_mpir_type(const std::string &v);
   void fill_launchers(const std::vector<std::string> &v);
@@ -288,11 +292,6 @@ public:
 
   bool init(const std::string &os_isa_string);
 
-  bool init_rm_instance(const std::string &launchr_path,
-            const std::string &tool_daemon_path,
-            const std::string &tool_daemon_opts,
-            const std::string be_stub_path="");
-
   bool set_paramset (int n_nodes, int n_daemons, char *secret,
                      char *ran_id, int resource_id,
                      char *host_file_name);
@@ -324,7 +323,9 @@ public:
 
   resource_manager_t & get_resource_manager();
 
-  const coloc_str_param_t & get_coloc_paramset();
+  coloc_str_param_t & get_coloc_paramset();
+
+  const coloc_str_param_t & get_const_coloc_paramset();
 
   const char * get_hostnames_fn();
 
@@ -334,14 +335,12 @@ public:
 
   void set_attach_fifo_path(const std::string &fifo_path);
 
+  void set_resource_manager(const resource_manager_t &rmgr);
 
 private:
 
   bool LEVELCHK(self_trace_verbosity level)
        { return (self_trace_t::rm_module_trace.verbosity_level >= level); }
-
-  bool is_launcher_name_equal(const std::string &lnchrpath,
-                 resource_manager_t &a_rm);
 
   bool read_supported_rm_confs(const std::string &os_isa_string,
                  const std::string &rm_info_conf_path,
@@ -363,6 +362,167 @@ private:
   std::string MODULENAME;
 
 };
+
+
+template <BASE_IMAGE_TEMPLATELIST>
+class rc_rm_plat_matcher
+{
+public:
+  rc_rm_plat_matcher() { MODULENAME = self_trace_t::rm_module_trace.module_name; }
+  rc_rm_plat_matcher(const rc_rm_plat_matcher &o) { MODULENAME = o.MODULENAME; }
+  ~rc_rm_plat_matcher() {}
+
+  bool init_rm_instance(rc_rm_t &rm_obj,
+                 const std::string &lnchrpath,
+                 const std::string &tool_daemon_path,
+                 const std::string &tool_daemon_opts,
+                 const image_base_t<BASE_IMAGE_TEMPLPARAM> *main_symtab=NULL,
+                 const image_base_t<BASE_IMAGE_TEMPLPARAM> *rmso_symtab=NULL,
+                 const std::string be_stub_path="");
+
+private:
+  bool has_matching_signiture (const std::string &lnchrpath,
+                 const resource_manager_t &a_rm, 
+                 const image_base_t<BASE_IMAGE_TEMPLPARAM> *main_symtab=NULL,
+                 const image_base_t<BASE_IMAGE_TEMPLPARAM> *rmso_symtab=NULL);
+
+  // For self tracing
+  //
+  std::string MODULENAME;
+};
+
+
+///////////////////////////////////////////////////////////////////
+//                                                               //
+// Best practice for templated methods is to include their def   //
+// directly to the user.                                         //
+//                                                               //
+///////////////////////////////////////////////////////////////////
+
+template <BASE_IMAGE_TEMPLATELIST>
+bool
+rc_rm_plat_matcher<BASE_IMAGE_TEMPLPARAM>::init_rm_instance(rc_rm_t &rm_obj,
+              const std::string &launchr_path,
+              const std::string &tool_daemon_path,
+              const std::string &tool_daemon_opts,
+              const image_base_t<BASE_IMAGE_TEMPLPARAM> *main_symtab,
+              const image_base_t<BASE_IMAGE_TEMPLPARAM> *rmso_symtab,
+              const std::string be_stub_path)
+{
+  bool found_matched_rm = true;
+  std::vector<resource_manager_t>::const_iterator r_i;
+
+  for (r_i = rm_obj.get_supported_rms().begin();
+           r_i != rm_obj.get_supported_rms().end(); r_i++)
+    {
+      if (has_matching_signiture(launchr_path,
+                                 (*r_i),
+                                 main_symtab, rmso_symtab))
+        {
+          rm_obj.set_resource_manager(*r_i);
+          found_matched_rm = true;
+          break;
+        }
+    }
+
+  rm_obj.get_coloc_paramset().rm_daemon_path
+    = tool_daemon_path;
+  rm_obj.get_coloc_paramset().rm_daemon_args
+    = tool_daemon_opts;
+  rm_obj.get_coloc_paramset().rm_daemon_stub
+    = be_stub_path;
+
+  return found_matched_rm;
+}
+
+
+template <BASE_IMAGE_TEMPLATELIST>
+bool
+rc_rm_plat_matcher<BASE_IMAGE_TEMPLPARAM>::has_matching_signiture (
+                 const std::string &lnchrpath,
+                 const resource_manager_t &a_rm,
+                 const image_base_t<BASE_IMAGE_TEMPLPARAM> *main_symtab,
+                 const image_base_t<BASE_IMAGE_TEMPLPARAM> *rmso_symtab)
+{
+  char *bnbuf = strdup(lnchrpath.c_str());
+  char *launcher_name = basename(bnbuf);
+  bool match = false;
+  std::vector<std::string>::const_iterator r_i;
+  std::vector<rm_id_t>::const_iterator id_i;
+
+  for (r_i = a_rm.get_const_launchers().begin();
+           r_i != a_rm.get_const_launchers().end(); r_i++)
+    {
+      if (launcher_name == (*r_i) || (*r_i) == std::string("*"))
+        {
+          //
+          // Name matched!
+          //
+          const std::vector<rm_id_t> &id_vector = a_rm.get_const_launcher_ids();
+          for (id_i = id_vector.begin(); id_i != id_vector.end(); id_i++)
+            {
+              switch ((*id_i).from)
+                {
+                case from_launcher:
+                  {
+                    if ((*id_i).method == symbol)
+                      {
+                        if (main_symtab && (*id_i).id.symbol_name)
+                          {
+                            const std::string sn((*id_i).id.symbol_name);
+                            const symbol_base_t<VA> &symb
+                              = main_symtab->get_a_symbol(sn);
+                            if (!(!symb))
+                              {
+                                //
+                                // Symbol matched!
+                                //
+                                match = true;
+                                break;
+                              }
+                          }
+
+                        if (rmso_symtab && (*id_i).id.symbol_name)
+                          {
+                            const std::string sn((*id_i).id.symbol_name);
+                            const symbol_base_t<VA> &symb
+                              = rmso_symtab->get_a_symbol(sn);
+                            if (!(!symb))
+                              {
+                                //
+                                // Symbol matched!
+                                //
+                                match = true;
+                                break;
+                              }
+                          }
+                      }
+                    else
+                      {
+                        self_trace_t::trace (true,
+                          MODULENAME,1,
+                          "only symbol-based id method is supported (%s)!",
+                          (*r_i).c_str());
+                      }
+                  }
+                  break;
+
+                default:
+                  {
+                    self_trace_t::trace (true,
+                      MODULENAME,1,
+                      "only symbol-based id method is supported (%s)!",
+                      (*r_i).c_str());
+                  }
+                  break;
+                }
+            }
+        }
+    }
+
+  free(bnbuf);
+  return match;
+}
 
 #endif // SDBG_RM_MAP_HXX
 

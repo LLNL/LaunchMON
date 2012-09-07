@@ -1280,7 +1280,7 @@ linux_launchmon_t::handle_mpir_variables (
             { 
               T_VA ep_addr = executablepath.get_relocated_address();
               std::string daemon_pth;
-              daemon_pth = p.rmgr()->get_coloc_paramset().rm_daemon_path;
+              daemon_pth = p.rmgr()->get_const_coloc_paramset().rm_daemon_path;
               size_t dpsize = daemon_pth.size() + 1;
 
               if (dpsize > BG_EXECPATH_LENGTH)

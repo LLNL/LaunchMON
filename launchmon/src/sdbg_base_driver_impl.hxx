@@ -47,6 +47,7 @@
 #include "sdbg_base_tracer.hxx"
 #include "sdbg_event_manager.hxx"
 #include "sdbg_event_manager_impl.hxx"
+#include "sdbg_rm_map.hxx"
 #include "sdbg_base_driver.hxx"
 #include "sdbg_signal_hlr.hxx"
 #include "sdbg_signal_hlr_impl.hxx"
@@ -242,6 +243,51 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive_engine(opts_args_t *opt)
       //
       process_base_t<SDBG_DEFAULT_TEMPLPARAM> *launcher_proc 
         = create_process ( pid, string ( opt->get_my_opt()->debugtarget) );
+
+      //
+      // Construct launch string
+      //
+#ifdef RM_BE_STUB_CMD
+      char *pref;
+      std::string bestub(RM_BE_STUB_CMD);
+      if (pref = getenv("LMON_PREFIX"))
+        bestub = std::string(pref) + std::string("/bin/") + bestub;
+#endif
+
+      std::string bulklauncher = opt->get_my_opt()->debugtarget;
+
+#ifdef RM_FE_COLOC_CMD
+      char *bnbuf = strdup(bulklauncher.c_str());
+      char *dt = basename(bnbuf);
+
+      char *pref2;
+      bulklauncher = RM_FE_COLOC_CMD;
+      if (pref2 = getenv("LMON_PREFIX"))
+        {
+           bulklauncher = std::string(pref)
+                         + std::string("/bin/")
+                         + bulklauncher;
+        }
+#endif
+      rc_rm_plat_matcher<VA, EXECHANDLER> platobj; 
+      bool initc = platobj.init_rm_instance(*(opt->get_my_rmconfig()),
+                            bulklauncher,
+                            opt->get_my_opt()->tool_daemon,
+                            opt->get_my_opt()->tool_daemon_opts,
+                            launcher_proc->get_myimage(),
+                            launcher_proc->get_myrmso_image()
+#ifdef RM_BE_STUB_CMD
+                           ,bestub
+#endif
+                            );      
+
+      if (!initc)
+      {
+	self_trace_t::trace ( true, 
+	  MODULENAME,
+	  0,
+	  "Unknown resource manager type");
+      }
 
       //
       // process object carries "opt" around for future reference.

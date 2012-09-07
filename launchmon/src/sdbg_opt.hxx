@@ -134,7 +134,7 @@ public:
 
   bool process_args (int *argc, char ***argv);
   void print_usage();
-  bool construct_launch_string();
+  bool construct_rm_map();
   void print_copyright();
 
 

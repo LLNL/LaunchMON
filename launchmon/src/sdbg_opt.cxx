@@ -404,7 +404,7 @@ opts_args_t::process_args ( int *argc, char ***argv )
       self_trace_t::opt_module_trace.verbosity_level = verbo;
     }
 
-  if ( !has_parse_error && !construct_launch_string() )
+  if ( !has_parse_error && !construct_rm_map() )
     {
       if ( my_opt->remote && (my_opt->verbose == 0 ))
         has_parse_error = true;
@@ -421,12 +421,12 @@ opts_args_t::process_args ( int *argc, char ***argv )
 }
 
 
-//!  opts_args_t::construct_launchstring()
+//!  opts_args_t::construct_rm_map()
 /*!
  
 */
 bool
-opts_args_t::construct_launch_string ()
+opts_args_t::construct_rm_map ()
 {
   if (!my_opt) 
     {
@@ -440,44 +440,14 @@ opts_args_t::construct_launch_string ()
       return false;
     }
 
-#ifdef RM_BE_STUB_CMD
-  char *pref;
-  std::string bestub(RM_BE_STUB_CMD);
-  if (pref = getenv("LMON_PREFIX"))
-    bestub = std::string(pref) + std::string("/bin/") + bestub;
-#endif
-
-  std::string bulklauncher = my_opt->debugtarget;
-
-#ifdef RM_FE_COLOC_CMD
-  char *bnbuf = strdup(bulklauncher.c_str());
-  char *dt = basename(bnbuf);
-
-  char *pref2; 
-  bulklauncher = RM_FE_COLOC_CMD;
-  if (pref2 = getenv("LMON_PREFIX"))
-    {
-       bulklauncher = std::string(pref)
-                         + std::string("/bin/")
-                         + bulklauncher;
-    }
-#endif
   bool initc = my_rmconfig->init(std::string(TARGET_OS_ISA_STRING));
-  initc = my_rmconfig->init_rm_instance(bulklauncher,
-                            my_opt->tool_daemon,
-                            my_opt->tool_daemon_opts
-#ifdef RM_BE_STUB_CMD
-                           ,bestub
-#endif
-                            );
 
   if(!initc)
     {
       self_trace_t::trace ( true,
         MODULENAME,
         1,
-        "unable to initialize the RM map object "
-        "for launching string construction.");
+        "unable to initialize the RM map object ");
 
       return false;
     }
