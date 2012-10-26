@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Oct 26 2012 DHA: Removed catch clauses for deprecated thread tracers 
+ *                         exceptions.
  *        Jul 31 2012 DHA: Added a fix for a thread race-related hang problem.
  *        Jun 01 2012 DHA: Merged with the middleware-support branch.
  *        Oct 07 2011 DHA: Dynamic resource manager detection support.
@@ -3229,11 +3231,6 @@ linux_launchmon_t::handle_thrcreate_request (
       e.report();
       return LAUNCHMON_FAILED;
     }
-  catch ( thread_tracer_exception_t e ) 
-    {
-      e.report();
-      return LAUNCHMON_FAILED;
-    }
   catch ( machine_exception_t e )
     {
       e.report();
@@ -3287,11 +3284,6 @@ linux_launchmon_t::handle_thrcreate_trap_event (
       return LAUNCHMON_FAILED;
     }
   catch ( tracer_exception_t e ) 
-    {
-      e.report();
-      return LAUNCHMON_FAILED;
-    }
-  catch ( thread_tracer_exception_t e ) 
     {
       e.report();
       return LAUNCHMON_FAILED;
@@ -3354,11 +3346,6 @@ linux_launchmon_t::handle_newthread_trace_event (
       return LAUNCHMON_FAILED;
     }
   catch ( tracer_exception_t e ) 
-    {
-      e.report();
-      return LAUNCHMON_FAILED;
-    }
-  catch ( thread_tracer_exception_t e ) 
     {
       e.report();
       return LAUNCHMON_FAILED;

@@ -75,14 +75,14 @@ int main(int argc, char* argv[])
       //
       return EXIT_FAILURE;
     }
-  catch ( thread_tracer_exception_t e )
-    {
-      e.report();
-      //
-      // return EXIT_FAILURE
-      //
-      return EXIT_FAILURE;
-    }
+  //catch ( thread_tracer_exception_t e )
+  //  {
+  //    e.report();
+  //    //
+  //    // return EXIT_FAILURE
+  //    //
+  //    return EXIT_FAILURE;
+  //  }
   catch ( tracer_exception_t e ) 
     {
       e.report();

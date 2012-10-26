@@ -27,6 +27,8 @@
  *			
  *
  *  Update Log:
+ *        Oct 26 2012 DHA: Removed references to ttracer that has been 
+ *                         deprecated.
  *        May 11 2010 DHA: Removed gettimeofdayD from this file
  *        Sep 24 2008 DHA: Added handle_daemon_exit_event to support
  *                         better error handling 
@@ -74,7 +76,6 @@ extern "C" {
 
 #include "sdbg_base_mach.hxx"
 #include "sdbg_base_tracer.hxx"
-#include "sdbg_base_ttracer.hxx"
 #include "sdbg_self_trace.hxx"
 #include "sdbg_opt.hxx"
 
@@ -153,10 +154,8 @@ public:
   //
   //
   void set_tracer ( tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *t );
-  void set_ttracer ( thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *t );
   void set_engine_state (int); 
   tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> * get_tracer ();    
-  thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> * get_ttracer ();
   define_gset (int, resid)
   define_gset (int, pcount)
   define_gset (int, toollauncherpid)
@@ -341,11 +340,6 @@ private:
   // process tracer
   //
   tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *tracer;
-
-  //
-  // thread tracer
-  //
-  thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *ttracer;
 
   //
   // mpir tracer state

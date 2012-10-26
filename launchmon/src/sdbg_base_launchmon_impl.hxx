@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Oct 26 2012 DHA: Removed methods on ttracer that has been
+ *                         deprecated.
  *        Sep 12 2011 DHA: Added a be_fail_detection_supported check
  *                         within handle_daemon_exit for the orphaned 
  *                         alps_fe_colocat problem (ID: 3408210).
@@ -82,7 +84,6 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::launchmon_base_t (
                 const launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> &l) 
 {
   tracer          = l.tracer;
-  ttracer         = l.ttracer;
   resid           = l.resid;
   pcount          = l.pcount;
   toollauncherpid = l.toollauncherpid;
@@ -107,7 +108,6 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::operator=(
                 const launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> &rhs ) 
 {
   tracer          = rhs.tracer;
-  ttracer         = rhs.ttracer;
   resid           = rhs.resid;
   pcount          = rhs.pcount;
   toollauncherpid = rhs.toollauncherpid;
@@ -163,9 +163,6 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::~launchmon_base_t ()
   if (tracer)
     delete tracer; 
   
-  if (ttracer)
-    delete ttracer;
-
   if (!proctable_copy.empty())
     {
       std::map<std::string, std::vector<MPIR_PROCDESC_EXT *> >::iterator iter;
@@ -316,21 +313,6 @@ tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *
 launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_tracer ()
 {
   return tracer;
-}
-
-template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-void 
-launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_ttracer ( 
-                thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *t )
-{
-  ttracer = t;
-}
-
-template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> * 
-launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_ttracer()
-{
-  return ttracer;
 }
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
