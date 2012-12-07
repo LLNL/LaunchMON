@@ -26,6 +26,7 @@
  *-------------------------------------------------------------------------------- 
  *
  *  Update Log:
+ *        Dec 07 2012 DHA: init_rm_instance returns a meaningful return code
  *        Oct 06 2011 DHA: Restructuring to support
  *                         runtime detection of target resource managers
  *        Sep 12 2011 DHA: Added be_fail_detection_supported support
@@ -409,7 +410,7 @@ rc_rm_plat_matcher<BASE_IMAGE_TEMPLPARAM>::init_rm_instance(rc_rm_t &rm_obj,
               const image_base_t<BASE_IMAGE_TEMPLPARAM> *rmso_symtab,
               const std::string be_stub_path)
 {
-  bool found_matched_rm = true;
+  bool found_matched_rm = false;
   std::vector<resource_manager_t>::const_iterator r_i;
 
   for (r_i = rm_obj.get_supported_rms().begin();

@@ -27,6 +27,7 @@
  *
  *
  *  Update Log:
+ *        Dec 07 2012 DHA: Made the false condition of init_rm_instance fatal
  *        Jun 30 2010 DHA: Added faster parse error detection support
  *        Feb 09 2008 DHA: Added LLNS Copyright
  *        Jul 05 2006 DHA: Added signal handling support
@@ -286,7 +287,8 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive_engine(opts_args_t *opt)
 	self_trace_t::trace ( true, 
 	  MODULENAME,
 	  0,
-	  "Unknown resource manager type");
+	  "Unknown resource manager type: it could be misconfiguration in a rm config file.");
+         return SDBG_DRIVER_FAILED;
       }
 
       //

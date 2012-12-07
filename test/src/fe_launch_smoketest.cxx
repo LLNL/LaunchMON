@@ -189,7 +189,7 @@ main (int argc, char *argv[])
 
   if ((rmenv_str == std::string("RC_bgqrm")))
     {
-      launcher_argv = (char **) malloc(14*sizeof(char *));
+      launcher_argv = (char **) malloc(8*sizeof(char *));
       launcher_argv[0] = strdup(mylauncher);
       launcher_argv[1] = strdup("--verbose");
       launcher_argv[2] = strdup("5");
@@ -198,15 +198,16 @@ main (int argc, char *argv[])
       launcher_argv[5] = strdup("--exe"); 
       launcher_argv[6] = strdup(argv[1]); 
       // manually fill the block
-      launcher_argv[7] = strdup("--block");
-      launcher_argv[8] = strdup("R00-M0-N04"); 
+      //launcher_argv[7] = strdup("--block");
+      //launcher_argv[8] = strdup("R00-M0-N04"); 
       // manually fill the corner
-      launcher_argv[9] = strdup("--corner");
-      launcher_argv[10] = strdup("R00-M0-N04-J07");
+      //launcher_argv[9] = strdup("--corner");
+      //launcher_argv[10] = strdup("R00-M0-N04-J07");
       // manually fill the shape 
-      launcher_argv[11] = strdup("--shape");
-      launcher_argv[12] = strdup("1x1x1x1x1");
-      launcher_argv[13] = NULL;
+      //launcher_argv[11] = strdup("--shape");
+      //launcher_argv[12] = strdup("1x1x1x1x1");
+      //launcher_argv[13] = NULL;
+      launcher_argv[7] = NULL;
       fprintf (stdout, 
         "[LMON_FE] launching the job/daemons via %s\n",
         mylauncher);
