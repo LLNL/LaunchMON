@@ -1,72 +1,22 @@
-.TH LaunchMON 3 "JULY 2012" LaunchMON "LaunchMON Front-End API"
+.TH LaunchMON 3 "December 2012" LaunchMON "LaunchMON Front-End API"
 
 .SH NAME
-LMON_fe_launchAndSpawnDaemon LMON_fe_attachAndSpawnDaemons \- LaunchMON front-end API: job/daemon launching functions. 
+LMON_fe_launchMwDaemons\- LaunchMON front-end API: job/daemon launching function for middleware daemons. 
 
 .SH SYNOPSIS
 .nf
 .B #include <unistd.h>
 .B #include <lmon_fe.h>
 .PP
-.BI "lmon_rc_e LMON_fe_launchAndSpawnDaemons ( int " sessionHandle "," 
+.BI "lmon_rc_e LMON_fe_launchMwDaemons ( int " sessionHandle "," 
 .BI "  const char *" hostname ", const char *" launcher ", char *" l_argv[] "," 
 .BI "  const char *" toolDaemon ", char *" d_argv[] ", void *" febe_data ", void *" befe_data ");"
 .PP
-.BI "lmon_rc_e LMON_fe_attachAndSpawnDaemons ( int " sessionHandle "," 
-.BI "  const char *" hostname ", pid_t " launcherPid ", const char *" toolDaemon "," 
-.BI "  char *" d_argv[] ", void *" febe_data ", void *" befe_data ");"
 .PP
 .B cc ... -lmonfeapi
 
 .SH DESCRIPTION
-\fBLMON_fe_launchAndSpawnDaemons()\fR and \fBLMON_fe_attachAndSpawnDaemons()\fR 
-are the main LaunchMON functions that launch and co-locate tool daemons 
-with a parallel job. \fBLMON_fe_launchAndSpawnDaemons()\fR should be called 
-when a job needs to be started under the client tool's
-control, and \fBLMON_fe_attachAndSpawnDaemons()\fR should be
-used instead when the job has already been running.  
-.PP
-More specifically, the \fBLMON_fe_launchAndSpawnDaemons()\fR function launches a parallel
-job based on the \fIlauncher\fR and \fIl_argv\fR argument, and 
-launches tool daemons specified by \fItoolDaemon\fR and \fId_argv\fR. 
-The \fIlauncher\fR argument must specify the path to the system MPI job launcher (e.g., /usr/bin/srun), 
-and \fIl_argv\fR the set of options and arguments 
-for that launcher. Similarly,
-\fItoolDaemon\fR specifies the path to the tool daemon to be launched, and
-\fId_argv\fR is the tool daemon argument list. Both \fIl_argv\fR
-and \fId_argv\fR must be NULL-terminated. 
-.PP
-On successful return, the \fBLMON_fe_launchAndSpawnDaemons()\fR function  
-leaves the launched application processes in a stopped state unless
-the \fBLMON_DONT_STOP_APP\fR environment variable is set to 1.
-.PP
-On the other hand, the \fBLMON_fe_attachAndSpawnDaemons()\fR function 
-attaches to an existing MPI job launcher process, and launches 
-tool daemons specified by \fItoolDaemon\fR and \fId_argv\fR
-into the remote nodes in which the associated job's 
-tasks are running. 
-.PP
-On successful return, the \fBLMON_fe_attachAndSpawnDaemons()\fR function  
-leaves the attached application processes running unless
-the \fBLMON_DONT_STOP_APP\fR environment variable is set to 0.
-.PP
-For both functions, the caller must provide a valid tool session
-handle, \fIsessionHandle\fR, which should have been
-created by \fBLMON_fe_createSession\fR(3). The \fIhostname\fR argument specifies the node where 
-the launcher needs to run or is already running, in the latter
-case \fIlauncherPid\fR specifies the UNIX process ID of an existing 
-launcher process.  
-.PP
-Optionally, these functions can piggyback client tool data as 
-part of the communications needed for tool daemon setup. 
-If \fIfebe_data\fR is not null and a pack function has
-previously been registered for this session,  
-these functions call back that pack function to serialize the 
-tool data before transferring it to the master back-end daemon. 
-Likewise, when an acknowledgement message is received back from 
-the master back-end daemon and an unpack function has 
-been registered, they call back that unpack function de-serializing 
-the user data into \fIbefe_data\fR. 
+TODO
 
 .SH RETURN VALUE
 Both functions return \fBLMON_OK\fR when all the back-end daemons get co-located 

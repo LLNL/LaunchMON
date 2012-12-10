@@ -1,0 +1,72 @@
+.TH LaunchMON 3 "Dec 2012" LaunchMON "LaunchMON Middleware API"
+
+.SH NAME
+LMON_mw_regErrorCB \- LaunchMON Middleware API: registers an error message logging callback function. 
+
+.SH SYNOPSIS
+.nf
+.B #include <unistd.h>
+.B #include <lmon_fe.h>
+.B #include <stdarg.h>
+.PP
+.PP
+.BI "lmon_rc_e LMON_mw_regErrorCB ( 
+.BI "  int (* " errCB " ) (const char * " format ", va_list " ap "));"
+.B cc ... -lmonmwapi
+
+.SH DESCRIPTION
+
+\fBLMON_mw_regErrorCB\fR registers the \fBerrCB\fR function which 
+LaunchMON calls back on an error and/or warning condition with 
+appropriate arguments. LaunchMON otherwise prints the message 
+to stderr or stdout. In case there are multiple callback
+functions registered with this API call, the latest one is used.   
+
+.SH RETURN VALUE
+\fBLMON_OK\fR on success; otherwise, an LMON error code is returned as described below. 
+
+.SH ERRORS
+.TP
+.B LMON_OK
+Success.
+.TP
+.B LMON_EBDARG
+Invalid arguments.
+
+.SH AUTHOR
+Dong H. Ahn <ahn1@llnl.gov>
+
+.SH "SEE ALSO"
+.BR LMON_fe_init(3),
+.BR LMON_fe_createSession(3),
+.BR LMON_fe_launchAndSpawnDaemons(3),
+.BR LMON_fe_kill(3),
+.BR LMON_fe_detach(3),
+.BR LMON_fe_shutdownDaemons(3),
+.BR LMON_fe_regUnpackForBeToFe(3),
+.BR LMON_fe_regPackForFeToBe(3),
+.BR LMON_fe_putToBeDaemonEnv(3),
+.BR LMON_fe_sendUsrDataBe(3),
+.BR LMON_fe_recvUsrDataBe(3),
+.BR LMON_fe_getProctable(3),
+.BR LMON_fe_getProctableSize(3),
+.BR LMON_fe_getResourceHandle(3),
+.BR LMON_fe_regStatusCB(3),
+.BR LMON_fe_getRMInfo(3),
+.BR LMON_be_init(3),
+.BR LMON_be_finalize(3),
+.BR LMON_be_getMyRank(3),
+.BR LMON_be_getSize(3),
+.BR LMON_be_amIMaster(3),
+.BR LMON_be_handshake(3),
+.BR LMON_be_ready(3),
+.BR LMON_be_barrier(3),
+.BR LMON_be_broadcast(3),
+.BR LMON_be_gather(3),
+.BR LMON_be_scatter(3),
+.BR LMON_be_regPackForBeToFe(3),
+.BR LMON_be_regUnpackForFeToBe(3),
+.BR LMON_be_recvUsrData(3),
+.BR LMON_be_sendUsrData(3),
+.BR LMON_be_getMyProctab(3),
+.BR LMON_be_getMyProctabSize(3)

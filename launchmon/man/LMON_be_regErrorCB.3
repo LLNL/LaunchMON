@@ -1,36 +1,37 @@
-.TH LaunchMON 3 "JULY 2012" LaunchMON "LaunchMON Front-End API"
+.TH LaunchMON 3 "Dec 2012" LaunchMON "LaunchMON Back-End API"
 
 .SH NAME
-LMON_fe_createSession \- LaunchMON front-end API: the function creating a tool session.
+LMON_be_regErrorCB \- LaunchMON back-end API: registers an error message logging callback function. 
 
 .SH SYNOPSIS
+.nf
+.B #include <unistd.h>
 .B #include <lmon_fe.h>
+.B #include <stdarg.h>
 .PP
-.BI "lmon_rc_e LMON_fe_createSession ( int *" sessionHandle " );"
 .PP
-.B cc ... -lmonfeapi
+.BI "lmon_rc_e LMON_be_regErrorCB ( 
+.BI "  int (* " errCB " ) (const char * " format ", va_list " ap "));"
+.B cc ... -lmonbeapi
 
 .SH DESCRIPTION
-The \fBLMON_fe_createSession()\fR function creates a tool session, an abstraction
-for a group of daemons associated with a parallel job, and
-returns the session ID via the \fIsessionHandle\fR argument. 
-.PP
+
+\fBLMON_be_regErrorCB\fR registers the \fBerrCB\fR function which 
+LaunchMON calls back on an error and/or warning condition with 
+appropriate arguments. LaunchMON otherwise prints the message 
+to stderr or stdout. In case there are multiple callback
+functions registered with this API call, the latest one is used.   
 
 .SH RETURN VALUE
-The \fBLMON_fe_createSession()\fR function returns \fBLMON_OK\fR
-on success; otherwise, an LMON error code is returned 
-as described below.
+\fBLMON_OK\fR on success; otherwise, an LMON error code is returned as described below. 
 
 .SH ERRORS
 .TP
 .B LMON_OK
 Success.
 .TP
-.B LMON_EINVAL
-Unable to create resources needed for a tool session.
-.TP
-.B LMON_ESYS
-Encountered a system error. 
+.B LMON_EBDARG
+Invalid arguments.
 
 .SH AUTHOR
 Dong H. Ahn <ahn1@llnl.gov>

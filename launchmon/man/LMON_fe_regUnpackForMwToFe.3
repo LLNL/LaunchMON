@@ -1,88 +1,87 @@
 .TH LaunchMON 3 "JULY 2012" LaunchMON "LaunchMON Front-End API"
 
 .SH NAME
-LMON_fe_regPackForFeToBe, LMON_fe_regUnpackForBeToFe, LMON_fe_putToBeDaemonEnv, LMON_fe_recvUsrDataBe, LMON_fe_sendUsrDataBe \- LaunchMON front-end API: client tool data transfer functions. 
+LMON_fe_regPackForFeToMw, LMON_fe_regUnpackForMwToFe, LMON_fe_putToMwDaemonEnv, LMON_fe_recvUsrDataMw, LMON_fe_sendUsrDataMw \- LaunchMON front-end API: client tool data transfer functions. 
 .PP 
 
 .SH SYNOPSIS
 .nf
 .B #include <lmon_fe.h>
 .PP
-.BI "lmon_rc_e LMON_fe_regPackForFeToBe ( int " sessionHandle ", "
-.BI "  int (* " packFebe " ) (void * " udata ", void * " msgbuf ", int " msgbufmax ", int * " msgbuflen "));"
+.BI "lmon_rc_e LMON_fe_regPackForFeToMw ( int " sessionHandle ", "
+.BI "  int (* " packFemw " ) (void * " udata ", void * " msgbuf ", int " msgbufmax ", int * " msgbuflen "));"
 .PP
-.BI "lmon_rc_e LMON_fe_regUnpackForBeToFe ( int " sessionHandle ", " 
+.BI "lmon_rc_e LMON_fe_regUnpackForMwToFe ( int " sessionHandle ", " 
 .BI "  int (* " unpackBefe " ) (void * " udatabuf ", int " udatabuflen ", void * " udata "));"
 .PP
-.BI "lmon_rc_e LMON_fe_putToBeDaemonEnv (int " sessionHandle ", "
+.BI "lmon_rc_e LMON_fe_putToMwDaemonEnv (int " sessionHandle ", "
 .BI "  lmon_daemon_env_t * " dmonEnv ", int " numElem " );"  
 .PP
-.BI "lmon_rc_e LMON_fe_sendUsrDataBe ( int " sessionHandle ", "
-.BI "  void * " febe_data " );"  
+.BI "lmon_rc_e LMON_fe_sendUsrDataMw ( int " sessionHandle ", "
+.BI "  void * " femw_data " );"  
 .PP
-.BI "lmon_rc_e LMON_fe_recvUsrDataBe ( int " sessionHandle ", "
-.BI "  void * " befe_data " );"  
+.BI "lmon_rc_e LMON_fe_recvUsrDataMw ( int " sessionHandle ", "
+.BI "  void * " mwfe_data " );"  
 .PP
 .B cc ... -lmonfeapi
 .fi
 
 .SH DESCRIPTION
-\fBLMON_fe_regPackForFeToBe()\fR registers a per-session pack function 
-(\fIpackFebe\fR) that serializes the user-provided data, \fIudata\fR,
+\fBLMON_fe_regPackForFeToMw()\fR registers a per-session pack function 
+(\fIpackFemw\fR) that serializes the user-provided data, \fIudata\fR,
 into \fImsgbuf\fR.
 The registration is valid and effective  
-only if it occurs before a successful \fBLMON_fe_attachAndSpawnDaemons()\fR 
-or \fBLMON_fe_launchAndSpawnDaemons()\fR call, and \fIsessionHandle\fR 
-contains a valid session ID. \fIpackFebe\fR is called as part of the 
-(front-end <-> master back-end daemon) handshaking performed only within 
-above two functions.
-\fIudata\fR is a pointer to which tool data begins. \fIpackFebe\fR must 
+only if it occurs before a successful \fLMON_fe_launchMwDaemons()\fR call,
+and \fIsessionHandle\fR contains a valid session ID. \fIpackFemw\fR is called as part of the 
+(front-end <-> master middleware daemon) handshake performed only within 
+\fLMON_fe_launchMwDaemons()\fR.
+\fIudata\fR is a pointer to which tool data begins. \fIpackFemw\fR must 
 serialize this input data into the \fImsgbuf\fR argument whose buffer 
 size is specified by the \fImsgbufmax\fR argument. The packed data 
 cannot exceed \fImsgbufmax.\fR The current default max is determined by 
 the \fBLMON_MAX_USRPAYLOAD\fR macro defined in \fBlmon_api_std.h\fR, which is 
-set to a relatively small value, but can be differently configured. 
-The \fIpackFebe\fR function must return the size of the filled buffer 
+set to a relatively small value, but can be configured differently. 
+The \fIpackFemw\fR function must return the size of the filled buffer 
 via \fImsgbuflen\fR 
 In addition, any negative value
-returned from the \fIpackFebe\fR function is considered to be an error condition.
+returned from the \fIpackFemw\fR function is considered to be an error condition.
 .PP
-\fBLMON_fe_regUnpackForBeToFe()\fR registers a per-session unpack function 
-that de-serializes the tool data received from the master back-end daemon. 
+\fBLMON_fe_regUnpackForMwToFe()\fR registers a per-session unpack function 
+that de-serializes the tool data received from the master middleware daemon. 
 The registration is valid only when it occurs before a successful
-\fBLMON_fe_attachAndSpawnDaemons()\fR or \fBLMON_fe_launchAndSpawnDaemons()\fR call, 
+\fLMON_fe_launchMwDaemons()\fR call,
 and \fIsessionHandle\fR contains a valid ID; returns an error code otherwise. 
-\fIunpackBefe\fR is called as part of the (front-end <-> master back-end daemon)
-handshaking operations, when the front-end receives the master back-end 
-daemon's data. \fIunpackBefe\fR must unpack the back-end provided tool data, 
+\fIunpackMwfe\fR is called as part of the (front-end <-> master middleware daemon)
+handshake operations, when the front-end receives the master middleware
+daemon's data. \fIunpackMwfe\fR must unpack the middleware provided tool data, 
 and de-serialize it into the \fIudata\fR argument. 
-\fIudatabuf\fR is the raw payload received from the master back-end daemon.
+\fIudatabuf\fR is the raw payload received from the master middleware daemon.
 \fIudatabuflen\fR is the length of that raw buffer.
 And \fIudata\fR is the pointer to which this buffer should be unpacked. 
 Any negative value returned from the \fIunpackBefe\fR function
 is considered to be an error condition.
 .PP
-\fBLMON_fe_putToBeDaemonEnv()\fR adds \fIdmonEnv\fR to the environment variable
-list that gets propagated to all the backend daemons associated with \fIsessionHandle\fR. 
-The registration is valid only when it occurs before a \fBLMON_fe_attachAndSpawnDaemons()\fR 
-or \fBLMON_fe_launchAndSpawnDaemons()\fR call, and \fIsessionHandle\fR is a valid ID; 
+\fBLMON_fe_putToMwDaemonEnv()\fR adds \fIdmonEnv\fR to the environment variable
+list that gets propagated to all the middleware daemons associated with \fIsessionHandle\fR. 
+The registration is valid only when it occurs before a 
+\fLMON_fe_launchMwDaemons()\fR call, and \fIsessionHandle\fR is a valid ID; 
 returns \fBLMON_EINVAL\fR otherwise. The \fInumElem\fR argument specifies the number 
 of elements in the \fIdmonEnv\fR array.
 .PP
-\fBLMON_fe_sendUsrDataBe()\fR sends a message containing 
-the tool data (\fIfebe_data\fR) to the master back-end daemon. 
+\fBLMON_fe_sendUsrDataMw()\fR sends a message containing 
+the tool data (\fIfemw_data\fR) to the master middleware daemon. 
 If the correspoding pack function has been registered, this
-function calls back that pack function to serialize \fIfebe_data\fR
+function calls that pack function back to serialize \fIfemw_data\fR
 into the message.
-If \fIfebe_data\fR is NULL, this function sends an empty message 
-that contains only the message header to the master back-end daemon,
+If \fIfemw_data\fR is NULL, this function sends an empty message 
+that contains only the message header to the master middleware daemon,
 and returns the \fBLMON_ENOPLD\fR code.
 .PP
-\fBLMON_fe_recvUsrDataBe()\fR receives a message containing 
-the user data (\fIbefe_data\fR) from the master back-end daemon. 
+\fBLMON_fe_recvUsrDataMw()\fR receives a message containing 
+the user data (\fImwfe_data\fR) from the master middleware daemon. 
 If the correspoding unpack function has been registered, this
 function calls back that unpack function to de-serialize the 
-user payload into \fIbefe_data\fR.
+user payload into \fImwfe_data\fR.
 When the received message contains no payload, this function
 return \fBLMON_ENOPLD\fR. 
 

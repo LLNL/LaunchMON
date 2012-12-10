@@ -1,0 +1,101 @@
+.TH LaunchMON 3 "December 2012" LaunchMON "LaunchMON Middleware API"
+
+.SH NAME
+LMON_mw_handshake LMON_mw_ready \- LaunchMON middleware API: front-end <-> middleware handshake functions. 
+
+.SH SYNOPSIS
+.B #include <lmon_mw.h>
+.PP
+.BI "lmon_rc_e LMON_mw_handshake ( void *" udata " );"
+.PP
+.BI "lmon_rc_e LMON_mw_ready ( void *" udata " );"
+.PP
+.B cc ... -lmonmwapi
+
+.SH DESCRIPTION
+The \fBLMON_mw_handshake()\fR function performs handshake operations 
+between the tool front-end and the middleware daemons associated with 
+a session (see \fBLMON_launchAndSpawnDaemons\fR(3)). 
+For the master daemon, if \fIudata\fR is not NULL and an unpack function 
+has been registered (see \fBLMON_mw_regUnpackForMwToFe\fR(3)), the client tool data that are bundled 
+into the LaunchMON handshaking messages by the front-end 
+are de-serialized by that unpack function into the \fIudata\fR argument. 
+It is upto the client daemon implementation how these data are distributed 
+among the daemons. \fIudata\fR is only meaningful to the 
+master daemon. 
+
+\fBLMON_mw_ready() \fR is a companion function to \fBLMON_mw_handshake()\fR,
+which finalizes the handshaking operation 
+by sending the \fBREADY\fR message to the front-end.  
+For the master daemon, if \fIudata\fR is not NULL and a pack function 
+has been registered (see \fBLMON_mw_regpackForFeToMw\fR(3)), \fIudata\fR is serialized and bundled into 
+the \fBREADY\fR message. \fIudata\fR is only meaningful to the
+master daemon. 
+
+Note that all the middleware daemons associated with a session must participate in these functions for a
+successful handshake, but the
+only master daemon coordinates the communcation with the front-end on
+behalf of the other daemons.  
+
+.SH RETURN VALUE
+These functions return \fBLMON_OK\fR
+on success; otherwise, an LMON error code is returned 
+as described below. 
+
+.SH ERRORS
+.TP
+.B LMON_OK
+Success.
+.TP
+.B LMON_EBDMSG
+An LMONP message error. 
+.TP
+.B LMON_ESYS
+A system error (likely attributed to an error in a sockets API call). 
+.TP
+.B LMON_ESUBCOM
+Encountered an error during a communication subsystem operation. 
+.TP
+.B LMON_ENOMEM
+Out of memory.
+.TP
+.B LMON_EINVAL
+Encountered any other erroneous conditions. 
+
+.SH AUTHOR
+Dong H. Ahn <ahn1@llnl.gov>
+
+.SH "SEE ALSO"
+.BR LMON_fe_init(3),
+.BR LMON_fe_createSession(3),
+.BR LMON_fe_attachAndSpawnDaemons(3),
+.BR LMON_fe_launchAndSpawnDaemons(3),
+.BR LMON_fe_kill(3),
+.BR LMON_fe_detach(3),
+.BR LMON_fe_shutdownDaemons(3),
+.BR LMON_fe_regUnpackForBeToFe(3),
+.BR LMON_fe_regPackForFeToBe(3),
+.BR LMON_fe_putToBeDaemonEnv(3),
+.BR LMON_fe_sendUsrDataBe(3),
+.BR LMON_fe_recvUsrDataBe(3),
+.BR LMON_fe_getProctable(3),
+.BR LMON_fe_getProctableSize(3),
+.BR LMON_fe_getResourceHandle(3),
+.BR LMON_fe_regErrorCB(3),
+.BR LMON_fe_regStatusCB(3),
+.BR LMON_fe_getRMInfo(3),
+.BR LMON_be_init(3),
+.BR LMON_be_finalize(3),
+.BR LMON_be_getMyRank(3),
+.BR LMON_be_getSize(3),
+.BR LMON_be_amIMaster(3),
+.BR LMON_be_barrier(3),
+.BR LMON_be_broadcast(3),
+.BR LMON_be_gather(3),
+.BR LMON_be_scatter(3),
+.BR LMON_be_regPackForBeToFe(3),
+.BR LMON_be_regUnpackForFeToBe(3),
+.BR LMON_be_recvUsrData(3),
+.BR LMON_be_sendUsrData(3),
+.BR LMON_be_getMyProctab(3),
+.BR LMON_be_getMyProctabSize(3)

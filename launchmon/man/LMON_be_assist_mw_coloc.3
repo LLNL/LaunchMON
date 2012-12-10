@@ -1,36 +1,34 @@
-.TH LaunchMON 3 "JULY 2012" LaunchMON "LaunchMON Front-End API"
+.TH LaunchMON 3 "Dec 2012" LaunchMON "LaunchMON Back-End API"
 
 .SH NAME
-LMON_fe_createSession \- LaunchMON front-end API: the function creating a tool session.
+LMON_be_assist_mw_coloc \- LaunchMON back-end API: spawns middleware daemons on the nodes where back-end daemons run. 
 
 .SH SYNOPSIS
-.B #include <lmon_fe.h>
+.B #include <lmon_be.h>
 .PP
-.BI "lmon_rc_e LMON_fe_createSession ( int *" sessionHandle " );"
+.BI "lmon_rc_e LMON_be_assist_mw_coloc ( );"
 .PP
-.B cc ... -lmonfeapi
+.B cc ... -lmonbeapi
 
 .SH DESCRIPTION
-The \fBLMON_fe_createSession()\fR function creates a tool session, an abstraction
-for a group of daemons associated with a parallel job, and
-returns the session ID via the \fIsessionHandle\fR argument. 
-.PP
+The \fBLMON_be_assist_mw_coloc()\fR function forks and exec's middleware daemons
+on the back-end nodes in support to the \fBLMON_fe_launchMwDaemons()\fR function.
+For a machine in which no mechanism exists to spawn additional daemons
+on the back-end nodes, this function is required for launching 
+of middleware daemons.
 
 .SH RETURN VALUE
-The \fBLMON_fe_createSession()\fR function returns \fBLMON_OK\fR
+These functions return \fBLMON_OK\fR
 on success; otherwise, an LMON error code is returned 
-as described below.
+as described below. 
 
 .SH ERRORS
 .TP
 .B LMON_OK
 Success.
 .TP
-.B LMON_EINVAL
-Unable to create resources needed for a tool session.
-.TP
-.B LMON_ESYS
-Encountered a system error. 
+.B LMON_ESUBCOM
+Encountered an error during a communication subsystem operation. 
 
 .SH AUTHOR
 Dong H. Ahn <ahn1@llnl.gov>

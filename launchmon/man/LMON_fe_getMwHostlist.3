@@ -1,36 +1,45 @@
-.TH LaunchMON 3 "JULY 2012" LaunchMON "LaunchMON Front-End API"
+.TH LaunchMON 3 "DECEMBER 2012" LaunchMON "LaunchMON Front-End API"
 
 .SH NAME
-LMON_fe_createSession \- LaunchMON front-end API: the function creating a tool session.
+LMON_fe_getMwHostlist LMON_fe_getMwHostlistSize\- LaunchMON front-end API: retrieves information about hosts where middleware daemons are running
 
 .SH SYNOPSIS
+.nf
 .B #include <lmon_fe.h>
 .PP
-.BI "lmon_rc_e LMON_fe_createSession ( int *" sessionHandle " );"
+.BI "lmon_rc_e LMON_fe_getMwHostlist ( int " sessionHandle ","
+.BI "  MPIR_PROCDESC_EXT *" proctab ", unsigned int *" size ", unsigned int " maxlen " );"
+.PP
+.BI "lmon_rc_e LMON_fe_getMwHostlistSize ( int " sessionHandle ", unsigned int *" size " );"
+.PP
 .PP
 .B cc ... -lmonfeapi
+.fi
 
 .SH DESCRIPTION
-The \fBLMON_fe_createSession()\fR function creates a tool session, an abstraction
-for a group of daemons associated with a parallel job, and
-returns the session ID via the \fIsessionHandle\fR argument. 
-.PP
+
+TODO
 
 .SH RETURN VALUE
-The \fBLMON_fe_createSession()\fR function returns \fBLMON_OK\fR
-on success; otherwise, an LMON error code is returned 
-as described below.
+Those functions return \fBLMON_OK\fR on success; otherwise, an 
+LMON error code is returned. 
 
 .SH ERRORS
 .TP
 .B LMON_OK
 Success.
 .TP
-.B LMON_EINVAL
-Unable to create resources needed for a tool session.
+.B LMON_EBDARG
+Invalid arguments.
 .TP
-.B LMON_ESYS
-Encountered a system error. 
+.B LMON_EDUNAV
+The requested information is unavailable.
+.TP
+.B LMON_ETRUNC
+Returned \fIbuf\fR contains truncated remote process descriptor table.
+.TP
+.B LMON_EINVAL
+Encountered other errorenous conditions. 
 
 .SH AUTHOR
 Dong H. Ahn <ahn1@llnl.gov>
