@@ -38,7 +38,7 @@
 INCLUDES                          = -I$(top_srcdir) \
 				    -I$(top_srcdir)/launchmon/src \
 				    -I$(top_srcdir)/@LMONAPILOC@ \
-				    -I@ALPS_INC_DIR@
+				    -I@RMINC@
 
 bin_PROGRAMS              = alps_be_starter alps_fe_colocator 
 alps_be_starter_SOURCES   = alps_be_starter.c 
@@ -48,7 +48,7 @@ alps_be_starter: alps_be_starter.c Makefile
 	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CFLAGS) $(CFLAGS) -o $@ $<   
 
 alps_fe_colocator_CXXFLAGS      = @LNCHR_BIT_FLAGS@
-alps_fe_colocator_LDADD         = @LIBELF@ @LIBALPS@
+alps_fe_colocator_LDADD         = @LIBELF@ @RMLIB@
 
 etcdir                          = ${prefix}/etc
 etc_SCRIPTS                     = CLE-dso.conf \
