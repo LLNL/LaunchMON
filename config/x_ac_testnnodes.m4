@@ -184,7 +184,42 @@ AC_DEFUN([X_AC_TEST_RM], [
     AC_MSG_RESULT($with_rm:$rm_found)
 
   elif test "x$with_rm" = "xalps" ; then
-    echo "$with_rm"
+    #
+    # Configure for Cray ALPS RM
+    #
+    if test "x$with_launcher" != "xcheck"; then
+      #
+      # launcher path given
+      #
+      if test ! -z "$with_launcher" -a -f "$with_launcher"; then
+        pth=`config/ap $with_launcher`
+        ac_job_launcher_path=$pth
+        rm_found="yes"
+        AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
+        AC_SUBST(RM_TYPE, RC_alps)
+      fi
+    else
+      rm_default_dirs="/usr/bin/orig /usr/bin"
+      for rm_dir in $rm_default_dirs; do
+        if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
+          continue;
+        fi
+
+        if test ! -z "$rm_dir/aprun" -a -f "$rm_dir/aprun"; then
+          pth=`config/ap $rm_dir/aprun`
+          ac_job_launcher_path=$pth
+          rm_found="yes"
+          AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
+          AC_SUBST(RM_TYPE, RC_alps)
+          break
+        fi
+      done
+    fi
+
+    #
+    # This answers whether RM given and found
+    #
+    AC_MSG_RESULT($with_rm:$rm_found)
 
   elif test "x$with_rm" = "xbglrm" ; then
     #

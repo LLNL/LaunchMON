@@ -113,12 +113,13 @@ AC_DEFUN([X_AC_PLATFORM], [
         AC_SUBST(CIODLOC, [tools/ciod])
         ac_target_rm="bgqrm"
     fi
-  elif test "x$ac_target_os" = "x$linux" -a "x$ac_target_isa" = "x86_64"; then
-    if test ! -z "/usr/bin/orig/aprun" \
-         -a -f "/usr/bin/orig/aprun"; then
+  elif test "x$ac_target_os" = "xlinux" -a "x$ac_target_isa" = "xx86_64"; then
+    if test -f "/usr/bin/aprun"; then
         AC_DEFINE(SUB_ARCH_ALPS,1,[Define 1 for SUB_ARCH_ALPS])
         AC_DEFINE(RM_BE_STUB_CMD, "alps_be_starter", [be starter stub location])
         AC_DEFINE(RM_FE_COLOC_CMD, "alps_fe_colocator", [bulk launcher location])
+	AC_SUBST(RMINC,"/usr/include/alps")
+	AC_SUBST(RMLIB,"/usr/lib/alps/libalps.a")
         ac_target_rm="alps"
     fi
   else
