@@ -350,7 +350,7 @@ main( int argc, char* argv[] )
     }
 
   LMON_be_procctl_init ( myBeData->rmtype_instance,
-                         proctab, proctab_size, fastpath_state );
+                         proctab, 0, proctab_size, fastpath_state );
 
   LMON_be_procctl_run ( myBeData->rmtype_instance,
                         signum,

@@ -70,6 +70,7 @@ using namespace DebuggerInterface;
 
 lmon_rc_e
 LMON_be_procctl_init_bg ( MPIR_PROCDESC_EXT *ptab,
+                          int islaunch,
                           int psize)
 {
   lmon_rc_e lrc = LMON_OK;
@@ -117,6 +118,15 @@ LMON_be_procctl_init_bg ( MPIR_PROCDESC_EXT *ptab,
           lrc = LMON_EINVAL;
           break;
         }
+    }
+
+  if ( islaunch )
+    {
+      //
+      // if launch mode, you don't need to worry
+      // about the rest of the operations
+      //
+      return lrc;
     }
 
   for ( i=0; i < psize; i++ )
@@ -413,6 +423,7 @@ return_loc:
 
 lmon_rc_e
 LMON_be_procctl_init_bg ( MPIR_PROCDESC_EXT *ptab,
+                          int islaunch,
                           int psize)
 {
    return LMON_EINVAL;

@@ -39,6 +39,7 @@
 
 extern lmon_rc_e LMON_be_procctl_init ( rm_catalogue_e rmtype,
                    MPIR_PROCDESC_EXT *ptab,
+                   int islaunch,
                    int psize,
 		   int dontstop );
 

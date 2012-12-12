@@ -59,6 +59,7 @@ static int dontstop_fastpath = 0;
 lmon_rc_e
 LMON_be_procctl_init ( rm_catalogue_e rmtype,
                        MPIR_PROCDESC_EXT *ptab,
+                       int islaunch,
                        int psize,
                        int dontstop )
 {
@@ -76,7 +77,8 @@ LMON_be_procctl_init ( rm_catalogue_e rmtype,
 #if VERBOSE
   LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
     "Platform-independent proc control init"
-    " visited with rmtype(%d) psize(%d), dontstop_fastpath(%d)", rmtype, psize, dontstop_fastpath );
+    " visited with rmtype(%d) psize(%d), dontstop_fastpath(%d)", 
+    rmtype, psize, dontstop_fastpath );
 #endif
 
   switch(rmtype)
@@ -88,7 +90,7 @@ LMON_be_procctl_init ( rm_catalogue_e rmtype,
       //
       // Call generic Linux init
       //
-      rc = LMON_be_procctl_init_generic ( ptab, psize );
+      rc = LMON_be_procctl_init_generic ( ptab, islaunch, psize );
       break;
 
     case RC_bglrm:
@@ -96,7 +98,7 @@ LMON_be_procctl_init ( rm_catalogue_e rmtype,
       //
       // Call RM-specific init with BG CIOD debug interface
       //
-      rc = LMON_be_procctl_init_bg ( ptab, psize );
+      rc = LMON_be_procctl_init_bg ( ptab, islaunch, psize );
       break;
 
     case RC_bgqrm:
@@ -106,7 +108,7 @@ LMON_be_procctl_init ( rm_catalogue_e rmtype,
       //
       rc = (dontstop_fastpath) ? 
               LMON_OK :
-              LMON_be_procctl_init_bgq ( ptab, psize );
+              LMON_be_procctl_init_bgq ( ptab, islaunch, psize );
       break;
 
     case RC_mchecker_rm:

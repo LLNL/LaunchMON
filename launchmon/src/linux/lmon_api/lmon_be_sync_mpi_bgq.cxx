@@ -2268,6 +2268,7 @@ return_loc:
 
 lmon_rc_e
 LMON_be_procctl_init_bgq ( MPIR_PROCDESC_EXT *ptab,
+			   int islaunch,
                            int psize )
 {
   int i;
@@ -2374,14 +2375,19 @@ LMON_be_procctl_init_bgq ( MPIR_PROCDESC_EXT *ptab,
 #endif
 
   //
-  // Stop all processes
+  // Stop all processes only when the tracing mode is not "launch"
+  // In launch mode, attach will leave the processes into 
+  // a stop state.
   //
-  if ( stop_all ( _cdtiVer, _seqNum, _jobid, _toolid) != LMON_OK )
+  if ( !islaunch ) 
     {
-      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-        "stop_all returned an error code.");
+      if ( stop_all ( _cdtiVer, _seqNum, _jobid, _toolid) != LMON_OK )
+        {
+          LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+            "stop_all returned an error code.");
 
-      return LMON_EINVAL;
+          return LMON_EINVAL;
+        }
     }
 
 #if VERBOSE
@@ -2521,6 +2527,7 @@ LMON_be_procctl_done_bgq ( MPIR_PROCDESC_EXT *ptab,
 
 lmon_rc_e
 LMON_be_procctl_init_bgq ( MPIR_PROCDESC_EXT *ptab,
+                           int islaunch,
                            int psize)
 {
    return LMON_EINVAL;

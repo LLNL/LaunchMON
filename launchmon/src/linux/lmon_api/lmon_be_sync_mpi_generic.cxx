@@ -60,6 +60,7 @@
 
 lmon_rc_e
 LMON_be_procctl_init_generic ( MPIR_PROCDESC_EXT* ptab,
+                               int islaunch,
                                int psize )
 {
   return ( LMON_be_procctl_stop_generic ( ptab, psize ) );

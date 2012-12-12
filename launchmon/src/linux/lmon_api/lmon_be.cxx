@@ -26,6 +26,11 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Dec 11 2012 DHA: Added mods to initialize process control before 
+ *        		   MPIR_Breakpoint release.
+ *        		   This fixes an apparent race where the early release 
+ *        		   runs the target processes a bit before the proccontrol 
+ *        		   init completion.
  *        Aug 06 2010 DHA: Added middleware support including LMON_be_assist_mw_coloc.
  *        Nov 23 2011 DHA: Restructured MPI-Tool sync support to reduce
  *                         the complexity in this upper layer code.
@@ -1195,6 +1200,39 @@ LMON_be_handshake ( void *udata )
       return LMON_EDUNAV;
     }
 
+
+  //
+  // Call procctl_init which then calls into OS-dependent
+  // lower-layer to complete init as a function of the
+  // target RM. As part of init, the lower-layer leaves
+  // the job in a stopped state.
+  //
+  int dontstop_fastpath = 0;
+  if ( ( bedata.is_launch == trm_launch_dontstop ) 
+       || ( bedata.is_launch == trm_attach ) )
+    {
+      dontstop_fastpath = 1;
+    }
+
+  int islaunch = ((bedata.is_launch == trm_launch) 
+                  || (bedata.is_launch == trm_launch_dontstop))? 1 : 0;
+
+  if ( LMON_be_procctl_init ( bedata.rmtype_instance,
+         proctab, islaunch, proctab_size,
+         dontstop_fastpath ) != LMON_OK)
+    {
+      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+        "proc control initialization failed");
+
+      return LMON_ESUBSYNC;
+    }
+
+#if VERBOSE
+    LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+      "BES: LMON_be_procctl_init done");
+#endif
+
+
   //
   // We're almost ready: so we tell FEN to release RM from MPIR_Breakpoint 
   //
@@ -1216,33 +1254,6 @@ LMON_be_handshake ( void *udata )
       }
   END_MASTER_ONLY 
 
-  //
-  // Call procctl_init which then calls into OS-dependent
-  // lower-layer to complete init as a function of the
-  // target RM. As part of init, the lower-layer leaves
-  // the job in a stopped state.
-  //
-  int dontstop_fastpath = 0;
-  if ( ( bedata.is_launch == trm_launch_dontstop ) 
-       || ( bedata.is_launch == trm_attach ) )
-    {
-      dontstop_fastpath = 1;
-    }
-
-  if ( LMON_be_procctl_init ( bedata.rmtype_instance,
-         proctab, proctab_size,
-         dontstop_fastpath ) != LMON_OK)
-    {
-      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-        "proc control initialization failed");
-
-      return LMON_ESUBSYNC;
-    }
-
-#if VERBOSE
-    LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-      "BES: LMON_be_procctl_init done");
-#endif
 
   if ( ( bedata.is_launch == trm_launch_dontstop )
        || ( bedata.is_launch == trm_attach ) )
