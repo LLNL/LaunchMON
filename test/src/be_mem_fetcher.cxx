@@ -206,7 +206,7 @@ main( int argc, char* argv[] )
       return EXIT_FAILURE;
     }
 
-  LMON_be_procctl_init ( myBeData->rmtype_instance,
+  LMON_be_procctl_tester_init ( myBeData->rmtype_instance,
                          proctab, 0, proctab_size, 1);
 
   unsigned int fetchunit;

@@ -57,6 +57,17 @@ static int dontstop_fastpath = 0;
 //
 
 lmon_rc_e
+LMON_be_procctl_tester_init ( rm_catalogue_e rmtype,
+                              MPIR_PROCDESC_EXT *ptab,
+                              int islaunch,
+                              int psize,
+                              int dontstop )
+{
+  LMON_be_procctl_init (rmtype, ptab, islaunch, psize, dontstop);
+}
+
+
+lmon_rc_e
 LMON_be_procctl_init ( rm_catalogue_e rmtype,
                        MPIR_PROCDESC_EXT *ptab,
                        int islaunch,
@@ -84,6 +95,19 @@ LMON_be_procctl_init ( rm_catalogue_e rmtype,
   switch(rmtype)
     {
     case RC_slurm:
+      //
+      // Call generic Linux init
+      //
+      if (islaunch)
+        { 
+          rc = LMON_be_procctl_init_ptrace ( ptab, islaunch, psize );
+        }
+      else
+        {
+          rc = LMON_be_procctl_init_generic ( ptab, islaunch, psize );
+        } 
+      break;
+
     case RC_orte:
     case RC_alps:
     case RC_gupc:
@@ -181,6 +205,16 @@ LMON_be_procctl_stop ( rm_catalogue_e rmtype,
 
 
 lmon_rc_e
+LMON_be_procctl_tester_run ( rm_catalogue_e rmtype,
+                      int signum,
+                      MPIR_PROCDESC_EXT *ptab,
+                      int psize )
+{
+  return LMON_be_procctl_run ( rmtype, signum, ptab, psize);
+}
+
+
+lmon_rc_e
 LMON_be_procctl_run ( rm_catalogue_e rmtype,
                       int signum,
                       MPIR_PROCDESC_EXT *ptab,
@@ -240,6 +274,7 @@ LMON_be_procctl_run ( rm_catalogue_e rmtype,
 lmon_rc_e
 LMON_be_procctl_initdone( rm_catalogue_e rmtype,
                           MPIR_PROCDESC_EXT *ptab,
+                          int islaunch,
                           int psize)
 {
   lmon_rc_e rc = LMON_EINVAL;
@@ -253,13 +288,26 @@ LMON_be_procctl_initdone( rm_catalogue_e rmtype,
   switch(rmtype)
     {
     case RC_slurm:
+      //
+      // Call ptrace Linux initdone
+      //
+      if (islaunch)
+        {
+          rc = LMON_be_procctl_initdone_ptrace (ptab, psize);
+        }
+      else
+        {
+          rc = LMON_be_procctl_initdone_generic (ptab, psize);
+        }
+      break;
+
     case RC_orte:
     case RC_alps:
     case RC_gupc:
       //
       // Call generic Linux initdone
       //
-      rc = LMON_be_procctl_initdone_generic(ptab, psize);
+      rc = LMON_be_procctl_initdone_generic (ptab, psize);
       break;
 
     case RC_bglrm:
@@ -267,7 +315,7 @@ LMON_be_procctl_initdone( rm_catalogue_e rmtype,
       //
       // Call RM-specific initdone with BG CIOD debug interface
       //
-      rc = LMON_be_procctl_initdone_bg(ptab, psize);
+      rc = LMON_be_procctl_initdone_bg (ptab, psize);
       break;
 
     case RC_bgqrm:
@@ -277,7 +325,7 @@ LMON_be_procctl_initdone( rm_catalogue_e rmtype,
       //
       rc = (dontstop_fastpath) ? 
               LMON_OK :
-              LMON_be_procctl_initdone_bgq(ptab, psize);
+              LMON_be_procctl_initdone_bgq (ptab, psize);
       break;
 
     case RC_mchecker_rm:

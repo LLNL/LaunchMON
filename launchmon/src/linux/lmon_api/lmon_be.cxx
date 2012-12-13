@@ -1211,11 +1211,13 @@ LMON_be_handshake ( void *udata )
   if ( ( bedata.is_launch == trm_launch_dontstop ) 
        || ( bedata.is_launch == trm_attach ) )
     {
+      // hint: fastpath will allow BG not to use proccontrol at all
       dontstop_fastpath = 1;
     }
 
-  int islaunch = ((bedata.is_launch == trm_launch) 
-                  || (bedata.is_launch == trm_launch_dontstop))? 1 : 0;
+  int islaunch 
+    = ((bedata.is_launch == trm_launch) || (bedata.is_launch == trm_launch_dontstop))
+       ? 1 : 0;
 
   if ( LMON_be_procctl_init ( bedata.rmtype_instance,
          proctab, islaunch, proctab_size,
@@ -1232,6 +1234,10 @@ LMON_be_handshake ( void *udata )
       "BES: LMON_be_procctl_init done");
 #endif
 
+  //
+  // All BEs need to have completed procctl init
+  //
+  LMON_be_barrier ();
 
   //
   // We're almost ready: so we tell FEN to release RM from MPIR_Breakpoint 
@@ -1254,9 +1260,18 @@ LMON_be_handshake ( void *udata )
       }
   END_MASTER_ONLY 
 
+  if ( LMON_be_procctl_initdone ( bedata.rmtype_instance,
+                                  proctab, islaunch, proctab_size )
+       != LMON_OK )
+    {
+      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+        "proc control initdone failed");
 
-  if ( ( bedata.is_launch == trm_launch_dontstop )
-       || ( bedata.is_launch == trm_attach ) )
+      return LMON_ESUBSYNC;
+    }
+
+
+  if ( dontstop_fastpath == 1 )
     {
       //
       // Call procctl_run if the user requested to continue
@@ -1272,22 +1287,9 @@ LMON_be_handshake ( void *udata )
           return LMON_ESUBSYNC;
         }
 
-#if VERBOSE
-    LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
-      "BES: LMON_be_procctl_run done");
-#endif
 
     }
 
-  if ( LMON_be_procctl_initdone ( bedata.rmtype_instance,
-                                  proctab, proctab_size )
-       != LMON_OK )
-    {
-      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-        "proc control initdone failed");
-
-      return LMON_ESUBSYNC;
-    }
 
 # if VERBOSE
     LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
@@ -1298,7 +1300,7 @@ LMON_be_handshake ( void *udata )
   //
   // Clean up proctab
   //
-  for(i=0; i < proctab_size; i++)
+  for( i = 0; i < proctab_size; i++ )
     {
      if (proctab[i].pd.executable_name)
         {
@@ -1407,7 +1409,8 @@ LMON_be_assist_mw_coloc()
       if (!bedata.daemon_data.daemon_spawner->spawn())
         {
            LMON_say_msg(LMON_BE_MSG_PREFIX, true,
-             "coloc spawner failed: %s", bedata.daemon_data.daemon_spawner->get_err_str().c_str());
+             "coloc spawner failed: %s", 
+             bedata.daemon_data.daemon_spawner->get_err_str().c_str());
 
            return LMON_ESUBCOM;
         }

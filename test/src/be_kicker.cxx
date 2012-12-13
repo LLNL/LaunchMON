@@ -232,7 +232,7 @@ main( int argc, char* argv[] )
       fastpath_state = 0;
     }
 
-  LMON_be_procctl_init ( myBeData->rmtype_instance,
+  LMON_be_procctl_tester_init ( myBeData->rmtype_instance,
                          proctab, 0, proctab_size, fastpath_state );
 
   LMON_be_procctl_run ( myBeData->rmtype_instance,

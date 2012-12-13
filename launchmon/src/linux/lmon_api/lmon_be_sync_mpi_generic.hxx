@@ -41,6 +41,11 @@ extern lmon_rc_e LMON_be_procctl_init_generic (
                    int islaunch,
                    int psize);
 
+extern lmon_rc_e LMON_be_procctl_init_ptrace (
+                   MPIR_PROCDESC_EXT* ptab,
+                   int islaunch,
+                   int psize);
+
 extern lmon_rc_e LMON_be_procctl_stop_generic (
                    MPIR_PROCDESC_EXT* ptab,
                    int psize);
@@ -59,6 +64,10 @@ extern lmon_rc_e LMON_be_procctl_perf_generic (
                    unsigned int *usecperunit);
 
 extern lmon_rc_e LMON_be_procctl_initdone_generic (
+                   MPIR_PROCDESC_EXT *ptab,
+                   int psize);
+
+extern lmon_rc_e LMON_be_procctl_initdone_ptrace (
                    MPIR_PROCDESC_EXT *ptab,
                    int psize);
 

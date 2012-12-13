@@ -43,9 +43,21 @@ extern lmon_rc_e LMON_be_procctl_init ( rm_catalogue_e rmtype,
                    int psize,
 		   int dontstop );
 
+extern lmon_rc_e LMON_be_procctl_tester_init ( rm_catalogue_e rmtype,
+                   MPIR_PROCDESC_EXT *ptab,
+                   int islaunch,
+                   int psize,
+		   int dontstop );
+
 extern lmon_rc_e LMON_be_procctl_stop ( rm_catalogue_e rmtype,
                    MPIR_PROCDESC_EXT *ptab,
                    int psize );
+
+extern lmon_rc_e LMON_be_procctl_tester_run ( rm_catalogue_e rmtype,
+                   MPIR_PROCDESC_EXT *ptab,
+                   int islaunch,
+                   int psize,
+		   int dontstop );
 
 extern lmon_rc_e LMON_be_procctl_run ( rm_catalogue_e rmtype,
                    int signum,
@@ -62,6 +74,7 @@ extern lmon_rc_e LMON_be_procctl_perf ( rm_catalogue_e rmtype,
 
 extern lmon_rc_e LMON_be_procctl_initdone ( rm_catalogue_e rmtype,
                    MPIR_PROCDESC_EXT *ptab,
+                   int islaunch,
                    int psize );
 
 extern lmon_rc_e LMON_be_procctl_done ( rm_catalogue_e rmtype,
