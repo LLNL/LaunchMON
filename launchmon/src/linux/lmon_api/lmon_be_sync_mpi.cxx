@@ -289,16 +289,11 @@ LMON_be_procctl_initdone( rm_catalogue_e rmtype,
     {
     case RC_slurm:
       //
-      // Call ptrace Linux initdone
+      // Call ptrace Linux initdone for launch case
       //
-      if (islaunch)
-        {
-          rc = LMON_be_procctl_initdone_ptrace (ptab, psize);
-        }
-      else
-        {
-          rc = LMON_be_procctl_initdone_generic (ptab, psize);
-        }
+      rc = (islaunch == 1) 
+           ? LMON_be_procctl_initdone_ptrace (ptab, psize) 
+           : LMON_be_procctl_initdone_generic (ptab, psize);
       break;
 
     case RC_orte:
@@ -323,9 +318,9 @@ LMON_be_procctl_initdone( rm_catalogue_e rmtype,
       //
       // Call RM-specific initdone with BGQ CDTI interface
       //
-      rc = (dontstop_fastpath) ? 
-              LMON_OK :
-              LMON_be_procctl_initdone_bgq (ptab, psize);
+      rc = (dontstop_fastpath) 
+           ? LMON_OK
+           : LMON_be_procctl_initdone_bgq (ptab, islaunch, psize) ;
       break;
 
     case RC_mchecker_rm:

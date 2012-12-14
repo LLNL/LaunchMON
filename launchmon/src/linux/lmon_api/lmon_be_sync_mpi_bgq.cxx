@@ -1815,6 +1815,161 @@ return_loc:
 
 
 static lmon_rc_e
+reap_stop_noti ( uint8_t cdtiVer, uint32_t &sequenceId,
+                        uint64_t jobId, uint32_t toolId )
+{
+  lmon_rc_e rc = LMON_EINVAL;
+
+  std::map<int, std::vector<int> >::iterator cn;
+
+  for ( cn = IOToolMap.CN2Ranks.begin ();
+                    cn != IOToolMap.CN2Ranks.end (); ++cn )
+    {
+      std::vector<int>::iterator i;
+      for (i = cn->second.begin ();
+                      i != cn->second.end (); ++i)
+        {
+          bgcios::toolctl::NotifyMessage notifyMsg;
+
+	  if ( lmon_read_raw ( IOToolMap.CN2Sock[cn->first], (void *) &notifyMsg,
+	  	           sizeof(notifyMsg)) == -1 )
+	      {
+	        LMON_say_msg(LMON_BE_MSG_PREFIX, true,
+	          "Error reading from a Unix domain socket");
+
+	        goto return_loc;
+	      }
+
+#if VERBOSE
+          LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+                "Recv NotifyMessage from CN(%d) rank(%d) for stop signal",
+                cn->first, *i );
+#endif
+
+	  if ( notifyMsg.header.returnCode != bgcios::Success )
+	    {
+	      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+		 "An error was returned in AttachMessageAck (%d)",
+		 notifyMsg.header.returnCode);
+
+	      goto return_loc;
+	    }
+
+	  if ( notifyMsg.notifyMessageType 
+               != bgcios::toolctl::NotifyMessageType_Signal )
+	    {
+	      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+		 "NotifyMessageType_Signal wasn't delivered (%d)",
+		 notifyMsg.notifyMessageType);
+
+	      goto return_loc;
+	    }
+
+	  if ( notifyMsg.type.signal.signum != SIGSTOP )
+	    {
+	      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+		 "Notified signal isn't SIGSTOP!");
+
+	      goto return_loc;
+	    }
+
+	  sequenceId++;
+        }
+    }
+
+  rc = LMON_OK;
+
+return_loc:
+  return rc;
+
+}
+
+
+static lmon_rc_e
+stop_all_wo_noti_reap ( uint8_t cdtiVer, uint32_t &sequenceId,
+                        uint64_t jobId, uint32_t toolId )
+{
+  lmon_rc_e rc = LMON_EINVAL;
+
+  std::map<int, std::vector<int> >::iterator cn;
+
+  for ( cn = IOToolMap.CN2Ranks.begin ();
+                    cn != IOToolMap.CN2Ranks.end (); ++cn )
+    {
+      std::vector<int>::iterator i;
+      for (i = cn->second.begin ();
+                      i != cn->second.end (); ++i)
+        {
+          SendSignalMessage *stopMsg = NULL;
+          SendSignalAckMessage ackMsg;
+
+          stopMsg = create_SendSignalMessage ( cdtiVer,
+                      (uint32_t)(*i),
+                      sequenceId,
+                      jobId,
+                      toolId,
+                      SIGSTOP );
+
+          if ( lmon_write_raw ( IOToolMap.CN2Sock[cn->first],
+                               (void *) stopMsg,
+                               sizeof (*stopMsg) ) == -1 )
+            {
+              LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+                "Error writing to a Unix domain socket" );
+
+              goto return_loc;
+            }
+
+#if VERBOSE
+          LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+            "Sent UpdateMessage to CN(%d) rank(%d) for stop signal",
+            cn->first, *i );
+#endif
+
+          if ( lmon_read_raw ( IOToolMap.CN2Sock[cn->first],
+                               (void *) &ackMsg,
+                               sizeof (ackMsg) ) == -1 )
+            {
+              LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+                "Error reading from a Unix domain socket" );
+
+              goto return_loc;
+            }
+
+#if VERBOSE
+          LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
+            "Recv UpdateAckMessage from CN(%d) rank(%d) for stop signal",
+            cn->first, *i );
+#endif
+
+          if ( verify_SendSignalAckMessage ( ackMsg,
+                                             cdtiVer,
+                                             (uint32_t)(*i),
+                                             sequenceId,
+                                             jobId,
+                                             toolId,
+                                             SIGSTOP) != LMON_OK )
+            {
+              LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+                "verify_SendSignalAckMessage reports a failure");
+
+              goto return_loc;
+            }
+
+	  delete stopMsg;
+	  stopMsg = NULL;
+	  sequenceId++;
+      }
+  }
+
+  rc = LMON_OK;
+
+return_loc:
+  return rc;
+}
+
+
+static lmon_rc_e
 stop_all ( uint8_t cdtiVer, uint32_t &sequenceId,
                  uint64_t jobId, uint32_t toolId )
 {
@@ -1901,32 +2056,32 @@ stop_all ( uint8_t cdtiVer, uint32_t &sequenceId,
                 cn->first, *i );
 #endif
 
-	    if ( notifyMsg.header.returnCode != bgcios::Success )
-	      {
-	        LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-		     "An error was returned in AttachMessageAck (%d)",
-		     notifyMsg.header.returnCode);
+	  if ( notifyMsg.header.returnCode != bgcios::Success )
+	    {
+	      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+		 "An error was returned in AttachMessageAck (%d)",
+		 notifyMsg.header.returnCode);
 
-	        goto return_loc;
-	      }
+	      goto return_loc;
+	    }
 
-	    if ( notifyMsg.notifyMessageType 
-                 != bgcios::toolctl::NotifyMessageType_Signal )
-	      {
-	        LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-		    "NotifyMessageType_Signal wasn't delivered (%d)",
-		    notifyMsg.notifyMessageType);
+	  if ( notifyMsg.notifyMessageType 
+               != bgcios::toolctl::NotifyMessageType_Signal )
+	    {
+	      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+                "NotifyMessageType_Signal wasn't delivered (%d)",
+		notifyMsg.notifyMessageType);
 
-	        goto return_loc;
-	      }
+	      goto return_loc;
+	    }
 
-	    if ( notifyMsg.type.signal.signum != SIGSTOP )
-	      {
-	        LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
-		    "Notified signal isn't SIGSTOP!");
+	  if ( notifyMsg.type.signal.signum != SIGSTOP )
+	    {
+	      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+		 "Notified signal isn't SIGSTOP!");
 
-	        goto return_loc;
-	      }
+	      goto return_loc;
+	    }
 
 	  delete stopMsg;
 	  stopMsg = NULL;
@@ -2379,7 +2534,18 @@ LMON_be_procctl_init_bgq ( MPIR_PROCDESC_EXT *ptab,
   // In launch mode, attach will leave the processes into 
   // a stop state.
   //
-  if ( !islaunch ) 
+  
+  if ( islaunch == 1 )
+    {
+      if ( stop_all_wo_noti_reap ( _cdtiVer, _seqNum, _jobid, _toolid) != LMON_OK )
+        {
+          LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+            "stop_all returned an error code.");
+
+          return LMON_EINVAL;
+        }
+    }
+  else
     {
       if ( stop_all ( _cdtiVer, _seqNum, _jobid, _toolid) != LMON_OK )
         {
@@ -2403,7 +2569,7 @@ lmon_rc_e
 LMON_be_procctl_stop_bgq ( MPIR_PROCDESC_EXT *ptab,
                            int psize)
 {
-  if (stop_all ( _cdtiVer, _seqNum, _jobid, _toolid) != LMON_OK)
+  if ( stop_all ( _cdtiVer, _seqNum, _jobid, _toolid) != LMON_OK )
     {
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
         "stop_all returned an error code.");
@@ -2461,8 +2627,20 @@ LMON_be_procctl_perf_bgq (
 
 lmon_rc_e
 LMON_be_procctl_initdone_bgq ( MPIR_PROCDESC_EXT *ptab,
+                               int islaunch,
                                int psize )
 {
+  
+  if ( (islaunch == 1)
+       && reap_stop_noti ( _cdtiVer, _seqNum, _jobid, _toolid) != LMON_OK)
+    {
+      LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
+        "stop_all returned an error code.");
+
+      return LMON_EINVAL;
+    }
+
+
   if ( hold_all_threads ( _cdtiVer, _seqNum, _jobid, _toolid ) != LMON_OK )
     {
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
