@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *              Dec 14 2012 DHA: Add support to fix MPIR_Breakpoint
+ *                               release race
  *              Nov 23 2011 DHA: File created
  *
  */
@@ -61,9 +63,23 @@ LMON_be_procctl_tester_init ( rm_catalogue_e rmtype,
                               MPIR_PROCDESC_EXT *ptab,
                               int islaunch,
                               int psize,
-                              int dontstop )
+                              int dontstop)
 {
-  LMON_be_procctl_init (rmtype, ptab, islaunch, psize, dontstop);
+  lmon_rc_e rc = LMON_OK;
+
+  //
+  // tester procctller init should be a noop for BGP as OS doesn't
+  // allow launchmon layer to cleanly undo the process control effects
+  // Thus, the tester cannot go through its own ATTACH sequence cleanly
+  // This has been fixed in BGQ though. 
+  //
+
+  if ( (rmtype != RC_bgprm) && (rmtype != RC_bglrm) )
+    {
+      rc = LMON_be_procctl_init (rmtype, ptab, islaunch, psize, dontstop);
+    }
+
+  return rc;
 }
 
 
@@ -88,8 +104,8 @@ LMON_be_procctl_init ( rm_catalogue_e rmtype,
 #if VERBOSE
   LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
     "Platform-independent proc control init"
-    " visited with rmtype(%d) psize(%d), dontstop_fastpath(%d)", 
-    rmtype, psize, dontstop_fastpath );
+    " visited with rmtype(%d) psize(%d), islaunch(%d), dontstop_fastpath(%d)", 
+    rmtype, psize, islaunch, dontstop_fastpath );
 #endif
 
   switch(rmtype)
@@ -130,9 +146,9 @@ LMON_be_procctl_init ( rm_catalogue_e rmtype,
       //
       // Call RM-specific init with BGQ CDTI interface
       //
-      rc = (dontstop_fastpath) ? 
-              LMON_OK :
-              LMON_be_procctl_init_bgq ( ptab, islaunch, psize );
+      rc = (dontstop_fastpath) 
+           ? LMON_OK 
+           : LMON_be_procctl_init_bgq ( ptab, islaunch, psize );
       break;
 
     case RC_mchecker_rm:
@@ -225,7 +241,8 @@ LMON_be_procctl_run ( rm_catalogue_e rmtype,
 #if VERBOSE
   LMON_say_msg ( LMON_BE_MSG_PREFIX, false,
     "Platform-independent proc control run"
-    " visited with rmtype(%d) dontstop_fastpath(%d)", rmtype, dontstop_fastpath );
+    " visited with rmtype(%d) dontstop_fastpath(%d) signum(%d) psize(%d)", 
+    rmtype, dontstop_fastpath, signum, psize );
 #endif
 
   switch(rmtype)
@@ -253,9 +270,9 @@ LMON_be_procctl_run ( rm_catalogue_e rmtype,
       //
       // Call RM-specific run with BGQ CDTI interface
       //
-      rc = (dontstop_fastpath) ? 
-              LMON_OK :
-              LMON_be_procctl_run_bgq ( signum, ptab, psize );
+      rc = (dontstop_fastpath) 
+           ? LMON_OK 
+           : LMON_be_procctl_run_bgq ( signum, ptab, psize );
       break;
 
     case RC_mchecker_rm:
@@ -310,7 +327,7 @@ LMON_be_procctl_initdone( rm_catalogue_e rmtype,
       //
       // Call RM-specific initdone with BG CIOD debug interface
       //
-      rc = LMON_be_procctl_initdone_bg (ptab, psize);
+      rc = LMON_be_procctl_initdone_bg (ptab, islaunch, psize);
       break;
 
     case RC_bgqrm:

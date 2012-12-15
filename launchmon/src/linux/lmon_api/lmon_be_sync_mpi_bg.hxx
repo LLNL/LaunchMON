@@ -60,6 +60,7 @@ extern lmon_rc_e LMON_be_procctl_perf_bg (
 
 extern lmon_rc_e LMON_be_procctl_initdone_bg (
                    MPIR_PROCDESC_EXT *ptab,
+                   int islaunch,
                    int psize );
 
 extern lmon_rc_e LMON_be_procctl_done_bg (

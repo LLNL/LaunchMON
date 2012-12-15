@@ -103,11 +103,7 @@ main( int argc, char* argv[] )
   int i, rank,size;
   lmon_rc_e lrc;
 
-#if SUB_ARCH_BGL || SUB_ARCH_BGP
-  signum = 0;
-#else
   signum = SIGCONT;
-#endif 
 
   if ( (lrc = LMON_be_init(LMON_VERSION, &argc, &argv)) 
               != LMON_OK )
@@ -227,13 +223,14 @@ main( int argc, char* argv[] )
   //
   int fastpath_state = 2; //inherit the state
 
-  if ( signum != 0 && signum != SIGCONT)
+  if ( signum != SIGCONT)
     {
       fastpath_state = 0;
     }
 
   LMON_be_procctl_tester_init ( myBeData->rmtype_instance,
-                         proctab, 0, proctab_size, fastpath_state );
+                         proctab, 0, proctab_size, 
+                         fastpath_state );
 
   LMON_be_procctl_run ( myBeData->rmtype_instance,
                         signum,
