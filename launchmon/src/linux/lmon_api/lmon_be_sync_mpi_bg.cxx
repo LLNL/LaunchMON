@@ -501,6 +501,7 @@ LMON_be_procctl_perf_bg (
 
 lmon_rc_e
 LMON_be_procctl_initdone_bg ( MPIR_PROCDESC_EXT *ptab,
+                              int islaunch,
                               int psize)
 {
   return LMON_EINVAL;
