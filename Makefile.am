@@ -38,5 +38,5 @@
 ##
 
 SUBDIRS         = tools launchmon test
-EXTRA_DIST      = config/ap README.ERROR_HANDLING package.conf bootstrap
+EXTRA_DIST      = config/ap README.ERROR_HANDLING package.conf bootstrap INSTALL.launchmon
 ACLOCAL_AMFLAGS = -I config
