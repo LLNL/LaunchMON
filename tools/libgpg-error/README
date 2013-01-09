@@ -3,8 +3,7 @@ libgpg-error
 
 This is a library that defines common error values for all GnuPG
 components.  Among these are GPG, GPGSM, GPGME, GPG-Agent, libgcrypt,
-Libksba, DirMngr, Pinentry, SmartCard Daemon and possibly more in the
-future.
+Libksba, DirMngr, Pinentry, SmartCard Daemon and more.
 
 libgpg-error is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as
@@ -28,11 +27,12 @@ Please read the file INSTALL!
 
 Here is a quick summary:
 
-1) Check that you have unmodified sources. The below on how to do
-   this.  Don't skip it - this is an important step!
+1) Check that you have unmodified sources.  You can find instructions
+   how to verify the sources below.  Don't skip this - it is an
+   important step!
 
-2) Unpack the TAR.  With GNU tar you can do it this way:
-   "tar xzvf libgpg-error-x.y.tar.gz"
+2) Unpack the archive.  With GNU tar you can do it this way:
+   "tar xjvf libgpg-error-x.y.tar.bz2"
 
 3) "cd libgpg-error-x.y"
 
@@ -47,29 +47,69 @@ How to Verify the Source
 ------------------------
 
 In order to check that the version of libgpg-error which you are going
-to install is an original and unmodified one, you can do it in one of
-the following ways:
+to install is an original and unmodified copy of the original, you can
+do it in one of the following ways:
 
-a) If you already have a trusted Version of GnuPG installed, you can
-simply check the supplied signature:
+a) If you already have a trusted version of GnuPG installed, you can
+   simply check the supplied signature:
 
-$ gpg --verify libgpg-error-x.y.tar.gz.sig
+   $ gpg --verify libgpg-error-x.y.tar.bz2.sig
 
-This checks that the detached signature libgpg-error-x.y.tar.gz.sig
-is indeed a a signature of libgpg-error-x.y.tar.gz.
+   This checks that the detached signature libgpg-error-x.y.tar.bz2.sig
+   is indeed a a signature of libgpg-error-x.y.tar.bz2.
 
-Please note, that you have to use an old version of GnuPG to do all
-this stuff.  *Never* use the version which you are going to check!
+   Please note that you have to use an old version of GnuPG to do all
+   this stuff.  *Never* use the version which was built using the
+   library you are trying to verify!
+
+b) If you don't have any a trusted version of GnuPG, you can attempt
+   to verify the SHA1 checksum, using a trusted version of the sha1sum
+   program:
+
+   $ sha1sum libgpg-error-x.y.tar.bz2
+
+   This should yield an output _similar_ to this:
+
+   610064e5b77700f5771c8fde2691c4365e1ca100  libgpg-error-x.y.tar.bz2
+
+   Now check that this checksum is _exactly_ the same as the one
+   published via the announcement list and probably via Usenet.
 
 
-b) If you don't have any of the above programs, you have to verify the
-MD5 checksum:
+Hints
+-----
 
-$ md5sum libgpg-error-x.y.tar.gz
+To build for Windows you you may use the convenience command:
 
-This should yield an output _similar_ to this:
+   ./autogen.sh --build-w32
 
-fd9351b26b3189c1d577f0970f9dcadc  libgpg-error-x.y.tar.gz
+which runs configure with suitable options.  For WindowsCE the command
+is:
 
-Now check that this checksum is _exactly_ the same as the one
-published via the announcement list and probably via Usenet.
+   ./autogen.sh --build-w32ce
+
+
+Known Problems
+--------------
+
+On Windows, WSA Error Codes can be provided as system error codes and
+will be transparently converted to the corresponding gpg error codes.
+There are two problems with this support:
+
+* Not all error codes corresponding to WSA Error codes have a detailed
+  description when printed with gpg_strerror.  Some will default to
+  "Unknown error" for pretty printing.  For example, WSAEHOSTDOWN will
+  be translated to GPG_ERR_EHOSTDOWN, but there is no corresponding
+  EHOSTDOWN in Windows and thus gpg_strerror will default to "Unknown
+  error" as printed by the system's strerror function for the argument
+  WSAEHOSTDOWN.  (This could be fixed by adding our own error strings
+  replacing or extending the system error strings, including their
+  translations).
+
+* The translation to a gpg error code and back to a system error code
+  in some cases does not preserve information.  For example, the error code
+  WSAEACCES translates to GPG_ERR_EACCES, which translates back to
+  EACCES.
+
+Any WSA Error code has either the first problem or the second (but not
+both), depending on if there is a corresponding Windows error code.

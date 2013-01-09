@@ -1,7 +1,7 @@
-/* Output of mkheader.awk.  DO NOT EDIT.  */
+/* Output of mkheader.awk.  DO NOT EDIT.  -*- buffer-read-only: t -*- */
 
 /* gpg-error.h - Public interface to libgpg-error.
-   Copyright (C) 2003, 2004 g10 Code GmbH
+   Copyright (C) 2003, 2004, 2010 g10 Code GmbH
 
    This file is part of libgpg-error.
  
@@ -16,9 +16,9 @@
    Lesser General Public License for more details.
  
    You should have received a copy of the GNU Lesser General Public
-   License along with libgpg-error; if not, write to the Free
-   Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
-   02111-1307, USA.  */
+   License along with this program; if not, see <http://www.gnu.org/licenses/>.
+ */
+
 
 #ifndef GPG_ERROR_H
 #define GPG_ERROR_H	1
@@ -34,6 +34,7 @@
 #define GPG_ERR_INLINE
 #endif 
 #endif
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,12 +55,16 @@ extern "C" {
    another, it preserver the information about the source and nature
    of the error.
 
-   A component of the GnuPG project can define the following macro to
+   A component of the GnuPG project can define the following macros to
    tune the behaviour of the library:
 
    GPG_ERR_SOURCE_DEFAULT: Define to an error source of type
    gpg_err_source_t to make that source the default for gpg_error().
-   Otherwise GPG_ERR_SOURCE_UNKNOWN is used as default.  */
+   Otherwise GPG_ERR_SOURCE_UNKNOWN is used as default.
+
+   GPG_ERR_ENABLE_GETTEXT_MACROS: Define to provide macros to map the
+   internal gettext API to standard names.  This has only an effect on
+   Windows platforms.  */
 
 
 /* The error source type gpg_err_source_t.
@@ -84,13 +89,17 @@ typedef enum
     GPG_ERR_SOURCE_KSBA = 9,
     GPG_ERR_SOURCE_DIRMNGR = 10,
     GPG_ERR_SOURCE_GSTI = 11,
+    GPG_ERR_SOURCE_GPA = 12,
+    GPG_ERR_SOURCE_KLEO = 13,
+    GPG_ERR_SOURCE_G13 = 14,
+    GPG_ERR_SOURCE_ANY = 31,
     GPG_ERR_SOURCE_USER_1 = 32,
     GPG_ERR_SOURCE_USER_2 = 33,
     GPG_ERR_SOURCE_USER_3 = 34,
     GPG_ERR_SOURCE_USER_4 = 35,
 
     /* This is one more than the largest allowed entry.  */
-    GPG_ERR_SOURCE_DIM = 256
+    GPG_ERR_SOURCE_DIM = 128
   } gpg_err_source_t;
 
 
@@ -271,6 +280,23 @@ typedef enum
     GPG_ERR_PROTOCOL_VIOLATION = 168,
     GPG_ERR_INV_MAC = 169,
     GPG_ERR_INV_REQUEST = 170,
+    GPG_ERR_UNKNOWN_EXTN = 171,
+    GPG_ERR_UNKNOWN_CRIT_EXTN = 172,
+    GPG_ERR_LOCKED = 173,
+    GPG_ERR_UNKNOWN_OPTION = 174,
+    GPG_ERR_UNKNOWN_COMMAND = 175,
+    GPG_ERR_NOT_OPERATIONAL = 176,
+    GPG_ERR_NO_PASSPHRASE = 177,
+    GPG_ERR_NO_PIN = 178,
+    GPG_ERR_NOT_ENABLED = 179,
+    GPG_ERR_NO_ENGINE = 180,
+    GPG_ERR_MISSING_KEY = 181,
+    GPG_ERR_TOO_MANY = 182,
+    GPG_ERR_LIMIT_REACHED = 183,
+    GPG_ERR_NOT_INITIALIZED = 184,
+    GPG_ERR_MISSING_ISSUER_CERT = 185,
+    GPG_ERR_FULLY_CANCELED = 198,
+    GPG_ERR_UNFINISHED = 199,
     GPG_ERR_BUFFER_TOO_SHORT = 200,
     GPG_ERR_SEXP_INV_LEN_SPEC = 201,
     GPG_ERR_SEXP_STRING_TOO_LONG = 202,
@@ -285,6 +311,30 @@ typedef enum
     GPG_ERR_SEXP_BAD_HEX_CHAR = 211,
     GPG_ERR_SEXP_ODD_HEX_NUMBERS = 212,
     GPG_ERR_SEXP_BAD_OCT_CHAR = 213,
+    GPG_ERR_ASS_GENERAL = 257,
+    GPG_ERR_ASS_ACCEPT_FAILED = 258,
+    GPG_ERR_ASS_CONNECT_FAILED = 259,
+    GPG_ERR_ASS_INV_RESPONSE = 260,
+    GPG_ERR_ASS_INV_VALUE = 261,
+    GPG_ERR_ASS_INCOMPLETE_LINE = 262,
+    GPG_ERR_ASS_LINE_TOO_LONG = 263,
+    GPG_ERR_ASS_NESTED_COMMANDS = 264,
+    GPG_ERR_ASS_NO_DATA_CB = 265,
+    GPG_ERR_ASS_NO_INQUIRE_CB = 266,
+    GPG_ERR_ASS_NOT_A_SERVER = 267,
+    GPG_ERR_ASS_NOT_A_CLIENT = 268,
+    GPG_ERR_ASS_SERVER_START = 269,
+    GPG_ERR_ASS_READ_ERROR = 270,
+    GPG_ERR_ASS_WRITE_ERROR = 271,
+    GPG_ERR_ASS_TOO_MUCH_DATA = 273,
+    GPG_ERR_ASS_UNEXPECTED_CMD = 274,
+    GPG_ERR_ASS_UNKNOWN_CMD = 275,
+    GPG_ERR_ASS_SYNTAX = 276,
+    GPG_ERR_ASS_CANCELED = 277,
+    GPG_ERR_ASS_NO_INPUT = 278,
+    GPG_ERR_ASS_NO_OUTPUT = 279,
+    GPG_ERR_ASS_PARAMETER = 280,
+    GPG_ERR_ASS_UNKNOWN_INQUIRE = 281,
     GPG_ERR_USER_1 = 1024,
     GPG_ERR_USER_2 = 1025,
     GPG_ERR_USER_3 = 1026,
@@ -301,6 +351,7 @@ typedef enum
     GPG_ERR_USER_14 = 1037,
     GPG_ERR_USER_15 = 1038,
     GPG_ERR_USER_16 = 1039,
+    GPG_ERR_MISSING_ERRNO = 16381,
     GPG_ERR_UNKNOWN_ERRNO = 16382,
     GPG_ERR_EOF = 16383,
 
@@ -467,9 +518,48 @@ typedef unsigned int gpg_error_t;
 
 /* Bits 17 to 24 are reserved.  */
 
-/* We use the upper 8 bits of gpg_error_t for error sources.  */
+/* We use the upper 7 bits of gpg_error_t for error sources.  */
 #define GPG_ERR_SOURCE_MASK	(GPG_ERR_SOURCE_DIM - 1)
 #define GPG_ERR_SOURCE_SHIFT	24
+
+/* The highest bit is reserved.  It shouldn't be used to prevent
+   potential negative numbers when transmitting error values as
+   text.  */
+
+
+/* GCC feature test.  */
+#undef _GPG_ERR_HAVE_CONSTRUCTOR
+#if __GNUC__
+#define _GPG_ERR_GCC_VERSION (__GNUC__ * 10000 \
+                            + __GNUC_MINOR__ * 100 \
+                            + __GNUC_PATCHLEVEL__)
+
+#if _GPG_ERR_GCC_VERSION > 30100
+#define _GPG_ERR_CONSTRUCTOR	__attribute__ ((__constructor__))
+#define _GPG_ERR_HAVE_CONSTRUCTOR
+#endif
+#endif
+
+#ifndef _GPG_ERR_CONSTRUCTOR
+#define _GPG_ERR_CONSTRUCTOR
+#endif
+
+
+/* Initialization function.  */
+
+/* Initialize the library.  This function should be run early.  */
+gpg_error_t gpg_err_init (void) _GPG_ERR_CONSTRUCTOR;
+
+/* If this is defined, the library is already initialized by the
+   constructor and does not need to be initialized explicitely.  */
+#undef GPG_ERR_INITIALIZED
+#ifdef _GPG_ERR_HAVE_CONSTRUCTOR
+#define GPG_ERR_INITIALIZED	1
+#endif
+
+/* See the source on how to use the deinit function; it is usually not
+   required.  */
+void gpg_err_deinit (int mode);
 
 
 /* Constructor and accessor functions.  */
@@ -539,13 +629,24 @@ const char *gpg_strsource (gpg_error_t err);
 
 /* Retrieve the error code for the system error ERR.  This returns
    GPG_ERR_UNKNOWN_ERRNO if the system error is not mapped (report
-   this).  */
+   this). */
 gpg_err_code_t gpg_err_code_from_errno (int err);
 
 
 /* Retrieve the system error for the error code CODE.  This returns 0
    if CODE is not a system error code.  */
 int gpg_err_code_to_errno (gpg_err_code_t code);
+
+
+/* Retrieve the error code directly from the ERRNO variable.  This
+   returns GPG_ERR_UNKNOWN_ERRNO if the system error is not mapped
+   (report this) and GPG_ERR_MISSING_ERRNO if ERRNO has the value 0. */
+gpg_err_code_t gpg_err_code_from_syserror (void);
+
+
+/* Set the ERRNO variable.  This function is the preferred way to set
+   ERRNO due to peculiarities on WindowsCE.  */
+void gpg_err_set_errno (int err);
 
 
 /* Self-documenting convenience functions.  */
@@ -563,8 +664,15 @@ gpg_error_from_errno (int err)
   return gpg_error (gpg_err_code_from_errno (err));
 }
 
+static GPG_ERR_INLINE gpg_error_t
+gpg_error_from_syserror (void)
+{
+  return gpg_error (gpg_err_code_from_syserror ());
+}
+
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif	/* GPG_ERROR_H */

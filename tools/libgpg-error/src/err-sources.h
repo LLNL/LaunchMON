@@ -37,6 +37,10 @@ static const char msgstr[] =
   gettext_noop ("KSBA") "\0"
   gettext_noop ("Dirmngr") "\0"
   gettext_noop ("GSTI") "\0"
+  gettext_noop ("GPA") "\0"
+  gettext_noop ("Kleopatra") "\0"
+  gettext_noop ("G13") "\0"
+  gettext_noop ("Any source") "\0"
   gettext_noop ("User defined source 1") "\0"
   gettext_noop ("User defined source 2") "\0"
   gettext_noop ("User defined source 3") "\0"
@@ -58,13 +62,21 @@ static const int msgidx[] =
     79,
     87,
     92,
-    114,
-    136,
-    158,
-    180
+    96,
+    106,
+    110,
+    121,
+    143,
+    165,
+    187,
+    209
   };
 
-#define msgidxof(code) (0 ? -1 \
-  : ((code >= 0) && (code <= 11)) ? (code - 0) \
-  : ((code >= 32) && (code <= 35)) ? (code - 20) \
-  : 36 - 20)
+static inline int
+msgidxof (int code)
+{
+  return (0 ? 0
+  : ((code >= 0) && (code <= 14)) ? (code - 0)
+  : ((code >= 31) && (code <= 35)) ? (code - 16)
+  : 36 - 16);
+}
