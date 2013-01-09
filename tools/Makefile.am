@@ -41,9 +41,9 @@ endif
 if WITH_ALPS
   OPT_ALPS = alps
 endif
-  OPT_GCRYPT = libgpg-error
+  OPT_GPG = libgpg-error
 
-SUBDIRS = $(OPT_COBO) $(OPT_CIOD) $(OPT_ALPS) $(OPT_GCRYPT)
+SUBDIRS = $(OPT_COBO) $(OPT_CIOD) $(OPT_ALPS) $(OPT_GPG)
 
 all-local:
 	if test -f libgcrypt/Makefile; then \

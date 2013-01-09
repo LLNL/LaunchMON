@@ -863,6 +863,8 @@ WITH_CIOD_FALSE
 WITH_CIOD_TRUE
 WITH_ALPS_FALSE
 WITH_ALPS_TRUE
+RMLIB
+RMINC
 CIODLOC
 ARCHLIB
 ARCHHEADER
@@ -951,10 +953,13 @@ with_cobo_port
 with_gcrypt
 with_myboost
 enable_tracing_cost
-with_testnnodes
-with_ncore_per_CN
+with_test_nnodes
+with_test_ncore_per_CN
 with_test_rm
-with_mw_hostlist
+with_test_rm_launcher
+with_test_rm_lib
+with_test_rm_inc
+with_test_mw_hostlist
 enable_dependency_tracking
 enable_shared
 enable_static
@@ -1633,19 +1638,28 @@ Optional Packages:
                           [default=20101]
   --with-gcrypt[=ARG]     configure and build gcrypt [default=yes]
   --with-myboost[=ARG]    use my boost[default=yes]
-  --with-testnnodes[=NNodes]
+  --with-test-nnodes[=NNodes]
                           specify the number of compute nodes test cases
                           should use [Blue Gene Note: use the number of IO
                           nodes instead] [default=2]
-  --with-ncore-per-CN[=NCores]
+  --with-test-ncore-per-CN[=NCores]
                           specify the core-count per compute node [IBM Blue
-                          Gene Note: use the number of compute nodes per IO
-                          node instead] [default=NCore of the configure host]
+                          Gene /L /P Note: use the number of compute nodes per
+                          IO node instead] [default=NCore of the configure
+                          host]
   --with-test-rm[=RM]     specify a resource manager type to test
                           [default=slurm on linux-x86 and linux-x86_64; alps
                           on Cray; bgprm on linux-power; bgqrm on
                           linux-power64]
-  --with-mw-hostlist[=host1:host2]
+  --with-test-rm-launcher[=LAUNCHERPATH]
+                          specify the RM launcher path [default=/usr/bin/srun]
+  --with-test-rm-lib[=RMLIBDIR]
+                          specify the directory containing RM libraries
+                          [default=/usr/lib]
+  --with-rm-inc[=RMINCDIR]
+                          specify the directory containing RM include files
+                          [default=/usr/include]
+  --with-test-mw-hostlist[=host1:host2]
                           specify the list of hosts that middleware testing
                           should use
   --with-pic              try to use only PIC/non-PIC objects [default=use
@@ -2879,9 +2893,8 @@ _ACEOF
 
         ac_target_rm="bgqrm"
     fi
-  elif test "x$ac_target_os" = "x$linux" -a "x$ac_target_isa" = "x86_64"; then
-    if test ! -z "/usr/bin/orig/aprun" \
-         -a -f "/usr/bin/orig/aprun"; then
+  elif test "x$ac_target_os" = "xlinux" -a "x$ac_target_isa" = "xx86_64"; then
+    if test ! -z "/use/bin/aprun" -a -f "/usr/bin/aprun"; then
 
 cat >>confdefs.h <<\_ACEOF
 #define SUB_ARCH_ALPS 1
@@ -2897,7 +2910,16 @@ cat >>confdefs.h <<\_ACEOF
 #define RM_FE_COLOC_CMD "alps_fe_colocator"
 _ACEOF
 
+	RMINC="/usr/include/alps"
+
+	RMLIB="/usr/lib/alps/libalps.a"
+
         ac_target_rm="alps"
+    else
+        ARCHHEADER="/"
+
+        ARCHLIB="/"
+
     fi
   else
         ARCHHEADER="/"
@@ -3359,9 +3381,9 @@ fi
   { $as_echo "$as_me:$LINENO: checking the number of compute nodes that standard test cases should use" >&5
 $as_echo_n "checking the number of compute nodes that standard test cases should use... " >&6; }
 
-# Check whether --with-testnnodes was given.
-if test "${with_testnnodes+set}" = set; then
-  withval=$with_testnnodes; with_tnn=$withval
+# Check whether --with-test-nnodes was given.
+if test "${with_test_nnodes+set}" = set; then
+  withval=$with_test_nnodes; with_tnn=$withval
 else
   with_tnn="check"
 fi
@@ -3381,12 +3403,12 @@ fi
 $as_echo "$tnn" >&6; }
 
 
-  { $as_echo "$as_me:$LINENO: checking the number of cores per SMP node [IBM Blue Gene Note: the number of compute nodes per IO node]" >&5
-$as_echo_n "checking the number of cores per SMP node [IBM Blue Gene Note: the number of compute nodes per IO node]... " >&6; }
+  { $as_echo "$as_me:$LINENO: checking the number of cores per SMP node [IBM Blue Gene /L /P Note: the number of compute nodes per IO node]" >&5
+$as_echo_n "checking the number of cores per SMP node [IBM Blue Gene /L /P Note: the number of compute nodes per IO node]... " >&6; }
 
-# Check whether --with-ncore-per-CN was given.
-if test "${with_ncore_per_CN+set}" = set; then
-  withval=$with_ncore_per_CN; with_smp=$withval
+# Check whether --with-test-ncore-per-CN was given.
+if test "${with_test_ncore_per_CN+set}" = set; then
+  withval=$with_test_ncore_per_CN; with_smp=$withval
 else
   with_smp="check"
 fi
@@ -3425,6 +3447,34 @@ else
 fi
 
 
+
+# Check whether --with-test-rm-launcher was given.
+if test "${with_test_rm_launcher+set}" = set; then
+  withval=$with_test_rm_launcher; with_launcher=$withval
+else
+  with_launcher="check"
+fi
+
+
+
+# Check whether --with-test-rm-lib was given.
+if test "${with_test_rm_lib+set}" = set; then
+  withval=$with_test_rm_lib; with_rmlib=$withval
+else
+  with_rmlib="check"
+fi
+
+
+
+# Check whether --with-test-rm-inc was given.
+if test "${with_test_rm_inc+set}" = set; then
+  withval=$with_test_rm_inc; with_rminc=$withval
+else
+  with_rminc="check"
+fi
+
+
+
   rm_found="no"
   echo $with_rm
   #
@@ -3435,23 +3485,38 @@ fi
     #
     # Configure for SLURM
     #
-    rm_default_dirs="/usr/bin /usr/local/bin"
-    for rm_dir in $rm_default_dirs; do
-      if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
-        continue;
-      fi
-
-      if test ! -z "$rm_dir/srun" -a -f "$rm_dir/srun"; then
-	pth=`config/ap $rm_dir/srun`
+    if test "x$with_launcher" != "xcheck"; then
+      #
+      # launcher path given
+      #
+      if test ! -z "$with_launcher" -a -f "$with_launcher"; then
+        pth=`config/ap $with_launcher`
         ac_job_launcher_path=$pth
         rm_found="yes"
         TARGET_JOB_LAUNCHER_PATH=$ac_job_launcher_path
 
         RM_TYPE=RC_slurm
 
-        break
       fi
-    done
+    else
+      rm_default_dirs="/usr/bin /usr/local/bin"
+      for rm_dir in $rm_default_dirs; do
+        if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
+          continue;
+        fi
+
+        if test ! -z "$rm_dir/srun" -a -f "$rm_dir/srun"; then
+	  pth=`config/ap $rm_dir/srun`
+          ac_job_launcher_path=$pth
+          rm_found="yes"
+          TARGET_JOB_LAUNCHER_PATH=$ac_job_launcher_path
+
+          RM_TYPE=RC_slurm
+
+          break
+        fi
+      done
+    fi
 
     #
     # This answers whether RM given and found
@@ -3460,95 +3525,240 @@ fi
 $as_echo "$with_rm:$rm_found" >&6; }
 
   elif test "x$with_rm" = "xorte" ; then
-    echo "$with_rm"
+    #
+    # Configure for OPENMPI/OPENRTE
+    #
+    if test "x$with_launcher" != "xcheck"; then
+      #
+      # launcher path given
+      #
+      if test ! -z "$with_launcher" -a -f "$with_launcher"; then
+        pth=`config/ap $with_launcher`
+        ac_job_launcher_path=$pth
+        rm_found="yes"
+        TARGET_JOB_LAUNCHER_PATH=$ac_job_launcher_path
+
+        RM_TYPE=RC_orte
+
+      fi
+    else
+      rm_default_dirs="/usr/bin /usr/local/bin"
+      for rm_dir in $rm_default_dirs; do
+        if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
+          continue;
+        fi
+
+        if test ! -z "$rm_dir/orterun" -a -f "$rm_dir/orterun"; then
+          pth=`config/ap $rm_dir/srun`
+          ac_job_launcher_path=$pth
+          rm_found="yes"
+          TARGET_JOB_LAUNCHER_PATH=$ac_job_launcher_path
+
+          RM_TYPE=RC_orte
+
+          break
+        fi
+      done
+    fi
+
+    #
+    # This answers whether RM given and found
+    #
+    { $as_echo "$as_me:$LINENO: result: $with_rm:$rm_found" >&5
+$as_echo "$with_rm:$rm_found" >&6; }
 
   elif test "x$with_rm" = "xalps" ; then
-    echo "$with_rm"
+    #
+    # Configure for Cray ALPS RM
+    #
+    if test "x$with_launcher" != "xcheck"; then
+      #
+      # launcher path given
+      #
+      if test ! -z "$with_launcher" -a -f "$with_launcher"; then
+        pth=`config/ap $with_launcher`
+        ac_job_launcher_path=$pth
+        rm_found="yes"
+        TARGET_JOB_LAUNCHER_PATH=$ac_job_launcher_path
+
+        RM_TYPE=RC_alps
+
+      fi
+    else
+      rm_default_dirs="/usr/bin/orig /usr/bin"
+      for rm_dir in $rm_default_dirs; do
+        if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
+          continue;
+        fi
+
+        if test ! -z "$rm_dir/aprun" -a -f "$rm_dir/aprun"; then
+          pth=`config/ap $rm_dir/aprun`
+          ac_job_launcher_path=$pth
+          rm_found="yes"
+          TARGET_JOB_LAUNCHER_PATH=$ac_job_launcher_path
+
+          RM_TYPE=RC_alps
+
+          break
+        fi
+      done
+    fi
+
+    #
+    # This answers whether RM given and found
+    #
+    { $as_echo "$as_me:$LINENO: result: $with_rm:$rm_found" >&5
+$as_echo "$with_rm:$rm_found" >&6; }
 
   elif test "x$with_rm" = "xbglrm" ; then
     #
     # Configure for Blue Gene P RM
     #
-    rm_default_dirs="/bgl/BlueLight/ppcfloor/bglsys/bin"
-    for rm_dir in $rm_default_dirs; do
-      if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
-        continue;
-      fi
-
-      if test ! -z "$rm_dir/mpirun" -a -f "$rm_dir/mpirun"; then
-        pth=`config/ap $rm_dir/mpirun`
+    if test "x$with_launcher" != "xcheck"; then
+      #
+      # launcher path given
+      #
+      if test ! -z "$with_launcher" -a -f "$with_launcher"; then
+        pth=`config/ap $with_launcher`
         ac_job_launcher_path=$pth
         rm_found="yes"
         TARGET_JOB_LAUNCHER_PATH=$ac_job_launcher_path
 
         RM_TYPE=RC_bglrm
 
-        break
       fi
-    done
+    else
+      rm_default_dirs="/bgl/BlueLight/ppcfloor/bglsys/bin"
+      for rm_dir in $rm_default_dirs; do
+        if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
+          continue;
+        fi
+
+        if test ! -z "$rm_dir/mpirun" -a -f "$rm_dir/mpirun"; then
+          pth=`config/ap $rm_dir/mpirun`
+          ac_job_launcher_path=$pth
+          rm_found="yes"
+          TARGET_JOB_LAUNCHER_PATH=$ac_job_launcher_path
+
+          RM_TYPE=RC_bglrm
+
+          break
+        fi
+      done
+    fi
+
+    #
+    # This answers whether RM given and found
+    #
+    { $as_echo "$as_me:$LINENO: result: $with_rm:$rm_found" >&5
+$as_echo "$with_rm:$rm_found" >&6; }
 
   elif test "x$with_rm" = "xbgprm" -o "x$dflt_str" = "xcheck-linux-power"; then
     #
     # Configure for Blue Gene P RM
     #
-    rm_default_dirs="/bgsys/drivers/ppcfloor/bin"
-    for rm_dir in $rm_default_dirs; do
-      if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
-        continue;
-      fi
-
-      if test ! -z "$rm_dir/mpirun" -a -f "$rm_dir/mpirun"; then
-        pth=`config/ap $rm_dir/mpirun`
+    if test "x$with_launcher" != "xcheck"; then
+      #
+      # launcher path given
+      #
+      if test ! -z "$with_launcher" -a -f "$with_launcher"; then
+        pth=`config/ap $with_launcher`
         ac_job_launcher_path=$pth
         rm_found="yes"
         TARGET_JOB_LAUNCHER_PATH=$ac_job_launcher_path
 
         RM_TYPE=RC_bgprm
 
-        break
       fi
-    done
+    else
+      rm_default_dirs="/bgsys/drivers/ppcfloor/bin"
+      for rm_dir in $rm_default_dirs; do
+        if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
+          continue;
+        fi
+
+        if test ! -z "$rm_dir/mpirun" -a -f "$rm_dir/mpirun"; then
+          pth=`config/ap $rm_dir/mpirun`
+          ac_job_launcher_path=$pth
+          rm_found="yes"
+          TARGET_JOB_LAUNCHER_PATH=$ac_job_launcher_path
+
+          RM_TYPE=RC_bgprm
+
+          break
+        fi
+      done
+    fi
+
+    #
+    # This answers whether RM given and found
+    #
+    { $as_echo "$as_me:$LINENO: result: $with_rm:$rm_found" >&5
+$as_echo "$with_rm:$rm_found" >&6; }
 
   elif test "x$with_rm" = "xbgqrm" -o "x$dflt_str" = "xcheck-linux-power64"; then
     #
     # Configure for Blue Gene Q RM
     #
-    rm_default_dirs="/usr/bin /bgsys/drivers/ppcfloor/hlcs/bin"
-    for rm_dir in $rm_default_dirs; do
-      if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
-        continue;
-      fi
-
-      if test ! -z "$rm_dir/srun" -a -f "$rm_dir/srun"; then
-        pth=`config/ap $rm_dir/srun`
+    if test "x$with_launcher" != "xcheck"; then
+      #
+      # launcher path given
+      #
+      if test ! -z "$with_launcher" -a -f "$with_launcher"; then
+        pth=`config/ap $with_launcher`
         ac_job_launcher_path=$pth
         rm_found="yes"
         TARGET_JOB_LAUNCHER_PATH=$ac_job_launcher_path
 
-        RM_TYPE=RC_bgq_slurm
-
-        break
-      elif test ! -z "$rm_dir/runjob" -a -f "$rm_dir/runjob"; then
-        pth=`config/ap $rm_dir/runjob`
-        ac_job_launcher_path=$pth
-        rm_found="yes"
-        TARGET_JOB_LAUNCHER_PATH=$ac_job_launcher_path
-
+        #
+        # TODO: compare the filename of with_launcher against srun/runjob
+        #
         RM_TYPE=RC_bgqrm
 
-        break
       fi
-    done
+    else
+      rm_default_dirs="/usr/bin /bgsys/drivers/ppcfloor/hlcs/bin"
+      for rm_dir in $rm_default_dirs; do
+        if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
+          continue;
+        fi
 
+        if test ! -z "$rm_dir/srun" -a -f "$rm_dir/srun"; then
+          pth=`config/ap $rm_dir/srun`
+          ac_job_launcher_path=$pth
+          rm_found="yes"
+          TARGET_JOB_LAUNCHER_PATH=$ac_job_launcher_path
+
+          RM_TYPE=RC_bgq_slurm
+
+          break
+        elif test ! -z "$rm_dir/runjob" -a -f "$rm_dir/runjob"; then
+          pth=`config/ap $rm_dir/runjob`
+          ac_job_launcher_path=$pth
+          rm_found="yes"
+          TARGET_JOB_LAUNCHER_PATH=$ac_job_launcher_path
+
+          RM_TYPE=RC_bgqrm
+
+          break
+        fi
+      done
+    fi
+
+    #
+    # This answers whether RM given and found
+    #
+    { $as_echo "$as_me:$LINENO: result: $with_rm:$rm_found" >&5
+$as_echo "$with_rm:$rm_found" >&6; }
   fi
 
 
   { $as_echo "$as_me:$LINENO: checking a set of hosts that middleware testing should use" >&5
 $as_echo_n "checking a set of hosts that middleware testing should use... " >&6; }
 
-# Check whether --with-mw-hostlist was given.
-if test "${with_mw_hostlist+set}" = set; then
-  withval=$with_mw_hostlist; with_hostlist=$withval
+# Check whether --with-test-mw-hostlist was given.
+if test "${with_test_mw_hostlist+set}" = set; then
+  withval=$with_test_mw_hostlist; with_hostlist=$withval
 else
   with_hostlist="check"
 fi
@@ -5905,13 +6115,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:5908: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:6118: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5911: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:6121: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5914: output\"" >&5)
+  (eval echo "\"\$as_me:6124: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -7117,7 +7327,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 7120 "configure"' > conftest.$ac_ext
+  echo '#line 7330 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -9683,10 +9893,6 @@ _lt_linker_boilerplate=`cat conftest.err`
 $RM -r conftest*
 
 
-## CAVEAT EMPTOR:
-## There is no encapsulation within the following macros, do not change
-## the running order or otherwise move them around unless you know exactly
-## what you are doing...
 if test -n "$compiler"; then
 
 lt_prog_compiler_no_builtin_flag=
@@ -9712,11 +9918,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9715: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9921: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:9719: \$? = $ac_status" >&5
+   echo "$as_me:9925: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -10051,11 +10257,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:10054: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:10260: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:10058: \$? = $ac_status" >&5
+   echo "$as_me:10264: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -10156,11 +10362,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:10159: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:10365: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:10163: \$? = $ac_status" >&5
+   echo "$as_me:10369: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -10211,11 +10417,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:10214: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:10420: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:10218: \$? = $ac_status" >&5
+   echo "$as_me:10424: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -13014,7 +13220,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 13017 "configure"
+#line 13223 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13110,7 +13316,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 13113 "configure"
+#line 13319 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -15130,11 +15336,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15133: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15339: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15137: \$? = $ac_status" >&5
+   echo "$as_me:15343: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -15229,11 +15435,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15232: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15438: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:15236: \$? = $ac_status" >&5
+   echo "$as_me:15442: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15281,11 +15487,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15284: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15490: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:15288: \$? = $ac_status" >&5
+   echo "$as_me:15494: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized

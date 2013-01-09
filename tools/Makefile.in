@@ -41,6 +41,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/x_ac_bootfabric.m4 \
 	$(top_srcdir)/config/x_ac_enable_verbose.m4 \
 	$(top_srcdir)/config/x_ac_gcrypt.m4 \
 	$(top_srcdir)/config/x_ac_mpicc.m4 \
+	$(top_srcdir)/config/x_ac_myboost.m4 \
 	$(top_srcdir)/config/x_ac_platform.m4 \
 	$(top_srcdir)/config/x_ac_testnnodes.m4 \
 	$(top_srcdir)/config/x_ac_tracing_cost.m4 \
@@ -149,6 +150,7 @@ LIPO = @LIPO@
 LMONAPILOC = @LMONAPILOC@
 LMONENABSLOC = @LMONENABSLOC@
 LMONENLOC = @LMONENLOC@
+LMONHL = @LMONHL@
 LMON_AGE = @LMON_AGE@
 LMON_CURRENT = @LMON_CURRENT@
 LMON_REVISION = @LMON_REVISION@
@@ -159,6 +161,7 @@ MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
 MPICC = @MPICC@
 MPICXX = @MPICXX@
+MYBOOSTLOC = @MYBOOSTLOC@
 NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
@@ -173,6 +176,8 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 RANLIB = @RANLIB@
+RMINC = @RMINC@
+RMLIB = @RMLIB@
 RM_TYPE = @RM_TYPE@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
@@ -228,6 +233,7 @@ pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
+rshcmd = @rshcmd@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
@@ -242,8 +248,8 @@ tvcmd = @tvcmd@
 @WITH_COBO_TRUE@OPT_COBO = cobo
 @WITH_CIOD_TRUE@OPT_CIOD = ciod
 @WITH_ALPS_TRUE@OPT_ALPS = alps
-OPT_GCRYPT = libgpg-error
-SUBDIRS = $(OPT_COBO) $(OPT_CIOD) $(OPT_ALPS) $(OPT_GCRYPT)
+OPT_GPG = libgpg-error
+SUBDIRS = $(OPT_COBO) $(OPT_CIOD) $(OPT_ALPS) $(OPT_GPG)
 LIBGCRYPTDISTFILES = libgcrypt/src libgcrypt/src/gcrypt.h \
 	libgcrypt/src/gcrypt-module.h libgcrypt/src/Makefile.in \
 	libgcrypt/src/ChangeLog libgcrypt/src/Makefile.am \
