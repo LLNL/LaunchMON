@@ -351,6 +351,10 @@ libmonbeapi_la_SOURCES = lmon_be.cxx \
                                lmon_be_sync_mpi_bgq.cxx \
                                lmon_coloc_spawner.hxx \
                                lmon_daemon_internal.hxx \
+                               lmon_be_sync_mpi.hxx \
+			       lmon_be_sync_mpi_generic.hxx \
+			       lmon_be_sync_mpi_bg.hxx \
+			       lmon_be_sync_mpi_bgq.hxx \
                                ../../lmon_api/lmon_api_std.h \
                                ../../lmon_api/lmon_be.h \
                                ../../lmon_api/lmon_proctab.h \
