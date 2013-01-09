@@ -130,6 +130,7 @@ libmonmwapi_la_SOURCES       = lmon_mw.cxx \
                                lmon_coloc_spawner.hxx \
                                lmon_daemon_internal.hxx \
                                ../sdbg_rsh_spawner.hxx \
+                               ../sdbg_rm_spawner.hxx \
                                ../../lmon_api/lmon_api_std.h \
                                ../../lmon_api/lmon_mw.h \
                                ../../lmon_api/lmon_proctab.h \
