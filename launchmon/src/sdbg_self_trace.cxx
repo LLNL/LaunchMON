@@ -76,9 +76,6 @@ self_trace_entry_t self_trace_t::tracer_module_trace
 self_trace_entry_t self_trace_t::symtab_module_trace 
      = { quiet, "<Symtable>", "symtab" };
 
-self_trace_entry_t self_trace_t::thread_tracer_module_trace 
-     = { quiet, "<ThreadTracer>", "ttracer" };
-
 self_trace_entry_t self_trace_t::machine_module_trace 
      = { quiet, "<Machine>", "machine"};
 
