@@ -263,7 +263,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 tvcmd = @tvcmd@
 SUBDIRS = tools launchmon test
-EXTRA_DIST = config/ap README.ERROR_HANDLING package.conf bootstrap
+EXTRA_DIST = config/ap README.ERROR_HANDLING package.conf bootstrap INSTALL.launchmon
 ACLOCAL_AMFLAGS = -I config
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
