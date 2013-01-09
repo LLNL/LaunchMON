@@ -66,7 +66,6 @@ am_launchmon_OBJECTS = launchmon-main.$(OBJEXT) \
 	launchmon-lmon_lmonp_msg.$(OBJEXT) \
 	launchmon-sdbg_linux_mach.$(OBJEXT) \
 	launchmon-lmon_say_msg.$(OBJEXT) \
-	launchmon-sdbg_linux_thr_db.$(OBJEXT) \
 	launchmon-sdbg_proc_service.$(OBJEXT) \
 	launchmon-sdbg_self_trace.$(OBJEXT) \
 	launchmon-sdbg_opt.$(OBJEXT) launchmon-sdbg_rm_map.$(OBJEXT)
@@ -298,7 +297,6 @@ launchmon_SOURCES = main.cxx \
                           lmon_api/lmon_lmonp_msg.cxx \
                           sdbg_linux_mach.cxx \
                           lmon_api/lmon_say_msg.cxx \
-                          sdbg_linux_thr_db.cxx \
                           sdbg_proc_service.cxx \
                           ../sdbg_self_trace.cxx \
                           ../sdbg_opt.cxx \
@@ -431,7 +429,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-sdbg_linux_launchmon.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-sdbg_linux_mach.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-sdbg_linux_thr_db.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-sdbg_opt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-sdbg_proc_service.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launchmon-sdbg_rm_map.Po@am__quote@
@@ -527,20 +524,6 @@ launchmon-lmon_say_msg.obj: lmon_api/lmon_say_msg.cxx
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='lmon_api/lmon_say_msg.cxx' object='launchmon-lmon_say_msg.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(launchmon_CXXFLAGS) $(CXXFLAGS) -c -o launchmon-lmon_say_msg.obj `if test -f 'lmon_api/lmon_say_msg.cxx'; then $(CYGPATH_W) 'lmon_api/lmon_say_msg.cxx'; else $(CYGPATH_W) '$(srcdir)/lmon_api/lmon_say_msg.cxx'; fi`
-
-launchmon-sdbg_linux_thr_db.o: sdbg_linux_thr_db.cxx
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(launchmon_CXXFLAGS) $(CXXFLAGS) -MT launchmon-sdbg_linux_thr_db.o -MD -MP -MF $(DEPDIR)/launchmon-sdbg_linux_thr_db.Tpo -c -o launchmon-sdbg_linux_thr_db.o `test -f 'sdbg_linux_thr_db.cxx' || echo '$(srcdir)/'`sdbg_linux_thr_db.cxx
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/launchmon-sdbg_linux_thr_db.Tpo $(DEPDIR)/launchmon-sdbg_linux_thr_db.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sdbg_linux_thr_db.cxx' object='launchmon-sdbg_linux_thr_db.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(launchmon_CXXFLAGS) $(CXXFLAGS) -c -o launchmon-sdbg_linux_thr_db.o `test -f 'sdbg_linux_thr_db.cxx' || echo '$(srcdir)/'`sdbg_linux_thr_db.cxx
-
-launchmon-sdbg_linux_thr_db.obj: sdbg_linux_thr_db.cxx
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(launchmon_CXXFLAGS) $(CXXFLAGS) -MT launchmon-sdbg_linux_thr_db.obj -MD -MP -MF $(DEPDIR)/launchmon-sdbg_linux_thr_db.Tpo -c -o launchmon-sdbg_linux_thr_db.obj `if test -f 'sdbg_linux_thr_db.cxx'; then $(CYGPATH_W) 'sdbg_linux_thr_db.cxx'; else $(CYGPATH_W) '$(srcdir)/sdbg_linux_thr_db.cxx'; fi`
-@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/launchmon-sdbg_linux_thr_db.Tpo $(DEPDIR)/launchmon-sdbg_linux_thr_db.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='sdbg_linux_thr_db.cxx' object='launchmon-sdbg_linux_thr_db.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(launchmon_CXXFLAGS) $(CXXFLAGS) -c -o launchmon-sdbg_linux_thr_db.obj `if test -f 'sdbg_linux_thr_db.cxx'; then $(CYGPATH_W) 'sdbg_linux_thr_db.cxx'; else $(CYGPATH_W) '$(srcdir)/sdbg_linux_thr_db.cxx'; fi`
 
 launchmon-sdbg_proc_service.o: sdbg_proc_service.cxx
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(launchmon_CXXFLAGS) $(CXXFLAGS) -MT launchmon-sdbg_proc_service.o -MD -MP -MF $(DEPDIR)/launchmon-sdbg_proc_service.Tpo -c -o launchmon-sdbg_proc_service.o `test -f 'sdbg_proc_service.cxx' || echo '$(srcdir)/'`sdbg_proc_service.cxx

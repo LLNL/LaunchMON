@@ -58,7 +58,6 @@ launchmon_SOURCES       = main.cxx \
                           lmon_api/lmon_lmonp_msg.cxx \
                           sdbg_linux_mach.cxx \
                           lmon_api/lmon_say_msg.cxx \
-                          sdbg_linux_thr_db.cxx \
                           sdbg_proc_service.cxx \
                           ../sdbg_self_trace.cxx \
                           ../sdbg_opt.cxx \
