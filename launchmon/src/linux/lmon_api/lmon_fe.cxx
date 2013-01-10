@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Jan 09 2013 DHA: Remove verbosity ref to the deprecated
+ *                         thread tracer module.
  *        May 31 2012 DHA: Merged with the middleware support 
  *                         from the 0.8-middleware-support branch.
  *        May 30 2012 DHA: (ID: 3530680) Added better debug info.
@@ -2469,7 +2471,6 @@ LMON_set_options (
   self_trace_t::launchmon_module_trace.verbosity_level     = ver;
   self_trace_t::tracer_module_trace.verbosity_level        = ver;
   self_trace_t::symtab_module_trace.verbosity_level        = ver;
-  self_trace_t::thread_tracer_module_trace.verbosity_level = ver;
   self_trace_t::event_module_trace.verbosity_level         = ver;
   self_trace_t::driver_module_trace.verbosity_level        = ver;
   self_trace_t::machine_module_trace.verbosity_level       = ver;
