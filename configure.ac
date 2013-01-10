@@ -246,9 +246,6 @@ dnl -----------------------------------------------
 AC_CONFIG_FILES([Makefile
                  tools/Makefile
                  tools/ciod/Makefile
-                 tools/pmgr_collective/Makefile
-                 tools/pmgr_collective/src/Makefile
-                 tools/pmgr_collective/test/Makefile
                  tools/cobo/Makefile
                  tools/cobo/src/Makefile
                  tools/cobo/test/Makefile
