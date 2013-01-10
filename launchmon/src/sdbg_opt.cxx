@@ -27,6 +27,8 @@
  *	
  *
  *  Update Log:
+ *        Jan 09 2010 DHA: Remove verbose reference to the deprecated thread
+ *                         tracer module.
  *        Oct 07 2010 DHA: Dynamic resource manager detection support
  *        Jun 30 2010 DHA: Added faster engine parsing error detection support
  *                         Deprecated option_sanity_check();
@@ -231,7 +233,6 @@ opts_args_t::process_args ( int *argc, char ***argv )
 	      self_trace_t::launchmon_module_trace.verbosity_level = ver;
 	      self_trace_t::tracer_module_trace.verbosity_level = ver;
 	      self_trace_t::symtab_module_trace.verbosity_level = ver;
-	      self_trace_t::thread_tracer_module_trace.verbosity_level = ver;
 	      self_trace_t::event_module_trace.verbosity_level = ver;
 	      self_trace_t::driver_module_trace.verbosity_level = ver;
 	      self_trace_t::machine_module_trace.verbosity_level = ver;
@@ -319,9 +320,6 @@ opts_args_t::process_args ( int *argc, char ***argv )
 			== self_trace_t::symtab_module_trace.module_symbol )
 		self_trace_t::symtab_module_trace.verbosity_level = ver;
 	      else if ( modulename
-			== self_trace_t::thread_tracer_module_trace.module_symbol )
-		self_trace_t::thread_tracer_module_trace.verbosity_level = ver;
-	      else if ( modulename
 			== self_trace_t::machine_module_trace.module_symbol )
 		self_trace_t::machine_module_trace.verbosity_level = ver;
 	      else if ( modulename
@@ -398,7 +396,6 @@ opts_args_t::process_args ( int *argc, char ***argv )
       self_trace_t::launchmon_module_trace.verbosity_level = verbo;
       self_trace_t::tracer_module_trace.verbosity_level = verbo;
       self_trace_t::symtab_module_trace.verbosity_level = verbo;
-      self_trace_t::thread_tracer_module_trace.verbosity_level = verbo;
       self_trace_t::event_module_trace.verbosity_level = verbo;
       self_trace_t::driver_module_trace.verbosity_level = verbo;
       self_trace_t::machine_module_trace.verbosity_level = verbo;
