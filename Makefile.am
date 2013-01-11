@@ -28,6 +28,9 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        Jan 11 2013 DHA: Added launchmon.spec and launchmon.module for
+##                         RPM support. Added INSTALL.launchmon, as 'make dist'
+##                         was not distributing that file.
 ##        Sep 30 2008 DHA: Added README.ERROR_HANDLING and package.conf 
 ##                         to the distribution list
 ##        Jun 06 2008 DHA: Copied from the old Makefile.
@@ -38,5 +41,11 @@
 ##
 
 SUBDIRS         = tools launchmon test
-EXTRA_DIST      = config/ap README.ERROR_HANDLING package.conf bootstrap INSTALL.launchmon
+EXTRA_DIST      = config/ap \
+		  README.ERROR_HANDLING \
+		  package.conf \
+		  launchmon.spec \
+                  launchmon.module \
+		  bootstrap \
+		  INSTALL.launchmon
 ACLOCAL_AMFLAGS = -I config

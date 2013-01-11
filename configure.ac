@@ -41,7 +41,7 @@ dnl         Jun 06 2008 DHA: File created.
 dnl
 
 AC_PREREQ(2.59)
-AC_INIT(LaunchMON, 1.0, ahn1@llnl.gov)
+AC_INIT(LaunchMON, 1.0.beta1, ahn1@llnl.gov)
 
 dnl
 dnl This implements 2nd LMON interface (increase current when the 
@@ -64,7 +64,7 @@ AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_HEADER([config.h])
-AM_INIT_AUTOMAKE(launchmon, 1.0)
+AM_INIT_AUTOMAKE(launchmon, 1.0.beta1)
 AC_CANONICAL_HOST
 
 
