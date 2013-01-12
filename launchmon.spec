@@ -21,24 +21,25 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # Build time dependencies:
 BuildRequires:  gcc
 BuildRequires:  libgcc
-BuildRequires:  compat-libstdc++
+#BuildRequires:  compat-libstdc++
 BuildRequires:  glibc
 BuildRequires:  perl
 BuildRequires:  boost-devel
 BuildRequires:  elfutils-libelf-devel
 #
 # Configuring test cases with slurm and mvapich
-BuildRequires:  slurm-devel 
-BuildRequires:  mvapich-gnu
+# BuildRequires:  slurm-devel 
+# BuildRequires:  mvapich-gnu
 
 # In case you need to configure test cases with
 # openmpi instead of slurm
-# BuildRequires: openmpi-1.6-gnu
+BuildRequires: openmpi-1.6-gnu
 
 #
 # Install time dependencies
 Requires:  bash
-Requires:  mvapich-gnu
+#Requires:  mvapich-gnu
+Requires:  openmpi-1.6-gnu
 Requires:  glibc
 Requires:  elfutils-libelf-devel
 
@@ -60,11 +61,13 @@ mkdir -p $RPM_BUILD_ROOT
 
 %build
 . /usr/share/[mM]odules/init/bash
-module load mvapich-gnu-shmem/1.2
+#module load mvapich-gnu-shmem/1.2
+module load openmpi-gnu/1.6
 
-./configure \
+./configure MPICC=mpicc \
     --prefix=%{install_prefix} \
-    --with-test-rm=slurm \
+    --with-test-rm=orte \
+    --with-test-rm-launcher=/opt/openmpi-1.6-gnu/bin/orterun \
     --with-test-nnodes=2 \
     --with-test-ncore-per-CN=8 \
     --with-mw-hostlist=sierra1620:sierra1626
