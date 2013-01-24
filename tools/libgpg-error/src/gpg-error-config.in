@@ -16,6 +16,9 @@ includedir=@includedir@
 libdir=@libdir@
 isubdirafter="@GPG_ERROR_CONFIG_ISUBDIRAFTER@"
 
+# LLNL: patch
+mydir=`dirname $0`
+
 output=""
 
 usage()
@@ -59,7 +62,7 @@ while test $# -gt 0; do
 	    ;;
         --cflags)
 	    if test "x$includedir" != "x/usr/include" -a "x$includedir" != "x/include"; then
-		output="$output -I$includedir"
+		output="$output -I$includedir -I$mydir"
 	    fi
             # Note: -idirafter is a gcc extension.  It is only used on
             #       systems where gcc is the only compiler we support.
@@ -70,7 +73,7 @@ while test $# -gt 0; do
 	    ;;
 	--libs)
 	    if test "x$libdir" != "x/usr/lib" -a "x$libdir" != "x/lib"; then
-		output="$output -L$libdir"
+		output="$output -L$libdir -L$mydir"
 	    fi
 	    output="$output @GPG_ERROR_CONFIG_LIBS@"
 	    ;;

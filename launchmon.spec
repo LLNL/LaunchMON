@@ -11,8 +11,8 @@ URL:            https://sourceforge.net/projects/launchmon
 # to set up an rpm to install to /opt, adjust install_prefix and module_path
 # accordingly
 
-%define install_prefix /g/g0/dahn/rpm-local/opt/%{name}-%{version}
-%define module_path    /g/g0/dahn/rpm-local/opt/modules/modulefiles/launchmon
+%define install_prefix /opt/%{name}-%{version}
+%define module_path    /opt/modules/modulefiles/launchmon
 %define debug_package %{nil}
 
 Source0: 	%{name}-%{version}.tar.gz
@@ -70,7 +70,7 @@ module load openmpi-gnu/1.6
     --with-test-rm-launcher=/opt/openmpi-1.6-gnu/bin/orterun \
     --with-test-nnodes=2 \
     --with-test-ncore-per-CN=8 \
-    --with-mw-hostlist=sierra1620:sierra1626
+    --with-test-mw-hostlist=sierra1620:sierra1626
 
 make 
 
