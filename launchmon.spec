@@ -34,14 +34,17 @@ BuildRequires:  elfutils-libelf-devel
 # In case you need to configure test cases with
 # openmpi instead of slurm
 BuildRequires: openmpi-1.6-gnu
+BuildRequires: numactl-devel
 
 #
 # Install time dependencies
-Requires:  bash
+Requires: bash
 #Requires:  mvapich-gnu
-Requires:  openmpi-1.6-gnu
-Requires:  glibc
-Requires:  elfutils-libelf-devel
+Requires: openmpi-1.6-gnu
+Requires: numactl-devel
+Requires: numactl
+Requires: glibc
+Requires: elfutils-libelf-devel
 
 
 
