@@ -81,7 +81,7 @@ make
 make install DESTDIR=$RPM_BUILD_ROOT
 
 mkdir -p ${RPM_BUILD_ROOT}%{module_path}
-cp ${RPM_SOURCE_DIR}/launchmon.module ${RPM_BUILD_ROOT}%{module_path}/%{version}
+cp ${RPM_BUILD_DIR}/%{name}-%{version}/launchmon.module ${RPM_BUILD_ROOT}%{module_path}/%{version}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -89,7 +89,5 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %{install_prefix}
 %attr(644, root, root) %{module_path}/%{version}
-
-
 
 
