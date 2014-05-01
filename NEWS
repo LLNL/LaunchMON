@@ -1,6 +1,6 @@
-2013-04-30 DHA Release 1.1.1 
-		o SLURM, OpenMPI/ORTE, and BlueGene/Q support
-		o Droped support for BlueGene/L and /P
+2013-04-30 DHA Release 1.0.1 
+		o SLURM, OpenMPI/OpenRTE, and BlueGene/Q support
+		o Dropped support for BlueGene/L and /P
 		o Dynamic detection of resource management
                 o Limited support for LaunchMON middleware API 
 		o Security enhancement for COBO handshaking
