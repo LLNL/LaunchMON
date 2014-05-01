@@ -2640,7 +2640,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=launchmon
- VERSION=1.0.beta2
+ VERSION=1.0.1
 
 
 cat >>confdefs.h <<_ACEOF

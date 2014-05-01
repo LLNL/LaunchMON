@@ -67,7 +67,7 @@ AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_HEADER([config.h])
-AM_INIT_AUTOMAKE(launchmon, 1.0.beta2)
+AM_INIT_AUTOMAKE(launchmon, 1.0.1)
 AC_CANONICAL_HOST
 
 
