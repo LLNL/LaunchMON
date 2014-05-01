@@ -43,62 +43,23 @@
 
 #define __GNU_SOURCE
 
-#if HAVE_UNISTD_H
-# include <unistd.h>
-#else
-# error unistd.h is required
-#endif
-
+#include <unistd.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <iomanip>
-
-#if HAVE_SIGNAL_H
-# include <signal.h>
-#else
-# error signal.h is required 
-#endif
-
-#if HAVE_LIMITS_H
-# include <limits.h>
-#else
-# error limits.h is required 
-#endif
+#include <signal.h>
+#include <limits.h>
 
 #if SUB_ARCH_BGL || SUB_ARCH_BGP
 # include "debugger_interface.h"
   using namespace DebuggerInterface;
 #else 
-# if HAVE_SYS_TYPES_H
-#   include <sys/types.h>
-# else
-#   error sys/types.h is required
-# endif
-
-# if HAVE_SYS_WAIT_H
-#   include <sys/wait.h>
-# else
-#   error sys/wait.h is required
-# endif
-
-# if HAVE_SYS_PTRACE_H
-#   include <sys/ptrace.h>
-# else
-#   error sys/ptrace.h is required
-# endif 
-
-# if HAVE_SYS_RESOURCE_H
-#   include <sys/resource.h>
-# else
-#   error sys/resource.h is required 
-# endif
-
-# if HAVE_ERRNO_H
-#   include <errno.h>
-# else
-#   error errno.h is required 
-# endif
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/ptrace.h>
+#include <sys/resource.h>
+#include <errno.h>
 #endif
 
 #include <lmon_api/lmon_be.h>
