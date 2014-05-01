@@ -26,7 +26,7 @@ BuildRequires:  glibc
 BuildRequires:  perl
 BuildRequires:  boost-devel
 BuildRequires:  elfutils-libelf-devel
-BuildRequires:  munge
+BuildRequires:  munge-devel
 #
 # Configuring test cases with slurm and mvapich
 # BuildRequires:  slurm-devel 
