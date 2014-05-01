@@ -37,12 +37,12 @@ noinst_PROGRAMS    = client server_rsh
 
 client_SOURCES     = client.c 
 
-client_LDFLAGS     = -L$(top_srcdir)/@COMMLOC@
+client_LDFLAGS     = 
 
-client_LDADD       = @LIBCOMM@
+client_LDADD       = $(top_srcdir)/@COMMLOC@/@LIBCOMM@
 
 server_rsh_SOURCES = server_rsh.c
 
-server_rsh_LDFLAGS = -L$(top_srcdir)/@COMMLOC@
+server_rsh_LDFLAGS = 
 
-server_rsh_LDADD   = @LIBCOMM@
+server_rsh_LDADD   = $(top_srcdir)/@COMMLOC@/@LIBCOMM@

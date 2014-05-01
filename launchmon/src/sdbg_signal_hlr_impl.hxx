@@ -43,37 +43,13 @@
 #include <lmon_api/common.h>
 
 extern "C" {
-#if HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#else
-# error sys/types.h is required
-#endif
-
-#if HAVE_SIGNAL_H
-# include <signal.h>  
-#else
-# error signal.h is required 
-#endif
-
-#if HAVE_UNISTD_H
-# include <unistd.h>
-#else
-# error unistd.h is required 
-#endif
-
-#if HAVE_UNISTD_H
-# include <libgen.h>
-#else
-# error libgen.h is required 
-#endif
+#include <sys/types.h>
+#include <signal.h>  
+#include <unistd.h>
+#include <libgen.h>
 }
 
-#if HAVE_ASSERT_H
-# include <cassert>
-#else
-# error cassert is required
-#endif
-
+#include <cassert>
 #include "sdbg_signal_hlr.hxx"
 #include "sdbg_base_tracer.hxx"
 #include "sdbg_base_mach.hxx"

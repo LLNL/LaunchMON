@@ -50,6 +50,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/libtool.m4 \
 	$(top_srcdir)/config/x_ac_enable_debug.m4 \
 	$(top_srcdir)/config/x_ac_enable_verbose.m4 \
 	$(top_srcdir)/config/x_ac_gcrypt.m4 \
+	$(top_srcdir)/config/x_ac_handshake.m4 \
 	$(top_srcdir)/config/x_ac_mpicc.m4 \
 	$(top_srcdir)/config/x_ac_myboost.m4 \
 	$(top_srcdir)/config/x_ac_platform.m4 \
@@ -183,6 +184,8 @@ MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
 MPICC = @MPICC@
 MPICXX = @MPICXX@
+MUNGE_CFLAGS = @MUNGE_CFLAGS@
+MUNGE_LIBS = @MUNGE_LIBS@
 MYBOOSTLOC = @MYBOOSTLOC@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -197,6 +200,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 RMINC = @RMINC@
 RMLIB = @RMLIB@
@@ -597,7 +601,7 @@ distcheck: dist
 	*.zip*) \
 	  unzip $(distdir).zip ;;\
 	esac
-	chmod -R a-w $(distdir); chmod a+w $(distdir)
+	chmod -R a-w $(distdir); chmod u+w $(distdir)
 	mkdir $(distdir)/_build
 	mkdir $(distdir)/_inst
 	chmod a-w $(distdir)

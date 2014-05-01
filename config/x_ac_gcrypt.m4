@@ -55,8 +55,9 @@ AC_DEFUN([X_AC_GCRYPT], [
       AC_CONFIG_SUBDIRS([tools/libgpg-error])
       AC_SUBST(GPGERRLOC, [tools/libgpg-error/src])
       AC_SUBST(GCRYPTLOC, [tools/libgcrypt/src])
-      AC_SUBST(LIBGCRYPT, [-lgcrypt])
-      AC_SUBST(LIBGPGERR, [-lgpg-error])
+      AC_SUBST(LIBGCRYPT, [libgcrypt.la])
+      AC_SUBST(LIBGPGERR, [libgpg-error.la])
+      AC_DEFINE(GCRYPT, [1], [1 if defined])	
       gcrypt_configured="yes"
     else
       AC_MSG_ERROR([tools/libgpg-error or tools/libgcrypt not found])

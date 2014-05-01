@@ -43,60 +43,17 @@
 #endif
 
 extern "C" {
-#if HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#else
-# error sys/types.h is required
-#endif 
-
-#if HAVE_SYS_WAIT_H
-# include <sys/wait.h>
-#else
-# error sys/wait.h is required
-#endif
-
-#if HAVE_SYS_STAT_H
-# include <sys/stat.h>
-#else
-# error sys/stat.h is required
-#endif
-
-#if HAVE_SYS_USER_H
-# include <sys/user.h>
-#else
-# error sys/user.h is required
-#endif
-
-#if HAVE_ERRNO_H
-# include <errno.h>
-#else
-# error errno.h is required
-#endif
-
-#if HAVE_UNISTD_H
-# include <unistd.h>
-#else
-# error unistd.h is required
-#endif
-
-#if HAVE_SIGNAL_H
-# include <signal.h>
-#else
-# error signal.h is required
-#endif
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <sys/user.h>
+#include <errno.h>
+#include <unistd.h>
+#include <signal.h>
 }
 
-#if HAVE_IOSTREAM
 #include <iostream>
-#else
-# error iostream is required
-#endif
-
-#if HAVE_STRING_H
 #include <cstring>
-#else
-# error string.h is required
-#endif
 
 #include "sdbg_base_symtab.hxx"
 #include "sdbg_base_symtab_impl.hxx"

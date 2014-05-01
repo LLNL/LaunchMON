@@ -1,6 +1,6 @@
 Name:           launchmon
-Version:        1.0.beta1 
-Release:        1cce
+Version:        1.0.1
+Release:        2cce
 License:        LGPL
 Group:          Development/Languages
 Summary:        Tool Daemon launching/bootstrapping infrastructure. 
@@ -26,6 +26,7 @@ BuildRequires:  glibc
 BuildRequires:  perl
 BuildRequires:  boost-devel
 BuildRequires:  elfutils-libelf-devel
+BuildRequires:  munge
 #
 # Configuring test cases with slurm and mvapich
 # BuildRequires:  slurm-devel 
@@ -45,14 +46,15 @@ Requires: numactl-devel
 Requires: numactl
 Requires: glibc
 Requires: elfutils-libelf-devel
+Requires: munge
 
 
 
 # A line shouldn't be longer than 80 characters.
 %description
-LaunchMON is scalable software infrastructure that enables an HPC run-time tool 
+LaunchMON is a scalable software infrastructure that enables an HPC run-time tool 
 to co-locate its daemons with the target parallel application. Its API allows 
-the tool to identify all the remote processes of the application and to launch 
+the tool to identify all of the remote application processes and to launch 
 its daemons into the relevant remote nodes.
 
 More information can be found at https://sourceforge.net/projects/launchmon.
@@ -73,6 +75,7 @@ module load openmpi-gnu/1.6
     --with-test-rm-launcher=/opt/openmpi-1.6-gnu/bin/orterun \
     --with-test-nnodes=2 \
     --with-test-ncore-per-CN=8 \
+    --enable-sec-munge \
     --with-test-mw-hostlist=sierra1620:sierra1626
 
 make 

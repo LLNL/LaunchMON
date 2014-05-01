@@ -55,17 +55,8 @@
 
 #include <lmon_api/lmon_api_std.h>
 
-#if HAVE_POLL_H
-# include <poll.h>
-#else
-# error poll.h is required
-#endif 
-
-#if HAVE_SIGNAL_H
-# include <signal.h>
-#else
-# error signal.h is required
-#endif
+#include <poll.h>
+#include <signal.h>
 
 #include "sdbg_base_launchmon.hxx"
 

@@ -47,6 +47,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/libtool.m4 \
 	$(top_srcdir)/config/x_ac_enable_debug.m4 \
 	$(top_srcdir)/config/x_ac_enable_verbose.m4 \
 	$(top_srcdir)/config/x_ac_gcrypt.m4 \
+	$(top_srcdir)/config/x_ac_handshake.m4 \
 	$(top_srcdir)/config/x_ac_mpicc.m4 \
 	$(top_srcdir)/config/x_ac_myboost.m4 \
 	$(top_srcdir)/config/x_ac_platform.m4 \
@@ -62,13 +63,13 @@ CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am_client_OBJECTS = client.$(OBJEXT)
 client_OBJECTS = $(am_client_OBJECTS)
-client_DEPENDENCIES =
+client_DEPENDENCIES = $(top_srcdir)/@COMMLOC@/@LIBCOMM@
 client_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(client_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am_server_rsh_OBJECTS = server_rsh.$(OBJEXT)
 server_rsh_OBJECTS = $(am_server_rsh_OBJECTS)
-server_rsh_DEPENDENCIES =
+server_rsh_DEPENDENCIES = $(top_srcdir)/@COMMLOC@/@LIBCOMM@
 server_rsh_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(server_rsh_LDFLAGS) $(LDFLAGS) -o $@
@@ -156,6 +157,8 @@ MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
 MPICC = @MPICC@
 MPICXX = @MPICXX@
+MUNGE_CFLAGS = @MUNGE_CFLAGS@
+MUNGE_LIBS = @MUNGE_LIBS@
 MYBOOSTLOC = @MYBOOSTLOC@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -170,6 +173,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 RMINC = @RMINC@
 RMLIB = @RMLIB@
@@ -242,11 +246,11 @@ top_srcdir = @top_srcdir@
 tvcmd = @tvcmd@
 INCLUDES = -I$(top_srcdir)/@COMMLOC@
 client_SOURCES = client.c 
-client_LDFLAGS = -L$(top_srcdir)/@COMMLOC@
-client_LDADD = @LIBCOMM@
+client_LDFLAGS = 
+client_LDADD = $(top_srcdir)/@COMMLOC@/@LIBCOMM@
 server_rsh_SOURCES = server_rsh.c
-server_rsh_LDFLAGS = -L$(top_srcdir)/@COMMLOC@
-server_rsh_LDADD = @LIBCOMM@
+server_rsh_LDFLAGS = 
+server_rsh_LDADD = $(top_srcdir)/@COMMLOC@/@LIBCOMM@
 all: all-am
 
 .SUFFIXES:

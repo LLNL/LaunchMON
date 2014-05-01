@@ -49,48 +49,13 @@
 #error This source file requires a LINUX-like OS
 #endif
 
-#if HAVE_SIGNAL_H
-# include <signal.h>
-#else
-# error signal.h is required
-#endif
-
-#if HAVE_SYS_UN_H
+#include <signal.h>
 #include <sys/un.h> 
-#else
-# error sys/un.h is required
-#endif
-
-#if HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#else
-# error sys/types.h is required
-#endif
-
-#if HAVE_SYS_SOCKET_H
-# include <sys/socket.h>
-#else
-# error sys/socket.h is required
-#endif
-
-#if HAVE_ERRNO_H
-# include <errno.h>
-#else
-# error errno.h is required
-#endif
-
-#if HAVE_STRING_H
-# include <string.h>
-#else
-# error string.h is required
-#endif
-
-#if HAVE_LIMITS_H
-# include <limits.h>
-#else
-# error limits.h is required
-#endif
-
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <errno.h>
+#include <string.h>
+#include <limits.h>
 #include <map>
 #include <vector>
 #include <string>

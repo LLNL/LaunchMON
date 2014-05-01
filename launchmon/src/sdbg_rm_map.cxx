@@ -36,42 +36,12 @@
 #include <lmon_api/common.h>
 
 #include <string>
-
-#if HAVE_LIMITS_H
-# include <limits.h>
-#else
-# error limits.h is required
-#endif
-
-#if HAVE_SSTREAM
-# include <sstream>
-#else
-# error sstream is required
-#endif
-
-#if HAVE_FSTREAM
-# include <fstream>
-#else
-# error fstream is required
-#endif
-
-#if HAVE_MAP
-# include <map>
-#else
-# error map is required
-#endif
-
-#if HAVE_VECTOR
-# include <vector>
-#else
-# error vector is required
-#endif
-
-#if HAVE_LIST
-# include <list>
-#else
-# error list is required
-#endif
+#include <limits.h>
+#include <sstream>
+#include <fstream>
+#include <map>
+#include <vector>
+#include <list>
 
 // Jun 07 2012 DHA TODO: We need to check boost/tokenizer.hpp; 
 // doing so generates whole lot of errors on some platforms
@@ -1157,7 +1127,11 @@ rc_rm_t::expand_a_letter(const char p, bool *split_maybe_needed)
       break;
 
     case 'o':
-      ssm << coloc_paramset.rm_daemon_args;
+       for (std::list<std::string>::iterator i = coloc_paramset.rm_daemon_args.begin();
+            i != coloc_paramset.rm_daemon_args.end(); i++)
+       {
+          ssm << *i << " ";
+       }
       *split_maybe_needed = true;
       break;
 

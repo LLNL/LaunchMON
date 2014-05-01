@@ -36,24 +36,9 @@
 
 #include "sdbg_std.hxx"
 
-#if HAVE_STRING
-# include <string>
-#else
-# error string is required
-#endif 
-
-#if HAVE_STRING_H
-# include <string.h>
-#else
-# error string.h is required
-#endif
-
-#if HAVE_VECTOR
-# include <vector>
-#else
-# error vector is required
-#endif 
-
+#include <string>
+#include <string.h>
+#include <vector>
 #include "sdbg_base_spawner.hxx"
 
 const char LMON_RSHSPAWNER_OPT[] = "--lmon-rsh";

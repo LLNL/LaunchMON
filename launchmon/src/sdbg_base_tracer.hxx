@@ -42,12 +42,7 @@
 #ifndef SDBG_BASE_TRACER_HXX
 #define SDBG_BASE_TRACER_HXX
 
-#if HAVE_IOSTREAM
-# include <iostream>
-#else
-# error iostream is required
-#endif
-
+#include <iostream>
 #include "sdbg_base_mach.hxx"
 #include "sdbg_base_bp.hxx"
 #include "sdbg_base_exception.hxx"

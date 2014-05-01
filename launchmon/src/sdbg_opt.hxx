@@ -27,6 +27,8 @@
  *
  *
  *  Update Log:
+ *        Apr 22 2014 DHA: Applied a patch to store RM args/opts into
+ *                         a std::list object instead of a std:string string.
  *        Jun 30 2010 DHA: Added faster engine parsing error detection support
  *                         Deprecated option_sanity_check();
  *        Jun 09 2010 DHA: Added RM MAP support
@@ -49,48 +51,15 @@
 #include <lmon_api/common.h>
  
 extern "C" {
-#if HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#else
-# error sys/types.h is required
-#endif
-
-#if HAVE_UNISTD_H
-# include <unistd.h>
-#else
-# error unistd.h is required
-#endif
-
-#if HAVE_SYS_STAT_H
-# include <sys/stat.h>
-#else
-# error sys/stat.h is required
-#endif
- 
-#if HAVE_ASSERT_H
-# include <assert.h>
-#else
-# error assert.h is required
-#endif
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <assert.h>
 }
 
-#if HAVE_IOSTREAM
-# include <iostream>
-#else
-# error iostream is required
-#endif
-
-#if HAVE_STRING
-# include <string>
-#else
-# error string is required
-#endif 
-
-#if HAVE_MAP
-# include <map>
-#else
-# error map is required
-#endif
+#include <iostream>
+#include <string>
+#include <map>
 
 #include "sdbg_std.hxx"
 #include "sdbg_rm_map.hxx"
@@ -108,7 +77,7 @@ struct opt_struct_t {
   std::string debugtarget;      // parallel job launcher
   std::string copyright;        // copy right for this project
   std::string launchstring;     // launch string to be expanded
-  std::string tool_daemon_opts; // options to the lightweight debug engine
+  std::list<std::string>   tool_daemon_opts; // options to the lightweight debug engine
   std::string remote_info;      // ip:port
   std::string lmon_sec_info;    // shared secret:randomID
   pid_t       launcher_pid;     // the pid of a running parallel launcher process

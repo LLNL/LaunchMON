@@ -47,36 +47,11 @@
 #include "sdbg_std.hxx"
 
 #include <cstdio>
-
-#if HAVE_SIGNAL_H
-# include <signal.h>
-#else
-# error signal.h is required
-#endif
-
-#if HAVE_LIMITS_H
-# include <limits.h>
-#else
-# error limits.h is required
-#endif
-
-#if HAVE_STRING
-# include <string>
-#else
-# error string is required
-#endif
-
-#if HAVE_VECTOR
-# include <vector>
-#else
-# error vector is required
-#endif
-
-#if HAVE_LIST
-# include <list>
-#else
-# error list is required
-#endif
+#include <signal.h>
+#include <limits.h>
+#include <string>
+#include <vector>
+#include <list>
 
 #include <lmon_api/lmon_api_std.h>
 
@@ -170,7 +145,6 @@ struct coloc_str_param_t
 {
   coloc_str_param_t() 
     : rm_daemon_path(std::string("na")),
-      rm_daemon_args(std::string("na")),
       rm_daemon_stub(std::string("na")),
       nnodes(-1),
       ndaemons(-1),
@@ -212,7 +186,7 @@ struct coloc_str_param_t
     }
 
   std::string rm_daemon_path;
-  std::string rm_daemon_args;
+  std::list<std::string> rm_daemon_args;
   std::string rm_daemon_stub;
   int nnodes;
   int ndaemons;
@@ -376,7 +350,7 @@ public:
   bool init_rm_instance(rc_rm_t &rm_obj,
                  const std::string &lnchrpath,
                  const std::string &tool_daemon_path,
-                 const std::string &tool_daemon_opts,
+                 const std::list<std::string> &tool_daemon_opts,
                  const image_base_t<BASE_IMAGE_TEMPLPARAM> *main_symtab=NULL,
                  const image_base_t<BASE_IMAGE_TEMPLPARAM> *rmso_symtab=NULL,
                  const std::string be_stub_path="");
@@ -405,7 +379,7 @@ bool
 rc_rm_plat_matcher<BASE_IMAGE_TEMPLPARAM>::init_rm_instance(rc_rm_t &rm_obj,
               const std::string &launchr_path,
               const std::string &tool_daemon_path,
-              const std::string &tool_daemon_opts,
+              const std::list<std::string> &tool_daemon_opts,
               const image_base_t<BASE_IMAGE_TEMPLPARAM> *main_symtab,
               const image_base_t<BASE_IMAGE_TEMPLPARAM> *rmso_symtab,
               const std::string be_stub_path)

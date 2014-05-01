@@ -37,36 +37,11 @@
 #error This source file requires a LINUX OS
 #endif
 
-#if HAVE_STDIO_H
-# include <cstdio>
-#else
-# error stdio.h is required
-#endif
-
-#if HAVE_STDLIB_H
-# include <cstdlib>
-#else
-# error stdlib.h is required
-#endif
-
-#if HAVE_STRING
-# include <string>
-#else
-# error string is required
-#endif
-
-#if HAVE_STRING_H
-# include <string.h>
-#else
-# error string.h is required
-#endif
-
-#if HAVE_VECTOR
-# include <vector>
-#else
-# error vector is required
-#endif
-
+#include <cstdio>
+#include <cstdlib>
+#include <string>
+#include <string.h>
+#include <vector>
 #include "lmon_api/lmon_be.h"
 #include "lmon_api/lmon_lmonp_msg.h"
 #include "lmon_api/lmon_say_msg.hxx"

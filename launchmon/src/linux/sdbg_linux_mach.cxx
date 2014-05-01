@@ -51,11 +51,7 @@
 
 
 extern "C" {
-#if HAVE_THREAD_DB_H
-# include <thread_db.h>
-#else
-# error thread_db.h is required 
-#endif
+#include <thread_db.h>
 }
 
 #if X86_ARCHITECTURE || X86_64_ARCHITECTURE

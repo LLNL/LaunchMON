@@ -48,6 +48,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/libtool.m4 \
 	$(top_srcdir)/config/x_ac_enable_debug.m4 \
 	$(top_srcdir)/config/x_ac_enable_verbose.m4 \
 	$(top_srcdir)/config/x_ac_gcrypt.m4 \
+	$(top_srcdir)/config/x_ac_handshake.m4 \
 	$(top_srcdir)/config/x_ac_mpicc.m4 \
 	$(top_srcdir)/config/x_ac_myboost.m4 \
 	$(top_srcdir)/config/x_ac_platform.m4 \
@@ -83,12 +84,13 @@ am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libcobo_la_LIBADD =
-am_libcobo_la_OBJECTS = cobo.lo
+libcobo_la_DEPENDENCIES =  \
+	$(top_builddir)/tools/handshake/libhandshake.la
+am_libcobo_la_OBJECTS = libcobo_la-cobo.lo
 libcobo_la_OBJECTS = $(am_libcobo_la_OBJECTS)
 libcobo_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(libcobo_la_LDFLAGS) $(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libcobo_la_CFLAGS) \
+	$(CFLAGS) $(libcobo_la_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -174,6 +176,8 @@ MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
 MPICC = @MPICC@
 MPICXX = @MPICXX@
+MUNGE_CFLAGS = @MUNGE_CFLAGS@
+MUNGE_LIBS = @MUNGE_LIBS@
 MYBOOSTLOC = @MYBOOSTLOC@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -188,6 +192,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 RMINC = @RMINC@
 RMLIB = @RMLIB@
@@ -264,6 +269,8 @@ libcobo_la_SOURCES = cobo.c \
 
 include_HEADERS = cobo.h 
 libcobo_la_LDFLAGS = -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
+libcobo_la_CFLAGS = -I$(top_srcdir)/tools/handshake
+libcobo_la_LIBADD = $(top_builddir)/tools/handshake/libhandshake.la
 all: all-am
 
 .SUFFIXES:
@@ -338,7 +345,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cobo.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcobo_la-cobo.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -360,6 +367,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+
+libcobo_la-cobo.lo: cobo.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcobo_la_CFLAGS) $(CFLAGS) -MT libcobo_la-cobo.lo -MD -MP -MF $(DEPDIR)/libcobo_la-cobo.Tpo -c -o libcobo_la-cobo.lo `test -f 'cobo.c' || echo '$(srcdir)/'`cobo.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libcobo_la-cobo.Tpo $(DEPDIR)/libcobo_la-cobo.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cobo.c' object='libcobo_la-cobo.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcobo_la_CFLAGS) $(CFLAGS) -c -o libcobo_la-cobo.lo `test -f 'cobo.c' || echo '$(srcdir)/'`cobo.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

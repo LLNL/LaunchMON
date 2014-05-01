@@ -33,6 +33,7 @@
  *
  *
  *  Update Log:
+ *        Apr  11 2014 DHA: Integrate secure COBO handshake.
  *        Aug  02 2010 DHA: Changed the file name to lmon_daemon_internal.cxx
  *                          to support middleware daemons
  *        Oct  07 2011 DHA: Deprecated PMGR Collective support
@@ -63,36 +64,11 @@
 #error This source file requires a LINUX OS
 #endif
 
-#if HAVE_STDIO_H
-# include <cstdio>
-#else
-# error cstdio is required
-#endif
-
-#if HAVE_STDLIB_H
-# include <cstdlib>
-#else
-# error cstdlib is required
-#endif
-
-#if HAVE_STRING_H
-# include <string.h>
-#else
-# error string.h is required
-#endif
-
-#if HAVE_IOSTREAM
-# include <iostream>
-#else
-# error iostream is required
-#endif
-
-#if HAVE_FSTREAM
-# include <fstream>
-#else
-# error fstream is required
-#endif
-
+#include <cstdio>
+#include <cstdlib>
+#include <string.h>
+#include <iostream>
+#include <fstream>
 #include <vector>
 
 extern "C" {
@@ -241,6 +217,20 @@ LMON_daemon_internal_init ( int* argc, char*** argv, char *myhn, int is_be )
    */
   __cobo_ts = gettimeofdayD();
 # endif
+
+#if defined(MUNGE)
+  cobo_sec_protocol.mechanism = hs_munge;
+#elif defined(KEYFILE)
+  char kp[PATH_MAX];
+  snprintf (kp, PATH_MAX, "%s/keyfile.%d", SEC_KEYDIR, getuid());
+  cobo_sec_protocol.mechanism = hs_key_in_file;
+  cobo_sec_protocol.data.key_in_file.key_filepath = strdup(kp);
+  cobo_sec_protocol.data.key_in_file.key_length_bytes = 8;
+#elif defined(ENABLE_NULL_ENCRYPTION)
+  cobo_sec_protocol.mechanism = hs_none;
+#else
+#error No recognized handshake mechanism enabled
+#endif
 
    int iccl_begin_port, iccl_tmp_session;
 
@@ -684,6 +674,8 @@ LMON_daemon_enable_verbose(const char *vdir, const char *local_hostname, int is_
 
       return LMON_EINVAL;
     }
+
+  handshake_enable_debug_prints (stdout);
 
   if (is_be)
     {

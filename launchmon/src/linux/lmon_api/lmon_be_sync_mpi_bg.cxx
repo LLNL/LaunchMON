@@ -42,18 +42,8 @@
 #error This source file requires a LINUX-like OS
 #endif
 
-#if HAVE_SIGNAL_H
-# include <signal.h>
-#else
-# error signal.h is required
-#endif
-
-#if HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#else
-# error sys/types.h is required
-#endif
-
+#include <signal.h>
+#include <sys/types.h>
 #include "lmon_daemon_internal.hxx"
 #include "lmon_api/lmon_proctab.h"
 #include "lmon_api/lmon_say_msg.hxx"

@@ -56,9 +56,12 @@ export LMON_STATUS_CB_TEST=1
 if test "x$RM_TYPE" = "xRC_slurm" ; then
   WAITAMOUNT=`expr $WAITAMOUNT`
   $MPI_JOB_LAUNCHER_PATH -n$NUMTASKS -N$NUMNODES -ppdebug `pwd`/hang_on_SIGUSR1@EXE@ &
-elif test "x$RM_TYPE" = "xRC_bgrm" ; then 
+elif test "x$RM_TYPE" = "xRC_bgqrm"; then
   WAITAMOUNT=`expr $WAITAMOUNT`
-  nohup $MPI_JOB_LAUNCHER_PATH -verbose 1 -np $NUMTASKS -exe `pwd`/hang_on_SIGUSR1@EXE@ -cwd `pwd` &
+  $MPI_JOB_LAUNCHER_PATH --verbose 4 --np $NUMTASKS --exe `pwd`/hang_on_SIGUSR1@EXE@ --cwd `pwd` --env-all &
+elif test "x$RM_TYPE" = "xRC_bgq_slurm"; then
+  WAITAMOUNT=`expr $WAITAMOUNT`
+  $MPI_JOB_LAUNCHER_PATH -N$NUMNODES -n $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
 elif test "x$RM_TYPE" = "xRC_alps" ; then
   WAITAMOUNT=`expr $WAITAMOUNT`
   $MPI_JOB_LAUNCHER_PATH -n $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &

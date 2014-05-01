@@ -8,7 +8,7 @@ if { [file exists $env(MODULESHOME)/etc/control] } {
  
 # set some local variables
 set name    launchmon
-set version 1.0.beta1
+set version 1.0.beta2
 set prefix  /opt/$name-$version
  
 # prints when user types module-whatis <modfile>

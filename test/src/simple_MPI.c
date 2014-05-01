@@ -48,37 +48,16 @@
 #endif
                                                                                                                                         
 #include <mpi.h>
-                                                                                                                                        
-#if HAVE_SIGNAL_H
-# include <signal.h>
-#else
-# error signal.h is required
-#endif
+#include <signal.h>
                                                                                                                                
 #define COMM_TAG              1000
 #define MAX_BUF_LEN           1024
 #define COMPUTE_UNIT          20
 #define SLEEP_FOR_COMPUTE_SEC 3
-
-#if HAVE_STDARG_H
-# include <stdarg.h>
-#else
-# error stdarg.h is required
-#endif 
-
-#if HAVE_LIMITS_H
-# include <limits.h>
-#else
-# error limits.h is required 
-#endif
-
-#if TIME_WITH_SYS_TIME
-# include <time.h>
-# include <sys/time.h>
-#else
-# error time.h and sys/time.h are required
-#endif
-
+#include <stdarg.h>
+#include <limits.h>
+#include <time.h>
+#include <sys/time.h>
 
 static void 
 LMON_say_msg ( const char* m, const char* output, ... )

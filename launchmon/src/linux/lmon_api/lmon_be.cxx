@@ -80,92 +80,23 @@
 #error This source file requires a LINUX-like OS
 #endif
 
-#if HAVE_STDIO_H
-# include <cstdio>
-#else
-# error cstdio is required
-#endif
-
-#if HAVE_STDLIB_H
-# include <cstdlib>
-#else
-# error cstdlib is required
-#endif
-
-#if HAVE_STRING_H
-# include <string.h>
-#else
-# error string.h is required
-#endif
-
-#if HAVE_IOSTREAM
-# include <iostream>
-#else
-# error iostream is required
-#endif
-
-#if HAVE_FSTREAM
-# include <fstream>
-#else
-# error fstream is required
-#endif
-
-#if HAVE_SIGNAL_H
-# include <signal.h>
-#else
-# error signal.h is required
-#endif
-
-#if HAVE_MAP
-# include <map>
-#else
-# error map is required
-#endif
-
-#if HAVE_VECTOR
-# include <vector>
-#else
-# error vector is required
-#endif
-
-#if HAVE_SYS_STAT_H
+#include <cstdio>
+#include <cstdlib>
+#include <string.h>
+#include <iostream>
+#include <fstream>
+#include <signal.h>
+#include <map>
+#include <vector>
 #include <sys/stat.h>
-#else
-# error sys/stat.h is required
-#endif
-
-#if HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#else
-# error sys/types.h is required
-#endif
-
-#if HAVE_SYS_SOCKET_H
-# include <sys/socket.h>
-#else
-# error sys/socket.h is required
-#endif
-
-#if HAVE_ARPA_INET_H
-# include <arpa/inet.h>
-#else
-# error arpa/inet.h is required
-#endif
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
 #include "gcrypt.h"
 
-#if HAVE_ASSERT_H
-# include <assert.h>
-#else
-# error assert.h is required
-#endif
-
-#if HAVE_LIMITS_H
-# include <limits.h>
-#else
-# error limits.h is required
-#endif
-
+#include <assert.h>
+#include <limits.h>
 #include "lmon_api/lmon_proctab.h"
 #include "lmon_api/lmon_be.h"
 #include "lmon_api/lmon_lmonp_msg.h"

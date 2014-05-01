@@ -47,12 +47,7 @@
 #endif
 
 #include <mpi.h>
-
-#if HAVE_SIGNAL_H
-# include <signal.h>
-#else
-# error signal.h is required 
-#endif
+#include <signal.h>
 
 #define COMM_TAG    1000
 #define MAX_BUF_LEN 1024

@@ -1,7 +1,7 @@
-.TH LaunchMON 3 "December 2012" LaunchMON "LaunchMON Front-End API"
+.TH LaunchMON 3 "MAY 2014" LaunchMON "LaunchMON Front-End API"
 
 .SH NAME
-LMON_fe_launchMwDaemons\- LaunchMON front-end API: job/daemon launching function for middleware daemons. 
+LMON_fe_launchMwDaemons \- LaunchMON front-end API: job/daemon launching function for middleware daemons. 
 
 .SH SYNOPSIS
 .nf
@@ -9,27 +9,95 @@ LMON_fe_launchMwDaemons\- LaunchMON front-end API: job/daemon launching function
 .B #include <lmon_fe.h>
 .PP
 .BI "lmon_rc_e LMON_fe_launchMwDaemons ( int " sessionHandle "," 
-.BI "  const char *" hostname ", const char *" launcher ", char *" l_argv[] "," 
-.BI "  const char *" toolDaemon ", char *" d_argv[] ", void *" febe_data ", void *" befe_data ");"
+.BI "  dist_request_t " req[] ", int " nreq ", void * " femw_data "," 
+.BI "  void * " mwfe_data ");"
 .PP
 .PP
 .B cc ... -lmonfeapi
 
 .SH DESCRIPTION
-TODO
+\fBLMON_fe_launchMwDaemons()\fR launches daemons specified by the array
+of \fBdist_request_t\fR objects,  \fIreq[]\fR. \fBdist_request_t\fR is 
+in \fBlmon_api_std.h\fR and is defined as the following: 
+
+.PP
+.nf
+.B
+.B typedef enum {
+.B "   "subset_stride, subset_hosts, hostlists, 
+.B "   "newalloc_nhosts, req_none, space_for_rent 
+.B "} dist_req_opt_e;
+.PP
+.B typedef struct {
+.B "   "lmon_mw_mode_t md; "
+.B "   "char *mw_daemon_path; "
+.B "   "char **d_argv; "
+.B "   "int ndaemon; "
+.B "   "int block; "
+.B "   "int cyclic; "
+.B "   "dist_req_opt_e optkind; "
+.B "   "union u { "
+.B "        "int stride_unit; "
+.B "        "int nhosts; "
+.B "        "char **subset_hl; "
+.B "        "char **hl; "
+.B "   "} option; "
+.B "} dist_request_t;
+.PP
+.fi
+.PP
+
+\fBLMON_fe_launchMwDaemons()\fR allows the requester to launch middleware daemons in
+four distinct modes: 1) the set of hosts where the back-end daemons are running
+(co-location mode), 2) the set of hosts provided by a list of hostnames (host-list mode),
+3) the existing set of hosts that has already been allocated to the user (existing-allocation mode), 
+and 4) the set of hosts that LaunchMON will newly allocate (new-allocation mode). 
+
+The requester can specify a mode via the \fImd\fR field of \fBdist_request_t\fR, and
+it is allowed to specify multiple modes by filling each mode into the \fImd\fR field
+of each element of the \fIreq[]\fR array.  
+
+Co-location mode is specified by a macro, LMON_MW_COLOC.
+Host-list mode is specified by another macro, LMON_MW_HOSTLIST. 
+existing-allocation and new-allocation modes are specified 
+by LMON_MW_NEWALLOC and LMON_MW_EXISTINGALLOC respectively. 
+
+However, the current implementation has several limitations. 
+Because support for LMON_MW_NEWALLOC and LMON_MW_EXISTINGALLOC
+requires a deeper integration with native resource and 
+job management systems, the current implementation only
+supports LMON_MW_COLOC and LMON_MW_HOSTLIST, and for other cases,
+\fBLMON_fe_launchMwDaemons()\fR returns LMON_NOTIMPL.
+
+Further limitations include that \fBLMON_fe_launchMwDaemons()\fR will only
+launch one daemon per host. In other words, the daemon distribution policy
+fields, \fIndaemon\fR, \fIblock\fR, and \fIcyclic\fR have
+not been implemented and the requester is required to set them all to be -1. 
+Similarly, \fIoptkind\fR will determine what field in \fIoption\fR will be used,
+and only \fIhostlists\fR has been implemented. With \fIhostlists\fR,
+\fBLMON_fe_launchMwDaemons()\fR will use the \fIhl\fR field that 
+is an array of hostname strings. The end of the \fIhl\fR array
+must be marked with NULL.
+
+Data transfer schemes between the launched middleware daemons
+and the front-end components are identical as back-end
+daemon launching functions, namely,
+\fBLMON_fe_launchAndSpawnDaemons()\fR
+and \fBLMON_fe_attachAndSpawnDaemons()\fR.
+
 
 .SH RETURN VALUE
-Both functions return \fBLMON_OK\fR when all the back-end daemons get co-located 
-with the job and become ready to begin communications with the client 
-front-end tool; otherwise, an LMON error code is returned as described below. 
+This function returns \fBLMON_OK\fR when all the middleware daemons 
+have successfully been launched and bootstrapped; otherwise, an LMON error code 
+is returned as described below. 
 
 .SH ERRORS
 .TP
 .B LMON_OK
 Success.
 .TP
-.B LMON_EBDARG
-Invalid arguments.
+.B LMON_NOTIMPL
+Not implemented.
 .TP
 .B LMON_ESYS
 A system error encountered (mostly an error with a TCP/IP or POSIX thread call).
@@ -43,219 +111,6 @@ A plain bug.
 .B LMON_EINVAL:
 An error encountered while waiting on some events from other dependent component such as the LaunchMON engine.
 
-.SH ENVIRONMENT VARIABLES
-.TP
-.B LMON_VERBOSE
-overwrites the verbose level: [0-3] (default: 0).
-.TP
-.B LMON_FE_ENGINE_TIMEOUT
-overwrites the FE-Engine connection timeout value.
-The valid range is from 1 to 6000 seconds (default: 120 seconds).
-.TP
-.B LMON_BE_DAEMON_TIMEOUT
-overwrites the FE-BE connection timeout value. 
-The valid range is from 1 to 6000 seconds (default: 30).
-.TP
-.B LMON_DEBUG_FE_ENGINE_RSH
-invokes totalview to aid in debugging of the child process
-that issues a rsh-like command to invoke an engine
-remotely if set and if this debugging mode is supported; 
-otherwise noop.
-.TP
-.B LMON_REMOTE_LOGIN
-overwrites the remote login method that is used to 
-spawn an engine remotely (e.g., "/usr/bin/rsh")
-(default: /usr/bin/ssh).
-.TP
-.B LMON_PREFIX
-sets the installation path of the package.
-\fB[Cray ALPS Note]\fR Setting this environment variable is
-required for Cray ALPS for which LaunchMON builds
-various tool helper executables and configuration 
-files.  
-.TP
-.B LMON_DEBUG_LAUNCHMON_ENGINE
-invokes totalview to aid in debugging of the LaunchMON engine
-running on \fIhostname\fR if set and if this debugging mode is 
-supported; otherwise noop.
-.TP
-.B LMON_DEBUG_BES
-invokes totalview to aid in debugging the back-end daemons
-if set and if this debugging mode is supported; otherwise noop.
-.TP
-.B LMON_LAUNCHMON_ENGINE_PATH
-overwrites the path to the LaunchMON engine on \fIhostname\fR
-(default: launchmon).
-.TP
-.B LMON_ENGINE_WARM_INTERVAL
-overwrites the value that controls the length of the "warm period"
-in which the LaunchMON engine polls events at the fastest rate.
-This parameter is reset each time the engine's handler is
-invoked  (default: 10 seconds).
-.TP
-.B LMON_FE_HOSTNAME_TO_CONN
-overwrites the front-end host name that the LaunchMON front-end 
-uses to open a communication TCP socket with a remote daemon or daemons. 
-On non-BlueGene systems, LaunchMON front-end uses the host name 
-returned by the \fIgethostname()\fR function by default. 
-On BlueGene, it uses hostname-io to indicate a network
-that has I/O nodes connectivity. In general, the name is  
-site-specific. Thus, should the name be different from default,
-it needs to be be specified through this environment variable. 
-.TP
-.B LMON_DONT_STOP_APP
-causes the launched application processes to continue running (if set to 1)
-or the attached application processes to stop (if set to 0). 
-
-.SH ERROR HANDLING SEMANTICS 
-\fBA.\fR When the LaunchMON engine fails, the cleanup semantics 
-of LaunchMON is to detach from the job while keeping the client 
-tool running.
-.PP
-\fBA.1.\fR The LaunchMON engine fails. Unless it is due to SIGKILL,
-the engine performs the cleanup in its signal handler.
-The cleanup is \fBA.1.1.\fR to detach from the RM_job
-process, to keep the RM_daemon process running (\fBA.1.2\fR), and
-and to notify this error event to the front-end
-tool client before it exits (\fBA.1.3.\fR). RM_job refers to the resource
-manager launcher process that monitors the target job. RM_daemon
-refers to the resource manager launcher process that monitors
-the deamons.   
-[IBM BlueGene Note] As BlueGene's control system implements
-daemon co-spawning service as part of its Automatic Process Acquisition
-Interface (APAI), RM_job is equal to RM_daemon.
-
-.PP
-\fBB.\fR FE API extension to be able to communciate a session's status
-to the tool FEN.
-.PP
-\fBB.1.\fR interrupt interface
-       lmon_rc_e LMON_fe_regStatusCB (int sessionHandle, int (*func) (void *status))
-.PP
-The interface passes to the call-back function the session status 
-via the status argument. It encodes the status using the lowest 
-five bits as follows. 
-lowest bit: session is registered (0) or not (1)
-next bit: back-end daemons have been spawned or not
-next bit: middleware daemons have been spawned or not
-next bit: engine has detached from the job or not 
-next bit: the job has been killed or not 
-.PP
-\fBC.\fR When a client tool component (whether it is FE or daemons) fails, the 
-basic semantics of the LaunchMON cleanup procedure is to detach from
-the target job, and kill the daemons (when FE fails) or
-notify the tool front-end client (when a daemon failure is detected).
-.PP
-\fBC.1.\fR If the tool FE fails, the engine first detects the socket disconnection, 
-at which point it tries to kill the RM_daemon process and detaches from the RM_job process. 
-However, if for some reason the engine also gets into trouble,
-the engine would perform \fBA.1\fR instead; obviously in this case,
-the failing launchmon engine will keep the RM_daemon process
-running, and won't be able to do \fBA.1.3.\fR
-.PP
-\fB[IBM BlueGene Note]\fR As RM_daemon is equal to RM_job on BlueGene, 
-and the system control system doesn't offer a mechanism to 
-clean up daemons, LaunchMON does not currently enforce
-killing of daemons for this condition.   
-.PP
-\fBC.2.\fR One or more BE daemons fail. This fatal event gets propagated
-to the RM_daemon process and the daemons are already cleaned up
-by the RM by this time. Next, the engine gets notified and
-will begin the cleanup. It will detach from the RM_job, notify
-the tool front-end, and exit.
-However, for some reason, if the engine also gets into trouble,
-it will perform A.1; obviously in this case, it
-doesn't need to perform \fBA.1.2.\fR
-.PP
-\fB[IBM BlueGene Note]\fR As RM_daemon is equal to RM_job on BlueGene, 
-and the system control system does not offer a mechanism to 
-detect failures that occurred in the back-end daemons, LaunchMON does not 
-currently enforce this semantics on this platform.   
-.PP
-\fB[OpenRTE Note]\fR Identical to IBM BlueGene, RM_daemon is equal to RM_job 
-on OpenRTE and the system control system does not offer a mechanism to 
-detect failures that occurred in the back-end daemons. Hence, LaunchMON does not 
-currently enforce this semantics on this platform.   
-.PP
-\fB[Cray ALPS Note]\fR The ALPS tool helper service currently does not offer 
-a mechanism to detect failures in the daemons; LaunchMON does not enforce this 
-semantics on this platform.
-.PP
-\fBD.\fR When the job fails, the basic cleanup semantics of LaunchMON is
-to notify the FEN tool while keeping the daemons running.
-.PP
-\fBD.1.\fR The target job fails, and this fatal event first gets propagated
-to the RM_job process. Next, the engine gets notified of this event,
-and in turn notifies the front-end tool of this condition before it exits. 
-LaunchMON relies on the failure handling to the tool in this case, 
-thereby leaving the RM_daemons running. 
-.PP
-
 .SH AUTHOR
 Dong H. Ahn <ahn1@llnl.gov>
-
-.SH "SEE ALSO"
-
-.BP LMON_fe_attachAndSpawnDaemons(3),
-.BP LMON_fe_createSession(3),
-.BR LMON_fe_detach(3),
-.BR LMON_fe_getMwHostlist(3),
-.BR LMON_fe_getMwHostlistSize(3),
-.BR LMON_fe_getProctable(3),
-.BR LMON_fe_getProctableSize(3),
-.BR LMON_fe_getRMInfo(3),
-.BR LMON_fe_getResourceHandle(3),
-.BR LMON_fe_getStatus(3),
-.BR LMON_fe_init(3),
-.BR LMON_fe_kill(3),
-.BR LMON_fe_launchAndSpawnDaemons(3),
-.BR LMON_fe_launchMwDaemons(3),
-.BR LMON_fe_putToBeDaemonEnv(3),
-.BR LMON_fe_putToMwDaemonEnv(3),
-.BR LMON_fe_recvUsrDataBe(3),
-.BR LMON_fe_recvUsrDataMw(3),
-.BR LMON_fe_regErrorCB(3),
-.BR LMON_fe_regPackForFeToBe(3),
-.BR LMON_fe_regPackForFeToMw(3),
-.BR LMON_fe_regStatusCB(3),
-.BR LMON_fe_regUnpackForBeToFe(3),
-.BR LMON_fe_regUnpackForMwToFe(3),
-.BR LMON_fe_sendUsrDataBe(3),
-.BR LMON_fe_sendUsrDataMw(3),
-.BR LMON_fe_shutdownDaemons(3),
-.BR LMON_be_amIMaster(3),
-.BR LMON_be_assist_mw_coloc(3),
-.BR LMON_be_barrier(3),
-.BR LMON_be_broadcast(3),
-.BR LMON_be_finalize(3),
-.BR LMON_be_gather(3),
-.BR LMON_be_getMyProctab(3),
-.BR LMON_be_getMyProctabSize(3),
-.BR LMON_be_getMyRank(3),
-.BR LMON_be_getSize(3),
-.BR LMON_be_handshake(3),
-.BR LMON_be_init(3),
-.BR LMON_be_ready(3),
-.BR LMON_be_recvUsrData(3),
-.BR LMON_be_regErrorCB(3),
-.BR LMON_be_regPackForBeToFe(3),
-.BR LMON_be_regUnpackForFeToBe(3),
-.BR LMON_be_scatter(3),
-.BR LMON_be_sendUsrData(3),
-.BR LMON_mw_amIMaster(3),
-.BR LMON_mw_barrier(3),
-.BR LMON_mw_broadcast(3),
-.BR LMON_mw_finalize(3),
-.BR LMON_mw_gather(3),
-.BR LMON_mw_getMyRank(3),
-.BR LMON_mw_getSize(3),
-.BR LMON_mw_handshake(3),
-.BR LMON_mw_init(3),
-.BR LMON_mw_ready(3),
-.BR LMON_mw_recvUsrData(3),
-.BR LMON_mw_regErrorCB(3),
-.BR LMON_mw_regPackForMwToFe(3),
-.BR LMON_mw_regUnpackForFeToMw(3),
-.BR LMON_mw_scatter(3),
-.BR LMON_mw_sendUsrData(3)
 

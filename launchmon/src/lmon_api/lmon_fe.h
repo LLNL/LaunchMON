@@ -28,6 +28,7 @@
  *
  *
  *  Update Log:
+ *        Apr  11 2014 DHA: Integrate secure handshaking for COBO.
  *        May  31 2012 DHA: Merged with the middleware support from
  *                          the 0.8-middleware-support branch.
  *        Jul  02 2010 DHA: Augmented LMON_fe_launchMwDaemons
@@ -68,6 +69,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <netdb.h>
+#include <stdarg.h>
 
 #include <lmon_api/lmon_api_std.h>
 #include <lmon_api/lmon_proctab.h>

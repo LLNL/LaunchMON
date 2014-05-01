@@ -41,15 +41,9 @@ extern "C" {
 #include <thread_db.h>
 }
 
-#if HAVE_STRING
 #include <string>
-#else
-# error string is required
-#endif
-
 #include "sdbg_std.hxx"
 #include "sdbg_base_mach.hxx"
-
 #include "sdbg_linux_std.hxx"
 #include "sdbg_linux_symtab.hxx"
 

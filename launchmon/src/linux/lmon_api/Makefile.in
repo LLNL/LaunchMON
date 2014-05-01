@@ -46,6 +46,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/libtool.m4 \
 	$(top_srcdir)/config/x_ac_enable_debug.m4 \
 	$(top_srcdir)/config/x_ac_enable_verbose.m4 \
 	$(top_srcdir)/config/x_ac_gcrypt.m4 \
+	$(top_srcdir)/config/x_ac_handshake.m4 \
 	$(top_srcdir)/config/x_ac_mpicc.m4 \
 	$(top_srcdir)/config/x_ac_myboost.m4 \
 	$(top_srcdir)/config/x_ac_platform.m4 \
@@ -81,7 +82,9 @@ am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
 am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libmonbeapi_la_DEPENDENCIES =
+libmonbeapi_la_DEPENDENCIES = $(top_builddir)/@COMMLOC@/@LIBCOMM@ \
+	$(top_builddir)/@GCRYPTLOC@/@LIBGCRYPT@ \
+	$(top_builddir)/@GPGERRLOC@/@LIBGPGERR@
 am_libmonbeapi_la_OBJECTS = libmonbeapi_la-lmon_be.lo \
 	libmonbeapi_la-lmon_daemon_internal.lo \
 	libmonbeapi_la-lmon_coloc_spawner.lo \
@@ -96,7 +99,9 @@ libmonbeapi_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(libmonbeapi_la_CXXFLAGS) $(CXXFLAGS) \
 	$(libmonbeapi_la_LDFLAGS) $(LDFLAGS) -o $@
-libmonfeapi_la_DEPENDENCIES =
+libmonfeapi_la_DEPENDENCIES = $(top_builddir)/@COMMLOC@/@LIBCOMM@ \
+	$(top_builddir)/@GCRYPTLOC@/@LIBGCRYPT@ \
+	$(top_builddir)/@GPGERRLOC@/@LIBGPGERR@
 am_libmonfeapi_la_OBJECTS = libmonfeapi_la-lmon_fe.lo \
 	libmonfeapi_la-lmon_lmonp_msg.lo \
 	libmonfeapi_la-lmon_coloc_spawner.lo \
@@ -108,7 +113,9 @@ libmonfeapi_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(libmonfeapi_la_CXXFLAGS) $(CXXFLAGS) \
 	$(libmonfeapi_la_LDFLAGS) $(LDFLAGS) -o $@
-libmonmwapi_la_DEPENDENCIES =
+libmonmwapi_la_DEPENDENCIES = $(top_builddir)/@COMMLOC@/@LIBCOMM@ \
+	$(top_builddir)/@GCRYPTLOC@/@LIBGCRYPT@ \
+	$(top_builddir)/@GPGERRLOC@/@LIBGPGERR@
 am_libmonmwapi_la_OBJECTS = libmonmwapi_la-lmon_mw.lo \
 	libmonmwapi_la-lmon_daemon_internal.lo \
 	libmonmwapi_la-lmon_lmonp_msg.lo \
@@ -215,6 +222,8 @@ MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
 MPICC = @MPICC@
 MPICXX = @MPICXX@
+MUNGE_CFLAGS = @MUNGE_CFLAGS@
+MUNGE_LIBS = @MUNGE_LIBS@
 MYBOOSTLOC = @MYBOOSTLOC@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -229,6 +238,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 RMINC = @RMINC@
 RMLIB = @RMLIB@
@@ -309,7 +319,8 @@ INCLUDES = -I@ARCHHEADER@ \
                                 $(GCRYPT_SUPPORT) \
                                 $(MYBOOST_SUPPORT) \
                                -I.. -I../.. \
-                               -I$(top_srcdir)/@COMMLOC@
+                               -I$(top_srcdir)/@COMMLOC@ \
+                               -I$(top_srcdir)/tools/handshake
 
 lib_LTLIBRARIES = libmonbeapi.la libmonfeapi.la libmonmwapi.la
 libmonfeapi_la_SOURCES = lmon_fe.cxx \
@@ -333,13 +344,10 @@ libmonfeapi_la_SOURCES = lmon_fe.cxx \
 
 libmonfeapi_la_CFLAGS = $(AM_CFLAGS)
 libmonfeapi_la_CXXFLAGS = $(AM_CXXFLAGS)
-libmonfeapi_la_LDFLAGS = -L$(top_srcdir)/@COMMLOC@ \
-                               -L$(top_srcdir)/@GCRYPTLOC@ \
-                               -L$(top_srcdir)/@GPGERRLOC@ \
-                               $(AM_LDFLAGS) \
-                               -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
+libmonfeapi_la_LDFLAGS = $(AM_LDFLAGS) \
+                                -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
 
-libmonfeapi_la_LIBADD = @LIBPTHREAD@ @LIBCOMM@ @LIBGCRYPT@ @LIBGPGERR@ @LIBRT@
+libmonfeapi_la_LIBADD = @LIBPTHREAD@ $(top_builddir)/@COMMLOC@/@LIBCOMM@ $(top_builddir)/@GCRYPTLOC@/@LIBGCRYPT@ $(top_builddir)/@GPGERRLOC@/@LIBGPGERR@ @LIBRT@
 libmonbeapi_la_SOURCES = lmon_be.cxx \
                                lmon_daemon_internal.cxx \
                                lmon_coloc_spawner.cxx \
@@ -364,13 +372,10 @@ libmonbeapi_la_SOURCES = lmon_be.cxx \
 
 libmonbeapi_la_CFLAGS = $(AM_CFLAGS)
 libmonbeapi_la_CXXFLAGS = $(AM_CXXFLAGS)
-libmonbeapi_la_LDFLAGS = -L$(top_srcdir)/@COMMLOC@ \
-                               -L$(top_srcdir)/@GCRYPTLOC@ \
-                               -L$(top_srcdir)/@GPGERRLOC@ \
-                               $(AM_LDFLAGS) \
+libmonbeapi_la_LDFLAGS = $(AM_LDFLAGS) \
                                -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
 
-libmonbeapi_la_LIBADD = @LIBCOMM@ @LIBGCRYPT@ @LIBGPGERR@
+libmonbeapi_la_LIBADD = $(top_builddir)/@COMMLOC@/@LIBCOMM@ $(top_builddir)/@GCRYPTLOC@/@LIBGCRYPT@ $(top_builddir)/@GPGERRLOC@/@LIBGPGERR@
 
 #
 # Middleware API
@@ -394,13 +399,10 @@ libmonmwapi_la_SOURCES = lmon_mw.cxx \
 
 libmonmwapi_la_CFLAGS = $(AM_CFLAGS)
 libmonmwapi_la_CXXFLAGS = $(AM_CXXFLAGS)
-libmonmwapi_la_LDFLAGS = -L$(top_srcdir)/@COMMLOC@ \
-                               -L$(top_srcdir)/@GCRYPTLOC@ \
-                               -L$(top_srcdir)/@GPGERRLOC@ \
-                               $(AM_LDFLAGS) \
+libmonmwapi_la_LDFLAGS = $(AM_LDFLAGS) \
                                -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
 
-libmonmwapi_la_LIBADD = @LIBCOMM@ @LIBGCRYPT@ @LIBGPGERR@
+libmonmwapi_la_LIBADD = $(top_builddir)/@COMMLOC@/@LIBCOMM@ $(top_builddir)/@GCRYPTLOC@/@LIBGCRYPT@ $(top_builddir)/@GPGERRLOC@/@LIBGPGERR@
 all: all-am
 
 .SUFFIXES:

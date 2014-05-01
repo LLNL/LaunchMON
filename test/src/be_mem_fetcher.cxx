@@ -42,32 +42,11 @@
 
 #include <lmon_api/common.h>
 
-#if HAVE_UNISTD_H
-# include <unistd.h>
-#else
-# error unistd.h is required
-#endif
-                                                                    
+#include <unistd.h>
 #include <iostream>
-                                                                    
-#if HAVE_SIGNAL_H
-# include <signal.h>
-#else
-# error signal.h is required
-#endif
-                                                                    
-#if HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#else
-# error sys/types.h is required
-#endif
-                                                                    
-#if HAVE_SYS_WAIT_H
-# include <sys/wait.h>
-#else
-# error sys/wait.h is required
-#endif
-                                                                    
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <lmon_api/lmon_be.h>
 #include "lmon_daemon_internal.hxx"
 #include "lmon_be_sync_mpi.hxx"

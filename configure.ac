@@ -28,6 +28,9 @@ dnl  Place, Suite 330, Boston, MA 02111-1307 USA
 dnl --------------------------------------------------------------------------------
 dnl
 dnl   Update Log:
+dnl         Apr 30 2014 DHA: Declare 1.0.1 -- this doesn't have Cray support though.
+dnl         Apr 15 2014 DHA: Drop tools/cobo/test
+dnl         Mar 10 2014 MPL: Add secure handshake
 dnl         Aug 03 2010 DHA: Added X_AC_MW_HOSTLIST support
 dnl         Dec 28 2009 DHA: Deprecated X_AC_PREFIX_CONFIG_H to better support
 dnl                          binary distribution
@@ -41,7 +44,7 @@ dnl         Jun 06 2008 DHA: File created.
 dnl
 
 AC_PREREQ(2.59)
-AC_INIT(LaunchMON, 1.0.beta1, ahn1@llnl.gov)
+AC_INIT(LaunchMON, 1.0.1, ahn1@llnl.gov)
 
 dnl
 dnl This implements 2nd LMON interface (increase current when the 
@@ -64,7 +67,7 @@ AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_HEADER([config.h])
-AM_INIT_AUTOMAKE(launchmon, 1.0.beta1)
+AM_INIT_AUTOMAKE(launchmon, 1.0.beta2)
 AC_CANONICAL_HOST
 
 
@@ -72,7 +75,6 @@ dnl -----------------------------------------------
 dnl Checks for the OS and CPU type
 dnl -----------------------------------------------
 X_AC_PLATFORM
-
 
 dnl -----------------------------------------------
 dnl enable debug support
@@ -98,6 +100,11 @@ dnl with GCRYPT support?
 dnl -----------------------------------------------
 X_AC_GCRYPT
 
+dnl -----------------------------------------------
+dnl Choose a security model for handshakes
+dnl -----------------------------------------------
+AC_CHECK_HEADERS([sys/types.h])
+X_AC_HANDSHAKE
 
 dnl -----------------------------------------------
 dnl with MY BOOST support?
@@ -206,7 +213,11 @@ dnl doing so generates whole lot of errors on some platforms
 dnl so I'm skipping that check for now. We need to 
 dnl revisit that issue.
 dnl
-AC_CHECK_HEADERS([sys/time.h stdio.h stdint.h syscall.h unistd.h libelf.h libelf/libelf.h poll.h signal.h errno.h sys/user.h libgen.h assert.h link.h thread_db.h netdb.h arpa/inet.h sys/un.h sys/socket.h netinet/in.h limits.h sys/ptrace.h execinfo.h fcntl.h sys/procfs.h pthread.h sys/resource.h stdarg.h dlfcn.h stddef.h])
+dnl 
+dnl AC_CHECK_HEADERS([sys/time.h stdio.h stdint.h syscall.h unistd.h libelf.h libelf/libelf.h poll.h signal.h errno.h sys/user.h libgen.h assert.h link.h thread_db.h netdb.h arpa/inet.h sys/un.h sys/socket.h netinet/in.h limits.h sys/ptrace.h execinfo.h fcntl.h sys/procfs.h pthread.h sys/resource.h stdarg.h dlfcn.h stddef.h][][])
+
+AC_CHECK_HEADERS([libelf.h libelf/libelf.h],[],[],
+[[#include <elf.h>]])
 
 if test "$ac_cv_header_libelf_h" = "yes" ; then
      AC_DEFINE(LOCATION_OF_LIBELFHEADER, [<libelf.h>],
@@ -248,9 +259,9 @@ AC_CONFIG_FILES([Makefile
                  tools/ciod/Makefile
                  tools/cobo/Makefile
                  tools/cobo/src/Makefile
-                 tools/cobo/test/Makefile
                  tools/alps/Makefile
                  tools/alps/src/Makefile
+                 tools/handshake/Makefile
                  launchmon/Makefile
                  launchmon/src/Makefile
                  launchmon/src/linux/Makefile

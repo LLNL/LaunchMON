@@ -49,18 +49,8 @@
 #endif
 
 #include <lmon_api/common.h>
-
-#if HAVE_UNISTD_H
-# include <unistd.h>
-#else
-# error unistd.h is required
-#endif
-
-#if HAVE_LIMITS_H
-# include <limits.h>
-#else
-# error limits.h is required
-#endif
+#include <unistd.h>
+#include <limits.h>
 
 #include <string>
 

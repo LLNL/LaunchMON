@@ -44,24 +44,9 @@
 #endif
 
 #include <lmon_api/common.h>
-
-#if HAVE_UNISTD_H
-# include <unistd.h>
-#else
-# error unistd.h is required
-#endif
-
-#if HAVE_STDARG_H
-# include <cstdarg>
-#else
-# error stdarg.h is required
-#endif
-
-#if HAVE_LIMITS_H
-# include <limits.h>
-#else
-# error limits.h is required 
-#endif
+#include <unistd.h>
+#include <cstdarg>
+#include <limits.h>
 
 #include <lmon_api/lmon_proctab.h>
 #include <lmon_api/lmon_fe.h>

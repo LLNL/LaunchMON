@@ -37,13 +37,7 @@
 #endif
 
 #include <lmon_api/common.h>
-
-#if HAVE_UNISTD_H
-# include <unistd.h>
-#else
-# error unistd.h is required
-#endif
-
+#include <unistd.h>
 #include <lmon_api/lmon_proctab.h>
 #include <lmon_api/lmon_fe.h>
 

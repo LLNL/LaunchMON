@@ -1,3 +1,61 @@
+2014-04-30 Matt LeGendre <legendre1@llnl.gov> Dong H. Ahn <ahn1@llnl.gov>
+	* configure.ac,
+	config/x_ac_handshake.m4,
+	tools/cobo/src/cobo.c, tools/cobo/src/Makefile.am, 
+	tools/handshake/handshake.c, 
+	tools/handshake/Makefile.am, 
+	tools/handshake/handshake.h, 
+	tools/Makefile.am, 
+	launchmon/src/linux/lmon_api/lmon_fe.cxx,
+	launchmon/src/linux/lmon_api/lmon_daemon_internal.cxx:
+	Enhanced security handshake protocol for COBO. 
+	Configure now supports munge- and file-based COBO
+	authentication. Munge is available at 
+	https://code.google.com/p/munge/
+
+
+2014-04-30 Matt LeGendre <legendre1@llnl.gov>
+	* launchmon/src/sdbg_rm_map.hxx,
+	launchmon/src/sdbg_rm_map.cxx,
+	launchmon/src/sdbg_opt.cxx,
+	launchmon/src/sdbg_opt.hxx,
+	launchmon/src/linux/lmon_api/lmon_fe.cxx:
+	Improved how the options and arguments of RM launchers
+	and tool daemons are parsed and stored.
+
+
+2014-04-11 Matt LeGendre <legendre1@llnl.gov>
+	* launchmon/src/linux/sdbg_linux_launchmon.cxx:
+	Suppressed a warning message about invalid MPIR state
+	transition, as the Spindle project works around 
+	an OpenMPI/Orterun issue by creating an unexpected 
+	MPIR state transition. Spindle is a new open-source 
+	scalable dynamic loading capability that uses LaunchMON
+	(https://github.com/hpc/Spindle).
+
+
+2014-04-10 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/rm_openrte.conf:
+	Added mpirun and mpiexec into RM_launcher field
+	as these names are often aliases to orterun.
+
+
+2014-04-10 Dong H. Ahn <ahn1@llnl.gov>
+	* Many files:
+	Code clean-up -- Removed HAVE_XXX conditional macroes for
+	commonly found header files. 
+
+
+2014-04-03 Matt LeGendre <legendre1@llnl.gov>
+	* launchmon/src/linux/lmon_api/Makefile.am
+	tools/cobo/test/Makefile.am
+	tools/pmgr_collective/test/Makefile.am
+	config/x_ac_bootfabric.m4
+	config/x_ac_gcrypt.m4:
+	Applied SPACK build patch. SPACK is a new build system
+	LLNL is investigating (https://github.com/scalability-llnl/spack).
+
+
 2012-05-31 Dong H. Ahn <ahn1@llnl.gov>
 	* tools/libgpg-error/src/gpg-error.c:
 	Fix a bug where libgpg-errors is complaining about LC_ALL 

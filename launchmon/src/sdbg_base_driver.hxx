@@ -38,12 +38,7 @@
 #ifndef SDBG_BASE_DRIVER_HXX
 #define SDBG_BASE_DRIVER_HXX 1
 
-#if HAVE_STRING
-# include <string>
-#else
-# error string is required
-#endif
-
+#include <string>
 #include "sdbg_std.hxx"
 #include "sdbg_base_mach.hxx"
 #include "sdbg_event_manager.hxx"

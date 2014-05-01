@@ -29,6 +29,7 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        May 01 2014 DHA: Added LMON_fe_getStatus.3
 ##        May 20 2009 DHA: Added LMON_fe_regErrorCB.3
 ##        Jun 09 2008 DHA: Created file.
 ##
@@ -42,6 +43,7 @@ man_MANS = LMON_fe_attachAndSpawnDaemons.3 \
            LMON_fe_getProctableSize.3 \
            LMON_fe_getRMInfo.3 \
            LMON_fe_getResourceHandle.3 \
+           LMON_fe_getStatus.3 \
            LMON_fe_init.3 \
            LMON_fe_kill.3 \
            LMON_fe_launchAndSpawnDaemons.3 \

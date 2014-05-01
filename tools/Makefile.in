@@ -45,6 +45,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/libtool.m4 \
 	$(top_srcdir)/config/x_ac_enable_debug.m4 \
 	$(top_srcdir)/config/x_ac_enable_verbose.m4 \
 	$(top_srcdir)/config/x_ac_gcrypt.m4 \
+	$(top_srcdir)/config/x_ac_handshake.m4 \
 	$(top_srcdir)/config/x_ac_mpicc.m4 \
 	$(top_srcdir)/config/x_ac_myboost.m4 \
 	$(top_srcdir)/config/x_ac_platform.m4 \
@@ -73,7 +74,7 @@ AM_RECURSIVE_TARGETS = $(RECURSIVE_TARGETS:-recursive=) \
 	distdir
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = cobo ciod alps libgpg-error
+DIST_SUBDIRS = handshake cobo ciod alps libgpg-error
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 am__relativize = \
   dir0=`pwd`; \
@@ -166,6 +167,8 @@ MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
 MPICC = @MPICC@
 MPICXX = @MPICXX@
+MUNGE_CFLAGS = @MUNGE_CFLAGS@
+MUNGE_LIBS = @MUNGE_LIBS@
 MYBOOSTLOC = @MYBOOSTLOC@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -180,6 +183,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 RMINC = @RMINC@
 RMLIB = @RMLIB@
@@ -254,7 +258,8 @@ tvcmd = @tvcmd@
 @WITH_CIOD_TRUE@OPT_CIOD = ciod
 @WITH_ALPS_TRUE@OPT_ALPS = alps
 OPT_GPG = libgpg-error
-SUBDIRS = $(OPT_COBO) $(OPT_CIOD) $(OPT_ALPS) $(OPT_GPG)
+OPT_HANDSHAKE = handshake
+SUBDIRS = $(OPT_HANDSHAKE) $(OPT_COBO) $(OPT_CIOD) $(OPT_ALPS) $(OPT_GPG)
 LIBGCRYPTDISTFILES = libgcrypt/src libgcrypt/src/gcrypt.h \
 	libgcrypt/src/gcrypt-module.h libgcrypt/src/Makefile.in \
 	libgcrypt/src/ChangeLog libgcrypt/src/Makefile.am \

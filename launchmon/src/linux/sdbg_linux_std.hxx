@@ -42,34 +42,13 @@
 #define SDBG_LINUX_STD_HXX 1
 
 extern "C" {
-#if HAVE_EXECINFO_H
-# include <execinfo.h>
-#else
-#error execinfo.h is required 
-#endif
-
-#if HAVE_LIBGEN_H
-# include <libgen.h>
-#else
-# error libgen.h is required
-#endif
-
-#if HAVE_STDDEF_H
-# include <stddef.h>
-#endif
+#include <execinfo.h>
+#include <libgen.h>
+#include <stddef.h>
 }
 
-#if HAVE_STRING
-# include <string>
-#else
-# error string is required
-#endif
-
-#if HAVE_CXXABI_H
-# if HAVE_STDDEF_H
-#  include <cxxabi.h> /* picking up demangling service */
-# endif
-#endif
+#include <string>
+#include <cxxabi.h> /* picking up demangling service */
 
 //! LAUNCH_BREAKPOINT:
 /*!
@@ -190,7 +169,6 @@ bool glic_backtrace_wrapper (std::string &bt)
   size = (size > BPCHAINMAX) ? BPCHAINMAX: size;
   stacksymbols = backtrace_symbols (StFrameArray, BPCHAINMAX);
 
-#if HAVE_STDDEF_H && HAVE_CXXABI_H 
   /* demangle support */
   char **demangleStSyms = (char **) malloc (size * sizeof(char *));
   size_t dnSize; 
@@ -239,9 +217,7 @@ bool glic_backtrace_wrapper (std::string &bt)
 	}
       ssUsed = demangleStSyms;
     }
-#else
-  ssUsed = stacksymbols;
-#endif
+  /* ssUsed = stacksymbols;*/
 
   bt = "BACKTRACE: \n";  
   /* starting from 2 to remove two top stack frames */  

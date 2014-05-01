@@ -110,59 +110,15 @@
 #endif
 
 extern "C" {
-#if HAVE_SYS_TYPES_H 
-# include <sys/types.h>
-#else
-# error sys/types.h is required
-#endif
-
-#if HAVE_SYS_STAT_H
-# include <sys/stat.h>
-#else
-# error sys/stat.h is required
-#endif
-
-#if HAVE_FCNTL_H
-# include <fcntl.h>
-#else
-# error fcntl.h is required
-#endif
-
-#if HAVE_SYS_SOCKET_H
-# include <sys/socket.h>
-#else
-# error sys/socket.h is required
-#endif
-
-#if HAVE_ARPA_INET_H
-# include <arpa/inet.h>
-#else
-# error arpa/inet.h is required
-#endif
-
-#if HAVE_LINK_H
-# include <link.h>
-#else
-# error link.h is required
-#endif
-
-#if HAVE_THREAD_DB_H
-# include <thread_db.h>
-#else
-# error thread_db.h is required
-#endif
-
-#if HAVE_LIBGEN_H
-# include <libgen.h>
-#else
-# error libgen.h is required
-#endif
-
-#if HAVE_LIMITS_H
-# include <limits.h>
-#else
-# error limits.h is required 
-#endif 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <link.h>
+#include <thread_db.h>
+#include <libgen.h>
+#include <limits.h>
 }
 
 #include "sdbg_self_trace.hxx"
@@ -2406,7 +2362,7 @@ linux_launchmon_t::handle_launch_bp_event (
       if (!validate_mpir_state_transition(bdbg))
         {
 	  self_trace_t::trace ( 
-            true, 
+            LEVELCHK(level2), 
 	    MODULENAME,0,
 	    "MPIR state transition is invalid! continue...");
 

@@ -15,6 +15,7 @@
 #include <arpa/inet.h>
 #include <poll.h>
 #include "cobo.h"
+#include "config.h"
 
 #define COBO_DEBUG_LEVELS (3)
 
@@ -50,6 +51,14 @@
  * ==========================================================================
  * ==========================================================================
  */
+
+/*
+ * DHA 4/11/2014: Security protocol blurb
+ * cobo_sec_protocol should be set properly by
+ * the upper layer. 
+ *
+ */
+handshake_protocol_t cobo_sec_protocol;
 
 /* Ranks:
  *   -3     ==> unitialized task (may be server or client task)
@@ -532,7 +541,26 @@ static int cobo_connect_hostname(char* hostname, int rank)
                 /* got a connection, let's test it out */
                 cobo_debug(1, "Connected to rank %d port %d on %s", rank, port, hostname);
                 int test_failed = 0;
-
+                int result = handshake_client(s, &cobo_sec_protocol, cobo_sessionid);
+                switch (result) {
+                   case HSHAKE_SUCCESS:
+                      break;
+                   case HSHAKE_INTERNAL_ERROR:
+                      cobo_debug(1, "Error handshaking with server: %s\n", handshake_last_error_str());
+                      abort();
+                   case HSHAKE_DROP_CONNECTION:
+                   case HSHAKE_CONNECTION_REFUSED:
+                      cobo_debug(1, "Connection refused when handshaking with server: %s\n",
+                                 handshake_last_error_str());
+                      test_failed = 1;
+                      break;
+                   case HSHAKE_ABORT:
+                      handshake_log_sec_error("LaunchMON security error in handshake: ");
+                      abort();
+                   default:
+                      cobo_debug(1, "Unknown return from handshake client %d\n", result);
+                      abort();
+                }
                 /* write cobo service id */
                 if (!test_failed && cobo_write_fd_w_suppress(s, &cobo_serviceid, sizeof(cobo_serviceid), 1) < 0) {
                     cobo_debug(1, "Writing service id to %s on port %d @ file %s:%d",
@@ -794,7 +822,26 @@ static int cobo_open_tree()
         socklen_t parent_len = sizeof(parent_addr);
         cobo_parent_fd = accept(sockfd, (struct sockaddr *) &parent_addr, &parent_len);
 
-        /* TODO: need to handshake/authenticate our connection to make sure it one of our processes */
+        int result = handshake_server(cobo_parent_fd, &cobo_sec_protocol, cobo_sessionid);
+        switch (result) {
+           case HSHAKE_SUCCESS:
+              break;
+           case HSHAKE_INTERNAL_ERROR:
+              cobo_debug(1, "Error handshaking with client: %s\n", handshake_last_error_str());
+              abort();
+           case HSHAKE_DROP_CONNECTION:
+           case HSHAKE_CONNECTION_REFUSED:
+              cobo_debug(1, "Connection refused when handshaking with client: %s\n",
+                         handshake_last_error_str());
+              close(cobo_parent_fd);
+              continue;
+           case HSHAKE_ABORT:
+              handshake_log_sec_error("LaunchMON security error in handshake: ");
+              abort();
+           default:
+              cobo_debug(1, "Unknown return from handshake with server %d\n", result);
+              abort();
+        }
 
         /* read the service id */
         unsigned int received_serviceid = 0;
@@ -1433,6 +1480,9 @@ int cobo_open(unsigned int sessionid, int* portlist, int num_ports, int* rank, i
         cobo_connect_timeout, cobo_connect_backoff, cobo_connect_sleep, (int) cobo_connect_timelimit
     );
 
+    /* DHA 4/11/2014: enable security handshake timeout */
+    handshake_enable_read_timeout(cobo_connect_timeout); 
+
     /* copy port list from user */
     cobo_num_ports = num_ports;
     cobo_ports = cobo_int_dup(portlist, num_ports);
@@ -1514,6 +1564,9 @@ int cobo_server_get_root_socket(int* fd)
 /* given a hostlist and portlist where clients are running, open the tree and assign ranks to clients */
 int cobo_server_open(unsigned int sessionid, char** hostlist, int num_hosts, int* portlist, int num_ports)
 {
+    /* DHA 4/11/1014: enable security handshake timeout */
+    handshake_enable_read_timeout(cobo_connect_timeout);
+
     /* at this point, we know this process is the server, so set its rank */
     cobo_me = -2;
     cobo_nprocs = num_hosts;

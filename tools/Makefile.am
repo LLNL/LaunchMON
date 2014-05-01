@@ -28,6 +28,7 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        Mar 10 2014 MPL: Add secure handshake
 ##        Dec 16 2009 DHA: Added COBO support
 ##        Jun 10 2007 DHA: Copied from the old Makefile.
 ##
@@ -42,8 +43,9 @@ if WITH_ALPS
   OPT_ALPS = alps
 endif
   OPT_GPG = libgpg-error
+OPT_HANDSHAKE = handshake
 
-SUBDIRS = $(OPT_COBO) $(OPT_CIOD) $(OPT_ALPS) $(OPT_GPG)
+SUBDIRS =  $(OPT_HANDSHAKE) $(OPT_COBO) $(OPT_CIOD) $(OPT_ALPS) $(OPT_GPG)
 
 all-local:
 	if test -f libgcrypt/Makefile; then \

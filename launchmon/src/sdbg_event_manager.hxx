@@ -35,12 +35,7 @@
 #ifndef SDBG_EVENT_MANAGER_HXX
 #define SDBG_EVENT_MANAGER_HXX 1
 
-#if HAVE_VECTOR
-# include <vector>
-#else
-# error vector is required
-#endif 
-
+#include <vector>
 #include "sdbg_base_mach.hxx"
 #include "sdbg_base_launchmon.hxx"
 

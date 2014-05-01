@@ -15,7 +15,11 @@
 #ifndef _COBO_H
 #define _COBO_H
 
+#include "handshake.h"
+
 #define COBO_SUCCESS (0)
+
+extern handshake_protocol_t cobo_sec_protocol;
 
 /*
  * ==========================================================================

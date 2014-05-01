@@ -53,9 +53,9 @@ AC_DEFUN([X_AC_TESTNNODES], [
 
 
 AC_DEFUN([X_AC_NCORE_SMP], [
-  AC_MSG_CHECKING([the number of cores per SMP node @<:@IBM Blue Gene /L /P Note: the number of compute nodes per IO node@:>@])
+  AC_MSG_CHECKING([the number of cores per SMP node @<:@IBM Blue Gene Note: the number of compute nodes per IO node@:>@])
   AC_ARG_WITH([test-ncore-per-CN],
-    AS_HELP_STRING(--with-test-ncore-per-CN@<:@=NCores@:>@,specify the core-count per compute node @<:@IBM Blue Gene /L /P Note: use the number of compute nodes per IO node instead@:>@ @<:@default=NCore of the configure host@:>@),
+    AS_HELP_STRING(--with-test-ncore-per-CN@<:@=NCores@:>@,specify the core-count per compute node @<:@IBM Blue Gene Note: use the number of compute nodes per IO node instead@:>@ @<:@default=NCore of the configure host@:>@),
     [with_smp=$withval],
     [with_smp="check"])
 
@@ -79,9 +79,9 @@ AC_DEFUN([X_AC_NCORE_SMP], [
 
 
 AC_DEFUN([X_AC_TEST_RM], [
-  AC_MSG_CHECKING([resource manager to test @<:@slurm bglrm bgprm bgqrm alps orte@:>@])
+  AC_MSG_CHECKING([resource manager to test @<:@slurm bgqrm alps orte@:>@])
   AC_ARG_WITH([test-rm],
-    AS_HELP_STRING(--with-test-rm@<:@=RM@:>@,specify a resource manager type to test @<:@default=slurm on linux-x86 and linux-x86_64; alps on Cray; bgprm on linux-power; bgqrm on linux-power64@:>@),
+    AS_HELP_STRING(--with-test-rm@<:@=RM@:>@,specify a resource manager type to test @<:@slurm bgqrm alps orte@:>@ @<:@default=slurm on linux-x86 and linux-x86_64; alps on Cray; bgqrm on linux-power64@:>@),
     [with_rm=$withval],
     [with_rm="check"])
 

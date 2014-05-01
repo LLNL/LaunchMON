@@ -1,5 +1,11 @@
 $Header: $
 
+4-30-2014 DHA
+- Drop gcrypt/gpgerror package integration. This can cause conflict when 
+  launchmon is built on a system that already has default versions of
+  these GNU cryptography packages.  
+
+========== OLD items that have been addressed ========================= 
 x add self-tracing for the event manager layer and driver layer.
 x add signal handler and better exit support such that any anomalous event including 
    having a UNIX signal being sent won't leave any deadwood on the resource 
@@ -147,7 +153,7 @@ x Re-attaching to the BGL mpirun seems to fail
   NOTE: 9/24/2008 not scheduled for 0.6 release.
 + make the selection of low-level communication layer dynamically
   NOTE: 9/24/2008 not scheduled for 0.6 release.
-- Investigate how to time when to release the mpirun process properly 
++ Investigate how to time when to release the mpirun process properly 
   so that BGL's MPIR extension, which supports co-spawning,
   does not produce a race condition. 
   NOTE: 9/24/2008 not scheduled for 0.6 release.

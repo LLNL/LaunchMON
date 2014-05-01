@@ -57,17 +57,8 @@
 #include "sdbg_linux_mach.hxx"
 
 extern "C" {
-#if HAVE_LIBGEN_H
-# include <libgen.h>
-#else
-# error libgen.h is required
-#endif
-
-#if HAVE_LIMITS_H
-# include <limits.h>
-#else
-# error limits.h is required
-#endif
+#include <libgen.h>
+#include <limits.h>
 }
 
 #if X86_ARCHITECTURE || PPC_ARCHITECTURE

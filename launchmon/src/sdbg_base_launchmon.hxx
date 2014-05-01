@@ -54,24 +54,11 @@
 #ifndef SDBG_BASE_LAUNCHMON_HXX
 #define SDBG_BASE_LAUNCHMON_HXX 1
 
-#if HAVE_MAP
-# include <map>
-#else
-# error map is required
-#endif
-
-#if HAVE_VECTOR
-# include <vector>
-#else
-# error vector is required
-#endif
+#include <map>
+#include <vector>
 
 extern "C" {
-#if HAVE_SYS_TIME_H
 #include <sys/time.h>
-#else
-# error sys/time.h is required 
-#endif
 }
 
 #include "sdbg_base_mach.hxx"

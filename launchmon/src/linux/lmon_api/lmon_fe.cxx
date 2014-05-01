@@ -26,6 +26,9 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Apr 22 2014 DHA: Applied a patch to store RM args/opts into
+ *                         a std::list object instead of a std:string string.
+ *        Apr 15 2014 DHA: Integrate COBO secure handshake 
  *        Jan 09 2013 DHA: Remove verbosity ref to the deprecated
  *                         thread tracer module.
  *        May 31 2012 DHA: Merged with the middleware support 
@@ -132,110 +135,25 @@
 #error This source file requires a LINUX OS
 #endif
 
-#if HAVE_STDIO_H
-# include <cstdio>
-#else
-# error stdio.h is required
-#endif
-
-#if TIME_WITH_SYS_TIME 
-# include <ctime>
-#else
-# error time.h is required
-#endif
-
-#if HAVE_MAP
-# include <map>
-#else
-# error map.h is required
-#endif
-
-#if HAVE_VECTOR
-# include <vector>
-#else
-# error vector is required
-#endif
-
-#if HAVE_STDLIB_H
-# include <cstdlib>
-#else
-# error stdlib.h is required
-#endif
-
-#if HAVE_STRING_H
-# include <string.h>
-#else
-# error string.h is required
-#endif
-
-#if HAVE_UNISTD_H
+#include <cstdio>
+#include <ctime>
+#include <map>
+#include <vector>
+#include <list>
+#include <cstdlib>
+#include <string.h>
 #include <unistd.h>
-#else
-# error unistd.h is required
-#endif
-
-#if HAVE_NETDB_H
 #include <netdb.h>
-#else
-# error netdb.h is required
-#endif
-
-#if HAVE_PTHREAD_H
 #include <pthread.h>
-#else
-# error pthread.h is required
-#endif
-
-#if HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#else
-# error sys/types.h is required
-#endif
-
-#if HAVE_SYS_SOCKET_H
-# include <sys/socket.h>
-#else
-# error sys/socket.h is required
-#endif
-
-#if HAVE_ARPA_INET_H
-# include <arpa/inet.h>
-#else
-# error arpa/inet.h is required
-#endif
-
-#if HAVE_NETINET_IN_H
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 #include <netinet/in.h>
-#else
-# error netinet/in.h is required
-#endif
-
-#if HAVE_SIGNAL_H
 #include <signal.h>
-#else
-# error signal.h is required
-#endif
-
-#if TIME_WITH_SYS_TIME
 #include <time.h>
-#else
-# error time.h is required
-#endif
-
 #include "gcrypt.h"
-
-#if HAVE_FCNTL_H
 #include <fcntl.h>
-#else
-# error fcntl.h is required
-#endif
-
-#if HAVE_LIMITS_H
-# include <limits.h>
-#else
-# error limits.h is required
-#endif
-
+#include <limits.h>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -260,6 +178,7 @@
 #if COBO_BASED
 extern "C" {
 #include <cobo.h>
+#include <handshake.h>
 }
 #endif
 
@@ -1469,6 +1388,73 @@ LMON_fe_acceptEngine ( int sessionHandle )
 }
 
 
+static int
+set_cobosec_mode ()
+{
+  int rc = 0;
+#if defined(MUNGE)
+  cobo_sec_protocol.mechanism = hs_munge;
+#elif defined(KEYFILE)
+  int fd;
+  unsigned char akey[8];
+  char kp[PATH_MAX];
+  snprintf (kp, PATH_MAX, "%s/keyfile.%d", SEC_KEYDIR, getuid());
+  cobo_sec_protocol.mechanism = hs_key_in_file;
+  cobo_sec_protocol.data.key_in_file.key_filepath = strdup(kp);
+  cobo_sec_protocol.data.key_in_file.key_length_bytes = 8;
+
+  if ( (fd = open ("/dev/urandom", O_RDONLY) ) < 0)
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "opening /dev/urandom failed");
+      rc = -1;
+      goto done;
+    }
+  if ( lmon_read_raw (fd, akey, sizeof(akey)) < 0)
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "read from /dev/urandom failed.");
+      rc = -1;
+      goto done;
+    }
+  close (fd);  
+  remove (kp);
+  if (( fd = open (cobo_sec_protocol.data.key_in_file.key_filepath, 
+                   O_WRONLY|O_CREAT, 
+                   S_IRUSR|S_IWUSR)) < 0)
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "Failed to open %s.", cobo_sec_protocol.data.key_in_file.key_filepath);
+      rc = -1;
+      goto done;
+    }
+  if ( lmon_write_raw (fd, akey, sizeof(akey)) < 0)
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "write to %s failed.", SEC_KEYDIR );
+      rc = -1;
+      goto done;
+    }
+  if ( fchmod (fd, S_IRUSR) < 0)
+    {
+      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+        "chmod %s failed.", 
+	cobo_sec_protocol.data.key_in_file.key_filepath);
+      rc = -1;
+      goto done;
+    }
+  close (fd);
+#elif defined(ENABLE_NULL_ENCRYPTION)
+  cobo_sec_protocol.mechanism = hs_none;
+#else
+#error No recognized handshake mechanism enabled
+#endif
+
+done:
+  return rc;
+}
+
+
 static lmon_rc_e 
 LMON_assist_ICCL_BE_init (lmon_session_desc_t *mydesc)
 {
@@ -1510,7 +1496,7 @@ LMON_assist_ICCL_BE_init (lmon_session_desc_t *mydesc)
   if ( tout && ( (atoi(tout) > 0 ) && ( atoi(tout) <= MAX_TIMEOUT )))
     tosec = atoi(tout);
   else
-    tosec = DFLT_FE_BE_TOUT;
+	  tosec = DFLT_FE_BE_TOUT;
 
   if (!mydesc->proctab_msg)
     {
@@ -1568,6 +1554,14 @@ LMON_assist_ICCL_BE_init (lmon_session_desc_t *mydesc)
   mydesc->commDesc[fe_be_conn].nDaemons
     = mydesc->proctab_msg->sec_or_stringinfo.exec_and_hn.num_host_name;
   ndmons = mydesc->commDesc[fe_be_conn].nDaemons;
+
+  if ( set_cobosec_mode () < 0)
+    {
+       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+         "Failed to set COBO secure"
+         " handshake mode for back-end daemons." );
+      return LMON_ESYS;
+    }
 
   /*
    * Now taking advantage of COBO's new scalable bootstrapping
@@ -1711,6 +1705,14 @@ LMON_assist_ICCL_MW_init (lmon_session_desc_t *mydesc)
       cobohl[j] = (*h_it).c_str();
       j++;
     }
+
+   if ( set_cobosec_mode () < 0)
+     {
+        LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
+          "Failed to set COBO secure"
+          " handshake mode for middleware deamons." );
+       return LMON_ESYS;
+     }
 
   //
   // session ID = 11 for now
@@ -2508,7 +2510,7 @@ LMON_set_options (
       optcontext->launcher_pid = launcherPid;
     }
 
-  optcontext->tool_daemon_opts = "";
+  optcontext->tool_daemon_opts.clear();
 
   if (launcher_argv != NULL)
     {
@@ -2521,12 +2523,7 @@ LMON_set_options (
 	{
 	  if (daemon_argopts[i] != NULL)
 	    {
-	      if ( i != 0 )
-                {
-		  optcontext->tool_daemon_opts += " ";
-                }
-	      optcontext->tool_daemon_opts += string(daemon_argopts[i]);
-
+              optcontext->tool_daemon_opts.push_back(string(daemon_argopts[i]));
 	    }
 	  else
 	    break;
@@ -3193,6 +3190,58 @@ LMON_fetofe_watchdog_thread ( void *arg )
     pthread_exit(NULL); 
 }
 
+static void tokenize(std::string str, std::list<std::string> &result)
+{
+#  define append_to_buffer(C) buffer[buffer_pos++] = C
+
+   size_t len = str.length(), buffer_pos = 0;
+   char *buffer = (char *) malloc(len+1);
+   bool escaped = false, quoted = false;
+
+   for (int i = 0; i < len; i++) {
+      char c = str[i];
+      if (escaped) {
+         switch (c) {
+            case 'a': append_to_buffer('\a'); break;
+            case 'b': append_to_buffer('\b'); break;
+            case 'f': append_to_buffer('\f'); break;
+            case 'n': append_to_buffer('\n'); break;
+            case 'r': append_to_buffer('\r'); break;
+            case 't': append_to_buffer('\t'); break;
+            case 'v': append_to_buffer('\v'); break;
+            default: append_to_buffer(c); break;
+         }
+         escaped = false;
+      }
+      else if (c == '\\') {
+         escaped = true;
+      }
+      else if (c == '"') {
+         quoted = !quoted;
+      }
+      else if (quoted) {
+         append_to_buffer(c);
+      }
+      else if (c == ' ') {
+         append_to_buffer('\0');
+         result.push_back(buffer);
+         buffer_pos = 0;
+
+         while (i+1 < len && buffer[i+1] == ' ')
+            i++;
+      }
+      else {
+         append_to_buffer(c);
+      }
+   }
+
+   if (buffer_pos > 0) {
+      append_to_buffer('\0');
+      result.push_back(buffer);
+   }
+
+   free(buffer);
+}
 
 static int
 tokenize ( const std::string& str,
@@ -3253,27 +3302,16 @@ tokenize ( const std::string& str,
 static lmon_rc_e 
 bld_exec_lmon_launch_str ( bool isLocal, 
 			   const char *hostname,
-			   std::string lmonOptArgs, 
+			   const std::list<std::string> &lmonOptArgs, 
 			   opts_args_t &opt )
 {
   using namespace std;
 
-  const int maxargv = 1024;
-  string cmd;
-  string cmdstring;
+  std::list<std::string> cmdlist;
   char *rm;
   char *lmonpath;
   char *debugflag;
-  char **myargv;
   int k=0;
-
-  if ( ( myargv = (char **) malloc (maxargv*sizeof (char *)) ) == NULL )
-    {
-      LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
-		     "malloc returned NULL, exiting... ");
-
-      return LMON_ENOMEM;
-    }
 
   if ( isLocal ) 
     {
@@ -3287,89 +3325,70 @@ bld_exec_lmon_launch_str ( bool isLocal,
 
       if ( getenv("LMON_DEBUG_LAUNCHMON_ENGINE") )
 	{
-	  cmdstring += TVCMD;
-	  cmdstring += " ";
+           tokenize(TVCMD, cmdlist);
 	}
 
       if ( ( lmonpath = getenv ("LMON_LAUNCHMON_ENGINE_PATH")) != NULL )
 	{
-	  cmdstring += lmonpath;
-	  cmdstring += " ";
+          cmdlist.push_back(lmonpath);
 	}
       else
 	{
-	  cmd = "launchmon";
-	  cmdstring += cmd;
-	  cmdstring += " ";
+	  cmdlist.push_back("launchmon");
 	}
 
       if ( getenv("LMON_DEBUG_LAUNCHMON_ENGINE") )
 	{
-	  cmdstring += "-a";
-	  cmdstring += " ";
+           cmdlist.push_back("-a");
 	}
-
-      cmdstring += lmonOptArgs;
-      k = tokenize ( cmdstring, myargv, maxargv );
+      cmdlist.insert(cmdlist.end(), lmonOptArgs.begin(), lmonOptArgs.end());
 
       if ( k < 0 )
         return LMON_EINVAL;
 
-      myargv[k] = NULL;
     }  // The tool FEN is already co-located with the RM.
   else
     {
       // LMON_REMOTE_LOGIN (default=ssh)
       if ( ( rm = getenv ("LMON_REMOTE_LOGIN")) != NULL )	  
-	myargv[k] = strdup(rm);	  
+         tokenize(rm, cmdlist);
       else	  
-	myargv[k] = strdup(SSHCMD);
-      k++;
-	
-      myargv[k] = strdup(hostname);
-      k++;
+         tokenize(SSHCMD, cmdlist);
 
-      string cmdstring = ENVCMD;
-      cmdstring += " ";
+      cmdlist.push_back(hostname);
+
+      cmdlist.push_back(ENVCMD);
 
       map<string, string>::const_iterator envListPos;		
       for (envListPos = opt.get_my_opt()->envMap.begin(); 
 	   envListPos !=  opt.get_my_opt()->envMap.end(); envListPos++)
 	{ 
 	  string lstring = envListPos->first + "=" + envListPos->second;
-	  cmdstring += lstring;
-	  cmdstring += " ";
+          cmdlist.push_back(lstring);
 	}
 
       char *pref = getenv("LMON_PREFIX");
       if ( pref )
         {
-          cmdstring += std::string("LMON_PREFIX=")
-                     + std::string(pref) + std::string(" ");
-
+           cmdlist.push_back(string("LMON_PREFIX=") + string(pref));
         }
 
       if ( getenv("LMON_DEBUG_LAUNCHMON_ENGINE") )
 	{
-	  cmdstring += TVCMD;
-	  cmdstring += " ";
+           tokenize(TVCMD, cmdlist);
 	}
 
       if ( ( lmonpath = getenv ("LMON_LAUNCHMON_ENGINE_PATH")) != NULL )
 	{
-	  cmdstring += lmonpath;
-	  cmdstring += " ";
+           cmdlist.push_back(lmonpath);
 
 	  //
 	  // perform a sanity check here of the given path
 	  //
 	}
       else
-	{		    
-	  cmd = "launchmon";
-	  cmdstring += cmd;
-	  cmdstring += " ";
-	  
+	{
+           cmdlist.push_back("launchmon");
 	  //
 	  // perform a sanity check if this is in the user's PATH
 	  //
@@ -3377,15 +3396,18 @@ bld_exec_lmon_launch_str ( bool isLocal,
 
       if ( getenv("LMON_DEBUG_LAUNCHMON_ENGINE") )
 	{
-	  cmdstring += "-a";
-	  cmdstring += " ";
+           cmdlist.push_back("-a");
 	}
-
-      cmdstring += lmonOptArgs;
-      myargv[k] = strdup(cmdstring.c_str());
-      k++;
-      myargv[k] = NULL;
+      
+      cmdlist.insert(cmdlist.end(), lmonOptArgs.begin(), lmonOptArgs.end());      
     }  // The tool FEN is not co-located with the RM.
+
+  char **myargv = (char **) malloc(sizeof(char *) * (cmdlist.size() + 1));
+  unsigned int j = 0;
+  for (list<string>::iterator i = cmdlist.begin(); i != cmdlist.end(); i++) {
+     myargv[j++] = const_cast<char *>(i->c_str());
+  }
+  myargv[j] = NULL;
 
   if ( execvp ( myargv[0], myargv) < 0 )
     {
@@ -3430,6 +3452,13 @@ LMON_fe_init ( int ver )
 
       return LMON_EINVAL;
     }
+
+#if VERBOSE
+  /* This will enable debug print for security handshake 
+   * The security messages will not go to the errorCB 
+   */
+  handshake_enable_debug_prints (stdout);
+#endif
 
   set_client_name ( LMON_FE_MSG_PREFIX );
   std::string os_isa_str = TARGET_OS_ISA_STRING;
@@ -5092,7 +5121,7 @@ LMON_fe_launchAndSpawnDaemons (
        != LMON_OK )
     {
       return LMON_EBDARG;
-    }
+   }
 
   if ( ( remote_login_pid = fork() ) != 0 )
     {
@@ -5199,7 +5228,7 @@ LMON_fe_launchAndSpawnDaemons (
       //	
       bool isLocal;
       int i;
-      string lmonOptArgs;
+      list<string> lmonOptArgs;
 
       isLocal = (hostname == NULL) ? true : false;
 
@@ -5207,31 +5236,30 @@ LMON_fe_launchAndSpawnDaemons (
 	   && getenv("LMON_DEBUG_FE_ENGINE_RSH") )	  
 	LMON_TotalView_debug ();
 	
-      lmonOptArgs += "--remote ";
-      lmonOptArgs += opt.get_my_opt()->remote_info;
-      lmonOptArgs += " --lmonsec ";
-      lmonOptArgs += opt.get_my_opt()->lmon_sec_info;
-      lmonOptArgs += " --daemonpath ";
-      lmonOptArgs += opt.get_my_opt()->tool_daemon;
-      lmonOptArgs += " ";
+      lmonOptArgs.push_back("--remote");
+      lmonOptArgs.push_back(opt.get_my_opt()->remote_info);
+      lmonOptArgs.push_back("--lmonsec");
+      lmonOptArgs.push_back(opt.get_my_opt()->lmon_sec_info);
+      lmonOptArgs.push_back("--daemonpath");
+      lmonOptArgs.push_back(opt.get_my_opt()->tool_daemon);
       
-      if ( opt.get_my_opt()->tool_daemon_opts != string(""))
+      const list<string> &tool_daemon_opts = opt.get_my_opt()->tool_daemon_opts;
+      if ( !tool_daemon_opts.empty())
         {
-	  lmonOptArgs += strdup ("--daemonopts");
-	  lmonOptArgs += " \"";
-	  lmonOptArgs += strdup (opt.get_my_opt()->tool_daemon_opts.c_str());
-	  lmonOptArgs += "\" "; 
-	}
+          lmonOptArgs.push_back("--daemonopts");
 
-      lmonOptArgs += opt.get_my_opt()->debugtarget;
-      lmonOptArgs += " ";
-      lmonOptArgs += "-a";
-      lmonOptArgs += " ";
+          stringstream ss;
+          ss << tool_daemon_opts.size();
+          lmonOptArgs.push_back(ss.str());
+
+          lmonOptArgs.insert(lmonOptArgs.end(), tool_daemon_opts.begin(), tool_daemon_opts.end());
+	}
+      lmonOptArgs.push_back(opt.get_my_opt()->debugtarget);
+      lmonOptArgs.push_back("-a");
       
       for ( i = 1; opt.get_my_opt()->remaining[i] != NULL; i++)
 	{
-	  lmonOptArgs += opt.get_my_opt()->remaining[i];
-	  lmonOptArgs += " ";
+           lmonOptArgs.push_back(opt.get_my_opt()->remaining[i]);
 	}
 
       if ( bld_exec_lmon_launch_str ( isLocal, 
@@ -5432,32 +5460,35 @@ LMON_fe_attachAndSpawnDaemons (
       //	
       bool isLocal;
       char pidstr[10];
-      string lmonOptArgs;
+      list<string> lmonOptArgs;
 
       isLocal = (hostname == NULL) ? true : false;
       if ( (isLocal == false) 
 	   && getenv("LMON_DEBUG_FE_ENGINE_RSH") )	  
 	LMON_TotalView_debug ();
 
-      lmonOptArgs += "--remote ";
-      lmonOptArgs += opt.get_my_opt()->remote_info;
-      lmonOptArgs += " --lmonsec ";
-      lmonOptArgs += opt.get_my_opt()->lmon_sec_info;
-      lmonOptArgs += " --daemonpath ";
-      lmonOptArgs += opt.get_my_opt()->tool_daemon;
-      lmonOptArgs += " ";
+      lmonOptArgs.push_back("--remote");
+      lmonOptArgs.push_back(opt.get_my_opt()->remote_info);
+      lmonOptArgs.push_back("--lmonsec");
+      lmonOptArgs.push_back(opt.get_my_opt()->lmon_sec_info);
+      lmonOptArgs.push_back("--daemonpath");
+      lmonOptArgs.push_back(opt.get_my_opt()->tool_daemon);
 
-      if ( opt.get_my_opt()->tool_daemon_opts != string(""))
+      const list<string> &tool_daemon_opts = opt.get_my_opt()->tool_daemon_opts;
+      if ( !tool_daemon_opts.empty() )
         {
-	  lmonOptArgs += strdup ("--daemonopts");
-	  lmonOptArgs += " \"";
-	  lmonOptArgs += strdup (opt.get_my_opt()->tool_daemon_opts.c_str());
-	  lmonOptArgs += "\" "; 
+          lmonOptArgs.push_back("--daemonopts");
+
+          stringstream ss;
+          ss << tool_daemon_opts.size();
+          lmonOptArgs.push_back(ss.str());
+
+          lmonOptArgs.insert(lmonOptArgs.end(), tool_daemon_opts.begin(), tool_daemon_opts.end());
 	}
 
-      lmonOptArgs += "--pid ";
+      lmonOptArgs.push_back("--pid");
       sprintf ( pidstr, "%d", opt.get_my_opt()->launcher_pid ); 
-      lmonOptArgs += pidstr; 
+      lmonOptArgs.push_back(pidstr); 
 
       if ( bld_exec_lmon_launch_str ( isLocal, 
 				      hostname,

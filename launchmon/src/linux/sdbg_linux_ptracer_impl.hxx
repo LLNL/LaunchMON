@@ -51,55 +51,16 @@
 
 extern "C" {
 
-#if HAVE_SYSCALL_H
-# include <syscall.h>
-#else
-# error unistd.h is required
-#endif
-
-#if HAVE_UNISTD_H
-# include <unistd.h>
-#else
-# error unistd.h is required
-#endif
-
-#if HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#else
-# error sys/types.h is required
-#endif
-
-#if HAVE_SYS_PTRACE_H
-# include <sys/ptrace.h>
-#else
-# error sys/ptrace.h is required
-#endif
-
-#if HAVE_ERRNO_H
-# include <errno.h>
-#else
-# error errno.h is required
-#endif
-
-#if HAVE_SIGNAL_H
-# include <signal.h>
-#else
-# error signal.h is required
-#endif
+#include <syscall.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/ptrace.h>
+#include <errno.h>
+#include <signal.h>
 }
 
-#if HAVE_FSTREAM
-# include <fstream>
-#else
-# error fstream is required
-#endif
-
-#if HAVE_SSTREAM
-# include <sstream>
-#else
-# error sstream is required
-#endif
-
+#include <fstream>
+#include <sstream>
 #include "sdbg_linux_ptracer.hxx"
 
 

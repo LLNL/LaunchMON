@@ -26,11 +26,7 @@
 extern "C" {
 #endif
 
-#if HAVE_SYS_PROCFS_H 
-# include <sys/procfs.h>
-#else
-# error sys/procfs.h is required 
-#endif 
+#include <sys/procfs.h>
 
 /* Functions in this interface return one of these status codes.  */
 typedef enum

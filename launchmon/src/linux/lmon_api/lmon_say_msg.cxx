@@ -42,37 +42,12 @@
 #error This source file requires a LINUX OS
 #endif
 
-#if HAVE_IOSTREAM
-# include <iostream>
-#else
-# error iostream is required
-#endif
-
-#if HAVE_STDARG_H
-# include <cstdarg>
-#else
-# error stdarg.h is required
-#endif
-
-#if HAVE_UNISTD_H
-# include <unistd.h>
-#else
-# error unistd.h is required 
-#endif
-
-#if TIME_WITH_SYS_TIME
-# include <ctime>
-# include <sys/time.h>
-#else
-# error ctime and sys_time.h is required
-#endif
-
-#if HAVE_LIMITS_H
-# include <limits.h>
-#else
-# error limits.h is required
-#endif
-
+#include <iostream>
+#include <cstdarg>
+#include <unistd.h>
+#include <ctime>
+#include <sys/time.h>
+#include <limits.h>
 #include <lmon_api/lmon_say_msg.hxx>
 
 int (*errorCB) (const char *format, va_list ap) = NULL;

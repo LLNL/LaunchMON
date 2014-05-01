@@ -1,4 +1,12 @@
-2012-xx-xx DHA Release pre-1.0 with BGQ support (1.0-pre)
+2013-04-30 DHA Release 1.1.1 
+		o SLURM, OpenMPI/ORTE, and BlueGene/Q support
+		o Droped support for BlueGene/L and /P
+		o Dynamic detection of resource management
+                o Limited support for LaunchMON middleware API 
+		o Security enhancement for COBO handshaking
+		o Stability enhancement for LaunchMON engine 
+		o LaunchMON Middleware API support
+		o A bunch of bug fixes
 
 2012-06-03 DHA Merge the LaunchMON MW API into 1.0 alpha
 
@@ -33,3 +41,4 @@
 		o Lots of bug fixes
 	
 2009-03-12 DHA Created 0.7 development branch
+

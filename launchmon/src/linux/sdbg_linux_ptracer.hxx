@@ -41,8 +41,7 @@
 #define SDBG_LINUX_PTRACER_HXX 1
 
 extern "C" {
-#if HAVE_SYS_PTRACE_H
-# include <sys/ptrace.h>
+#include <sys/ptrace.h>
 //
 // W/R on a system that has
 //
@@ -64,9 +63,6 @@ extern "C" {
 # ifndef PTRACE_EVENT_CLONE
 #  define PTRACE_EVENT_CLONE      3
 # endif
-#else
-# error sys/ptrace.h is required 
-#endif
 }
 
 #include "sdbg_base_tracer.hxx"

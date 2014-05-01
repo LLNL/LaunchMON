@@ -63,7 +63,7 @@ AC_DEFUN([X_AC_BOOTFABRIC], [
       #AC_DEFINE(TOOL_SS_ENV, "LMON_SHARED_SECRET", [Define TOOL_SS_ENV])
       #AC_DEFINE(TOOL_SCH_ENV, "LMON_SEC_CHK", [Define TOOL_SCH_ENV])
       #AC_SUBST(COMMLOC, tools/pmgr_collective/src)
-      #AC_SUBST(LIBCOMM, -lpmgr_collective)
+      #AC_SUBST(LIBCOMM, libcobo.la)
     #else
       commfab_found="no"
       AC_MSG_ERROR([--with-bootfabric=pmgr is given, but pmgr_collective has been deprecated])
@@ -87,7 +87,7 @@ AC_DEFUN([X_AC_BOOTFABRIC], [
       AC_DEFINE(TOOL_SS_ENV, "LMON_SHARED_SECRET", [Define TOOL_SS_ENV])
       AC_DEFINE(TOOL_SCH_ENV, "LMON_SEC_CHK", [Define TOOL_SCH_ENV])
       AC_SUBST(COMMLOC, tools/cobo/src)
-      AC_SUBST(LIBCOMM, -lcobo)
+      AC_SUBST(LIBCOMM, libcobo.la)
 
       if test "x$with_cobo_port" != "xcheck" -a "x$with_cobo_port" != "xyes"; then
 	AC_DEFINE(COBO_BEGIN_PORT, $with_cobo_port, [Define a beginning port for COBO_BASED])
@@ -117,7 +117,7 @@ AC_DEFUN([X_AC_BOOTFABRIC], [
       AC_DEFINE(TOOL_SS_ENV, "LMON_SHARED_SECRET", [Define TOOL_SS_ENV])
       AC_DEFINE(TOOL_SCH_ENV, "LMON_SEC_CHK", [Define TOOL_SCH_ENV])
       AC_SUBST(COMMLOC, tools/cobo/src)
-      AC_SUBST(LIBCOMM, -lcobo)
+      AC_SUBST(LIBCOMM, libcobo.la)
 
       if test "x$with_cobo_port" != "xcheck" -a "x$with_cobo_port" != "xyes"; then
         AC_DEFINE(COBO_BEGIN_PORT, $with_cobo_port, [Define a beginning port for COBO_BASED])

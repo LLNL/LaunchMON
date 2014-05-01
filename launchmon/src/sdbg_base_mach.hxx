@@ -38,23 +38,9 @@
 #ifndef SDBG_BASE_MACH_HXX
 #define SDBG_BASE_MACH_HXX 1
 
-#if HAVE_MAP
-# include <map>
-#else
-# error map is required
-#endif
-
-#if HAVE_STACK
-# include <stack>
-#else
-# error stack is required
-#endif
-
-#if HAVE_STRING
-# include <string>
-#else
-# error string is required
-#endif
+#include <map>
+#include <stack>
+#include <string>
 
 #include "sdbg_std.hxx"
 #include "sdbg_opt.hxx"

@@ -33,12 +33,7 @@
 #ifndef SDBG_SIGNAL_HLR_HXX
 #define SDBG_SIGNAL_HLR_HXX 1
 
-#if HAVE_VECTOR
-# include <vector>
-#else
-# error vector is required
-#endif
-
+#include <vector>
 #include "sdbg_std.hxx"
 #include "sdbg_base_tracer.hxx"
 #include "sdbg_base_mach.hxx"

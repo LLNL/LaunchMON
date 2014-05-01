@@ -1,4 +1,4 @@
-.TH LaunchMON 3 "MAY 2009" LaunchMON "LaunchMON Front-End API"
+.TH LaunchMON 3 "MAY 2014" LaunchMON "LaunchMON Front-End API"
 
 .SH NAME
 LMON_fe_regStatusCB \- LaunchMON front-end API: registers a status notifying callback function. 
@@ -11,7 +11,12 @@ LMON_fe_regStatusCB \- LaunchMON front-end API: registers a status notifying cal
 .PP
 .BI "lmon_rc_e LMON_fe_regStatusCB ( 
 .BI "  int " sessionHandle, " int ( *"statusCB " ) (int *"status "));"
+.PP
+.BI "lmon_rc_e LMON_fe_getStatus ( 
+.BI "  int " sessionHandle, " int " status "));"
+.PP
 .B cc ... -lmonfeapi
+
 
 .SH DESCRIPTION
 
@@ -22,13 +27,18 @@ the following state changes: the given session is registered;
 back-end daemons are spawned; middleware daemons are spawned; 
 the job is detached from the LaunchMON engine's control; 
 and the job is killed.  
-The following macros are provided to help the callback routine 
-decoding the \fIstatus\fR argument. 
-In case there are multiple callback functions registered 
+In case where multiple callback functions are registered
 with this API call to a session, the latest one is used.
-LaunchMON considers a non-zero return value from 
+LaunchMON considers a non-zero return value from
 the \fIstatusCB\fR function as an error condition.
- 
+
+\fBLMON_fe_getStatus\fR returns the status of the session
+indicated by the \fIsessionHandle\fR argument. This can be
+used in polling mode.  
+
+In both cases, the following macros are provided to help the callback routine
+decoding the \fIstatus\fR argument.
+
 .TP
 .BI WIFREGISTERED( status_val ) 
 Evaluates to a non-zero value if the session is registered.
@@ -59,69 +69,4 @@ Invalid arguments.
 
 .SH AUTHOR
 Dong H. Ahn <ahn1@llnl.gov>
-
-.SH "SEE ALSO"
-
-.BP LMON_fe_attachAndSpawnDaemons(3),
-.BP LMON_fe_createSession(3),
-.BR LMON_fe_detach(3),
-.BR LMON_fe_getMwHostlist(3),
-.BR LMON_fe_getMwHostlistSize(3),
-.BR LMON_fe_getProctable(3),
-.BR LMON_fe_getProctableSize(3),
-.BR LMON_fe_getRMInfo(3),
-.BR LMON_fe_getResourceHandle(3),
-.BR LMON_fe_getStatus(3),
-.BR LMON_fe_init(3),
-.BR LMON_fe_kill(3),
-.BR LMON_fe_launchAndSpawnDaemons(3),
-.BR LMON_fe_launchMwDaemons(3),
-.BR LMON_fe_putToBeDaemonEnv(3),
-.BR LMON_fe_putToMwDaemonEnv(3),
-.BR LMON_fe_recvUsrDataBe(3),
-.BR LMON_fe_recvUsrDataMw(3),
-.BR LMON_fe_regErrorCB(3),
-.BR LMON_fe_regPackForFeToBe(3),
-.BR LMON_fe_regPackForFeToMw(3),
-.BR LMON_fe_regStatusCB(3),
-.BR LMON_fe_regUnpackForBeToFe(3),
-.BR LMON_fe_regUnpackForMwToFe(3),
-.BR LMON_fe_sendUsrDataBe(3),
-.BR LMON_fe_sendUsrDataMw(3),
-.BR LMON_fe_shutdownDaemons(3),
-.BR LMON_be_amIMaster(3),
-.BR LMON_be_assist_mw_coloc(3),
-.BR LMON_be_barrier(3),
-.BR LMON_be_broadcast(3),
-.BR LMON_be_finalize(3),
-.BR LMON_be_gather(3),
-.BR LMON_be_getMyProctab(3),
-.BR LMON_be_getMyProctabSize(3),
-.BR LMON_be_getMyRank(3),
-.BR LMON_be_getSize(3),
-.BR LMON_be_handshake(3),
-.BR LMON_be_init(3),
-.BR LMON_be_ready(3),
-.BR LMON_be_recvUsrData(3),
-.BR LMON_be_regErrorCB(3),
-.BR LMON_be_regPackForBeToFe(3),
-.BR LMON_be_regUnpackForFeToBe(3),
-.BR LMON_be_scatter(3),
-.BR LMON_be_sendUsrData(3),
-.BR LMON_mw_amIMaster(3),
-.BR LMON_mw_barrier(3),
-.BR LMON_mw_broadcast(3),
-.BR LMON_mw_finalize(3),
-.BR LMON_mw_gather(3),
-.BR LMON_mw_getMyRank(3),
-.BR LMON_mw_getSize(3),
-.BR LMON_mw_handshake(3),
-.BR LMON_mw_init(3),
-.BR LMON_mw_ready(3),
-.BR LMON_mw_recvUsrData(3),
-.BR LMON_mw_regErrorCB(3),
-.BR LMON_mw_regPackForMwToFe(3),
-.BR LMON_mw_regUnpackForFeToMw(3),
-.BR LMON_mw_scatter(3),
-.BR LMON_mw_sendUsrData(3)
 

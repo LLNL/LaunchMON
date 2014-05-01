@@ -39,36 +39,13 @@
 #endif
 
 extern "C" {
-#if HAVE_LIBGEN_H
-# include <libgen.h>
-#else
-# error libgen.h is required
-#endif 
-
-#if HAVE_ASSERT_H
-# include <assert.h>
-#else
-# error assert.h is required
-#endif
+#include <libgen.h>
+#include <assert.h>
 }
 
-#if HAVE_IOSTREAM
-# include <iostream>
-#else
-# error iostream is required
-#endif
-
-#if HAVE_STRING
-# include <string>
-#else
-# error string is required
-#endif
-
-#if HAVE_LIMITS_H
-# include <limits.h>
-#else
-# error limits.h is required
-#endif
+#include <iostream>
+#include <string>
+#include <limits.h>
 
 #include "sdbg_base_symtab.hxx"
 

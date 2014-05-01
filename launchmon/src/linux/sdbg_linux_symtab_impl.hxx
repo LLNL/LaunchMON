@@ -58,61 +58,17 @@
 #error This source file requires a LINUX OS
 #endif
 
-#if HAVE_VECTOR
-# include <vector>
-#else
-# error vector is required
-#endif 
-
-#if HAVE_STRING
-# include <string>
-#else
-# error string is required
-#endif
-
-#if HAVE_IOSTREAM
-# include <iostream>
-#else
-#error iostream is required
-#endif 
+#include <vector>
+#include <string>
+#include <iostream>
 
 extern "C" {
-#if HAVE_LIBGEN_H
-# include <libgen.h>
-#else
-# error libgen.h is required
-#endif
-
-#if HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#else
-# error sys/types.h is required 
-#endif
-
-#if HAVE_SYS_STAT_H
-# include <sys/stat.h>
-#else
-# error sys/stat.h is required
-#endif
-
-#if HAVE_FCNTL_H
-# include <fcntl.h>
-#else
-# error fcntl.h is required 
-#endif
-
-#if HAVE_ERRNO_H
-# include <errno.h>
-#else
-# error errno.h is required 
-#endif
-
-#if HAVE_LIMITS_H
-# include <limits.h>
-#else
-# error limits.h is required
-#endif
-
+#include <libgen.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <limits.h>
 }
 
 #include "sdbg_linux_std.hxx"

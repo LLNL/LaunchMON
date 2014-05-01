@@ -49,83 +49,19 @@
 #error This source file requires a LINUX OS
 #endif
 
-#if HAVE_UNISTD_H
 #include <unistd.h>
-#else
-# error unistd.h is required
-#endif
-
-#if HAVE_STDIO_H
-# include <cstdio>
-#else
-# error stdio.h is required
-#endif
-
-#if HAVE_STDINT_H
-# include <stdint.h>
-#else
-# error stdint.h is required
-#endif
-
-#if HAVE_ASSERT_H
-# include <cassert>
-#else
-# error assert.h is required
-#endif
-
-#if HAVE_STDLIB_H
-# include <cstdlib>
-#else
-# error stdlib.h is required
-#endif
-
-#if HAVE_STRING_H
-# include <string.h>
-#else
-# error string.h is required
-#endif
-
-#if HAVE_STRING
-# include <string>
-#else
-# error string is required
-#endif
-
-#if HAVE_IOSTREAM
-# include <iostream>
-#else
-# error iostream is required
-#endif
-
-#if HAVE_VECTOR
-# include <vector>
-#else
-# error vector is required
-#endif
-
-#if HAVE_MAP
-# include <map>
-#else
-# error map is required
-#endif
-
-#if HAVE_ERRNO_H
+#include <cstdio>
+#include <stdint.h>
+#include <cassert>
+#include <cstdlib>
+#include <string.h>
+#include <string>
+#include <iostream>
+#include <vector>
+#include <map>
 #include <errno.h>
-#else
-# error errno.h is required
-#endif
-
-#if HAVE_SYS_SOCKET_H
-# include <sys/socket.h>
-#else
-# error sys/socket.h is required
-#endif
-
-#if HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#else
-# error sys/types.h is required
-#endif
+#include <sys/socket.h>
+#include <sys/types.h>
 
 #include <lmon_api/lmon_lmonp_msg.h>
 #include <lmon_api/lmon_proctab.h>

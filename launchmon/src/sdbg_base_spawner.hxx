@@ -34,18 +34,8 @@
 #define SDBG_BASE_SPAWNER_HXX 1
 
 #include "sdbg_std.hxx"
-
-#if HAVE_STRING
-# include <string>
-#else
-# error string is required
-#endif 
-
-#if HAVE_VECTOR
-# include <vector>
-#else
-# error vector is required
-#endif 
+#include <string>
+#include <vector>
 
 const char LMON_HOST_DELIM[]=":";
 

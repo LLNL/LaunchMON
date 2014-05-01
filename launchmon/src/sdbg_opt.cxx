@@ -27,6 +27,8 @@
  *	
  *
  *  Update Log:
+ *        Apr 22 2014 DHA: Applied a patch to store RM args/opts into
+ *                         a std::list object instead of a std:string string.
  *        Jan 09 2010 DHA: Remove verbose reference to the deprecated thread
  *                         tracer module.
  *        Oct 07 2010 DHA: Dynamic resource manager detection support
@@ -56,13 +58,7 @@
 #endif
 
 #include <lmon_api/common.h>
-
-#if HAVE_LIMITS_H
-# include <limits.h>
-#else
-# error limits.h is required
-#endif
-
+#include <limits.h>
 #include "sdbg_opt.hxx"
 #include "sdbg_rm_map.hxx"
 #include "lmon_api/lmon_say_msg.hxx"
@@ -105,7 +101,6 @@ opts_args_t::opts_args_t ()
   my_opt->remote = false;
   my_opt->remaining = NULL;
   my_opt->tool_daemon = "";
-  my_opt->tool_daemon_opts = "";
   my_opt->remote_info = "";
   my_opt->lmon_sec_info = "";
   my_opt->debugtarget = "";
@@ -262,10 +257,16 @@ opts_args_t::process_args ( int *argc, char ***argv )
 	        i++;
 	        break;
 	      }
-	    case 't':
-	      my_opt->tool_daemon_opts = nargv[i+1];
-	      i++;
-	      break;
+	    case 't': {
+               int num_args = atoi(nargv[i+1]);
+               int j=0;
+               for (j = 0; j < num_args; j++) 
+               {
+                  my_opt->tool_daemon_opts.push_back(nargv[i+j+2]);
+               }
+               i += num_args + 1;
+               break;
+            }
 
 	    case 'p':
 	      my_opt->launcher_pid = (pid_t)atoi(nargv[i+1]);

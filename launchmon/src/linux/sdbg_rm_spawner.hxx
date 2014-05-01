@@ -41,12 +41,7 @@
 
 #include "sdbg_std.hxx"
 
-#if HAVE_STRING
-# include <string>
-#else
-# error string is required
-#endif 
-
+#include <string>
 #include "sdbg_rm_map.hxx"
 #include "sdbg_self_trace.hxx"
 

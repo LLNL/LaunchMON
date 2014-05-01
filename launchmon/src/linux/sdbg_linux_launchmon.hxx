@@ -40,12 +40,7 @@
 #ifndef SDBG_LINUX_LAUNCHMON_HXX
 #define SDBG_LINUX_LAUNCHMON_HXX 1
 
-#if HAVE_VECTOR
-# include <vector>
-#else
-# error vector is required
-#endif
-
+#include <vector>
 #include "sdbg_base_launchmon.hxx"
 #include "sdbg_linux_std.hxx"
 #include "sdbg_linux_mach.hxx"

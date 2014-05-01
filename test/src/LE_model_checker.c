@@ -45,12 +45,7 @@
 #endif
 
 #include <lmon_api/common.h>
-
-#if HAVE_PTHREAD_H
-# include <pthread.h>
-#else
-# error pthread.h is required
-#endif
+#include <pthread.h>
 
 #define MPIR_DEBUG_SPAWNED  1
 #define MPIR_DEBUG_ABORTING 2

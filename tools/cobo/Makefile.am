@@ -28,7 +28,8 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        Apr 11 2014 DHA: Removed test dir
 ##        Jun 06 2007 DHA: Copied from the old Makefile.
 ##
 
-SUBDIRS         = src test
+SUBDIRS         = src 

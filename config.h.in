@@ -18,17 +18,17 @@
 /* Define DEBUG flag */
 #undef DEBUG
 
+/* Allow NULL encryption */
+#undef ENABLE_NULL_ENCRYPTION
+
 /* env command found */
 #undef ENVCMD
 
+/* 1 if defined */
+#undef GCRYPT
+
 /* Define to 1 if you have the <algorithm> header file. */
 #undef HAVE_ALGORITHM
-
-/* Define to 1 if you have the <arpa/inet.h> header file. */
-#undef HAVE_ARPA_INET_H
-
-/* Define to 1 if you have the <assert.h> header file. */
-#undef HAVE_ASSERT_H
 
 /* Define to 1 if you have the <cxxabi.h> header file. */
 #undef HAVE_CXXABI_H
@@ -38,15 +38,6 @@
 
 /* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
 #undef HAVE_DOPRNT
-
-/* Define to 1 if you have the <errno.h> header file. */
-#undef HAVE_ERRNO_H
-
-/* Define to 1 if you have the <execinfo.h> header file. */
-#undef HAVE_EXECINFO_H
-
-/* Define to 1 if you have the <fcntl.h> header file. */
-#undef HAVE_FCNTL_H
 
 /* Define to 1 if you have the `fork' function. */
 #undef HAVE_FORK
@@ -69,14 +60,8 @@
 /* Define to 1 if you have the <libelf/libelf.h> header file. */
 #undef HAVE_LIBELF_LIBELF_H
 
-/* Define to 1 if you have the <libgen.h> header file. */
-#undef HAVE_LIBGEN_H
-
-/* Define to 1 if you have the <limits.h> header file. */
-#undef HAVE_LIMITS_H
-
-/* Define to 1 if you have the <link.h> header file. */
-#undef HAVE_LINK_H
+/* Define to 1 if you have the `munge' library (-lmunge). */
+#undef HAVE_LIBMUNGE
 
 /* Define to 1 if you have the <list> header file. */
 #undef HAVE_LIST
@@ -94,21 +79,6 @@
 /* Define to 1 if you have the `memset' function. */
 #undef HAVE_MEMSET
 
-/* Define to 1 if you have the <netdb.h> header file. */
-#undef HAVE_NETDB_H
-
-/* Define to 1 if you have the <netinet/in.h> header file. */
-#undef HAVE_NETINET_IN_H
-
-/* Define to 1 if you have the <poll.h> header file. */
-#undef HAVE_POLL_H
-
-/* Define to 1 if you have the <pthread.h> header file. */
-#undef HAVE_PTHREAD_H
-
-/* Define to 1 if you have the <signal.h> header file. */
-#undef HAVE_SIGNAL_H
-
 /* Define to 1 if you have the <sstream> header file. */
 #undef HAVE_SSTREAM
 
@@ -119,20 +89,11 @@
    zero-length file name argument. */
 #undef HAVE_STAT_EMPTY_STRING_BUG
 
-/* Define to 1 if you have the <stdarg.h> header file. */
-#undef HAVE_STDARG_H
-
 /* Define to 1 if stdbool.h conforms to C99. */
 #undef HAVE_STDBOOL_H
 
-/* Define to 1 if you have the <stddef.h> header file. */
-#undef HAVE_STDDEF_H
-
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
-
-/* Define to 1 if you have the <stdio.h> header file. */
-#undef HAVE_STDIO_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
@@ -152,41 +113,14 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
-/* Define to 1 if you have the <syscall.h> header file. */
-#undef HAVE_SYSCALL_H
-
-/* Define to 1 if you have the <sys/procfs.h> header file. */
-#undef HAVE_SYS_PROCFS_H
-
-/* Define to 1 if you have the <sys/ptrace.h> header file. */
-#undef HAVE_SYS_PTRACE_H
-
-/* Define to 1 if you have the <sys/resource.h> header file. */
-#undef HAVE_SYS_RESOURCE_H
-
-/* Define to 1 if you have the <sys/socket.h> header file. */
-#undef HAVE_SYS_SOCKET_H
-
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
-
-/* Define to 1 if you have the <sys/time.h> header file. */
-#undef HAVE_SYS_TIME_H
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
-/* Define to 1 if you have the <sys/un.h> header file. */
-#undef HAVE_SYS_UN_H
-
-/* Define to 1 if you have the <sys/user.h> header file. */
-#undef HAVE_SYS_USER_H
-
 /* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
 #undef HAVE_SYS_WAIT_H
-
-/* Define to 1 if you have the <thread_db.h> header file. */
-#undef HAVE_THREAD_DB_H
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
@@ -212,6 +146,9 @@
 /* Define to 1 if the system has the type `_Bool'. */
 #undef HAVE__BOOL
 
+/* Use keyfile for authentication */
+#undef KEYFILE
+
 /* Define 1 for LINUX_CODE_REQUIRED */
 #undef LINUX_CODE_REQUIRED
 
@@ -234,6 +171,9 @@
 
 /* Define 1 for MPI_BASED */
 #undef MPI_BASED
+
+/* Use munge for authentication */
+#undef MUNGE
 
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #undef NO_MINUS_C_MINUS_O
@@ -270,6 +210,9 @@
 
 /* rsh or its equivalent found */
 #undef RSHCMD
+
+/* Directory to store key files in */
+#undef SEC_KEYDIR
 
 /* ssh or its equivalent found */
 #undef SSHCMD

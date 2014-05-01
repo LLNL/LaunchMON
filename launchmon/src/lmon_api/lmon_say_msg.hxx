@@ -40,18 +40,8 @@
 #ifndef LMON_API_LMON_SAY_MSG_HXX
 #define LMON_API_LMON_SAY_MSG_HXX 1
 
-#if HAVE_STDARG_H
-# include <cstdarg>
-#else
-# error stdarg.h is required
-#endif
-
-#if HAVE_STRING
-# include <string>
-#else
-# error string is required
-#endif
-
+#include <cstdarg>
+#include <string>
 #include <stdint.h>
 
 extern int (*errorCB) (const char *format, va_list ap);
