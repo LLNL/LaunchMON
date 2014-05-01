@@ -36,6 +36,7 @@
 
 #include <lmon_api/common.h> 
 
+#define MPIR_NULL           0
 #define MPIR_DEBUG_SPAWNED  1
 #define MPIR_DEBUG_ABORTING 2
 
@@ -66,7 +67,16 @@ typedef struct {
 typedef struct {
   MPIR_PROCDESC pd;
   int mpirank;
+  int cnodeid;
 } MPIR_PROCDESC_EXT;
+
+
+//! N_Fields_MPIR_PROCDESC_EXT
+/*!
+    make sure N_Fields_MPIR_PROCDESC_EXT tells the aggregate number of fields
+    in the MPIR_PROCDESC_EXT data structure.
+*/
+#define N_Fields_MPIR_PROCDESC_EXT 5
 
 END_C_DECLS 
 

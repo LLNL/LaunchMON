@@ -1,4 +1,4 @@
-.TH LaunchMON 3 "FEBRUARY 2008" LaunchMON "LaunchMON Back-End API"
+.TH LaunchMON 3 "MAY 2014" LaunchMON "LaunchMON Back-End API"
 
 .SH NAME
 LMON_be_init LMON_be_finalize \- LaunchMON back-end API: back-end initialization/finalization functions. 
@@ -38,6 +38,13 @@ Each back-end daemon must call this fuction to be finalized
 correctly. The behavior of any subsequent LaunchMON back-end API calls 
 after \fBLMON_be_finalize ()\fR is undefined. 
 
+.PP
+\fB[IBM BlueGene Note]\fR The \fBLMON_be_finalize ()\fR function
+sends an END_DEBUG message to CIOD for the CIOD debug protocol
+larger than or equal to 3. Sending this message tells
+CIOD to reset the environment to be able to allow another 
+tool to attach to the job. 
+
 .SH RETURN VALUE
 These functions return \fBLMON_OK\fR
 on success; otherwise, an LMON error code is returned 
@@ -62,34 +69,3 @@ a library-header version mismatch.
 .SH AUTHOR
 Dong H. Ahn <ahn1@llnl.gov>
 
-.SH "SEE ALSO"
-.BR LMON_fe_init(3),
-.BR LMON_fe_createSession(3),
-.BR LMON_fe_attachAndSpawnDaemons(3),
-.BR LMON_fe_launchAndSpawnDaemons(3),
-.BR LMON_fe_kill(3),
-.BR LMON_fe_detach(3),
-.BR LMON_fe_shutdownDaemons(3),
-.BR LMON_fe_regUnpackForBeToFe(3),
-.BR LMON_fe_regPackForFeToBe(3),
-.BR LMON_fe_putToBeDaemonEnv(3),
-.BR LMON_fe_sendUsrDataBe(3),
-.BR LMON_fe_recvUsrDataBe(3),
-.BR LMON_fe_getProctable(3),
-.BR LMON_fe_getProctableSize(3),
-.BR LMON_fe_getResourceHandle(3),
-.BR LMON_be_getMyRank(3),
-.BR LMON_be_getSize(3),
-.BR LMON_be_amIMaster(3),
-.BR LMON_be_handshake(3),
-.BR LMON_be_ready(3),
-.BR LMON_be_barrier(3),
-.BR LMON_be_broadcast(3),
-.BR LMON_be_gather(3),
-.BR LMON_be_scatter(3),
-.BR LMON_be_regPackForBeToFe(3),
-.BR LMON_be_regUnpackForFeToBe(3),
-.BR LMON_be_recvUsrData(3),
-.BR LMON_be_sendUsrData(3),
-.BR LMON_be_getMyProctab(3),
-.BR LMON_be_getMyProctabSize(3)

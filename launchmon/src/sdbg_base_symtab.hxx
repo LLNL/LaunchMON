@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Oct 27 2010 DHA: Added is_defined, is_globally_visible, 
+ *                         is_locally_visible virtual methods.
  *        Feb 09 2008 DHA: Added LLNS Copyright
  *        Mar 30 2006 DHA: Added exception handling support
  *        Feb 08 2006 DHA: Seperated OS dependent components 
@@ -39,6 +41,7 @@
 #include <iostream>
 #include <string>
 #include <map>
+
 #include "sdbg_std.hxx"
 #include "sdbg_self_trace.hxx"
 #include "sdbg_base_exception.hxx"
@@ -79,7 +82,7 @@ class symtab_exception_t : public exception_base_t
 public:
 
   symtab_exception_t ()                          { }
-  symtab_exception_t ( const char* m, symtab_error_e e )
+  symtab_exception_t ( const char *m, symtab_error_e e )
                      { set_message (m); 
                        error_code = e;
                        set_type ( std::string ( "SDBG_SYMTAB_ERROR" ) ); 
@@ -87,7 +90,7 @@ public:
                        set_ln ( __LINE__ ); 
                       }
              
-  symtab_exception_t ( const std::string& m, symtab_error_e e )      
+  symtab_exception_t ( const std::string &m, symtab_error_e e )      
                      { set_message (m); 
                        error_code = e;
                        set_type ( std::string ( "SDBG_SYMTAB_ERROR" ) ); 
@@ -115,24 +118,36 @@ public:
   // constructosr & destructor
   //
   symbol_base_t ();
-  symbol_base_t ( const std::string& n, 
-		  const std::string& bln, 
+  symbol_base_t ( const std::string &n, 
+		  const std::string &bln, 
 		  const VA rd, 
 		  const VA rla);
-  symbol_base_t ( const symbol_base_t& sobj ); 
+  symbol_base_t ( const symbol_base_t &sobj ); 
   virtual ~symbol_base_t();
 
   //
   // accessors
   //
-  void set_name (const std::string& n);
-  void set_base_lib_name (const std::string& bln);
-  void set_raw_address (const VA& ra);
-  void set_relocated_address (const VA& ra); 
-  const std::string& get_name() const;    
-  const std::string& get_base_lib_name() const; 
-  const VA& get_raw_address() const;
-  const VA& get_relocated_address() const;
+  void set_name (const std::string &n);
+  void set_base_lib_name (const std::string &bln);
+  void set_raw_address (const VA &ra);
+  void set_relocated_address (const VA &ra); 
+  const std::string & get_name() const;    
+  const std::string & get_base_lib_name() const; 
+  const VA & get_raw_address() const;
+  const VA & get_relocated_address() const;
+
+  virtual bool is_defined() const { return false; }
+  virtual bool is_globally_visible() const { return false; }
+  virtual bool is_locally_visible() const { return false; }
+
+  //
+  // overloading operator!
+  //
+  friend bool operator!(const symbol_base_t<BASE_SYMTAB_TEMPLPARAM> &sym)
+    {
+      return ((sym.name == SYMTAB_UNINIT_STRING)? true : false);
+    }
 
 private:
   std::string name;
@@ -148,8 +163,8 @@ private:
 */
 struct ltstr
 {
-  bool operator() ( const std::string& s1, 
-		    const std::string& s2 ) const
+  bool operator() ( const std::string &s1, 
+		    const std::string &s2 ) const
   {
     return (s1 < s2); 
   } 
@@ -175,25 +190,25 @@ public:
   // constructors & destructor
   //
   image_base_t ();
-  image_base_t ( const std::string& lib );
-  image_base_t ( const image_base_t<BASE_IMAGE_TEMPLPARAM>& im );
+  image_base_t ( const std::string &lib );
+  image_base_t ( const image_base_t<BASE_IMAGE_TEMPLPARAM> &im );
   virtual ~image_base_t ();
 
   //
   // accessors
   //
-  void set_base_image_name ( std::string& n );
-  void set_path ( std::string& n );
+  void set_base_image_name ( std::string &n );
+  void set_path ( std::string &n );
   void set_image_base_address ( VA ba );
-  void set_native_exec_handler ( EXECHANDLER* h );
+  void set_native_exec_handler ( EXECHANDLER *h );
 
   const std::string& get_base_image_name() const;
   const std::string& get_path() const;
   const VA& get_image_base_address() const;    
-  EXECHANDLER* get_native_exec_handler();  
-  const symbol_base_t<VA>& get_a_symbol 
-    ( const std::string& key ) const;
-  std::map<std::string, std::string, ltstr>& get_dso_list () 
+  EXECHANDLER * get_native_exec_handler();  
+  const symbol_base_t<VA> & get_a_symbol 
+    ( const std::string &key ) const;
+  std::map<std::string, std::string, ltstr> & get_dso_list () 
     { return dso_list; }
  
   
@@ -208,18 +223,13 @@ public:
   //
   // pure virtual methods
   //
-  symtab_error_e init(const std::string& lib)
+  symtab_error_e init(const std::string &lib)
     throw ( symtab_exception_t );
   virtual symtab_error_e init() 
     throw ( symtab_exception_t ) = 0;
   virtual symtab_error_e read_linkage_symbols() 
     throw (symtab_exception_t) = 0;
-  virtual symtab_error_e fetch_DSO_info ( std::string& where_is_interpreter,
-					  bool& found_interp, 
-					  std::string& where_is_pthread,
-					  bool& is_threaded,
-					  std::string& where_is_libc,
-					  bool& found_runtime)
+  virtual symtab_error_e fetch_DSO_info (std::string&, bool&)
     throw (symtab_exception_t) = 0;
   // virtual symtab_error_e read_debug_symbols()
   //   throw ( symtab_exception_t ) = 0; 
@@ -228,24 +238,17 @@ public:
   //
   // Some Util methods.
   //
-  virtual const std::string decode_binding(int code) const     
-                          { return std::string(SYMTAB_UNINIT_STRING); }
-  virtual const std::string decode_visibility (int code) const
-                          { return std::string(SYMTAB_UNINIT_STRING); }
-  virtual const std::string decode_type(int code) const
-                          { return std::string(SYMTAB_UNINIT_STRING); }
+  virtual void decode_binding(int code, std::string &s) const     
+                          { s = std::string(SYMTAB_UNINIT_STRING); }
+  virtual void decode_visibility (int code, std::string &s) const
+                          { s = std::string(SYMTAB_UNINIT_STRING); }
+  virtual void decode_type(int code, std::string &s) const
+                          { s = std::string(SYMTAB_UNINIT_STRING); }
 
 protected:
-  // FIXME: do not attempt to copy symtab to another map container
-  // of the same type. It will copy the pointers but not pointees.
-  // It is tricky to implement polymorphism using STL containers.
-  // I will do that, once other parts of the project gets mature
-  // as well.
   std::map<std::string, symbol_base_t<VA>*, ltstr> linkage_symtab;
   std::map<std::string, symbol_base_t<VA>*, ltstr> debug_symtab;
   std::map<std::string, std::string, ltstr > dso_list;
-
-private:
 
 private:
 
@@ -259,7 +262,7 @@ private:
   std::string base_image_name;
   std::string path;
   VA image_base_address;
-  EXECHANDLER* native_exec_handler;
+  EXECHANDLER *native_exec_handler;
 };
 
 #endif // SDBG_BASE_SYMTAB_HXX

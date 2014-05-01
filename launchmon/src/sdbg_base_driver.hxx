@@ -27,10 +27,12 @@
  *			
  *			
  *  Update Log:
- *        Feb 09 2008 DHA: Added LLNS Copyright
- *        Jun 06 2006 DHA: Added DOXYGEN comments on the file scope 
+ *        Aug 13 2009 DHA: Move copy constructor and create operator=
+ *                         into the private section.
+ *        Feb 09 2008 DHA: Added LLNS Copyright.
+ *        Jun 06 2006 DHA: Added DOXYGEN comments on the file scope. 
  *                         and the class (driver_base_t) 
- *        Jan 08 2006 DHA: Created file.          
+ *        Jan 08 2006 DHA: Created file.
  */ 
 
 #ifndef SDBG_BASE_DRIVER_HXX
@@ -79,49 +81,59 @@ public:
    * constructors and destructors
    */
   driver_base_t();
-  driver_base_t(const driver_base_t& d);
   virtual ~driver_base_t();
 
   /*
    * accessors
    */
-  event_manager_t<SDBG_DEFAULT_TEMPLPARAM>* get_evman();
-  launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>* get_lmon();
-  void set_evman(event_manager_t<SDBG_DEFAULT_TEMPLPARAM>* ev); 
-  void set_lmon(launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>* lm);
+  event_manager_t<SDBG_DEFAULT_TEMPLPARAM> *get_evman();
+  launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> *get_lmon();
+  void set_evman(event_manager_t<SDBG_DEFAULT_TEMPLPARAM> *ev); 
+  void set_lmon(launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> *lm);
 
-  driver_error_e drive_engine ( opts_args_t* opt );
-  driver_error_e drive ( int argc, char** argv );
-  driver_error_e drive ( opts_args_t* opt );
+  driver_error_e drive_engine ( opts_args_t *opt );
+  driver_error_e drive ( int argc, char **argv );
+  driver_error_e drive ( opts_args_t *opt );
+
+  virtual process_base_t<SDBG_DEFAULT_TEMPLPARAM> * 
+                 create_process ( pid_t pid, 
+				  const std::string &mi,
+				  const std::string &md,
+				  const std::string &mt,
+				  const std::string &mc ) = 0;
 
   virtual process_base_t<SDBG_DEFAULT_TEMPLPARAM>* 
                  create_process ( pid_t pid, 
-				  const std::string& mi, 
-				  const std::string& md, 
-				  const std::string& mt,
-				  const std::string& mc ) = 0;
+				  const std::string &mi ) = 0;
 
-  virtual process_base_t<SDBG_DEFAULT_TEMPLPARAM>* 
-                 create_process ( pid_t pid, 
-				  const std::string& mi ) = 0;
-
-  
 private:
 
   bool LEVELCHK(self_trace_verbosity level) 
        { return (self_trace_t::driver_module_trace.verbosity_level >= level); }
 
+  //
+  // make the copy constructor and operator= private 
+  // so that another driver class cannot be constructed 
+  // by copyting this object.
+  //
+  driver_base_t(const driver_base_t &d);
+  driver_base_t & operator=(const driver_base_t &rhs);
 
-  event_manager_t<SDBG_DEFAULT_TEMPLPARAM>* evman;
-  launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>* lmon;
+  //
+  // event manage object
+  //
+  event_manager_t<SDBG_DEFAULT_TEMPLPARAM> *evman;
 
-  int pipe_fd[2];
-  
-  /*
-   * For self tracing
-   */
+  //
+  // launchmon object
+  //
+  launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> *lmon;
+
+  //
+  // For self tracing
+  // 
   std::string MODULENAME;  
 
 };
-
 #endif // SDBG_BASE_DRIVER_HXX
+

@@ -26,6 +26,9 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Oct 27 2010 DHA: Added is_defined, is_globally_visible, 
+ *                         is_locally_visible virtual methods.
+ *        Oct 26 2010 DHA: Added support for symbol visibility 
  *        Feb 09 2008 DHA: Added LLNS Copyright
  *        Mar 30 2006 DHA: Added exception handling support
  *        Mar 16 2006 DHA: The file is created so that
@@ -33,7 +36,7 @@
  *                         implementation from base symbol table
  *                         class. Linux only supports ELF file 
  *                         format and DWARF debug info format.
- *                   
+ *
  */ 
 
 #ifndef SDBG_LINUX_SYMTAB_HXX
@@ -56,6 +59,14 @@ extern "C" {
 #define LINUX_IMAGE_TEMPLATELIST  typename VA
 #define LINUX_IMAGE_TEMPLPARAM    VA
 
+enum LMON_ELF_visibility 
+  { elf_sym_local, 
+    elf_sym_global, 
+    elf_sym_weak, 
+    elf_sym_procspecific, 
+    elf_sym_none 
+  };
+
 
 //! class linkage_symbol_t<>
 /*!
@@ -66,7 +77,6 @@ class linkage_symbol_t
 	: public symbol_base_t<LINUX_SYMTAB_TEMPLPARAM>
 {
 public:
-
   //
   // constructosr & destructor
   //
@@ -94,13 +104,21 @@ public:
   const VA& get_raw_address() const;
   const VA& get_relocated_address() const;
 
+  virtual bool is_defined() const; 
+  virtual bool is_globally_visible() const; 
+  virtual bool is_locally_visible() const; 
+
+  define_gset(bool,defined)
+  define_gset(LMON_ELF_visibility,vis) 
+
   //
   // debug methods
   //
   void print_me () const;
 
 private:
-  std::string section;
+  bool defined;
+  LMON_ELF_visibility vis;
   std::string visibility;
   std::string binding; 
   std::string type;
@@ -154,7 +172,7 @@ public:
   // constructors & destructor
   //
   linux_image_t ();
-  linux_image_t ( const std::string& lib );
+  linux_image_t ( const std::string &lib );
   linux_image_t ( const image_base_t<VA,elf_wrapper>& im );
   virtual ~linux_image_t ();
 
@@ -178,12 +196,7 @@ public:
     throw ( symtab_exception_t );
   virtual symtab_error_e read_linkage_symbols()
     throw ( symtab_exception_t );
-  virtual symtab_error_e fetch_DSO_info ( std::string& where_is_interpreter,
-					  bool& found_interp, 
-					  std::string& where_is_pthread,
-					  bool& is_threaded,
-					  std::string& where_is_libc,
-					  bool& found_runtime)
+  virtual symtab_error_e fetch_DSO_info (std::string&,bool&) 
     throw ( symtab_exception_t );
   // virtual symtab_error_e read_debug_symbols() = 0;
   //   throw ( symtab_exception_t ) = 0; 
@@ -191,9 +204,10 @@ public:
   //
   // Some Util methods.
   //
-  virtual const std::string decode_binding ( int code ) const;
-  virtual const std::string decode_visibility ( int code ) const;
-  virtual const std::string decode_type ( int code ) const;
+  virtual LMON_ELF_visibility resolve_binding ( int code ) const;
+  virtual void decode_binding ( int code, std::string &s ) const;
+  virtual void decode_visibility ( int code, std::string &s ) const;
+  virtual void decode_type ( int code, std::string &s ) const;
   
 private:
   bool LEVELCHK(self_trace_verbosity level) 

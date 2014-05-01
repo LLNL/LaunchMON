@@ -1,0 +1,116 @@
+.TH LaunchMON 3 "MAY 2014" LaunchMON "LaunchMON Front-End API"
+
+.SH NAME
+LMON_fe_launchMwDaemons \- LaunchMON front-end API: job/daemon launching function for middleware daemons. 
+
+.SH SYNOPSIS
+.nf
+.B #include <unistd.h>
+.B #include <lmon_fe.h>
+.PP
+.BI "lmon_rc_e LMON_fe_launchMwDaemons ( int " sessionHandle "," 
+.BI "  dist_request_t " req[] ", int " nreq ", void * " femw_data "," 
+.BI "  void * " mwfe_data ");"
+.PP
+.PP
+.B cc ... -lmonfeapi
+
+.SH DESCRIPTION
+\fBLMON_fe_launchMwDaemons()\fR launches daemons specified by the array
+of \fBdist_request_t\fR objects,  \fIreq[]\fR. \fBdist_request_t\fR is 
+in \fBlmon_api_std.h\fR and is defined as the following: 
+
+.PP
+.nf
+.B
+.B typedef enum {
+.B "   "subset_stride, subset_hosts, hostlists, 
+.B "   "newalloc_nhosts, req_none, space_for_rent 
+.B "} dist_req_opt_e;
+.PP
+.B typedef struct {
+.B "   "lmon_mw_mode_t md; "
+.B "   "char *mw_daemon_path; "
+.B "   "char **d_argv; "
+.B "   "int ndaemon; "
+.B "   "int block; "
+.B "   "int cyclic; "
+.B "   "dist_req_opt_e optkind; "
+.B "   "union u { "
+.B "        "int stride_unit; "
+.B "        "int nhosts; "
+.B "        "char **subset_hl; "
+.B "        "char **hl; "
+.B "   "} option; "
+.B "} dist_request_t;
+.PP
+.fi
+.PP
+
+\fBLMON_fe_launchMwDaemons()\fR allows the requester to launch middleware daemons in
+four distinct modes: 1) the set of hosts where the back-end daemons are running
+(co-location mode), 2) the set of hosts provided by a list of hostnames (host-list mode),
+3) the existing set of hosts that has already been allocated to the user (existing-allocation mode), 
+and 4) the set of hosts that LaunchMON will newly allocate (new-allocation mode). 
+
+The requester can specify a mode via the \fImd\fR field of \fBdist_request_t\fR, and
+it is allowed to specify multiple modes by filling each mode into the \fImd\fR field
+of each element of the \fIreq[]\fR array.  
+
+Co-location mode is specified by a macro, LMON_MW_COLOC.
+Host-list mode is specified by another macro, LMON_MW_HOSTLIST. 
+existing-allocation and new-allocation modes are specified 
+by LMON_MW_NEWALLOC and LMON_MW_EXISTINGALLOC respectively. 
+
+However, the current implementation has several limitations. 
+Because support for LMON_MW_NEWALLOC and LMON_MW_EXISTINGALLOC
+requires a deeper integration with native resource and 
+job management systems, the current implementation only
+supports LMON_MW_COLOC and LMON_MW_HOSTLIST, and for other cases,
+\fBLMON_fe_launchMwDaemons()\fR returns LMON_NOTIMPL.
+
+Further limitations include that \fBLMON_fe_launchMwDaemons()\fR will only
+launch one daemon per host. In other words, the daemon distribution policy
+fields, \fIndaemon\fR, \fIblock\fR, and \fIcyclic\fR have
+not been implemented and the requester is required to set them all to be -1. 
+Similarly, \fIoptkind\fR will determine what field in \fIoption\fR will be used,
+and only \fIhostlists\fR has been implemented. With \fIhostlists\fR,
+\fBLMON_fe_launchMwDaemons()\fR will use the \fIhl\fR field that 
+is an array of hostname strings. The end of the \fIhl\fR array
+must be marked with NULL.
+
+Data transfer schemes between the launched middleware daemons
+and the front-end components are identical as back-end
+daemon launching functions, namely,
+\fBLMON_fe_launchAndSpawnDaemons()\fR
+and \fBLMON_fe_attachAndSpawnDaemons()\fR.
+
+
+.SH RETURN VALUE
+This function returns \fBLMON_OK\fR when all the middleware daemons 
+have successfully been launched and bootstrapped; otherwise, an LMON error code 
+is returned as described below. 
+
+.SH ERRORS
+.TP
+.B LMON_OK
+Success.
+.TP
+.B LMON_NOTIMPL
+Not implemented.
+.TP
+.B LMON_ESYS
+A system error encountered (mostly an error with a TCP/IP or POSIX thread call).
+.TP
+.B LMON_ETOUT
+Timed out while waiting for connections.
+.TP
+.B LMON_EBUG:
+A plain bug.
+.TP
+.B LMON_EINVAL:
+An error encountered while waiting on some events from other dependent component such as the LaunchMON engine.
+
+.SH AUTHOR
+Dong H. Ahn <ahn1@llnl.gov>
+

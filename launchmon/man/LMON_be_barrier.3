@@ -1,4 +1,4 @@
-.TH LaunchMON 3 "FEBRUARY 2008" LaunchMON "LaunchMON Back-End API"
+.TH LaunchMON 3 "MAY 2014" LaunchMON "LaunchMON Back-End API"
 
 .SH NAME
 LMON_be_barrier LMON_be_broadcast LMON_be_gather LMON_be_scatter \- LaunchMON back-end API: collective communication functions.  
@@ -21,7 +21,7 @@ LMON_be_barrier LMON_be_broadcast LMON_be_gather LMON_be_scatter \- LaunchMON ba
 and \fBLMON_be_scatter()\fR provide collective communication services to 
 back-end tool daemons. Thus, these functions require all the back-end daemons 
 associated with a session (see \fBLMON_launchAndSpawnDaemons\fR(3)) 
-to participate in the calls for successful transactions.  
+to participate in the calls for a successful transaction.  
 
 The \fBLMON_be_barrier()\fR function blocks the calling daemon until 
 all daemons have called it. 
@@ -63,34 +63,4 @@ Encountered any other erroneous conditions.
 
 .SH AUTHOR
 Dong H. Ahn <ahn1@llnl.gov>
-
-.SH "SEE ALSO"
-.BR LMON_fe_init(3),
-.BR LMON_fe_createSession(3),
-.BR LMON_fe_attachAndSpawnDaemons(3),
-.BR LMON_fe_launchAndSpawnDaemons(3),
-.BR LMON_fe_kill(3),
-.BR LMON_fe_detach(3),
-.BR LMON_fe_shutdownDaemons(3),
-.BR LMON_fe_regUnpackForBeToFe(3),
-.BR LMON_fe_regPackForFeToBe(3),
-.BR LMON_fe_putToBeDaemonEnv(3),
-.BR LMON_fe_sendUsrDataBe(3),
-.BR LMON_fe_recvUsrDataBe(3),
-.BR LMON_fe_getProctable(3),
-.BR LMON_fe_getProctableSize(3),
-.BR LMON_fe_getResourceHandle(3),
-.BR LMON_be_init(3),
-.BR LMON_be_finalize(3),
-.BR LMON_be_getMyRank(3),
-.BR LMON_be_getSize(3),
-.BR LMON_be_amIMaster(3),
-.BR LMON_be_handshake(3),
-.BR LMON_be_ready(3),
-.BR LMON_be_regPackForBeToFe(3),
-.BR LMON_be_regUnpackForFeToBe(3),
-.BR LMON_be_recvUsrData(3),
-.BR LMON_be_sendUsrData(3),
-.BR LMON_be_getMyProctab(3),
-.BR LMON_be_getMyProctabSize(3)
 

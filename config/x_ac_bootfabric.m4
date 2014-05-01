@@ -28,50 +28,111 @@
 # --------------------------------------------------------------------------------
 # 
 #   Update Log:
-#         Dec 12 2008 DHA: File created. 
+#         Dec 17 2009 DHA: Added COBO support
+#         Dec 14 2009 DHA: A bunch of AC_DEFINE removed as lmon specific 
+#                          changes have been merged into PMGR Collective
+#         Dec 12 2008 DHA: File created.
 #
- 
-AC_DEFUN([X_AC_BOOTFABRIC], [  
+
+AC_DEFUN([X_AC_BOOTFABRIC], [
   AC_MSG_CHECKING([communication fabric type for bootstrapping])
-  AC_ARG_WITH([bootfabric],  
-    AS_HELP_STRING(--with-bootfabric@<:@=FABRICTYPE@:>@,specify a communication fabric for bootstrapping of ditributed LaunchMON components @<:@default=pmgr@:>@), 
-    [with_fab=$withval],  
+  AC_ARG_WITH([bootfabric],
+    AS_HELP_STRING(--with-bootfabric@<:@=FABRICTYPE@:>@,specify a communication fabric for bootstrapping of ditributed LaunchMON components @<:@cobo|mpi@:>@ @<:@default=cobo@:>@),
+    [with_fab=$withval],
     [with_fab="check"])
+  AC_ARG_WITH([cobo-port],
+    AS_HELP_STRING(--with-cobo-port@<:@=LAUNCHERPATH@:>@,specify the beginning TCP port number from which COBO reserves the range of usable ports @<:@default=20101@:>@),
+    [with_cobo_port=$withval],
+    [with_cobo_port="check"]
+  )
 
   commfab_found="no"
 
-  if test "x$with_fab" = "xpmgr" -o "x$with_fab" = "xyes"; then
-    if test -d tools/pmgr_collective; then 
+  if test "x$with_fab" = "xpmgr" ; then
+    #if test -d tools/pmgr_collective; then 
       #
-      # Following defines macroes to pick up the customization 
+      # Following defines macroes to pick up the customization
       # added to the original pmgr collective implementation.
       #
-      with_fab="pmgr"	
+      #with_fab="pmgr"
+      #commfab_found="yes"
+      #AC_DEFINE(PMGR_BASED, 1, [Define 1 for PMGR_BASED])
+      #AC_DEFINE(TEST_MORE_COLL, 1, [Define test more coll support])
+      #AC_DEFINE(TOOL_HOST_ENV, "LMON_FE_WHERETOCONNECT_ADDR", [Define TOOL_HOST_ENV])
+      #AC_DEFINE(TOOL_PORT_ENV, "LMON_FE_WHERETOCONNECT_PORT", [Define TOOL_PORT_ENV] )
+      #AC_DEFINE(TOOL_SS_ENV, "LMON_SHARED_SECRET", [Define TOOL_SS_ENV])
+      #AC_DEFINE(TOOL_SCH_ENV, "LMON_SEC_CHK", [Define TOOL_SCH_ENV])
+      #AC_SUBST(COMMLOC, tools/pmgr_collective/src)
+      #AC_SUBST(LIBCOMM, libcobo.la)
+    #else
+      commfab_found="no"
+      AC_MSG_ERROR([--with-bootfabric=pmgr is given, but pmgr_collective has been deprecated])
+    #fi
+  elif test "x$with_fab" = "xmpi" ; then
+    commfab_found="yes"
+    AC_DEFINE(MPI_BASED, 1, [Define 1 for MPI_BASED])
+    AC_MSG_ERROR([MPI as a underlying comm. fabric no longer supported])	
+  elif test "x$with_fab" = "xcobo" -o "x$with_fab" = "xyes"; then
+    if test -d tools/cobo; then
+      #
+      # Following defines macroes to pick up the customization 
+      # added to the original COBO implementation.
+      #
+      with_fab="cobo"
       commfab_found="yes"
-      AC_DEFINE(PMGR_BASED, 1, [Define 1 for PMGR_BASED])
-      AC_DEFINE(COMMLINE_SUPPORT, 1, [Define command line support])
-      AC_DEFINE(LAZY_BINDING, 1, [Define lazy binding support])
-      AC_DEFINE(FINEGRAIN_MPIRUN_INTERFACE, 1, [Define fine grain mpirun interface support])
+      AC_DEFINE(COBO_BASED, 1, [Define 1 for COBO_BASED])
       AC_DEFINE(TEST_MORE_COLL, 1, [Define test more coll support])
       AC_DEFINE(TOOL_HOST_ENV, "LMON_FE_WHERETOCONNECT_ADDR", [Define TOOL_HOST_ENV])
       AC_DEFINE(TOOL_PORT_ENV, "LMON_FE_WHERETOCONNECT_PORT", [Define TOOL_PORT_ENV] )
       AC_DEFINE(TOOL_SS_ENV, "LMON_SHARED_SECRET", [Define TOOL_SS_ENV])
       AC_DEFINE(TOOL_SCH_ENV, "LMON_SEC_CHK", [Define TOOL_SCH_ENV])
-      AC_SUBST(COMMLOC, tools/pmgr_collective/src)
-      AC_SUBST(LIBCOMM, -lpmgr_collective)
+      AC_SUBST(COMMLOC, tools/cobo/src)
+      AC_SUBST(LIBCOMM, libcobo.la)
+
+      if test "x$with_cobo_port" != "xcheck" -a "x$with_cobo_port" != "xyes"; then
+	AC_DEFINE(COBO_BEGIN_PORT, $with_cobo_port, [Define a beginning port for COBO_BASED])
+      else
+        AC_DEFINE(COBO_BEGIN_PORT, 20101, [Define a beginning port for COBO_BASED])
+      fi
+	AC_DEFINE(COBO_PORT_RANGE, 32, [Define 32 for COBO_BASED])
     else
       commfab_found="no"
-      AC_MSG_ERROR([--with-bootfabric=pmgr is given, but tools/pmgr_collective not found])	
+      AC_MSG_ERROR([--with-bootfabric=cobo is given, but tools/cobo not found])
     fi
-  elif test "x$with_fab" = "xmpi" ; then
-    commfab_found="yes"
-    AC_DEFINE(MPI_BASED, 1, [Define 1 for MPI_BASED])
-    AC_MSG_ERROR([MPI as a underlying comm. fabric no longer supported])	
   else
-    AC_MSG_ERROR([--with-bootfabric is a required option])
+    #
+    # Making COBO default
+    #  
+    if test -d tools/cobo; then
+      #
+      # Following defines macroes to pick up the customization 
+      # added to the original COBO implementation.
+      #
+      with_fab="cobo"
+      commfab_found="yes"
+      AC_DEFINE(COBO_BASED, 1, [Define 1 for COBO_BASED])
+      AC_DEFINE(TEST_MORE_COLL, 1, [Define test more coll support])
+      AC_DEFINE(TOOL_HOST_ENV, "LMON_FE_WHERETOCONNECT_ADDR", [Define TOOL_HOST_ENV])
+      AC_DEFINE(TOOL_PORT_ENV, "LMON_FE_WHERETOCONNECT_PORT", [Define TOOL_PORT_ENV] )
+      AC_DEFINE(TOOL_SS_ENV, "LMON_SHARED_SECRET", [Define TOOL_SS_ENV])
+      AC_DEFINE(TOOL_SCH_ENV, "LMON_SEC_CHK", [Define TOOL_SCH_ENV])
+      AC_SUBST(COMMLOC, tools/cobo/src)
+      AC_SUBST(LIBCOMM, libcobo.la)
+
+      if test "x$with_cobo_port" != "xcheck" -a "x$with_cobo_port" != "xyes"; then
+        AC_DEFINE(COBO_BEGIN_PORT, $with_cobo_port, [Define a beginning port for COBO_BASED])
+      else
+        AC_DEFINE(COBO_BEGIN_PORT, 20101, [Define a beginning port for COBO_BASED])
+      fi
+        AC_DEFINE(COBO_PORT_RANGE, 32, [Define 32 for COBO_BASED])
+    else
+      commfab_found="no"
+      AC_MSG_ERROR([--with-bootfabric=cobo is given, but tools/cobo not found])
+    fi
   fi
-  
-  AM_CONDITIONAL([WITH_PMGR_COLLECTIVE], [test "x$commfab_found" = "xyes" -a "x$with_fab" = "xpmgr"])
+
+  #AM_CONDITIONAL([WITH_PMGR_COLLECTIVE], [test "x$commfab_found" = "xyes" -a "x$with_fab" = "xpmgr"])
+  AM_CONDITIONAL([WITH_COBO], [test "x$commfab_found" = "xyes" -a "x$with_fab" = "xcobo"])
   AC_MSG_RESULT($with_fab:$commfab_found)
 ])
 

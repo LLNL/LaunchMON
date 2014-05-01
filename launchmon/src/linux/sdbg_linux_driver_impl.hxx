@@ -31,7 +31,7 @@
  *        Mar  13 2007 DHA: pipe_t support
  *        Jan  09 2006 DHA: Linux X86/64 support   
  *        Dec  19 2006 DHA: Added driver_forkmain support
- *        Jan  08 2006 DHA: Created file.          
+ *        Jan  08 2006 DHA: Created file.
  */
 
 #ifndef SDBG_LINUX_DRIVER_IMPL_HXX
@@ -49,7 +49,7 @@
 //
 // PUBLIC INTERFACES (class symbol_base_t<>)
 //
-//
+////////////////////////////////////////////////////////////////////
 
 //!
 /*!  driver_base_t<> constructors
@@ -73,7 +73,7 @@ linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::linux_driver_t (
 template <LINUX_DRIVER_TEMPLATELIST>
 linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::~linux_driver_t ()
 {
-  // destroy 
+  // destroy
 }
 
 
@@ -84,7 +84,7 @@ linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::~linux_driver_t ()
     
 */
 template <LINUX_DRIVER_TEMPLATELIST> 
-process_base_t<LINUX_DRIVER_TEMPLPARAM,td_thrinfo_t,elf_wrapper>*
+process_base_t<LINUX_DRIVER_TEMPLPARAM,my_thrinfo_t,elf_wrapper>*
 linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::create_process ( 
                  pid_t pid, 
 		 const std::string& mi, 
@@ -93,15 +93,15 @@ linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::create_process (
 		 const std::string& mc )
 {
   
-  process_base_t<LINUX_DRIVER_TEMPLPARAM,td_thrinfo_t,elf_wrapper>* 
+  process_base_t<LINUX_DRIVER_TEMPLPARAM,my_thrinfo_t,elf_wrapper>* 
     return_proc;
 
 #if X86_ARCHITECTURE || X86_64_ARCHITECTURE
   return_proc = new linux_x86_process_t(pid, mi, md, mt, mc);
 #elif PPC_ARCHITECTURE
-  return_proc = new linux_ppc_process_t();
+  return_proc = new linux_ppc_process_t(pid, mi, md, mt, mc);
 #elif IA64_ARCHITECTURE
-  return_proc = new linux_ia64_process_t();
+  return_proc = new linux_ia64_process_t(pid, mi, md, mt, mc);
 #endif
 
   return return_proc;
@@ -112,32 +112,35 @@ linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::create_process (
 //!
 /*!  driver_base_t<> create_process
      
-     creates a platform specific process object
+     Method that creates a platform specific process object.
+     This is the method that is called by the ::drive_engine()
     
 */
 template <LINUX_DRIVER_TEMPLATELIST> 
-process_base_t<LINUX_DRIVER_TEMPLPARAM,td_thrinfo_t,elf_wrapper>*
+process_base_t<LINUX_DRIVER_TEMPLPARAM,my_thrinfo_t,elf_wrapper>*
 linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::create_process ( 
 		 pid_t pid, 
-		 const std::string& mi )
+		 const std::string &mi )
 {
-  
-  process_base_t<LINUX_DRIVER_TEMPLPARAM,td_thrinfo_t,elf_wrapper>* 
-    return_proc;
+  process_base_t<LINUX_DRIVER_TEMPLPARAM,my_thrinfo_t,elf_wrapper> *return_proc;
 
+  //
+  // different architectures require different sublayer 
+  // in creating a process object.
+  //
 #if X86_ARCHITECTURE || X86_64_ARCHITECTURE
   return_proc = new linux_x86_process_t (pid, mi);
 #elif PPC_ARCHITECTURE
   return_proc = new linux_ppc_process_t (pid, mi);
 #elif IA64_ARCHITECTURE
-  return_proc = new linux_ia64_process_t ();
+  return_proc = new linux_ia64_process_t (pid, mi);
 #endif
 
   return return_proc;
 
 }
 
-int MPIR_being_debugged = 0;
+//int MPIR_being_debugged = 0;
 
 //!
 /*!  driver_base_t<> driver_main
@@ -147,23 +150,25 @@ int MPIR_being_debugged = 0;
 */
 template <LINUX_DRIVER_TEMPLATELIST> 
 int 
-linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::driver_main ( 
-		 int argc, char** argv )
+linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::driver_main
+( int argc, char **argv )
 {
   try
    {
      driver_error_e error_code;
 
-     event_manager_t<LINUX_DRIVER_TEMPLPARAM, td_thrinfo_t ,elf_wrapper>* em;
-     launchmon_base_t<LINUX_DRIVER_TEMPLPARAM,td_thrinfo_t,elf_wrapper>* lm;
+     event_manager_t<LINUX_DRIVER_TEMPLPARAM,my_thrinfo_t,elf_wrapper>* em;
+     launchmon_base_t<LINUX_DRIVER_TEMPLPARAM,my_thrinfo_t,elf_wrapper>* lm;
 
-     em = new event_manager_t<LINUX_DRIVER_TEMPLPARAM, td_thrinfo_t,elf_wrapper>();
+     em = new event_manager_t<LINUX_DRIVER_TEMPLPARAM,my_thrinfo_t,elf_wrapper>();
      lm = new linux_launchmon_t();
-     set_evman(em);
-     set_lmon(lm);
+     this->set_evman(em);
+     this->set_lmon(lm);
   
-     error_code = driver_base_t<LINUX_DRIVER_TEMPLPARAM, td_thrinfo_t,elf_wrapper>
-       ::drive ( argc, argv );
+     //
+     // Start driving events, calling into the base driver layer 
+     //
+     error_code = driver_base_t<LINUX_DRIVER_TEMPLPARAM, my_thrinfo_t,elf_wrapper>::drive ( argc, argv );
 
      return ( ( error_code == SDBG_DRIVER_OK) ? 0 : 1 );
    }
@@ -171,7 +176,7 @@ linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::driver_main (
     {
       e.report();
       return LAUNCHMON_FAILED;
-    }     
+    }
 }
 
 

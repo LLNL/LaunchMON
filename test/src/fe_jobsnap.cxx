@@ -32,14 +32,12 @@
  *        Aug 06 2006 DHA: File created
  */
 
-#include <lmon_api/common.h>
-
-#if HAVE_UNISTD_H
-# include <unistd.h>
-#else
-# error unistd.h is required
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
 #endif
 
+#include <lmon_api/common.h>
+#include <unistd.h>
 #include <lmon_api/lmon_proctab.h>
 #include <lmon_api/lmon_fe.h>
 

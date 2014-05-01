@@ -31,21 +31,26 @@
 #  one daemon per node, which unlocks the initial hang of all tasks. 
 #
 #  Update Log:
+#        Oct 21 2011 DHA: Added dynamic RM detection support.
+#        Mar 06 2009 DHA: NUMTASKS=32
+#        Mar 06 2009 DHA: Changed bglrm to bgrm
 #        Dec 14 2008 DHA: configurable NUMNODES
 #        Jun 13 2008 DHA: Created file.
 #
 
-RM_TYPE=@RMTP@
+export RM_TYPE=@TEST_RMTP@
+export MPI_JOB_LAUNCHER_PATH=@TJLPATH@
+export LMON_PREFIX=@LMONPREFIX@
+export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
+
 NUMNODES=@NNODES@
 NOHUP=""
-if test "x$RM_TYPE" = "xbglrm" ; then
+if test "x$RM_TYPE" = "xRC_bglrm" -o "x$RM_TYPE" = "xRC_bgprm"; then
   NOHUP=nohup
   rm -f nohup.out
 fi
 
 NUMTASKS=`expr $NUMNODES \* @SMP@`
-
-export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
 
 $NOHUP fe_launch_smoketest@EXE@ `pwd`/simple_MPI@EXE@ $NUMTASKS $NUMNODES pdebug `pwd`/be_kicker@EXE@
 
@@ -53,4 +58,4 @@ if test -f nohup.out; then
   sleep $NUMNODES
   cat nohup.out
 fi
-  
+

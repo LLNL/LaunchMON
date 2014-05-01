@@ -1,0 +1,54 @@
+.TH LaunchMON 3 "MAY 2013" LaunchMON "LaunchMON Middleware API"
+
+.SH NAME
+LMON_mw_getMyRank LMON_mw_amIMaster LMON_mw_getSize \- LaunchMON Middleware API: data access functions for the communication subsystem. 
+
+.SH SYNOPSIS
+.B #include <lmon_mw.h>
+.PP
+.BI "lmon_rc_e LMON_mw_getMyRank ( int *" rank " );"
+.PP
+.BI "lmon_rc_e LMON_mw_amIMaster ( );"
+.PP
+.BI "lmon_rc_e LMON_mw_getSize ( int *" size " );"
+.PP
+.B cc ... -lmonmwapi
+
+.SH DESCRIPTION
+\fBLMON_mw_getMyRank()\fR, \fBLMON_mw_amIMaster()\fR and \fBLMON_mw_getSize()\fR
+provide the calling middleware daemon with information regarding
+its communication subsystem. 
+The \fBLMON_mw_getMyRank()\fR function returns the logical rank 
+of the calling daemon via the \fIrank\fR argument. The \fBLMON_mw_amIMaster\fR
+returns \fBLMON_YES\fR if the caller is the master daemon;
+\fBLMON_NO\fR if a slave daemon. The \fBLMON_mw_getSize()\fR function 
+returns the total number of daemons participating in the communication 
+subsystem thru the \fIsize\fR argument.
+
+.SH RETURN VALUE
+\fBLMON_mw_getMyRank()\fR and \fBLMON_mw_getSize()\fR return \fBLMON_OK\fR
+on success; otherwise, an LMON error code is returned 
+as described below. The \fBLMON_mw_amIMaster()\fR function
+returns \fBLMON_YES\fR if the caller is the master daemon;
+\fBLMON_NO\fR if a slave daemon. 
+
+.SH ERRORS
+.TP
+.B LMON_OK
+Success.
+.TP
+.B LMON_YES
+The caller is the master daemon.
+.TP
+.B LMON_NO
+The caller is a slave daemon.
+.TP
+.B LMON_ESUBCOM
+Encountered an error during a communication subsystem operation. 
+.TP
+.B LMON_EINVAL
+Encountered any other erroneous conditions. 
+
+.SH AUTHOR
+Dong H. Ahn <ahn1@llnl.gov>
+

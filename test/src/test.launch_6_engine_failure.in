@@ -29,14 +29,21 @@
 #
 #
 #  Update Log:
+#        Oct 21 2011 DHA: Added dynamic RM detection support.
+#        Mar 06 2009 DHA: Changed bglrm to bgrm
 #        Dec 14 2008 DHA: configurable NUMNODES
 #        Sep 26 2008 DHA: Created file.
 #
 
-RM_TYPE=@RMTP@
+export RM_TYPE=@TEST_RMTP@
+export MPI_JOB_LAUNCHER_PATH=@TJLPATH@
+export LMON_PREFIX=@LMONPREFIX@
+export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
+
 NUMNODES=@NNODES@
 NOHUP=""
-if test "x$RM_TYPE" = "xbglrm" ; then
+
+if test "x$RM_TYPE" = "xRC_bglrm" -o "x$RM_TYPE" = "xRC_bgprm"; then
   NOHUP=nohup
   rm -f nohup.out
 fi
@@ -44,10 +51,10 @@ fi
 NUMTASKS=`expr $NUMNODES \* @SMP@`
 SIGNUM=18
 
-export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
 export LMON_ADDITIONAL_FE_STALL=1
+export LMON_STATUS_CB_TEST=1
 
-echo "This is a munual test that can be used to check "
+echo "This is a manual test that can be used to check "
 echo "the distributed state when a failure occurrs as "
 echo "defined in README.ERROR_HANDLING."
 echo "A. once job/daemons are launched, kill -SEGV <launchmon pid>"
@@ -55,7 +62,7 @@ echo "C.1 once job/daemons are launched, kill -SEGV <FE pid>"
 echo "C.2 once job/daemons are launched, kill -SEGV <one of daemon tasks>"
 echo "D. once job/daemons are launched, kill -SEGV <one of mpi tasks>"
 
-$NOHUP fe_launch_smoketest@EXE@ `pwd`/run_3mins@EXE@ $NUMTASKS $NUMNODES pdebug `pwd`/be_kicker@EXE@ $SIGNUM 1 
+$NOHUP fe_launch_smoketest@EXE@ `pwd`/run_3mins@EXE@ $NUMTASKS $NUMNODES pdebug `pwd`/be_kicker@EXE@ $SIGNUM 3
 
 if test -f nohup.out; then
   sleep $NUMNODES

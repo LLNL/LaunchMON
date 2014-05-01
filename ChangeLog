@@ -1,3 +1,399 @@
+2014-04-30 Matt LeGendre <legendre1@llnl.gov> Dong H. Ahn <ahn1@llnl.gov>
+	* configure.ac,
+	config/x_ac_handshake.m4,
+	tools/cobo/src/cobo.c, tools/cobo/src/Makefile.am, 
+	tools/handshake/handshake.c, 
+	tools/handshake/Makefile.am, 
+	tools/handshake/handshake.h, 
+	tools/Makefile.am, 
+	launchmon/src/linux/lmon_api/lmon_fe.cxx,
+	launchmon/src/linux/lmon_api/lmon_daemon_internal.cxx:
+	Enhanced security handshake protocol for COBO. 
+	Configure now supports munge- and file-based COBO
+	authentication. Munge is available at 
+	https://code.google.com/p/munge/
+
+
+2014-04-30 Matt LeGendre <legendre1@llnl.gov>
+	* launchmon/src/sdbg_rm_map.hxx,
+	launchmon/src/sdbg_rm_map.cxx,
+	launchmon/src/sdbg_opt.cxx,
+	launchmon/src/sdbg_opt.hxx,
+	launchmon/src/linux/lmon_api/lmon_fe.cxx:
+	Improved how the options and arguments of RM launchers
+	and tool daemons are parsed and stored.
+
+
+2014-04-11 Matt LeGendre <legendre1@llnl.gov>
+	* launchmon/src/linux/sdbg_linux_launchmon.cxx:
+	Suppressed a warning message about invalid MPIR state
+	transition, as the Spindle project works around 
+	an OpenMPI/Orterun issue by creating an unexpected 
+	MPIR state transition. Spindle is a new open-source 
+	scalable dynamic loading capability that uses LaunchMON
+	(https://github.com/hpc/Spindle).
+
+
+2014-04-10 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/rm_openrte.conf:
+	Added mpirun and mpiexec into RM_launcher field
+	as these names are often aliases to orterun.
+
+
+2014-04-10 Dong H. Ahn <ahn1@llnl.gov>
+	* Many files:
+	Code clean-up -- Removed HAVE_XXX conditional macroes for
+	commonly found header files. 
+
+
+2014-04-03 Matt LeGendre <legendre1@llnl.gov>
+	* launchmon/src/linux/lmon_api/Makefile.am
+	tools/cobo/test/Makefile.am
+	tools/pmgr_collective/test/Makefile.am
+	config/x_ac_bootfabric.m4
+	config/x_ac_gcrypt.m4:
+	Applied SPACK build patch. SPACK is a new build system
+	LLNL is investigating (https://github.com/scalability-llnl/spack).
+
+
+2012-05-31 Dong H. Ahn <ahn1@llnl.gov>
+	* tools/libgpg-error/src/gpg-error.c:
+	Fix a bug where libgpg-errors is complaining about LC_ALL 
+	not being previous (ID: 3024575). The patch is provided
+	by Dane Gardner of Krell Institute: <gardner@krellinst.org>
+
+
+2012-05-30 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/lmon_api/lmon_lmonp_msg.h
+	launchmon/src/linux/lmon_api/lmon_fe.cxx
+	launchmon/src/linux/lmon_api/lmon_lmonp_msg.cxx
+	launchmon/src/linux/lmon_api/lmon_be_comm.cxx:
+	Fix the problem with "non-desriptive" error message (ID: 3530680). 
+
+
+2011-09-12 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/sdbg_rm_map.hxx
+	launchmon/src/sdbg_base_launchmon_impl.hxx
+	tools/alps/src/alps_fe_colocator.cxx:
+	Fix for the isse (ID: 3408210): alps_fe_colocat process
+	hanging around after STAT completes its session.
+
+
+2010-11-10 Dong H. Ahn <ahn1@llnl.gov>
+	* test/src/Makefile.am:
+	Added support for testdir to install test files 
+	into a non-bin directory
+
+
+2010-11-09 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/linux/sdbg_linux_launchmon.cxx:
+	Added a fix for a scalability bug. When launchmon puts
+	comma-separated hostnames in one line, srun's 
+	--node-list option fails with 
+	"srun: error: Line 1, of hostfile ...hostnamefn.31504 too long."
+	For Moe Jette's suggestion, the newline character
+	is used instead as the delimiter.
+
+	At 1334 Sierra nodes (16008 processes): Cold Start 
+	The inclusive LMON overhead of bootstrapping the ICCL layer: 8.673522 secs
+	The exclusive LMON overhead of bootstrapping the ICCL layer: 0.050768 secs
+	LMON_fe_launchAndSpawnDaemons perf: 18 (1289347047 - 1289347029) seconds 568745 (648176 - 79431) usec
+	LMON_fe_getProctable perf: 0 (1289347047 - 1289347047) seconds 2813 (651002 - 648189) usec
+
+	At 1334 Sierra nodes (16008 processes): Warm Start 
+	The inclusive LMON overhead of bootstrapping the ICCL layer: 1.128388 secs
+	The exclusive LMON overhead of bootstrapping the ICCL layer: 0.411942 secs
+	LMON_fe_launchAndSpawnDaemons perf: 3 (1289347052 - 1289347048) seconds 774304 (468822 - 694518) usec
+	LMON_fe_getProctable perf: 0 (1289347052 - 1289347052) seconds 2277 (471121 - 468844) usec
+
+
+2010-11-08 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/sdbg_base_symtab_impl.hxx
+	launchmon/src/sdbg_base_mach_impl.hxx
+	launchmon/src/sdbg_base_symtab.hxx
+	launchmon/src/linux/sdbg_linux_symtab.hxx
+	launchmon/src/linux/main.cxx
+	launchmon/src/linux/lmon_api/lmon_fe.cxx
+	launchmon/src/linux/lmon_api/lmon_lmonp_msg.cxx
+	launchmon/src/linux/lmon_api/lmon_be_comm.cxx
+	launchmon/src/linux/lmon_api/lmon_be.cxx
+	launchmon/src/linux/sdbg_linux_launchmon.cxx
+	launchmon/src/linux/sdbg_linux_symtab_impl.hxx
+	launchmon/src/sdbg_opt.cxx
+	launchmon/src/sdbg_base_launchmon_impl.hxx
+	test/src/be_kicker.cxx
+	test/src/be_kicker_usrpayload_test.cxx:
+	Added tweaks to the memory use as memory checkers
+	are applied in preparation for the official 0.7 release.
+
+
+2010-11-05 Dong H. Ahn <ahn1@llnl.gov>
+	* tools/alps/src/alps_fe_colocator.cxx
+	tools/alps/src/CLE-dso.conf
+	tools/alps/src/CLE_2_2-dso.conf
+	tools/alps/src/CLE_3_1-dso.conf
+	tools/alps/src/Makefile.am:
+	Added support for excluding certain system DSOs from 
+	being broadcast. Credit to Andrew Gontarek at Cray
+	for providing DSO list for CLE3.1 and CLE2.2; 
+	Added Support for base executable relocation (ID: 3103796).
+
+
+2010-10-27 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/man/LMON_be_finalize.3:
+	Added a BlueGene note describing the use of
+	END_DEBUG within the LMON_be_finalize call (ID: 3079668).
+
+	* launchmon/src/sdbg_base_launchmon.hxx
+	launchmon/src/sdbg_base_launchmon_impl.hxx
+	launchmon/src/linux/sdbg_linux_launchmon.hxx
+	launchmon/src/linux/sdbg_linux_launchmon.cxx:
+	Added mpir state tracking support to detect bad
+	state changes of RM.
+
+	* launchmon/src/sdbg_base_symtab.hxx
+	launchmon/src/linux/sdbg_linux_symtab.hxx
+	launchmon/src/linux/sdbg_linux_symtab_impl.hxx:
+	Added support that allows checking some of attributes
+	of a symbol.
+
+
+2010-10-21 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/sdbg_rm_map.hxx
+	launchmon/src/linux/sdbg_linux_launchmon.cxx:
+	Added support for launching of tool daemons
+	into a subset of an allocation under SLURM (ID: 2871927).
+
+
+2010-07-21 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/linux/lmon_api/lmon_fe.cxx:
+	Removed a code rot from LMON_fe_getProctable. Credit to 
+	Dane Gardner at LANL.
+
+
+2010-06-30 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/sdbg_opt.hxx
+	launchmon/src/sdbg_opt.cxx 
+	launchmon/src/sdbg_base_driver_impl.hxx
+	launchmon/src/lmon_api/lmon_lmonp_msg.h
+	launchmon/src/linux/sdbg_linux_launchmon.cxx:	
+	Added faster dection of LaunchMON engine parsing errors 
+	in reponse to a feature request (ID: 2993295).
+
+
+2010-06-28 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/man/Makefile.am 
+	launchmon/man/LMON_fe_getRMInfo.3
+	launchmon/src/sdbg_base_launchmon_impl.hxx
+	launchmon/src/linux/sdbg_linux_launchmon.cxx
+	launchmon/src/linux/lmon_api/lmon_fe.cxx
+	launchmon/src/lmon_api/lmon_api_std.h
+	launchmon/src/lmon_api/lmon_lmonp_msg.h
+	launchmon/src/lmon_api/lmon_fe.h
+	launchmon/src/sdbg_base_launchmon.hxx
+	launchmon/src/sdbg_rm_map.hxx
+	test/src/fe_attach_smoketest.cxx
+	test/src/fe_launch_smoketest.cxx:
+	Added LMON_fe_getRMInfo support
+
+
+2010-06-25 Dong H. Ahn <ahn1@llnl.gov>
+	* README.ERROR_HANDLING
+	test/src/test.attach_1_remote.in
+	test/src/test.fe_regStatusCB.in
+	test/src/test.attach_4_shutdownbe.in
+	test/src/test.attach_4_kill.in
+	test/src/test.attach_2_uneven.in
+	test/src/test.attach_1_pdebugmax.in
+	test/src/test.attach_1.in:
+	Added OpenRTE suport and tested it under ORTE on SLURM 
+	environment. 
+
+
+2010-06-12 Dong H. Ahn <ahn1@llnl.gov>
+	* test/src/simple_MPI.c
+	test/src/Makefile.in
+	test/src/fe_launch_smoketest.cxx
+	test/src/be_kicker.cxx
+	test/src/Makefile.am
+	test/src/test.launch_1.in
+	configure
+	launchmon/src/sdbg_base_launchmon.hxx
+	launchmon/src/lmon_api/lmon_say_msg.hxx
+	launchmon/src/linux/lmon_api/lmon_fe.cxx
+	launchmon/src/linux/lmon_api/lmon_lmonp_msg.cxx
+	launchmon/src/linux/lmon_api/lmon_be_comm.cxx
+	launchmon/src/linux/lmon_api/lmon_say_msg.cxx
+	launchmon/src/linux/lmon_api/lmon_be.cxx
+	launchmon/src/linux/sdbg_linux_launchmon_xt.cxx
+	launchmon/src/sdbg_opt.cxx
+	ChangeLog
+	tools/alps
+	tools/alps/src
+	tools/alps/src/Makefile.am
+	tools/alps/src/alps_be_starter
+	tools/alps/src/alps_be_starter.c
+	tools/alps/Makefile.am
+	tools/cobo/src/cobo.c
+	tools/cobo/src/cobo.h
+	tools/Makefile.am
+	tools/pmgr_collective/src/pmgr_collective_client.h
+	tools/pmgr_collective/src/pmgr_collective_client.c
+	configure.ac
+	config/x_ac_bootfabric.m4
+	config/x_ac_rm.m4:
+	Added Cray XT support including COBO and MEASURE_TRACING_COST
+	across the board.
+
+
+2010-04-28 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/linux/sdbg_linux_launchmon.cxx,
+	launchmon/src/linux/lmon_api/lmon_be_comm.cxx
+	launchmon/src/linux/lmon_api/lmon_fe.cxx
+	launchmon/src/linux/lmon_api/lmon_say_msg.cxx
+	launchmon/src/linux/sdbg_linux_launchmon.cxx
+	launchmon/src/lmon_api/lmon_say_msg.hxx
+	launchmon/src/sdbg_base_launchmon.hxx
+	tools/pmgr_collective/src/pmgr_collective_client.c
+	tools/pmgr_collective/src/pmgr_collective_client.h:
+	Added more MEASURE_TRACING_COST support.
+
+
+2010-04-06 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/linux/lmon_api/lmon_be.cxx: Added 
+	a new parser to parse /proc/personality.sh to 
+	fully work around the hostname resolution problem 
+	with ORNL Eugene's ION environment where gethostname returns 
+	a non-unique, non-standard BG rack-midplane-based hostname.
+
+
+2010-02-10 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/linux/sdbg_linux_ttracer.hxx
+	launchmon/src/linux/sdbg_linux_launchmon.cxx
+	launchmon/src/linux/sdbg_linux_ttracer_impl.hxx
+	launchmon/src/sdbg_base_mach_impl.hxx
+	launchmon/src/sdbg_std.hxx
+	launchmon/src/sdbg_opt.cxx
+	launchmon/src/sdbg_base_mach.hxx: Rewrite some of the 
+	thread iterator callback routines
+	to handle an exception arising from Linux thread_db where
+	it provides a garbage value when a target thread within the
+	inferior process recently exited but is still in zombie state.  
+
+
+2010-02-05 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/linux/lmon_api/lmon_fe.cxx
+	launchmon/src/linux/lmon_api/lmon_be_comm.cxx
+	launchmon/src/linux/lmon_api/lmon_be.cxx
+	launchmon/src/linux/lmon_api/lmon_be_internal.hxx
+	tools/cobo/src/cobo.c
+	tools/pmgr_collective/src/pmgr_collective_client.h
+	tools/pmgr_collective/src/pmgr_collective_common.h
+	tools/pmgr_collective/src/pmgr_collective_client.c
+	man/LMON_fe_launchAndSpawnDaemons.3: Add support to address a problem 
+	where some systems like Eugene, the ORNL BGP sytsem, don't allow 
+	resolving a hostname into an IP with gethostname and gethostbyname
+
+
+2009-12-28 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/linux/lmon_api/lmon_fe.cxx,
+	  launchmon/src/linux/lmon_api/lmon_be_comm.cxx,
+	  tools/cobo/src/cobo.c,
+	  tools/cobo/src/cobo.h,
+	  tools/cobo/test/client.c,
+	  tools/cobo/test/server_rsh.c: Picked up latest COBO update and
+	  adjusted LaunchMON for its minor API change
+
+
+2009-12-22 Dong H. Ahn <ahn1@llnl.gov>
+	* launchmon/src/linux/sdbg_linux_symtab_impl.hxx: Bug fix 
+	* launchmon/src/linux/sdbg_linux_launchmon.cxx: Added auxillary
+	  vector support to discover the base load address of the system
+	  loader more accurately.
+
+
+2009-12-17 Dong H. Ahn <ahn1@llnl.gov>
+	* Added COBO support. The default value for --with-bootfabric is now cobo
+
+
+2009-10-30 Dong H. Ahn <ahn1@llnl.gov>
+	* tools/ciod/debugger_interface.h: updated this with ciod debug
+	  interface version 4.
+	* test/src/be_jobsnap.cxx: added BGP port 
+	* launchmon/src/linux/sdbg_linux_ttracer.hxx: patch to work around 
+	  a bug in NPTL thread debug library's td_thr_get_info call.
+
+
+2009-08-26 Dong H. Ahn <ahn1@lnll.gov>
+	* launchmon/src/lmon_api/*.h,
+	config/x_ac_prefix_config_h.m4: Added lmon-config.h support
+	(prefixed config macros) to all header files that are
+	 externally exported.
+
+
+2009-08-15 Dong H. Ahn <ahn1@llnl.gov>
+	* Yet another cut to enhance error handlings; better
+	P/T state tracking system is used to handle idiosyncrasy 
+	of Linux process control
+
+
+2009-06-03 Dong H. Ahn <ahn1@llnl.gov>
+	* Better enforcement of the error handling semantics. 
+	* Added test.attach_4_kill for BlueGene.
+	* Made ptrace errors in tracer_detach "a soft error" 
+	  instead of a hard error that throws an exception.
+
+
+2009-06-01 Dong H. Ahn <ahn1@llnl.gov>
+	* Added a minor bug fix to detect the master thread ID correctly.
+	  (A bug introduced by one of changes made on 2009-05-20)
+	* Upped the grace period by x10 bewteen two consecutive signals
+	  to overcome unreliable UNIX signals. For some platforms,
+	  it turned out that sending SIGSTOPs to all the threads (lwp)
+	  of the target process did not cause all of them to stop
+	  with a short grace period...
+
+
+2009-05-20 Dong H. Ahn <ahn1@llnl.gov>
+	* Added LMON_fe_regErrorCB support (ID2787962)
+	* Added a fix for the "re-attach" defect on BlueGene/P. 
+	  The fix requires the IBM efix27 or higher.
+	* Added a fix for the back-end and front-end [recv|send]UsrData functions
+	  to return correct error codes. Added a new error code 
+	  (LMON_ENEGCB) to lmon_api_std.h to deal with a
+	  negative code returning from user-provided 
+	  pack/unpack callback routines. (ID2787959) 
+	* Changed the library version to -version-info 1:0:1.
+	  It is because this revision added new API calls and 
+	  bug fixes for existing API calls.
+
+
+2009-03-11 Dong H. Ahn <ahn1@llnl.gov>
+	* Generalized the BlueGene support in support of BGP
+	  Configure's --with-rm option now takes "bgrm" instead of 
+	  bglrm or bgprm.
+	* Deprecated the GLUESYM support in favor of indirect
+	  breakpoint support.
+	* launchmon/src/linux/sdbg_linux_ttracer_impl.[hxx|cxx]
+	  launchmon/src/linux/sdbg_linux_thr_db.[hxx|cxx]:
+	  Added runtime linking support for the thread_db library,
+	  and deprecated the static configure check for
+	  that library defined in config/x_ac_thread_db.m4.
+	* Deprecated the library version of ciod_db as IBM
+	  open-sourced the CIOD debugger interface codes 
+	  entire via a header file.
+	* configure.ac
+	  launchmon/src/linux/lmon_api/lmon_fe.cxx:
+	  Bug fix in the pthread_cond_timedwait
+	  return code checking logic for launchmon engine 
+	  connection: the only correct return code
+	  from pthread condition wait is zero; there were
+	  are two call sites testing with the less-than-zero 
+	  conditions for an error.
+	  Added comm_pair_e for readability
+	  Added configure check for env, ssh|rsh, and totalview.
+	  
+
 2008-12-12 Dong H. Ahn <ahn1@llnl.gov>
 	* added x_ac_testnnodes.m4 and modified test driver scripts 
 	  to make test cases more configurable. New options

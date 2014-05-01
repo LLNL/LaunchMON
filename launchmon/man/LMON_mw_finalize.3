@@ -1,0 +1,64 @@
+.TH LaunchMON 3 "MAY 2013" LaunchMON "LaunchMON Middleware API"
+
+.SH NAME
+LMON_mw_init LMON_mw_finalize \- LaunchMON Middleware API: Middleware initialization/finalization functions. 
+
+.SH SYNOPSIS
+.B #include <lmon_mw.h>
+.PP
+.BI "lmon_rc_e LMON_mw_init ( int " ver ", int *" pargc ", char ***" pargv " );"
+.PP
+.BI "lmon_rc_e LMON_be_finalize ( );"
+.PP
+.B cc ... -lmonmwapi
+
+.SH DESCRIPTION
+The \fBLMON_mw_init()\fR function initializes the LaunchMON Middleware. 
+Each middleware tool daemon must call this function before using any other
+middleware API calls. \fBLMON_mw_init()\fR
+performs the communication subsystem setup as well 
+as other sanity checks including a library-header version 
+mismatch check for its client daemon. 
+The caller must pass \fBLMON_VERSION\fR, 
+a macro defined in the \fBlmon_mw.h\fR file, 
+to the \fIver\fR argument for proper version matching. 
+\fIpargc\fR and \fIpargv\fR are the pointers to the 
+argument count and the argument list that the client 
+tool daemon gets passed at the \fImain\fR function. 
+During the communication subsystem setup process, the runtime
+selects a single master, the daemon that coordinates 
+communications with other LaunchMON components on behalf of 
+the rest of middleware daemons. The client daemon
+must use the \fBLMON_mw_amIMaster\fR(3) function to determine if it is 
+selected as the master daemon, should that information be needed.  
+
+The \fBLMON_mw_finalize ()\fR function finalizes LaunchMON 
+middleware resources including its communication subsystem. 
+Each middleware daemon must call this fuction to be finalized
+correctly. The behavior of any subsequent LaunchMON middleware API calls 
+after \fBLMON_mw_finalize ()\fR is undefined. 
+
+.SH RETURN VALUE
+These functions return \fBLMON_OK\fR
+on success; otherwise, an LMON error code is returned 
+as described below.
+
+.SH ERRORS
+.TP
+.B LMON_OK
+Success.
+.TP
+.B LMON_ESUBCOM
+Encountered an error during a communication subsystem operation. 
+.TP
+.B LMON_ESYS
+Encountered a system error. 
+(likely attributed to an error in a UNIX socket API call.)  
+.TP
+.B LMON_EINVAL
+Encountered any other erroneous conditions including 
+a library-header version mismatch.
+
+.SH AUTHOR
+Dong H. Ahn <ahn1@llnl.gov>
+

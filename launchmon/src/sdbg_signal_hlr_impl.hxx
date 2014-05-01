@@ -36,64 +36,44 @@
 #ifndef SDBG_SIGNAL_HLR_IMPL_HXX
 #define SDBG_SIGNAL_HLR_IMPL_HXX 1
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
+
 #include <lmon_api/common.h>
 
 extern "C" {
-#if HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#else
-# error sys/types.h is required
-#endif
-
-#if HAVE_SIGNAL_H
-# include <signal.h>  
-#else
-# error signal.h is required 
-#endif
-
-#if HAVE_UNISTD_H
-# include <unistd.h>
-#else
-# error unistd.h is required 
-#endif
-
-#if HAVE_UNISTD_H
-# include <libgen.h>
-#else
-# error libgen.h is required 
-#endif
+#include <sys/types.h>
+#include <signal.h>  
+#include <unistd.h>
+#include <libgen.h>
 }
 
-#if HAVE_ASSERT_H
-# include <cassert>
-#else
-# error cassert is required
-#endif
-
+#include <cassert>
 #include "sdbg_signal_hlr.hxx"
 #include "sdbg_base_tracer.hxx"
 #include "sdbg_base_mach.hxx"
 #include "sdbg_base_tracer.hxx"
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_base_t<SDBG_DEFAULT_TEMPLPARAM>
-*signal_handler_t<SDBG_DEFAULT_TEMPLPARAM>::tracer        = NULL;
+tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *
+signal_handler_t<SDBG_DEFAULT_TEMPLPARAM>::tracer        = NULL;
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 std::vector<int> 
 signal_handler_t<SDBG_DEFAULT_TEMPLPARAM>::monitoring_signals;
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-process_base_t<SDBG_DEFAULT_TEMPLPARAM> 
-*signal_handler_t<SDBG_DEFAULT_TEMPLPARAM>::launcher_proc = NULL;
+process_base_t<SDBG_DEFAULT_TEMPLPARAM> *
+signal_handler_t<SDBG_DEFAULT_TEMPLPARAM>::launcher_proc = NULL;
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-event_manager_t<SDBG_DEFAULT_TEMPLPARAM>
-*signal_handler_t<SDBG_DEFAULT_TEMPLPARAM>::evman         = NULL;
+event_manager_t<SDBG_DEFAULT_TEMPLPARAM> *
+signal_handler_t<SDBG_DEFAULT_TEMPLPARAM>::evman         = NULL;
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>
-*signal_handler_t<SDBG_DEFAULT_TEMPLPARAM>::lmon          = NULL;
+launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> *
+signal_handler_t<SDBG_DEFAULT_TEMPLPARAM>::lmon          = NULL;
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 std::string 
@@ -180,13 +160,14 @@ signal_handler_t<SDBG_DEFAULT_TEMPLPARAM>::sighandler ( int sig )
      
   process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p = *launcher_proc;
 
+  // DHA 6/03/2009 so far the failure handling due to an anomalous signal into
+  // the Engine has been the same, regardless of RMs. Genericize the following
+  // code until it breaks for a certain RM... 
   //
   // failure handling sequence is specific to 
   // RM implementations. Regardless, the engine must enforce
   // the following defined error handling.
   //
-  string dt 
-    = basename ( strdup (p.get_myopts()->get_my_opt()->debugtarget.c_str()));
 
   //
   // A. When LaunchMON engine fails, the basic cleanup semantics of LaunchMON
@@ -199,38 +180,43 @@ signal_handler_t<SDBG_DEFAULT_TEMPLPARAM>::sighandler ( int sig )
   //       to the FEN API stub, if it can.
   //
 
-  if ( dt == string ("srun") || dt == string ("lt-srun"))
+  //
+  // detach from the target RM_job (A.1.1).
+  //
+  // This attempts to stop all of the threads
+  // and mark "detach" If a kill/detach request has been already registered, 
+  // don't bother
+  self_trace_t::trace ( LEVELCHK(quiet), 
+    MODULENAME,
+    0,
+    "A signal (%d) received. Starting cleanup...", sig);
+  lmon->request_detach(p, ENGINE_dying_wsignal);
+
+  //
+  // poll_processes should return false as the detach handler
+  // will return LAUNCHMON_STOP_TRACE which is converted
+  // to the false return code. If not, there must have been
+  // more events queued up, and it's better to consume all
+  // before proceed. A.1.1 and A.1.2.
+  //
+  const int nMaxEvs = 15;
+  int i=0;
+  while ( evman->poll_processes ( p, *lmon ) != false )
     {
-      //
-      // detach from the target srun (A.1.1).
-      //
-      tracer->tracer_stop (p, false);
-      p.set_please_detach ( true );
-
-      //
-      // poll_processes should return false as the detach handler
-      // will return LAUNCHMON_STOP_TRACE which is converted
-      // to the false return code. If not, there must have been
-      // more events queued up, and it's better to consume all
-      // before proceed. A.1.1 and A.1.2.
-      //
-      while ( evman->poll_processes ( *lmon ) != false );
-
-      //
-      // sending the lmonp_stop_tracing message to FEN
-      // A.1.3.
-      //
-      if ( lmon->get_API_mode () )
-        {
-          lmon->say_fetofe_msg (lmonp_stop_tracing);
-        }
+      self_trace_t::trace ( LEVELCHK(level1), 
+        MODULENAME,
+	0,
+	"Attempting to consume all launchmon events before aborting...");
+      i++;
+      if (i >= nMaxEvs)
+        break;
     }
 
   {
      self_trace_t::trace ( LEVELCHK(quiet), 
  	                   MODULENAME,
 			   0,
-			   "Aborting...");    
+			   "Aborting...");
   }
 
   abort();

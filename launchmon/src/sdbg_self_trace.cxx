@@ -27,53 +27,55 @@
  *			
  *
  *  Update Log:
+ *        Jun 09 2010 DHA: Use LMON_timestamp to get consistent timestamp format
  *        Feb 09 2008 DHA: Added LLNS Copyright 
  *        Jul 03 2006 DHA: trace method
  *        Mar 30 2006 DHA: File created      
  */ 
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
+
 #include <lmon_api/common.h>
 #include <iostream>
 #include <cstdarg>
+#include <ctime>
+#include <sys/time.h>
+#include <limits.h>
 
-#if TIME_WITH_SYS_TIME 
-# include <ctime>
-# include <sys/time.h>
-#else
-# error ctime and sys_time.h is required 
-#endif
-
+#include "lmon_api/lmon_say_msg.hxx"
 #include "sdbg_self_trace.hxx"
 
 self_trace_entry_t self_trace_t::launchmon_module_trace 
-     =  { quiet, "Launchmon", "launchmon" };
+     =  { quiet, "<Launchmon>", "launchmon" };
 
 self_trace_entry_t self_trace_t::tracer_module_trace 
-     = { quiet, "ProcTracer", "tracer" };
+     = { quiet, "<ProcTracer>", "tracer" };
 
 self_trace_entry_t self_trace_t::symtab_module_trace 
-     = { quiet, "Symtable", "symtab" };
-
-self_trace_entry_t self_trace_t::thread_tracer_module_trace 
-     = { quiet, "ThreadTracer", "ttracer" };
+     = { quiet, "<Symtable>", "symtab" };
 
 self_trace_entry_t self_trace_t::machine_module_trace 
-     = { quiet, "Machine", "machine"};
+     = { quiet, "<Machine>", "machine"};
 
 self_trace_entry_t self_trace_t::event_module_trace
-     = { quiet, "EventMan", "event"};
+     = { quiet, "<EventMgr>", "event"};
 
 self_trace_entry_t self_trace_t::driver_module_trace
-     = { quiet, "Driver", "driver"};
+     = { quiet, "<Driver>", "driver"};
 
 self_trace_entry_t self_trace_t::opt_module_trace
-     = { quiet, "OptionParsing", "option"};
+     = { quiet, "<OptionParser>", "option"};
+
+self_trace_entry_t self_trace_t::rm_module_trace
+     = { quiet, "<ResourceMgr>", "resmgr"};
 
 self_trace_entry_t self_trace_t::sighandler_module_trace
-     = { quiet, "SigHandler", "sighandler"};
+     = { quiet, "<SigHandler>", "sighandler"};
 
 
-FILE* self_trace_t::tracefptr = stdout;
+FILE *self_trace_t::tracefptr = stdout;
 
 
 //!  opts_args_t::trace
@@ -81,33 +83,26 @@ FILE* self_trace_t::tracefptr = stdout;
     logs self-tracing event
 */
 bool 
-self_trace_t::trace ( bool levelchk, 		      
-		      const std::string& mn, 
+self_trace_t::trace ( bool levelchk,
+		      const std::string & mn, 
 		      bool error_or_info,
-		      const char* output, ... )
+		      const char *output, ... )
 {
-  using namespace std;
-
-  va_list ap;
-  
-  char timelog[PATH_MAX];
-  char log[PATH_MAX];
-  const char* format = "%b %d %T";
-  //struct timeval tv;  
-  time_t t;
-
   if (!levelchk) 
     return false;
 
-  string ei_str = error_or_info ? "ERROR" : "INFO";
+  va_list ap;
+  char log[PATH_MAX];
+  const char *ei_str = error_or_info ? "ERROR" : "INFO";
+  bool rc = false;
 
-  time(&t);
-  strftime ( timelog, PATH_MAX, format, localtime(&t) );
-  sprintf(log, "<%s> %s (%s): %s\n", timelog, mn.c_str(), ei_str.c_str(), output);
+  if (LMON_timestamp(mn.c_str(), ei_str, output, log, PATH_MAX) >= 0)
+    {
+      va_start(ap, output);
+      vfprintf(tracefptr, log, ap);
+      va_end(ap);
+      rc = true;
+    }
 
-  va_start(ap, output);
-  vfprintf(tracefptr, log, ap);
-  va_end(ap);
-
-  return true; 
+  return rc; 
 }

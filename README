@@ -1,3 +1,35 @@
+2014-05-30 Dong H. Ahn <ahn1@llnl.gov>
+	o LaunchMON version 1.0.1 released. Please see NEWS 
+
+2010-06-30 Dong H. Ahn <ahn1@llnl.gov>
+	o NEWS items
+        o Added new Cray XT4/5/6 and OpenRTE support
+        o Integrated the scalable version of PMGR, a.k.a.
+          "COBO", and set it as the default bootfabric
+        o Ran scaling tests and validated the scalability
+          at over 100K MPI processes on BlueGene/P and
+          over 200K MPI processes on Cray XT5.
+        o Augmented LMON API set while maintaining
+          the existing API to be backward-compatible
+          - LMON_fe_regErrorCB call
+          - LMON_fe_getRMInfo call
+          - LMON_DONT_STOP_APP environment variable
+	o Lots of bug fixes
+
+2009-05-20 Dong H. Ahn <ahn1@llnl.gov>
+	o Added LMON_fe_regErrorCB support
+	o Added a fix for the "re-attach" defect on BGP. 
+	  This requires IBM efix27 or higher.   
+	o Added a fix for user [recv|send]UsrData functions
+	  to return correct error codes. 
+	  Added a new error code (LMON_ENEGCB) to lmon_api_std.h  
+
+2009-03-11 Dong H. Ahn <ahn1@llnl.gov>
+        o LaunchMON 0.7X beta release 
+        o Added general BlueGene support convering both BlueGene/L 
+	  and BleGene/P
+   	  + --with-rm now takes bgrm instead of bglrm or bgprm
+          
 2008-12-12 Dong H. Ahn <ahn1@llnl.gov>
         o LaunchMON 0.6.4 service release
         o Validated the combinations of various configure options and

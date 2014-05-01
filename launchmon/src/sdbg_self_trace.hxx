@@ -35,7 +35,11 @@
 #ifndef SDBG_SELF_TRACE_HXX
 #define SDBG_SELF_TRACE_HXX 1
 
-#include <string>
+#if HAVE_STRING
+# include <string>
+#else
+# error string is required
+#endif
 
 enum self_trace_verbosity {
   quiet = 0,
@@ -60,6 +64,7 @@ struct self_trace_t {
   static self_trace_entry_t driver_module_trace;
   static self_trace_entry_t machine_module_trace;
   static self_trace_entry_t opt_module_trace;
+  static self_trace_entry_t rm_module_trace;
   static self_trace_entry_t sighandler_module_trace;
 
   static bool trace(bool, const std::string&, bool, const char*, ... );

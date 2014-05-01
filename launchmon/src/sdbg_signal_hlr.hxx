@@ -27,7 +27,7 @@
  *
  *  Update Log:
  *        Feb 09 2008 DHA: Added LLNS Copyright
- *        Jul 05  2006 DHA: File created      
+ *        Jul 05  2006 DHA: File created
  */ 
 
 #ifndef SDBG_SIGNAL_HLR_HXX
@@ -59,7 +59,7 @@ public:
                                                           { launcher_proc = p; }
  
   static process_base_t<SDBG_DEFAULT_TEMPLPARAM>* get_launcher_proc ( )
-                                                          { return launcher_proc; }     
+                                                          { return launcher_proc; }
 
   static void sighandler ( int sig );
   static void install_hdlr_for_all_sigs ( );
@@ -74,10 +74,10 @@ private:
        { return (self_trace_t::sighandler_module_trace.verbosity_level >= level); }
  
   static std::vector<int> monitoring_signals;  
-  static tracer_base_t<SDBG_DEFAULT_TEMPLPARAM>* tracer;
-  static process_base_t<SDBG_DEFAULT_TEMPLPARAM>* launcher_proc;
-  static event_manager_t<SDBG_DEFAULT_TEMPLPARAM>* evman;
-  static launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>* lmon;
+  static tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *tracer;
+  static process_base_t<SDBG_DEFAULT_TEMPLPARAM> *launcher_proc;
+  static event_manager_t<SDBG_DEFAULT_TEMPLPARAM> *evman;
+  static launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> *lmon;
 
   //
   // For self tracing

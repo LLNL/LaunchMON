@@ -1,0 +1,73 @@
+.TH LaunchMON 3 "MAY 2014" LaunchMON "LaunchMON Front-End API"
+
+.SH NAME
+LMON_fe_getRMInfo \- LaunchMON front-end API: provides RM info. 
+
+.SH SYNOPSIS
+.nf
+.B #include <unistd.h>
+.B #include <lmon_fe.h>
+.PP
+.PP
+.BI "lmon_rc_e LMON_fe_getRMInfo ( int " sessionHandle, " lmon_rm_info_t * " info " ); "
+.B cc ... -lmonfeapi
+
+.SH DESCRIPTION
+
+\fBLMON_fe_getRMInfo()\fR provides information through \fIinfo\fR on the underlying 
+resource management software system with that LaunchMON interacts for
+the tool session associated with \fIsessionHandle\fR. \fIinfo\fR must point
+to the storage holding the \fBlmon_rm_info_t\fR type:
+.PP
+.nf
+.B typedef enum {
+.B "   "RC_mchecker_rm, "
+.B "   "RC_slurm, "
+.B "   "RC_bglrm, "
+.B "   "RC_bgprm, "
+.B "   "RC_bgqrm, "
+.B "   "RC_bgrm, "
+.B "   "RC_alps, "
+.B "   "RC_orte, "
+.B "   "RC_none "
+.B "} rm_catalogue_e;
+.PP
+.B typedef struct {
+.B "   "rm_catalogue_e *rm_supported_types; "
+.B "   "int num_supported_types; "
+.B "   "int index_to_cur_instance; "
+.B "   "pid_t rm_launcher_pid; "
+.B "} lmon_rm_info_t;
+.fi
+.PP
+
+The \fIrm\_supported\_types\fR field is a pointer to an array of
+the length of \fInum\_supported\_types\fR, containing the supported
+resource manager types (the \fIrm\_catalogue\_e\fR type) for the platform. These fields contain static information
+and thus are available before an active session is instantiated with
+a specific resource manager. However, \fIindex\_to\_cur\_instance\fR and \fIrm\_launcher\_pid\fR are specific to a resource manager that the session
+instantiates. Thus, these two later fields become available only after \fBLMON\_fe\_launchAndSpawnDaemons()\fR or \fBLMON\_fe\_attachAndSpawnDaemons()\fR is
+successfully returned for the session.
+
+.SH RETURN VALUE
+\fBLMON_OK\fR when all the fields of \fIinfo\fR are available;
+\fBLMON_EDUNAV\fR only when \fIrm\_supported\_types\fR and \fInum\_supported\_types\fR are available; otherwise, an LMON error code 
+is returned as described below.
+
+.SH ERRORS
+.TP
+.B LMON_OK
+Success.
+.TP
+.B LMON_EBDARG
+Invalid arguments.
+.TP
+.B LMON_EINVAL,
+Invalid session.
+.TP
+.B LMON_EDUNAV
+Neither the pid of the target job launcher (\fIrm\_launcher\_pid\fR) nor \fIindex\_to\_cur\_instance\fR is  available.
+
+.SH AUTHOR
+Dong H. Ahn <ahn1@llnl.gov>
+

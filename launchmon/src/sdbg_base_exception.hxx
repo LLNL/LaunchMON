@@ -45,7 +45,8 @@ public:
  
   exception_base_t ()                         { }
   explicit exception_base_t ( const char* m ) { message = m; }
-  exception_base_t( const std::string& m )    { message = m; }
+  explicit exception_base_t( const std::string& m )    
+					      { message = m; }
   virtual ~exception_base_t ( )               { }
   virtual void report()  {
     self_trace_t::trace ( true, type, true,

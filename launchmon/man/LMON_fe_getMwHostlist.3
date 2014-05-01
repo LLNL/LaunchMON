@@ -1,0 +1,46 @@
+.TH LaunchMON 3 "MAY 2014" LaunchMON "LaunchMON Front-End API"
+
+.SH NAME
+LMON_fe_getMwHostlist LMON_fe_getMwHostlistSize\- LaunchMON front-end API: retrieves information about hosts where middleware daemons are running
+
+.SH SYNOPSIS
+.nf
+.B #include <lmon_fe.h>
+.PP
+.BI "lmon_rc_e LMON_fe_getMwHostlist ( int " sessionHandle ","
+.BI "  MPIR_PROCDESC_EXT *" proctab ", unsigned int *" size ", unsigned int " maxlen " );"
+.PP
+.BI "lmon_rc_e LMON_fe_getMwHostlistSize ( int " sessionHandle ", unsigned int *" size " );"
+.PP
+.PP
+.B cc ... -lmonfeapi
+.fi
+
+.SH DESCRIPTION
+
+TODO
+
+.SH RETURN VALUE
+Those functions return \fBLMON_OK\fR on success; otherwise, an 
+LMON error code is returned. 
+
+.SH ERRORS
+.TP
+.B LMON_OK
+Success.
+.TP
+.B LMON_EBDARG
+Invalid arguments.
+.TP
+.B LMON_EDUNAV
+The requested information is unavailable.
+.TP
+.B LMON_ETRUNC
+Returned \fIbuf\fR contains truncated remote process descriptor table.
+.TP
+.B LMON_EINVAL
+Encountered other errorenous conditions. 
+
+.SH AUTHOR
+Dong H. Ahn <ahn1@llnl.gov>
+

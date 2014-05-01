@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Mar 04 2008 DHA: Added generic BlueGene support
  *        Jun 13 2008 DHA: Added GNU build system support. 
  *        Mar 21 2008 DHA: Beautified the code a bit.  
  *        Mar 18 2008 DHA: Added BlueGene support. (Fixing a File IO bug) 
@@ -33,9 +34,18 @@
  *          
  */
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
+
 #include <lmon_api/common.h>
+
+/*
+ * This program may interfere with MPI implementations that 
+ * use USR2 signal. 
+ */ 
                                                                   
-#if RM_BGL_MPIRUN
+#if SUB_ARCH_BGL || SUB_ARCH_BGP
 /* work around for a compiler problem on BlueGene/L */
 #undef SEEK_SET
 #undef SEEK_END
@@ -43,19 +53,67 @@
 #endif
                                                                   
 #include <mpi.h>
+#include <signal.h>
                                                                   
-#if HAVE_SIGNAL_H
-# include <signal.h>
-#else
-# error signal.h is required
-#endif
-                                                                  
-#define COMM_TAG    1000
-#define MAX_BUF_LEN 1024
+#define COMM_TAG              1000
+#define MAX_BUF_LEN           1024
+#define COMPUTE_UNIT          20
+#define SLEEP_FOR_COMPUTE_SEC 3
+
+#include <stdarg.h>
+#include <limits.h>
+#include <time.h>
+#include <sys/time.h>
+
+//
+// For the performance study of 4K-byte block fetching
+// 10,000 x 4KB = 10,000 x 8B * 512
+//
+#define FETCH_ME_ARRAY_SIZE 5120000
+double FETCH_ME_DBL_ARRAY[FETCH_ME_ARRAY_SIZE];
 
 static int global_stall = 1;
 static int global_rank = -1;
 
+static void
+LMON_say_msg ( const char* m, const char* output, ... )
+{
+  va_list ap;
+  char timelog[PATH_MAX];
+  char log[PATH_MAX];
+  const char* format = "%b %d %T";
+  time_t t;
+  const char ei_str[] = "INFO";
+
+  time(&t);
+  strftime ( timelog, PATH_MAX, format, localtime(&t));
+  snprintf(log, PATH_MAX, "<%s> %s (%s): %s\n", timelog, m, "INFO", output);
+
+  va_start(ap, output);
+  vfprintf(stdout, log, ap);
+  va_end(ap);
+}
+
+static void
+init_FETCH_ME_DBL_ARRAY()
+{
+  int i=0;
+  for (i=0; i < FETCH_ME_ARRAY_SIZE; ++i)
+    {
+      FETCH_ME_DBL_ARRAY[i] = (double) i+1;
+    }
+#if 0
+  char *tmp = (char*)FETCH_ME_DBL_ARRAY;
+  fprintf (stdout, "[LMON APP] address: 0x%x\n", FETCH_ME_DBL_ARRAY);
+  fprintf (stdout, "[LMON APP] 1st: 0x%x, %f\n", &FETCH_ME_DBL_ARRAY[0], FETCH_ME_DBL_ARRAY[0]);
+  fprintf (stdout, "[LMON APP] 1st: %x %x %x %x %x %x %x %x \n", tmp[0], tmp[1], tmp[2], tmp[3], 
+                                                                 tmp[4], tmp[5], tmp[6], tmp[7]);
+  tmp = (char*)&FETCH_ME_DBL_ARRAY[512];
+  fprintf (stdout, "[LMON APP] 512th: 0x%x %f\n", &FETCH_ME_DBL_ARRAY[512], FETCH_ME_DBL_ARRAY[512]);
+  fprintf (stdout, "[LMON APP] 1st: %x %x %x %x %x %x %x %x \n", tmp[0], tmp[1], tmp[2], tmp[3], 
+                                                                 tmp[4], tmp[5], tmp[6], tmp[7]);
+#endif
+}
 
 void 
 sighandler (int sig) 
@@ -96,20 +154,34 @@ main(int argc, char* argv[])
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+  init_FETCH_ME_DBL_ARRAY ();
   signal(SIGUSR1, sighandler);
   global_rank = rank;
   if (rank == 0) 
     fprintf(stdout, "[LMON APP] singal handler installed for signum=%d\n", SIGUSR1); 
  
   while(global_stall == 1 ) {
-    /* fprintf(stdout, "[LMON APP] stall for a sec"); */
-    sleep(1);
+    if (rank == 0)
+      LMON_say_msg ( "APP", "stall for %d secs", SLEEP_FOR_COMPUTE_SEC );  
+    sleep(SLEEP_FOR_COMPUTE_SEC);
   }
 
+  if (rank == 0)
+    fprintf(stdout, "The hang unlocked\n");
+
   pass_its_neighbor(rank, size, &buf);
-  sleep (30); // inserting a stall to emulate some computation latency
-  if (rank == 0) 
-    fprintf(stdout, "[LMON APP] The program size is %d\n", size); 
+
+  int remain = COMPUTE_UNIT * SLEEP_FOR_COMPUTE_SEC;
+  for (i=0; i < COMPUTE_UNIT; i++)
+    {
+      sleep(SLEEP_FOR_COMPUTE_SEC);
+      remain -= SLEEP_FOR_COMPUTE_SEC;
+      if (rank == 0)
+        LMON_say_msg ( "APP", "%d secs remain", remain);
+    }
+
+  if (rank == 0)
+    LMON_say_msg ( "APP", "size of this program is %d\n", size);
 
   MPI_Finalize();
   return EXIT_SUCCESS;

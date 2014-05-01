@@ -33,23 +33,33 @@
 #  engine remotely on a node in which the job launcher process runs.
 #
 #  Update Log:
+#        Oct 21 2011 DHA: Added dynamic RM detection support.
+#        Mar 06 2009 DHA: Changed bglrm to bgrm
 #        Dec 14 2008 DHA: configurable NUMNODES
 #        Jun 13 2008 DHA: Created file.
 #
 
-RM_TYPE=@RMTP@
-NUMNODES=@NNODES@
-NOHUP=""                                                                                                                                                                      
-if test "x$RM_TYPE" = "xbglrm" ; then
-  echo "[LMON FE] until mpirun -partition option is fixed this test is disabled on BGL"
+export RM_TYPE=@TEST_RMTP@
+export MPI_JOB_LAUNCHER_PATH=@TJLPATH@
+export LMON_PREFIX=@LMONPREFIX@
+export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
+
+NUMNODES=2
+NOHUP=""
+
+if test "x$RM_TYPE" = "xRC_bglrm" -o "x$RM_TYPE" = "xRC_bgprm" -o "x$RM_TYPE" = "xRC_bgqrm" -o "x$RM_TYPE" = "xRC_bgq_slurm; then
+  echo "[LMON FE] until mpirun -partition option is fixed this test is disabled on BlueGene"
   exit 1
   NOHUP=nohup
   rm -f nohup.out
 fi
+if test "x$RM_TYPE" = "xalps" ; then
+  echo "[LMON FE] this test is disabled on CRAY ALPS"
+  exit 1
+fi
 
 NUMTASKS=`expr $NUMNODES \* @SMP@`
 
-export LMON_LAUNCHMON_ENGINE_PATH=@LMON@ 
 export FEN_RM_DISTRIBUTED=1
 
 $NOHUP fe_launch_smoketest@EXE@ `pwd`/simple_MPI@EXE@ $NUMTASKS $NUMNODES pdebug `pwd`/be_kicker@EXE@

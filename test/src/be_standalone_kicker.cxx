@@ -31,52 +31,20 @@
  *        Jul 30 2006 DHA: Created file.          
  */
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
+
 #include <lmon_api/common.h>
-
-#if HAVE_UNISTD_H
-# include <unistd.h>
-#else
-# error unistd.h is required
-#endif
-                                                                          
+#include <unistd.h>
 #include <iostream>
-
-#if HAVE_STDARG_H
-# include <cstdarg>
-#else
-# error stdarg.h is required
-#endif
-
-#if HAVE_SIGNAL_H
-# include <signal.h>
-#else
-# error signal.h is required
-#endif
-                                                                          
-#if HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#else
-# error sys/types.h is required
-#endif
-                                                                          
-#if HAVE_SYS_WAIT_H
-# include <sys/wait.h>
-#else
-# error sys/wait.h is required
-#endif
-
-#if HAVE_LIMITS_H
-# include <climits>
-#else
-# error limits.h is required
-#endif
-
-#if TIME_WITH_SYS_TIME
-# include <ctime>
-# include <sys/time.h>
-#else
-# error ctime and sys_time.h is required
-#endif
+#include <cstdarg>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <climits>
+#include <ctime>
+#include <sys/time.h>
 
 void 
 LMON_say_msg ( const char* m, const char* output, ... )

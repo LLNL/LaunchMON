@@ -34,22 +34,19 @@
 #ifndef SDBG_BASE_SYMTAB_IMPL_HXX
 #define SDBG_BASE_SYMTAB_IMPL_HXX 1
 
-extern "C" {
-#if HAVE_LIBGEN_H
-# include <libgen.h>
-#else
-# error libgen.h is required
-#endif 
-
-#if HAVE_ASSERT_H
-# include <assert.h>
-#else
-# error assert.h is required
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
 #endif
+
+extern "C" {
+#include <libgen.h>
+#include <assert.h>
 }
 
-#include <string>
 #include <iostream>
+#include <string>
+#include <limits.h>
+
 #include "sdbg_base_symtab.hxx"
 
 
@@ -86,8 +83,8 @@ symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::symbol_base_t (
 
 template <BASE_SYMTAB_TEMPLATELIST>
 symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::symbol_base_t (
-                 const std::string& n, 
-		 const std::string& bln, 
+                 const std::string &n, 
+		 const std::string &bln, 
 		 const VA rd=SYMTAB_UNINIT_ADDR, 
 		 const VA rla=SYMTAB_UNINIT_ADDR )
 {
@@ -117,14 +114,14 @@ symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::~symbol_base_t ()
 template <BASE_SYMTAB_TEMPLATELIST>
 void 
 symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::set_name (
-		 const std::string& n )
+		 const std::string &n )
 {
   name = n;
 }
 
 
 template <BASE_SYMTAB_TEMPLATELIST>
-const std::string& 
+const std::string & 
 symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::get_name () const
 {
   return name;
@@ -134,14 +131,14 @@ symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::get_name () const
 template <BASE_SYMTAB_TEMPLATELIST>
 void 
 symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::set_base_lib_name ( 
-                 const std::string& bln )
+                 const std::string &bln )
 {
   base_lib_name = bln;
 }
 
 
 template <BASE_SYMTAB_TEMPLATELIST>
-const std::string& 
+const std::string & 
 symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::get_base_lib_name () const
 {
   return base_lib_name ;
@@ -151,14 +148,14 @@ symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::get_base_lib_name () const
 template <BASE_SYMTAB_TEMPLATELIST>
 void 
 symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::set_raw_address (
-                 const VA& ra)
+                 const VA &ra)
 {
   raw_address = ra;
 } 
 
 
 template <BASE_SYMTAB_TEMPLATELIST>
-const VA& 
+const VA & 
 symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::get_raw_address () const
 {
   return raw_address;
@@ -168,14 +165,14 @@ symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::get_raw_address () const
 template <BASE_SYMTAB_TEMPLATELIST>
 void 
 symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::set_relocated_address ( 
-                 const VA& ra )
+                 const VA &ra )
 {
   relocated_address = ra;
 } 
 
 
 template <BASE_SYMTAB_TEMPLATELIST>
-const VA& 
+const VA & 
 symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::get_relocated_address () const
 {
   return relocated_address;
@@ -205,7 +202,7 @@ image_base_t<BASE_IMAGE_TEMPLPARAM>::image_base_t ()
 
 template <BASE_IMAGE_TEMPLATELIST>
 image_base_t<BASE_IMAGE_TEMPLPARAM>::image_base_t 
-(const std::string& lib) 
+(const std::string &lib) 
   : image_base_address(SYMTAB_INIT_IMAGE_BASE),
     native_exec_handler(NULL)
 {
@@ -213,13 +210,17 @@ image_base_t<BASE_IMAGE_TEMPLPARAM>::image_base_t
   
   sprintf(tempstr, "%s", lib.c_str());
   path = lib;
+  //
+  // some memory checkers complain about basename...
+  //  
   base_image_name = basename((char*) tempstr);
   MODULENAME = self_trace_t::symtab_module_trace.module_name;
 }
 
 
 template <BASE_IMAGE_TEMPLATELIST>
-image_base_t<BASE_IMAGE_TEMPLPARAM>::image_base_t ( const image_base_t<BASE_IMAGE_TEMPLPARAM>& im) 
+image_base_t<BASE_IMAGE_TEMPLPARAM>::image_base_t 
+( const image_base_t<BASE_IMAGE_TEMPLPARAM> &im) 
 {
   base_image_name = im.base_image_name;
   path = im.base_path_name;
@@ -236,16 +237,38 @@ image_base_t<BASE_IMAGE_TEMPLPARAM>::image_base_t ( const image_base_t<BASE_IMAG
 
 //! PUBLIC: image_base_t<> destructor
 /*!
-    desructor
+    destructor
 */
 template <BASE_IMAGE_TEMPLATELIST>
 image_base_t<BASE_IMAGE_TEMPLPARAM>::~image_base_t()
 {
   if (native_exec_handler)   
-    native_exec_handler->finalize();
+    {
+      native_exec_handler->finalize();
+      delete native_exec_handler;
+      native_exec_handler = NULL;
+    }
 
-  linkage_symtab.clear();
-  debug_symtab.clear();    
+  if (!(linkage_symtab.empty()))
+    {
+      typename std::map<std::string, symbol_base_t<VA>*, ltstr>::iterator iter;
+      for (iter = linkage_symtab.begin(); iter != linkage_symtab.end(); ++iter)
+        {
+          delete iter->second;
+          iter->second = NULL;
+        }
+      linkage_symtab.clear(); 
+    }
+  if (!(debug_symtab.empty()))
+    {
+      typename std::map<std::string, symbol_base_t<VA>*, ltstr>::iterator iter;
+      for (iter = debug_symtab.begin(); iter != debug_symtab.end(); ++iter)
+        {
+          delete iter->second;
+          iter->second = NULL;
+        }
+      debug_symtab.clear();
+    }
 }
 
 
@@ -262,7 +285,7 @@ image_base_t<BASE_IMAGE_TEMPLPARAM>::set_image_base_address(VA ba)
 
 
 template <BASE_IMAGE_TEMPLATELIST>
-const VA&
+const VA &
 image_base_t<BASE_IMAGE_TEMPLPARAM>::get_image_base_address() const
 {
   return image_base_address;
@@ -271,7 +294,7 @@ image_base_t<BASE_IMAGE_TEMPLPARAM>::get_image_base_address() const
 
 template <BASE_IMAGE_TEMPLATELIST>
 void image_base_t<BASE_IMAGE_TEMPLPARAM>::set_base_image_name
-(std::string& n)
+(std::string &n)
 {
   base_image_name = n;
 }
@@ -287,7 +310,7 @@ image_base_t<BASE_IMAGE_TEMPLPARAM>::get_base_image_name() const
 
 template <BASE_IMAGE_TEMPLATELIST>
 void image_base_t<BASE_IMAGE_TEMPLPARAM>::set_path
-(std::string& n)
+(std::string &n)
 {
   path = n;
 }
@@ -303,7 +326,7 @@ image_base_t<BASE_IMAGE_TEMPLPARAM>::get_path() const
 
 template <BASE_IMAGE_TEMPLATELIST>
 void image_base_t<BASE_IMAGE_TEMPLPARAM>::set_native_exec_handler
-(EXECHANDLER* h)
+(EXECHANDLER *h)
 {
   assert ( h != NULL );  
   native_exec_handler = h;  
@@ -311,7 +334,7 @@ void image_base_t<BASE_IMAGE_TEMPLPARAM>::set_native_exec_handler
 
 
 template <BASE_IMAGE_TEMPLATELIST>
-EXECHANDLER* 
+EXECHANDLER * 
 image_base_t<BASE_IMAGE_TEMPLPARAM>::get_native_exec_handler()
 {
   return native_exec_handler;
@@ -323,8 +346,9 @@ image_base_t<BASE_IMAGE_TEMPLPARAM>::get_native_exec_handler()
     returns the matching linkage symbol object
  */
 template <BASE_IMAGE_TEMPLATELIST>
-const symbol_base_t<BASE_SYMTAB_TEMPLPARAM>& 
-image_base_t<BASE_IMAGE_TEMPLPARAM>::get_a_symbol ( const std::string& key ) const 
+const symbol_base_t<BASE_SYMTAB_TEMPLPARAM> & 
+image_base_t<BASE_IMAGE_TEMPLPARAM>::get_a_symbol 
+( const std::string& key ) const 
 { 
   symbol_base_t<BASE_SYMTAB_TEMPLPARAM>* rsym = NULL; 
   
@@ -403,7 +427,7 @@ image_base_t<BASE_IMAGE_TEMPLPARAM>::print_sorted_linkage_symtab ()
 
 template <BASE_IMAGE_TEMPLATELIST>
 symtab_error_e
-image_base_t<BASE_IMAGE_TEMPLPARAM>::init ( const std::string& lib )
+image_base_t<BASE_IMAGE_TEMPLPARAM>::init ( const std::string &lib )
   throw ( symtab_exception_t ) 
 {
   char tempstr[PATH_MAX];
@@ -411,8 +435,11 @@ image_base_t<BASE_IMAGE_TEMPLPARAM>::init ( const std::string& lib )
   sprintf(tempstr, "%s", lib.c_str());
   path = lib;
   base_image_name = basename((char*) tempstr);
-  
+  //
+  // some memory checkers complain about basename...
+  //  
   return (init());
 }
+
 
 #endif // SDBG_BASE_SYMTAB_IMPL_HXX

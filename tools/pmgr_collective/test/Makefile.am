@@ -31,18 +31,18 @@
 ##        Jun 10 2008 DHA: Copied from the old Makefile.
 ##
 
-INCLUDES           = -I$(top_srcdir)/@COMMLOC@
+INCLUDES           = 
 
 noinst_PROGRAMS    = client mpirun_rsh
 
 client_SOURCES     = client.c 
 
-client_LDFLAGS     = -L$(top_srcdir)/@COMMLOC@
+client_LDFLAGS     = 
 
-client_LDADD       = @LIBCOMM@
+client_LDADD       = @COMMLOC@/@LIBCOMM@
 
 mpirun_rsh_SOURCES = mpirun_rsh.c
 
-mpirun_rsh_LDFLAGS = -L$(top_srcdir)/@COMMLOC@
+mpirun_rsh_LDFLAGS = 
 
-mpirun_rsh_LDADD   = @LIBCOMM@
+mpirun_rsh_LDADD   = @COMMLOC@/@LIBCOMM@

@@ -28,9 +28,12 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        Jan 11 2013 DHA: Added launchmon.spec and launchmon.module for
+##                         RPM support. Added INSTALL.launchmon, as 'make dist'
+##                         was not distributing that file.
 ##        Sep 30 2008 DHA: Added README.ERROR_HANDLING and package.conf 
 ##                         to the distribution list
-##        Jun 06 2007 DHA: Copied from the old Makefile.
+##        Jun 06 2008 DHA: Copied from the old Makefile.
 ##        Mar 15 2008 DHA: Added PMGR Collective support
 ##        Mar 11 2008 DHA: Added Linux PowerPC support (BlueGene FEN)
 ##        Feb 09 2008 DHA: Added LLNS Copyright
@@ -38,5 +41,11 @@
 ##
 
 SUBDIRS         = tools launchmon test
-include_HEADERS = config.h 
-EXTRA_DIST      = config/ap README.ERROR_HANDLING package.conf bootstrap
+EXTRA_DIST      = config/ap \
+		  README.ERROR_HANDLING \
+		  package.conf \
+		  launchmon.spec \
+                  launchmon.module \
+		  bootstrap \
+		  INSTALL.launchmon
+ACLOCAL_AMFLAGS = -I config

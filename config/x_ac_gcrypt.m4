@@ -28,20 +28,18 @@
 # --------------------------------------------------------------------------------
 # 
 #   Update Log:
-#         Jun 11 2008 DHA: File created. 
+#         Jun 11 2008 DHA: File created.
 #
-AC_DEFUN([X_AC_GCRYPT], [  
+AC_DEFUN([X_AC_GCRYPT], [
 
   AC_MSG_CHECKING([whether to configure and build gcrypt])
 
-  AC_ARG_WITH([gcrypt],  
+  AC_ARG_WITH([gcrypt],
     AS_HELP_STRING(--with-gcrypt@<:@=ARG@:>@,configure and build gcrypt @<:@default=yes@:>@), 
-    [with_gcrypt=$withval],  
+    [with_gcrypt=$withval],
     [with_gcrypt="check"]
   )
 
-  #echo ""
-  #echo "***with_gcrypt: $with_gcrypt"
   gcrypt_configured="no"
   if test "x$with_gcrypt" != "xno"; then 
     if test -d tools/libgpg-error -a -d tools/libgcrypt; then
@@ -57,8 +55,9 @@ AC_DEFUN([X_AC_GCRYPT], [
       AC_CONFIG_SUBDIRS([tools/libgpg-error])
       AC_SUBST(GPGERRLOC, [tools/libgpg-error/src])
       AC_SUBST(GCRYPTLOC, [tools/libgcrypt/src])
-      AC_SUBST(LIBGCRYPT, [-lgcrypt])
-      AC_SUBST(LIBGPGERR, [-lgpg-error])
+      AC_SUBST(LIBGCRYPT, [libgcrypt.la])
+      AC_SUBST(LIBGPGERR, [libgpg-error.la])
+      AC_DEFINE(GCRYPT, [1], [1 if defined])	
       gcrypt_configured="yes"
     else
       AC_MSG_ERROR([tools/libgpg-error or tools/libgcrypt not found])
@@ -66,7 +65,6 @@ AC_DEFUN([X_AC_GCRYPT], [
   else
       AC_MSG_ERROR([--with-gcrypt is now mandatory])
   fi # with_gcrypt
-  AM_CONDITIONAL([WITH_GCRYPT], [test "x$gcrypt_configured" = "xyes"])
   AC_MSG_RESULT($gcrypt_configured)
 ])
 

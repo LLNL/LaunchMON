@@ -4,7 +4,7 @@
 ##
 ##
 ##--------------------------------------------------------------------------------
-## Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at
+## Copyright (c) 2008 ~ 2012, Lawrence Livermore National Security, LLC. Produced at
 ## the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>.
 ## LLNL-CODE-409469. All rights reserved.
 ##
@@ -29,6 +29,8 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        Aug 03 2010 DHA: Added LMONHOSTLIST support
+##        May 29 2009 DHA: Added fe_regErrorCB.in test
 ##        Jun 12 2008 DHA: Created file.
 ##
 
@@ -37,38 +39,49 @@ SMPFACTOR                         = @SMPFACTOR@
 TESTNNODES                        = @TESTNNODES@
 TARGET_JOB_LAUNCHER_PATH          = @TARGET_JOB_LAUNCHER_PATH@
 RM_TYPE                           = @RM_TYPE@
+LMONHOSTLIST                      = @LMONHL@
 
-INCLUDES                          = -I$(top_srcdir)/launchmon/src -I$(top_srcdir)/@LMONAPILOC@
-if WITH_GCRYPT
+INCLUDES                          = -I$(top_srcdir)/launchmon/src \
+                                    -I$(top_srcdir)/launchmon/src/linux \
+                                    -I$(top_srcdir)/launchmon/src/linux/lmon_api \
+                                    -I$(top_srcdir)/@LMONAPILOC@
 INCLUDES                          += -I$(top_srcdir)/@GCRYPTLOC@ -I$(top_srcdir)/@GPGERRLOC@
-endif
 if WITH_CIOD
-INCLUDES                          += -I$(top_srcdir)/@CIODLOC@
+INCLUDES                          += -I@ARCHHEADER@ -I$(top_srcdir)/@CIODLOC@
 endif
 
-bin_PROGRAMS                      = fe_jobsnap \
+testdir                           = ${pkgdatadir}/tests
+test_PROGRAMS                     = fe_jobsnap \
 				    be_jobsnap \
 				    LE_model_checker \
 				    fe_launch_smoketest \
 				    fe_launch_usrpayload_test \
+                                    fe_launch_middleware \
 			   	    fe_attach_smoketest \
 				    be_kicker \
+                                    be_mem_fetcher \
 				    be_kicker_usrpayload_test \
 				    be_standalone_kicker \
+                                    mw_comm_helper \
 				    run_3mins \
 				    hang_on_SIGUSR1 \
 				    simple_MPI 
 
 LE_model_checker_SOURCES          = LE_model_checker.c
 LE_model_checker_CFLAGS           = @LNCHR_BIT_FLAGS@ $(AM_CFLAGS)
+LE_model_checker_CXXFLAGS         = @LNCHR_BIT_FLAGS@ $(AM_CXXFLAGS)
 LE_model_checker_LDADD            = @LIBPTHREAD@
 LE_model_checker_LDFLAGS          = @LNCHR_BIT_FLAGS@ @LIBPTHREAD@ $(AM_LDFLAGS)
 
 fe_launch_smoketest_SOURCES       = fe_launch_smoketest.cxx util.c
+fe_launch_smoketest_CFLAGS        = $(AM_CFLAGS)
+fe_launch_smoketest_CXXFLAGS      = $(AM_CXXFLAGS)
 fe_launch_smoketest_LDFLAGS       = -L$(top_srcdir)/@LMONAPILOC@ 
 fe_launch_smoketest_LDADD         = -lmonfeapi 
 
 fe_launch_usrpayload_test_SOURCES = fe_launch_usrpayload_test.cxx util.c
+fe_launch_usrpayload_test_CFLAGS   = $(AM_CFLAGS)
+fe_launch_usrpayload_test_CXXFLAGS = $(AM_CXXFLAGS)
 fe_launch_usrpayload_test_LDFLAGS = -L$(top_srcdir)/@LMONAPILOC@ 
 fe_launch_usrpayload_test_LDADD   = -lmonfeapi 
 
@@ -77,29 +90,59 @@ fe_launch_usrpayload_test_LDADD   = -lmonfeapi
 #fe_multisession_launch_LDADD      = -lmonfeapi 
 
 fe_attach_smoketest_SOURCES       = fe_attach_smoketest.cxx util.c
+fe_attach_smoketest_CFLAGS        = $(AM_CFLAGS)
+fe_attach_smoketest_CXXFLAGS      = $(AM_CXXFLAGS)
 fe_attach_smoketest_LDFLAGS       = -L$(top_srcdir)/@LMONAPILOC@
 fe_attach_smoketest_LDADD         = -lmonfeapi
 
 be_kicker_SOURCES                 = be_kicker.cxx util.c
+be_kicker_CFLAGS                  = $(AM_CFLAGS)
+be_kicker_CXXFLAGS                = $(AM_CXXFLAGS)
 be_kicker_LDFLAGS    	          = -L$(top_srcdir)/@LMONAPILOC@ 
 be_kicker_LDADD                   = -lmonbeapi 
 
 be_kicker_usrpayload_test_SOURCES = be_kicker_usrpayload_test.cxx
+be_kicker_usrpayload_test_CFLAGS   = $(AM_CFLAGS)
+be_kicker_usrpayload_test_CXXFLAGS = $(AM_CXXFLAGS)
 be_kicker_usrpayload_test_LDFLAGS = -L$(top_srcdir)/@LMONAPILOC@ 
 be_kicker_usrpayload_test_LDADD   = -lmonbeapi
 
+fe_launch_middleware_SOURCES       = fe_launch_middleware.cxx util.c
+fe_launch_middleware_CFLAGS        = $(AM_CFLAGS)
+fe_launch_middleware_CXXFLAGS      = $(AM_CXXFLAGS)
+fe_launch_middleware_LDFLAGS       = -L$(top_srcdir)/@LMONAPILOC@ 
+fe_launch_middleware_LDADD         = -lmonfeapi 
+
 be_standalone_kicker_SOURCES      = be_standalone_kicker.cxx
+be_standalone_kicker_CFLAGS       = $(AM_CFLAGS)
+be_standalone_kicker_CXXFLAGS     = $(AM_CXXFLAGS)
 be_standalone_kicker_LDFLAGS      = -L$(top_srcdir)/@LMONAPILOC@ 
 be_standalone_kicker_LDADD        = -lmonbeapi
 
+be_mem_fetcher_SOURCES            = be_mem_fetcher.cxx util.c
+be_mem_fetcher_CFLAGS             = $(AM_CFLAGS)
+be_mem_fetcher_CXXFLAGS           = $(AM_CXXFLAGS)
+be_mem_fetcher_LDFLAGS            = -L$(top_srcdir)/@LMONAPILOC@ 
+be_mem_fetcher_LDADD              = -lmonbeapi 
+
 fe_jobsnap_SOURCES                = fe_jobsnap.cxx util.c
+fe_jobsnap_CFLAGS                 = $(AM_CFLAGS)
+fe_jobsnap_CXXFLAGS               = $(AM_CXXFLAGS)
 fe_jobsnap_LDFLAGS                = -L$(top_srcdir)/@LMONAPILOC@
 fe_jobsnap_LDADD                  = -lmonfeapi 
 be_jobsnap_SOURCES                = be_jobsnap.cxx util.c
+be_jobsnap_CFLAGS                 = $(AM_CFLAGS)
+be_jobsnap_CXXFLAGS               = $(AM_CXXFLAGS)
 be_jobsnap_LDFLAGS                = -L$(top_srcdir)/@LMONAPILOC@
 be_jobsnap_LDADD                  = -lmonbeapi
 
-bin_SCRIPTS                       = test.LE_model_checker_mainthread \
+mw_comm_helper_SOURCES            = mw_comm_helper.cxx util.c
+mw_comm_helper_CFLAGS             = $(AM_CFLAGS)
+mw_comm_helper_CXXFLAGS           = $(AM_CXXFLAGS)
+mw_comm_helper_LDFLAGS            = -L$(top_srcdir)/@LMONAPILOC@
+mw_comm_helper_LDADD              = -lmonmwapi
+
+test_SCRIPTS                      = test.LE_model_checker_mainthread \
 				    test.LE_model_checker_pthread \
 			            test.LE_model_checker_large \
 				    test.LE_model_checker_extreme \
@@ -109,7 +152,15 @@ bin_SCRIPTS                       = test.LE_model_checker_mainthread \
 				    test.launch_2_uneven \
 				    test.launch_3_invalid_dmonpath \
 				    test.launch_5_usrpayload \
+				    test.launch_6_engine_failure \
+                                    test.launch_7_kill \
+                                    test.launch_7_shutdownbe \
+                                    test.launch_7_detach \
+                                    test.launch_mw_1_hostlist \
+                                    test.launch_mw_2_coloc \
+                                    test.launch_mw_5_mixall \
 				    test.attach_1 \
+                                    test.attach_1_mem_fetcher \
 				    test.attach_1_remote \
 				    test.attach_1_pdebugmax \
 				    test.attach_2_uneven \
@@ -118,10 +169,13 @@ bin_SCRIPTS                       = test.LE_model_checker_mainthread \
 				    test.attach_3_callsafterfail \
 				    test.attach_4_kill \
 				    test.attach_4_shutdownbe \
+                                    test.attach_4_detach \
 				    test.jobsnap_1 \
-				    test.launch_6_engine_failure
+				    test.fe_regErrorCB \
+				    test.fe_regStatusCB
 
-CLEANFILES                        = $(bin_SCRIPTS)
+
+CLEANFILES                        = $(test_SCRIPTS)
 EXTRA_DIST                        = test.LE_model_checker_mainthread.in \
                                     test.LE_model_checker_pthread.in \
                                     test.LE_model_checker_large.in \
@@ -132,7 +186,15 @@ EXTRA_DIST                        = test.LE_model_checker_mainthread.in \
                                     test.launch_2_uneven.in \
                                     test.launch_3_invalid_dmonpath.in \
                                     test.launch_5_usrpayload.in \
+				    test.launch_6_engine_failure.in \
+                                    test.launch_7_kill.in \
+                                    test.launch_7_shutdownbe.in \
+                                    test.launch_7_detach.in \
+                                    test.launch_mw_1_hostlist.in \
+                                    test.launch_mw_2_coloc.in \
+                                    test.launch_mw_5_mixall.in \
                                     test.attach_1.in \
+                                    test.attach_1_mem_fetcher.in \
                                     test.attach_1_remote.in \
                                     test.attach_1_pdebugmax.in \
                                     test.attach_2_uneven.in \
@@ -141,13 +203,17 @@ EXTRA_DIST                        = test.LE_model_checker_mainthread.in \
                                     test.attach_3_callsafterfail.in \
                                     test.attach_4_kill.in \
                                     test.attach_4_shutdownbe.in \
+                                    test.attach_4_detach.in \
                                     test.jobsnap_1.in \
-				    test.launch_6_engine_failure.in
+				    test.fe_regErrorCB.in \
+				    test.fe_regStatusCB.in
 
 
 do_subst = sed -e 's,@LMON@,$(prefix)/bin/launchmon$(EXEEXT),g' \
+               -e 's,@LMONMWHL@,$(LMONHOSTLIST),g' \
+	       -e 's,@LMONPREFIX@,$(prefix),g' \
                -e 's,@TJLPATH@,$(TARGET_JOB_LAUNCHER_PATH),g' \
-               -e 's,@RMTP@,$(RM_TYPE),g' \
+               -e 's,@TEST_RMTP@,$(RM_TYPE),g' \
 	       -e 's,@SMP@,$(SMPFACTOR),g' \
 	       -e 's,@NNODES@,$(TESTNNODES),g' \
                -e 's,@EXE@,$(EXEEXT),g' 
@@ -185,9 +251,30 @@ test.launch_5_usrpayload: test.launch_5_usrpayload.in Makefile
 test.launch_6_engine_failure: test.launch_6_engine_failure.in Makefile
 	$(do_subst) < test.launch_6_engine_failure.in > test.launch_6_engine_failure
 	chmod +x test.launch_6_engine_failure
+test.launch_7_kill: test.launch_7_kill.in Makefile
+	$(do_subst) < test.launch_7_kill.in > test.launch_7_kill
+	chmod +x test.launch_7_kill
+test.launch_7_shutdownbe: test.launch_7_shutdownbe.in Makefile
+	$(do_subst) < test.launch_7_shutdownbe.in > test.launch_7_shutdownbe
+	chmod +x test.launch_7_shutdownbe
+test.launch_7_detach: test.launch_7_detach.in Makefile
+	$(do_subst) < test.launch_7_detach.in > test.launch_7_detach
+	chmod +x test.launch_7_detach
+test.launch_mw_1_hostlist: test.launch_mw_1_hostlist.in Makefile
+	$(do_subst) < test.launch_mw_1_hostlist.in > test.launch_mw_1_hostlist
+	chmod +x test.launch_mw_1_hostlist
+test.launch_mw_2_coloc: test.launch_mw_2_coloc.in Makefile
+	$(do_subst) < test.launch_mw_2_coloc.in > test.launch_mw_2_coloc
+	chmod +x test.launch_mw_2_coloc
+test.launch_mw_5_mixall: test.launch_mw_5_mixall.in Makefile
+	$(do_subst) < test.launch_mw_5_mixall.in > test.launch_mw_5_mixall
+	chmod +x test.launch_mw_5_mixall
 test.attach_1: test.attach_1.in Makefile
 	$(do_subst) < test.attach_1.in > test.attach_1
 	chmod +x test.attach_1
+test.attach_1_mem_fetcher: test.attach_1_mem_fetcher.in Makefile
+	$(do_subst) < test.attach_1_mem_fetcher.in > test.attach_1_mem_fetcher
+	chmod +x test.attach_1_mem_fetcher
 test.attach_1_pdebugmax: test.attach_1_pdebugmax.in Makefile
 	$(do_subst) < test.attach_1_pdebugmax.in > test.attach_1_pdebugmax
 	chmod +x test.attach_1_pdebugmax
@@ -212,9 +299,18 @@ test.attach_4_kill: test.attach_4_kill.in Makefile
 test.attach_4_shutdownbe: test.attach_4_shutdownbe.in Makefile
 	$(do_subst) < test.attach_4_shutdownbe.in > test.attach_4_shutdownbe
 	chmod +x test.attach_4_shutdownbe
+test.attach_4_detach: test.attach_4_detach.in Makefile
+	$(do_subst) < test.attach_4_detach.in > test.attach_4_detach
+	chmod +x test.attach_4_detach
 test.jobsnap_1: test.jobsnap_1.in Makefile
 	$(do_subst) < test.jobsnap_1.in > test.jobsnap_1
 	chmod +x test.jobsnap_1
+test.fe_regErrorCB: test.fe_regErrorCB.in Makefile
+	$(do_subst) < test.fe_regErrorCB.in > test.fe_regErrorCB
+	chmod +x test.fe_regErrorCB
+test.fe_regStatusCB: test.fe_regStatusCB.in Makefile
+	$(do_subst) < test.fe_regStatusCB.in > test.fe_regStatusCB
+	chmod +x test.fe_regStatusCB
 
 run_3mins: run_3mins.c Makefile
 	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) -I$(top_srcdir)/launchmon/src $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -o $@ $<	

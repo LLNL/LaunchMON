@@ -1,0 +1,72 @@
+.TH LaunchMON 3 "MAY 2014" LaunchMON "LaunchMON Front-End API"
+
+.SH NAME
+LMON_fe_regStatusCB \- LaunchMON front-end API: registers a status notifying callback function. 
+
+.SH SYNOPSIS
+.nf
+.B #include <unistd.h>
+.B #include <lmon_fe.h>
+.PP
+.PP
+.BI "lmon_rc_e LMON_fe_regStatusCB ( 
+.BI "  int " sessionHandle, " int ( *"statusCB " ) (int *"status "));"
+.PP
+.BI "lmon_rc_e LMON_fe_getStatus ( 
+.BI "  int " sessionHandle, " int " status "));"
+.PP
+.B cc ... -lmonfeapi
+
+
+.SH DESCRIPTION
+
+\fBLMON_fe_regStatusCB\fR registers the \fIstatusCB\fR function 
+for the session indicated by the \fIsessionHandle\fR argument.
+LaunchMON calls back the registered routine on 
+the following state changes: the given session is registered; 
+back-end daemons are spawned; middleware daemons are spawned; 
+the job is detached from the LaunchMON engine's control; 
+and the job is killed.  
+In case where multiple callback functions are registered
+with this API call to a session, the latest one is used.
+LaunchMON considers a non-zero return value from
+the \fIstatusCB\fR function as an error condition.
+
+\fBLMON_fe_getStatus\fR returns the status of the session
+indicated by the \fIsessionHandle\fR argument. This can be
+used in polling mode.  
+
+In both cases, the following macros are provided to help the callback routine
+decoding the \fIstatus\fR argument.
+
+.TP
+.BI WIFREGISTERED( status_val ) 
+Evaluates to a non-zero value if the session is registered.
+.TP 
+.BI WIFBESPAWNED( status_val ) 
+Evaluates to a non-zero value if the back-end daemons have been spawned.
+.TP
+.BI WIFMWSPAWNED( status_val ) 
+Evaluates to a non-zero value if the middleware daemons have been spawned.
+.TP
+.BI WIFDETACHED( status_val ) 
+Evaluates to a non-zero value if the job has been detached.
+.TP
+.BI WIFKILLED( status_val ) 
+Evaluates to a non-zero value if the job has been killed.
+
+
+.SH RETURN VALUE
+\fBLMON_OK\fR on success; otherwise, an LMON error code is returned as described below. 
+
+.SH ERRORS
+.TP
+.B LMON_OK
+Success.
+.TP
+.B LMON_EBDARG
+Invalid arguments.
+
+.SH AUTHOR
+Dong H. Ahn <ahn1@llnl.gov>
+

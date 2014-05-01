@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Mar 04 2009 DHA: Added generic BG support.
  *        Jun 13 2008 DHA: Added GNU build system support.
  *        Mar 18 2008 DHA: Added BlueGene support. 
  *        Feb 09 2008 DHA: Added LLNS Copyright.
@@ -33,9 +34,13 @@
  *          
  */
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
+
 #include <lmon_api/common.h>
                                                                                                                                         
-#if RM_BGL_MPIRUN
+#if SUB_ARCH_BGL || SUB_ARCH_BGP
 /* work around for a compiler problem on BlueGene/L */
 #undef SEEK_SET
 #undef SEEK_END
@@ -43,35 +48,16 @@
 #endif
                                                                                                                                         
 #include <mpi.h>
-                                                                                                                                        
-#if HAVE_SIGNAL_H
-# include <signal.h>
-#else
-# error signal.h is required
-#endif
-                                                                                                                                        
-#define COMM_TAG    1000
-#define MAX_BUF_LEN 1024
-
-#if HAVE_STDARG_H
-# include <stdarg.h>
-#else
-# error stdarg.h is required
-#endif 
-
-#if HAVE_LIMITS_H
-# include <limits.h>
-#else
-# error limits.h is required 
-#endif
-
-#if TIME_WITH_SYS_TIME
-# include <time.h>
-# include <sys/time.h>
-#else
-# error time.h and sys/time.h are required
-#endif
-
+#include <signal.h>
+                                                                                                                               
+#define COMM_TAG              1000
+#define MAX_BUF_LEN           1024
+#define COMPUTE_UNIT          20
+#define SLEEP_FOR_COMPUTE_SEC 3
+#include <stdarg.h>
+#include <limits.h>
+#include <time.h>
+#include <sys/time.h>
 
 static void 
 LMON_say_msg ( const char* m, const char* output, ... )
@@ -80,22 +66,22 @@ LMON_say_msg ( const char* m, const char* output, ... )
   char timelog[PATH_MAX];
   char log[PATH_MAX];
   const char* format = "%b %d %T";
-  struct timeval tv;
+  time_t t;
   const char ei_str[] = "INFO";
 
-  gettimeofday (&tv, NULL);
-  strftime ( timelog, PATH_MAX, format, localtime(&(tv.tv_sec)));
-  sprintf(log, "<%f> %s (%s): %s\n", (tv.tv_sec+(tv.tv_usec/100000.0)), m, "INFO", output);
+  time(&t);
+  strftime ( timelog, PATH_MAX, format, localtime(&t));
+  snprintf(log, PATH_MAX, "<%s> %s (%s): %s\n", timelog, m, "INFO", output);
 
   va_start(ap, output);
   vfprintf(stdout, log, ap);
   va_end(ap);
 }
 
-
 static void 
 pass_its_neighbor(const int rank, const int size, int* buf)
 {  
+  int i;
   MPI_Request request[2];
   MPI_Status status[2];
 
@@ -103,10 +89,18 @@ pass_its_neighbor(const int rank, const int size, int* buf)
   MPI_Isend((void*)&rank, 1, MPI_INT, ((rank+1)%size), COMM_TAG, MPI_COMM_WORLD, &request[1]);
   MPI_Waitall(2, request, status);
 
+  int remain = COMPUTE_UNIT * SLEEP_FOR_COMPUTE_SEC;
+  for (i=0; i < COMPUTE_UNIT; i++) 
+    {
+      sleep(SLEEP_FOR_COMPUTE_SEC);
+      remain -= SLEEP_FOR_COMPUTE_SEC;
+      if (rank == 0) 
+        LMON_say_msg ( "APP", "%d secs remain", remain);
+    }
+
   if (rank == 0) 
-   {
-     LMON_say_msg ( "APP", "size of this program is %d\n", size); 
-   }
+    LMON_say_msg ( "APP", "size of this program is %d\n", size); 
+
   MPI_Barrier(MPI_COMM_WORLD);
 }
 

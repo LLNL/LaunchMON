@@ -29,13 +29,12 @@
  *  Update Log:
  *        Feb 09 2008 DHA: Added LLNS Copyright
  *        Jul 04 2006 DHA: Added self tracing support
- *        Jan 12 2006 DHA: Created file.          
+ *        Jan 12 2006 DHA: Created file.
  */ 
 
 #ifndef SDBG_EVENT_MANAGER_HXX
 #define SDBG_EVENT_MANAGER_HXX 1
 
-#include <list>
 #include <vector>
 #include "sdbg_base_mach.hxx"
 #include "sdbg_base_launchmon.hxx"
@@ -47,11 +46,10 @@ class monitor_proc_thread_t
 
 public:
   monitor_proc_thread_t ();
+  monitor_proc_thread_t (const monitor_proc_thread_t &m);
   ~monitor_proc_thread_t ();
   
-  bool wait_for_all (pid_t& p, debug_event_t& rc);
-
-
+  bool wait_for_all (debug_event_t& rc);
 };
 
 
@@ -68,33 +66,30 @@ class event_manager_t
 public:
   
   event_manager_t ();
-  ~event_manager_t ();
+  event_manager_t (const event_manager_t &e);
+  virtual ~event_manager_t ();
   
-  bool multiplex_events ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& proc,
-		    launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>& lm );
-  bool poll_processes ( launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>& lm );
-  bool poll_FE_socket ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& proc,
-		    launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>& lm );
-  bool register_process ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>* proc );
-  bool delete_process ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>* proc );
-  
-  //FIXME: 
-  process_base_t<SDBG_DEFAULT_TEMPLPARAM>* tmp_launcher_proc;
-  
+  bool multiplex_events ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &proc,
+		          launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> &lm );
+  bool poll_processes ( process_base_t<SDBG_DEFAULT_TEMPLPARAM>& proc,
+		          launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> &lm );
+  bool poll_FE_socket ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &proc,
+		        launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> &lm );
+
 private:
 
   bool LEVELCHK(self_trace_verbosity level) 
        { return (self_trace_t::event_module_trace.verbosity_level >= level); }
 
-
+ 
   //
   // WARNING: do not attempt to copy proclist to another list
   // of the same type. It will copy the pointers, not pointees.
   // It is just tricky and time consuming to implement 
   // polymorphism using STL containers.
-  //
-  std::list <process_base_t<SDBG_DEFAULT_TEMPLPARAM>* > proclist;
-  monitor_proc_thread_t<SDBG_DEFAULT_TEMPLPARAM>* ev_monitor;
+  // proclist not yet used
+  //std::list <process_base_t<SDBG_DEFAULT_TEMPLPARAM>* > proclist;
+  monitor_proc_thread_t<SDBG_DEFAULT_TEMPLPARAM> *ev_monitor;
 
   //
   // For self tracing

@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Mar 05 2008 DHA: Support for generic BlueGene systems
  *        Jun 12 2008 DHA: GNU build system support 
  *        Feb 09 2008 DHA: Added LLNS Copyright
  *        Dec 07 2007 DHA: Included more header files to shut up the 
@@ -39,13 +40,12 @@
  *                         TODO: populate a wide range of error cases.  
  */
 
-#include <lmon_api/common.h>
-
-#if HAVE_PTHREAD_H
-# include <pthread.h>
-#else
-# error pthread.h is required
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
 #endif
+
+#include <lmon_api/common.h>
+#include <pthread.h>
 
 #define MPIR_DEBUG_SPAWNED  1
 #define MPIR_DEBUG_ABORTING 2
@@ -73,7 +73,7 @@ volatile int MPIR_debug_gate      = 0;
 int MPIR_proctable_size           = 0;
 volatile int  MPIR_being_debugged = 0;
   
-/* BGL/MPIRUN specific variables */
+/* BG/MPIRUN specific variables */
 char MPIR_executable_path[EXECPATH_SIZE] = {0};
 char MPIR_server_arguments[SERVER_ARG_SIZE] = {0};
 
@@ -205,6 +205,8 @@ setup_debugger ( void* arg )
 }
 
 
+#include <sys/types.h>
+
 void * 
 abort_debugger ( void* arg )
 {
@@ -213,7 +215,7 @@ abort_debugger ( void* arg )
       MPIR_debug_state = MPIR_DEBUG_ABORTING;	
       MPIR_Breakpoint();
     }
-  
+
   return NULL;
 }
 
@@ -222,23 +224,29 @@ void *
 do_something ( void* arg )
 {
   int cnt = 0;
+  long tid = ((long)arg);
+
+  if (tid == 24) 
+    {
+      setup_debugger(arg);
+    }
 
   while (1) {
    
     sleep(1);
  
     cnt++;
-    fprintf ( stdout, "." );
-    fflush ( stdout );
+    //fprintf ( stdout, ".",tid );
+    //fflush ( stdout );
 	
-    if ( cnt == 10 ) 
+    if ( cnt == 3 ) 
       {
 	break;
       }
   }       
    
-  fprintf ( stdout, "\n");
-  return NULL;
+  fprintf ( stdout, "tid[%ld]done \n", tid);
+  pthread_exit(NULL);
 }
 
 
@@ -271,8 +279,7 @@ echo_argv (int argc, char** argv)
 }
 
 
-int 
-main ( int argc, char* argv[])
+int modelchecker_run( int argc, char* argv[])
 {
   int i = 0;
   int errorlevel;
@@ -363,8 +370,8 @@ main ( int argc, char* argv[])
 
   if ( myopt.thr == slavethread )
     {
-      pthread_t thr[7];
-      int i;
+      pthread_t thr[256];
+      long i;
 	  
       fprintf ( stdout, "[LaunchMON MODEL CHECKER]: Starting mpirun model checker...\n");
       fprintf ( stdout, "[LaunchMON MODEL CHECKER]: Process Count: %d\n", 
@@ -372,20 +379,17 @@ main ( int argc, char* argv[])
       fprintf ( stdout, "[LaunchMON MODEL CHECKER]: Pthreads calling MPIR_Breakpoint %d\n", 
 		myopt.thr);
 	  
-      for (i=0; i < 6; i++) 	  
-	pthread_create(&thr[i], NULL, do_something, (void *) &i);
+      for (i=0; i < 256; i++) 	  
+	pthread_create(&thr[i], NULL, do_something, (void *) i);
 
-      pthread_create(&thr[6], NULL, setup_debugger, (void *) argv[0]);
+      //pthread_create(&thr[1023], NULL, setup_debugger, (void *) argv[0]);
 	
-      for (i=0; i < 7; i++)
+      for (i=0; i < 256; i++)
 	pthread_join(thr[i], NULL);
 	
       fprintf ( stdout, "[LaunchMON MODEL CHECKER]: Finishing up...\n");
       pthread_create(&thr[0], NULL, abort_debugger, (void *) argv[0]);
-      
-      for (i=0; i < 1; i++)
-	pthread_join(thr[i], NULL);
-
+      pthread_join(thr[0], NULL);
     }
   else
     {
@@ -406,5 +410,12 @@ main ( int argc, char* argv[])
   fprintf ( stdout,
     "[LMON LE: OK] Please check if launchmon fetched all RPDTAB entries of %d tasks\n", myopt.pcount);
   fprintf ( stdout, "****************************************************************\n\n");
+
   return 0;
+}
+
+int
+main ( int argc, char* argv[])
+{
+  return modelchecker_run(argc, argv);
 }

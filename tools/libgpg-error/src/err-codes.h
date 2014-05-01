@@ -105,8 +105,8 @@ static const char msgstr[] =
   gettext_noop ("No agent running") "\0"
   gettext_noop ("agent error") "\0"
   gettext_noop ("Invalid data") "\0"
-  gettext_noop ("Assuan server fault") "\0"
-  gettext_noop ("Assuan error") "\0"
+  gettext_noop ("Unspecific Assuan server fault") "\0"
+  gettext_noop ("General Assuan error") "\0"
   gettext_noop ("Invalid session key") "\0"
   gettext_noop ("Invalid S-expression") "\0"
   gettext_noop ("Unsupported algorithm") "\0"
@@ -196,6 +196,23 @@ static const char msgstr[] =
   gettext_noop ("Protocol violation") "\0"
   gettext_noop ("Invalid MAC") "\0"
   gettext_noop ("Invalid request") "\0"
+  gettext_noop ("Unknown extension") "\0"
+  gettext_noop ("Unknown critical extension") "\0"
+  gettext_noop ("Locked") "\0"
+  gettext_noop ("Unknown option") "\0"
+  gettext_noop ("Unknown command") "\0"
+  gettext_noop ("Not operational") "\0"
+  gettext_noop ("No passphrase given") "\0"
+  gettext_noop ("No PIN given") "\0"
+  gettext_noop ("Not enabled") "\0"
+  gettext_noop ("No crypto engine") "\0"
+  gettext_noop ("Missing key") "\0"
+  gettext_noop ("Too many objects") "\0"
+  gettext_noop ("Limit reached") "\0"
+  gettext_noop ("Not initialized") "\0"
+  gettext_noop ("Missing issuer certificate") "\0"
+  gettext_noop ("Operation fully cancelled") "\0"
+  gettext_noop ("Operation not yet finished") "\0"
   gettext_noop ("Buffer too short") "\0"
   gettext_noop ("Invalid length specifier in S-expression") "\0"
   gettext_noop ("String too long in S-expression") "\0"
@@ -209,7 +226,31 @@ static const char msgstr[] =
   gettext_noop ("Unexpected reserved punctuation in S-expression") "\0"
   gettext_noop ("Bad hexadecimal character in S-expression") "\0"
   gettext_noop ("Odd hexadecimal numbers in S-expression") "\0"
-  gettext_noop ("Bad octadecimal character in S-expression") "\0"
+  gettext_noop ("Bad octal character in S-expression") "\0"
+  gettext_noop ("General IPC error") "\0"
+  gettext_noop ("IPC accept call failed") "\0"
+  gettext_noop ("IPC connect call failed") "\0"
+  gettext_noop ("Invalid IPC response") "\0"
+  gettext_noop ("Invalid value passed to IPC") "\0"
+  gettext_noop ("Incomplete line passed to IPC") "\0"
+  gettext_noop ("Line passed to IPC too long") "\0"
+  gettext_noop ("Nested IPC commands") "\0"
+  gettext_noop ("No data callback in IPC") "\0"
+  gettext_noop ("No inquire callback in IPC") "\0"
+  gettext_noop ("Not an IPC server") "\0"
+  gettext_noop ("Not an IPC client") "\0"
+  gettext_noop ("Problem starting IPC server") "\0"
+  gettext_noop ("IPC read error") "\0"
+  gettext_noop ("IPC write error") "\0"
+  gettext_noop ("Too much data for IPC layer") "\0"
+  gettext_noop ("Unexpected IPC command") "\0"
+  gettext_noop ("Unknown IPC command") "\0"
+  gettext_noop ("IPC syntax error") "\0"
+  gettext_noop ("IPC call has been cancelled") "\0"
+  gettext_noop ("No input source for IPC") "\0"
+  gettext_noop ("No output source for IPC") "\0"
+  gettext_noop ("IPC parameter error") "\0"
+  gettext_noop ("Unknown IPC inquire") "\0"
   gettext_noop ("User defined error code 1") "\0"
   gettext_noop ("User defined error code 2") "\0"
   gettext_noop ("User defined error code 3") "\0"
@@ -226,6 +267,7 @@ static const char msgstr[] =
   gettext_noop ("User defined error code 14") "\0"
   gettext_noop ("User defined error code 15") "\0"
   gettext_noop ("User defined error code 16") "\0"
+  gettext_noop ("System error w/o errno") "\0"
   gettext_noop ("Unknown system error") "\0"
   gettext_noop ("End of file") "\0"
   gettext_noop ("Unknown error code");
@@ -313,134 +355,182 @@ static const int msgidx[] =
     1350,
     1362,
     1375,
-    1395,
-    1408,
-    1428,
-    1449,
-    1471,
-    1483,
-    1498,
-    1506,
-    1519,
-    1528,
-    1546,
-    1557,
-    1568,
-    1582,
-    1602,
-    1615,
-    1627,
-    1641,
-    1653,
-    1673,
+    1406,
+    1427,
+    1447,
+    1468,
+    1490,
+    1502,
+    1517,
+    1525,
+    1538,
+    1547,
+    1565,
+    1576,
+    1587,
+    1601,
+    1621,
+    1634,
+    1646,
+    1660,
+    1672,
     1692,
-    1712,
-    1734,
-    1758,
-    1779,
-    1802,
-    1823,
-    1838,
-    1849,
-    1869,
-    1882,
-    1895,
-    1912,
-    1934,
-    1948,
-    1968,
-    1984,
-    1998,
-    2009,
-    2029,
-    2052,
-    2073,
-    2088,
-    2109,
-    2131,
-    2147,
-    2161,
-    2177,
-    2191,
-    2208,
-    2220,
-    2252,
-    2272,
-    2284,
-    2294,
-    2306,
-    2324,
-    2345,
-    2357,
-    2372,
-    2389,
-    2404,
-    2420,
-    2434,
+    1711,
+    1731,
+    1753,
+    1777,
+    1798,
+    1821,
+    1842,
+    1857,
+    1868,
+    1888,
+    1901,
+    1914,
+    1931,
+    1953,
+    1967,
+    1987,
+    2003,
+    2017,
+    2028,
+    2048,
+    2071,
+    2092,
+    2107,
+    2128,
+    2150,
+    2166,
+    2180,
+    2196,
+    2210,
+    2227,
+    2239,
+    2271,
+    2291,
+    2303,
+    2313,
+    2325,
+    2343,
+    2364,
+    2376,
+    2391,
+    2408,
+    2423,
+    2439,
     2453,
     2472,
-    2495,
-    2516,
-    2540,
-    2558,
-    2580,
-    2603,
-    2621,
-    2633,
-    2651,
-    2668,
-    2682,
-    2699,
-    2714,
-    2737,
+    2491,
+    2514,
+    2535,
+    2559,
+    2577,
+    2599,
+    2622,
+    2640,
+    2652,
+    2670,
+    2687,
+    2701,
+    2718,
+    2733,
     2756,
-    2769,
+    2775,
     2788,
-    2812,
-    2839,
-    2852,
-    2877,
-    2888,
+    2807,
+    2831,
+    2858,
+    2871,
+    2896,
     2907,
-    2919,
-    2935,
-    2952,
-    2993,
-    3025,
-    3063,
-    3090,
-    3120,
-    3150,
-    3178,
-    3215,
-    3239,
-    3287,
-    3329,
-    3369,
-    3411,
-    3437,
-    3463,
-    3489,
-    3515,
-    3541,
-    3567,
-    3593,
-    3619,
-    3645,
-    3672,
-    3699,
-    3726,
-    3753,
-    3780,
-    3807,
-    3834,
-    3855,
-    3867
+    2926,
+    2938,
+    2954,
+    2972,
+    2999,
+    3006,
+    3021,
+    3037,
+    3053,
+    3073,
+    3086,
+    3098,
+    3115,
+    3127,
+    3144,
+    3158,
+    3174,
+    3201,
+    3227,
+    3254,
+    3271,
+    3312,
+    3344,
+    3382,
+    3409,
+    3439,
+    3469,
+    3497,
+    3534,
+    3558,
+    3606,
+    3648,
+    3688,
+    3724,
+    3742,
+    3765,
+    3789,
+    3810,
+    3838,
+    3868,
+    3896,
+    3916,
+    3940,
+    3967,
+    3985,
+    4003,
+    4031,
+    4046,
+    4062,
+    4090,
+    4113,
+    4133,
+    4150,
+    4178,
+    4202,
+    4227,
+    4247,
+    4267,
+    4293,
+    4319,
+    4345,
+    4371,
+    4397,
+    4423,
+    4449,
+    4475,
+    4501,
+    4528,
+    4555,
+    4582,
+    4609,
+    4636,
+    4663,
+    4690,
+    4713,
+    4734,
+    4746
   };
 
-#define msgidxof(code) (0 ? -1 \
-  : ((code >= 0) && (code <= 170)) ? (code - 0) \
-  : ((code >= 200) && (code <= 213)) ? (code - 29) \
-  : ((code >= 1024) && (code <= 1039)) ? (code - 839) \
-  : ((code >= 16382) && (code <= 16383)) ? (code - 16181) \
-  : 16384 - 16181)
+static inline int
+msgidxof (int code)
+{
+  return (0 ? 0
+  : ((code >= 0) && (code <= 185)) ? (code - 0)
+  : ((code >= 198) && (code <= 213)) ? (code - 12)
+  : ((code >= 257) && (code <= 271)) ? (code - 55)
+  : ((code >= 273) && (code <= 281)) ? (code - 56)
+  : ((code >= 1024) && (code <= 1039)) ? (code - 798)
+  : ((code >= 16381) && (code <= 16383)) ? (code - 16139)
+  : 16384 - 16139);
+}

@@ -1,0 +1,32 @@
+#%Module1.0
+# vi:set filetype=tcl:
+ 
+# pre global control file
+if { [file exists $env(MODULESHOME)/etc/control] } {
+   source $env(MODULESHOME)/etc/control
+}
+ 
+# set some local variables
+set name    launchmon
+set version 1.0.1
+set prefix  /opt/$name-$version
+ 
+# prints when user types module-whatis <modfile>
+module-whatis "Tool Daemon launching/bootstrapping infrastructure v$version"
+ 
+# executed when user types module help <modfile>
+proc ModulesHelp { } {
+  puts strerr "$name $version"
+}
+ 
+# set environment variables
+prepend-path LMON_PREFIX     $prefix
+prepend-path LMON_LAUNCHMON_ENGINE_PATH $prefix/bin/launchmon
+prepend-path PATH            $prefix/bin
+prepend-path LD_LIBRARY_PATH $prefix/lib
+prepend-path MANPATH         $prefix/share/share/man
+ 
+# post global control file
+if { [file exists $env(MODULESHOME)/etc/post.control] } {
+   source $env(MODULESHOME)/etc/post.control
+}

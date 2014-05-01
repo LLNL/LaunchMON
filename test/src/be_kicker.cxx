@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Mar 04 2008 DHA: Added generic BlueGene support
  *        Jun 12 2008 DHA: Added GNU build support.
  *        Mar 20 2008 DHA: Added BlueGene support.
  *        Feb 09 2008 DHA: Dynamic RPDTAB buff size support with the
@@ -35,40 +36,41 @@
  *        Dec 20 2006 DHA: Created file.          
  */
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
+
 #include <lmon_api/common.h>
 
-#if HAVE_UNISTD_H
-# include <unistd.h>
-#else
-# error unistd.h is required
-#endif
-                                                                    
+#include <unistd.h>
 #include <iostream>
-                                                                    
-#if HAVE_SIGNAL_H
-# include <signal.h>
-#else
-# error signal.h is required
-#endif
-                                                                    
-#if HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#else
-# error sys/types.h is required
-#endif
-                                                                    
-#if HAVE_SYS_WAIT_H
-# include <sys/wait.h>
-#else
-# error sys/wait.h is required
-#endif
-                                                                    
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <lmon_api/lmon_be.h>
+#include "lmon_daemon_internal.hxx"
+#include "lmon_be_sync_mpi.hxx"
 
-#if RM_BGL_MPIRUN
-# include "debugger_interface.h"
-  using namespace DebuggerInterface;
-#endif 
+enum be_subtest_e {
+  subtest_no = 0,
+  subtest_kill_detach_shutdown,
+  subtest_mw_coloc, 
+  subtest_fail_mode,
+  subtest_reserved
+};
+
+const unsigned int kill_detach_shutdown_time = 60;
+const unsigned int fail_mode_test_time = 180;
+
+/*
+ * Multipurpose kicker daemon
+ *
+ * Usage: be_kicker signumber waittime
+ *
+ * argv[1]: specify if a non-continue-signal should be delivered to the job
+ * argv[2]: specify the number of seconds this daemon must wait before exit 
+ *
+ */
 
 int 
 main( int argc, char* argv[] )
@@ -76,17 +78,11 @@ main( int argc, char* argv[] )
   MPIR_PROCDESC_EXT* proctab;
   int proctab_size;
   int signum;
-  int kill_detach_shutdown_test; 
+  be_subtest_e subtest = subtest_no; 
   int i, rank,size;
   lmon_rc_e lrc;
 
-#if RM_BGL_MPIRUN
-  signum = 0;
-#else
   signum = SIGCONT;
-#endif 
-
-  kill_detach_shutdown_test = 0;
 
   if ( (lrc = LMON_be_init(LMON_VERSION, &argc, &argv)) 
               != LMON_OK )
@@ -98,13 +94,19 @@ main( int argc, char* argv[] )
 
   if (argc > 1) 
     {
-     signum = atoi(argv[1]);
-     printf ("[LMON BE] signum: %d, argv[1]: %s\n", signum, argv[1]);
+      signum = atoi(argv[1]);
+      printf ("[LMON BE] signum: %d, argv[1]: %s argc(%d)\n", signum, argv[1], argc);
     }
 
   if ( argc > 2 )
     {
-      kill_detach_shutdown_test = 1;
+      subtest = (be_subtest_e) atoi(argv[2]);
+      printf ("[LMON BE] subtest: %d, argv[2]: %s\n", subtest, argv[2]);
+      if (subtest >= subtest_reserved) {
+         printf ("[LMON BE] Unknown subtest. Existing...\n");
+         LMON_be_finalize();
+         return EXIT_FAILURE;
+      }
     } 
 
   LMON_be_getMyRank(&rank);
@@ -130,6 +132,17 @@ main( int argc, char* argv[] )
       return EXIT_FAILURE;
     } 
 
+  //
+  // This routine should only be used by test cases like this
+  //
+  if ( (lrc = LMON_be_tester_init ( ) ) 
+              != LMON_OK )
+    {      
+      fprintf(stdout, 
+        "[LMON BE] FAILED: LMON_be_tester_init\n");
+      return EXIT_FAILURE;
+    }
+
   if ( (lrc = LMON_be_getMyProctabSize(&proctab_size)) != LMON_OK ) 
     {
       fprintf(stdout, 
@@ -149,9 +162,9 @@ main( int argc, char* argv[] )
       LMON_be_finalize();
       return EXIT_FAILURE;
     }
-
-  if ( (lrc = LMON_be_getMyProctab (proctab, &proctab_size, proctab_size)) 
-              != LMON_OK )
+ 
+  if ( (lrc = LMON_be_getMyProctab (proctab, 
+                &proctab_size, proctab_size)) != LMON_OK )
     {    
       fprintf(stdout, 
         "[LMON BE(%d)] FAILED: LMON_be_getMyProctab\n", 
@@ -169,112 +182,106 @@ main( int argc, char* argv[] )
         proctab[i].mpirank);
     }
 
-#if RM_BGL_MPIRUN
-  /* the tool wants to send a signal other than the default */
-  if (signum != 0)  
+  //
+  // This routine should only be used by test cases like this
+  //
+  per_be_data_t *myBeData = NULL;
+  if ( (lrc = LMON_daemon_internal_tester_getBeData (&myBeData)) 
+              != LMON_OK )
     {
-      for (i=0; i < proctab_size; i++)
-        {
-          BGL_Debugger_Msg dbgmsg(KILL,proctab[i].pd.pid,0,0,0);
-          dbgmsg.dataArea.KILL.signal = SIGSTOP;
-          dbgmsg.header.dataLength = sizeof(dbgmsg.dataArea.KILL);
-          BGL_Debugger_Msg ackmsg;	  
-          BGL_Debugger_Msg ackmsg2;	  
-
-          if ( !BGL_Debugger_Msg::writeOnFd (BGL_DEBUGGER_WRITE_PIPE, dbgmsg ))
-            {
-	      fprintf(stdout, 
-	        "[LMON BE(%d)] FAILED: KILL command.\n", rank);
-	        return EXIT_FAILURE;
-	    }
-          if ( !BGL_Debugger_Msg::readFromFd (BGL_DEBUGGER_READ_PIPE, ackmsg )) 
-	    {
-	      fprintf(stdout, 
-	        "[LMON BE(%d)] FAILED: KILL_ACK command.\n", rank);
-	        return EXIT_FAILURE;
-	    }
-          if ( ackmsg.header.messageType != KILL_ACK)
-	    {
-	      fprintf(stdout, 
-		  "[LMON BE(%d)] FAILED: readFromFd received a wrong msg type: %d.\n", 
-	  	    rank,ackmsg.header.messageType);
-	      return EXIT_FAILURE;
-	    }
-          if ( !BGL_Debugger_Msg::readFromFd (BGL_DEBUGGER_READ_PIPE, ackmsg2 )) 
-	    {
-	      fprintf(stdout, 
-	        "[LMON BE(%d)] FAILED: SIGNAL_ENCOUNTERED command.\n", rank);
-	      return EXIT_FAILURE;
-	    }
-          if ( ackmsg2.header.messageType != SIGNAL_ENCOUNTERED)
-	    {
-	      fprintf(stdout, 
-		  "[LMON BE(%d)] FAILED: readFromFd received a wrong msg type: %d.\n", 
-	  	    rank,ackmsg.header.messageType);
-	      return EXIT_FAILURE;
-	    }
-        }
-      }
-
-      for (i=0; i < proctab_size; i++)
-        {
-          BGL_Debugger_Msg dbgmsg(CONTINUE,proctab[i].pd.pid,0,0,0);
-          BGL_Debugger_Msg ackmsg;	  
-          dbgmsg.dataArea.CONTINUE.signal = signum;
-          dbgmsg.header.dataLength = sizeof(dbgmsg.dataArea.CONTINUE);
-
-          if ( !BGL_Debugger_Msg::writeOnFd (BGL_DEBUGGER_WRITE_PIPE, dbgmsg ))
-            {
-              fprintf(stdout, 
-                "[LMON BE(%d)] FAILED: CONTINUE command.\n", rank);
-                return EXIT_FAILURE;
-            }
-          if ( !BGL_Debugger_Msg::readFromFd (BGL_DEBUGGER_READ_PIPE, ackmsg )) 
-            {
-              fprintf(stdout, 
-                "[LMON BE(%d)] FAILED: CONTINUE_ACK command.\n", rank);
-                return EXIT_FAILURE;
-            }
-          if ( ackmsg.header.messageType != CONTINUE_ACK)
-            {
-              fprintf(stdout, 
-          	  "[LMON BE(%d)] FAILED: readFromFd received a wrong msg type: %d.\n", 
-        	    rank,ackmsg.header.messageType);
-              return EXIT_FAILURE;
-            }
-          if ( ackmsg.header.nodeNumber != (unsigned int) proctab[i].pd.pid )
-            {
-              fprintf(stdout, 
-          	  "[LMON BE(%d)] FAILED: the CONTINUE_ACK msg contains a wrong nodeNumber.\n", rank);
-              return EXIT_FAILURE;
-            }   
-         }
-#else
-  for(i=0; i < proctab_size; i++)
-    {
-#if 0
-      printf("[LMON BE(%d)] kill %d, %d\n", rank, proctab[i].pd.pid, signum );  
-#endif
-      kill(proctab[i].pd.pid, signum);
+      fprintf(stdout, 
+        "[LMON BE(%d)] FAILED: LMON_be_internal_getBeDat returned an error\n",
+        rank );
+      LMON_be_finalize();
+      return EXIT_FAILURE;
     }
-#endif
- 
-  if ( kill_detach_shutdown_test == 1)
-    sleep (60);
 
+  //
+  // Unless LMON_DONT_STOP_APP condition is met
+  // LMON_be_procctl_init will leave the job stopped
+  //
+  int fastpath_state = 2; //inherit the state
+
+  if ( signum != SIGCONT)
+    {
+      fastpath_state = 0;
+    }
+
+  LMON_be_procctl_tester_init ( myBeData->rmtype_instance,
+                         proctab, 0, proctab_size, 
+                         fastpath_state );
+
+  LMON_be_procctl_run ( myBeData->rmtype_instance,
+                        signum,
+                        proctab, proctab_size);
+
+  sleep(1);
+
+  switch (subtest)
+    {
+    case subtest_kill_detach_shutdown:
+      sleep (kill_detach_shutdown_time);
+      break;
+
+    case subtest_fail_mode:
+      sleep (fail_mode_test_time);
+      break;
+
+    case subtest_mw_coloc:
+      {
+        //
+        // MW daemon co-location support
+        //
+        if (LMON_be_assist_mw_coloc() != LMON_OK)
+          {
+            fprintf(stdout,
+              "[LMON BE(%d)] FAILED: LMON_be_assist_mw_coloc failed \n", rank);
+            LMON_be_finalize();
+            return EXIT_FAILURE;
+          }
+
+         break;
+      }
+    default:
+        break;
+    }
+
+  for (i=0; i < proctab_size; i++)
+    {
+      if (proctab[i].pd.executable_name)
+        free(proctab[i].pd.executable_name);
+      if (proctab[i].pd.host_name)
+        free(proctab[i].pd.host_name);
+    }
   free (proctab);
 
-  /* sending this to mark the end of the BE session */
-  /* This should be used to determine PASS/FAIL criteria */
+  // sending this to mark the end of the BE session 
+  // This should be used to determine PASS/FAIL criteria 
   if ( (( lrc = LMON_be_sendUsrData ( NULL )) == LMON_EBDARG)
        || ( lrc == LMON_EINVAL ) 
-       || ( lrc == LMON_ENOMEM )) 
+       || ( lrc == LMON_ENOMEM )
+       || ( lrc == LMON_ENEGCB )) 
      {
        fprintf(stdout, "[LMON BE(%d)] FAILED(%d): LMON_be_sendUsrData\n",
                rank, lrc );
        LMON_be_finalize();
        return EXIT_FAILURE;
      }
+
+  //
+  // recving an ack back
+  if ( (( lrc = LMON_be_recvUsrData ( NULL )) == LMON_EBDARG)
+       || ( lrc == LMON_EINVAL )
+       || ( lrc == LMON_ENOMEM )
+       || ( lrc == LMON_ENEGCB ))
+     {
+       fprintf(stdout, "[LMON BE(%d)] FAILED(%d): LMON_be_recvUsrData\n",
+               rank, lrc );
+       LMON_be_finalize();
+       return EXIT_FAILURE;
+     }
+
+
 
   LMON_be_finalize();
 

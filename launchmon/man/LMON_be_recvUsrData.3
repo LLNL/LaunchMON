@@ -1,4 +1,4 @@
-.TH LaunchMON 3 "FEBRUARY 2008" LaunchMON "LaunchMON Back-End API"
+.TH LaunchMON 3 "MAY 2014" LaunchMON "LaunchMON Back-End API"
 
 .SH NAME
 LMON_be_regPackForBeToFe LMON_be_regUnpackForFeToBe LMON_be_recvUsrData LMON_be_sendUsrData \- LaunchMON back-end API: client tool data transfer functions.  
@@ -15,7 +15,7 @@ LMON_be_regPackForBeToFe LMON_be_regUnpackForFeToBe LMON_be_recvUsrData LMON_be_
 .PP
 .BI "lmon_rc_e LMON_be_sendUsrData ( void * " udata " );"
 .PP
-.BI "lmon_rc_e LMON_fe_recvUsrData ( void * " udata " );"
+.BI "lmon_rc_e LMON_be_recvUsrData ( void * " udata " );"
 .PP
 .B cc ... -lmonbeapi
 
@@ -34,7 +34,8 @@ cannot exceed \fImsgbufmax.\fR The current default max is determined by
 the \fBLMON_MAX_USRPAYLOAD\fR macro defined in \fBlmon_api_std.h\fR, which is
 set to a relatively small value, but can be differently configured.
 The \fIpackBefe\fR function must return the size of the filled buffer
-via the \fImsgbuflen\fR argument.
+via the \fImsgbuflen\fR argument. In addition, any negative value 
+returned from the \fIpackBefe\fR function is considered to be an error condition.
 .PP
 \fBLMON_be_regUnpackForFeToBe()\fR allows the master back-end daemon to register
 an unpack (\fIunpackFebe\fR) function that de-serializes the tool data received from the front-end
@@ -46,6 +47,8 @@ function.
 \fIudatabuf\fR is the raw payload received from the front-end.
 \fIudatabuflen\fR is the length of that raw buffer, and
 \fIudata\fR is the pointer to which this buffer should be unpacked.
+Any negative value returned from the \fIunpackFebe\fR function 
+is considered to be an error condition.
 .PP
 \fBLMON_be_sendUsrData()\fR sends a message containing
 the tool data (\fIudata\fR) to the front-end.
@@ -63,6 +66,11 @@ function calls back that unpack function to de-serialize the
 user payload into \fIudata\fR.
 When the received message contains no user payload, this function
 return \fBLMON_ENOPLD\fR.
+
+The above functions require all of the back-end daemons to
+participate, but \fIudata\fR is only meaningful to the master
+daemon.
+
 
 .SH RETURN VALUE
 These functions return \fBLMON_OK\fR
@@ -82,6 +90,9 @@ The message contains no user payload.
 .TP
 .B LMON_ENCLLB
 No pack or unpack function is registered.
+.TP 
+.B LMON_ENEGCB
+The pack or unpack function returned a negative value.
 .TP
 .B LMON_ENOMEM
 Out of memory.
@@ -92,32 +103,3 @@ Encountered other error conditions
 .SH AUTHOR
 Dong H. Ahn <ahn1@llnl.gov>
 
-.SH "SEE ALSO"
-.BR LMON_fe_init(3),
-.BR LMON_fe_createSession(3),
-.BR LMON_fe_attachAndSpawnDaemons(3),
-.BR LMON_fe_launchAndSpawnDaemons(3),
-.BR LMON_fe_kill(3),
-.BR LMON_fe_detach(3),
-.BR LMON_fe_shutdownDaemons(3),
-.BR LMON_fe_regUnpackForBeToFe(3),
-.BR LMON_fe_regPackForFeToBe(3),
-.BR LMON_fe_putToBeDaemonEnv(3),
-.BR LMON_fe_sendUsrDataBe(3),
-.BR LMON_fe_recvUsrDataBe(3),
-.BR LMON_fe_getProctable(3),
-.BR LMON_fe_getProctableSize(3),
-.BR LMON_fe_getResourceHandle(3),
-.BR LMON_be_init(3),
-.BR LMON_be_finalize(3),
-.BR LMON_be_getMyRank(3),
-.BR LMON_be_getSize(3),
-.BR LMON_be_amIMaster(3),
-.BR LMON_be_handshake(3),
-.BR LMON_be_ready(3),
-.BR LMON_be_barrier(3),
-.BR LMON_be_broadcast(3),
-.BR LMON_be_gather(3),
-.BR LMON_be_scatter(3),
-.BR LMON_be_getMyProctab(3),
-.BR LMON_be_getMyProctabSize(3)

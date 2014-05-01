@@ -28,12 +28,16 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        Mar 09 2009 DHA: Deprecated the library version of ciod_db as IBM
+##                         open sourced entire source codes in a header file.
 ##        Jun 10 2008 DHA: Copied from the old Makefile.
 ##
 
-INCLUDES              = -I$(top_srcdir)/launchmon/src -I$(top_srcdir)/@LMONAPILOC@
 
-lib_LTLIBRARIES       = libciod_db.la
-libciod_db_la_SOURCES = debugger_interface.cxx \
-		        debugger_interface.h
-libciod_db_la_LDFLAGS   = -static -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
+##INCLUDES              = -I$(top_srcdir)/launchmon/src -I$(top_srcdir)/@LMONAPILOC@ -I@ARCHHEADER@
+
+##lib_LTLIBRARIES       = libciod_db.la
+##libciod_db_la_SOURCES = debugger_interface.cxx \
+##		        debugger_interface.h
+##libciod_db_la_LDFLAGS   = -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
+nobase_include_HEADERS = debugger_interface.h

@@ -26,15 +26,20 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Mar 04 2008 DHA: Added generic BlueGene support
  *        Jun 13 2008 DHA: Added GNU build system support.
  *        Mar 18 2008 DHA: Added BlueGene support.
  *        Feb 09 2008 DHA: Added LLNS Copyright.
  *          
  */
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
+
 #include <lmon_api/common.h> 
 
-#if RM_BGL_MPIRUN
+#if SUB_ARCH_BGL || SUB_ARCH_BGP
 /* work around for a compiler problem on BlueGene/L */
 #undef SEEK_SET
 #undef SEEK_END
@@ -42,12 +47,7 @@
 #endif
 
 #include <mpi.h>
-
-#if HAVE_SIGNAL_H
-# include <signal.h>
-#else
-# error signal.h is required 
-#endif
+#include <signal.h>
 
 #define COMM_TAG    1000
 #define MAX_BUF_LEN 1024
@@ -57,9 +57,9 @@ pass_its_neighbor(const int rank, const int size, int* buf)
 {  
   MPI_Request request[2];
   MPI_Status status[2];
-  char hn[MAX_BUF_LEN];
-  gethostname (hn, MAX_BUF_LEN);
-  printf ("%s\n", hn);
+  //char hn[MAX_BUF_LEN];
+  //gethostname (hn, MAX_BUF_LEN);
+  //printf ("%s\n", hn);
 
   MPI_Irecv((void*)buf, 1, MPI_INT, 
    	    ((rank+size-1)%size), 

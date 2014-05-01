@@ -26,6 +26,9 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Jun  02 2009 DHA: Added LMON_STATUS_CB_TEST support.
+ *        May  19 2009 DHA: Added LMON_ERROR_CB_TEST support.
+ *        Mar  13 2009 DHA: Dynamic check for proctabsize 
  *        Jun  12 2008 DHA: Added GNU build system support.  
  *        Mar  20 2008 DHA: Added BlueGene support.
  *        Mar  06 2008 DHA: Added calls-after-fail case.
@@ -33,32 +36,87 @@
  *                          connection timeout capability.
  *        Feb  09 2008 DHA: Added LLNS Copyright.
  *        Aug  06 2006 DHA: Adjust this case for minor API changes  
- *        Dec  27 2006 DHA: Created file.          
+ *        Dec  27 2006 DHA: Created file.
  */
 
-#include <lmon_api/common.h>
-
-#if HAVE_UNISTD_H
-# include <unistd.h>
-#else
-# error unistd.h is required
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
 #endif
+
+#include <lmon_api/common.h>
+#include <unistd.h>
+#include <cstdarg>
+#include <limits.h>
 
 #include <lmon_api/lmon_proctab.h>
 #include <lmon_api/lmon_fe.h>
 
-#define MAXPCOUNT 8192
+#define ERROR_LOG_MAXSIZE 4096
+#define STRING_MAXSIZE 128
+
+#if MEASURE_TRACING_COST 
+extern "C" {
+  int begin_timer ();
+  int time_stamp ( const char* description );
+}
+#endif
+
+int statusFunc ( int *status )
+{
+  int stcp = *status;
+  fprintf (stdout, "**** status callback routine is invoked:0x%x ****\n", stcp);
+  if (WIFREGISTERED(stcp))
+    fprintf(stdout, "* session registered\n");
+  else
+    fprintf(stdout, "* session not registered\n");
+
+  if (WIFBESPAWNED(stcp))
+    fprintf(stdout, "* BE daemons spawned\n");
+  else
+    fprintf(stdout, "* BE daemons have not spawned\n");
+
+  if (WIFMWSPAWNED(stcp))
+    fprintf(stdout, "* MW daemons spawned\n");
+  else
+    fprintf(stdout, "* MW daemons have not spawned\n");
+
+  if (WIFDETACHED(stcp))
+    fprintf(stdout, "* the job is detached\n");
+  else
+    fprintf(stdout, "* the job has not been detached\n");
+
+  if (WIFKILLED(stcp))
+    fprintf(stdout, "* the job is killed\n");
+  else
+    fprintf(stdout, "* the job has not been killed\n");
+
+  return 0;
+}
+
+int errFunc (const char *format, va_list ap)
+{
+  int rc;
+  char buf[ERROR_LOG_MAXSIZE];
+
+  fprintf(stdout, "errFunc is called\n");
+  rc = vsnprintf(buf, ERROR_LOG_MAXSIZE, format, ap); 
+  fprintf(stdout, "errFunc: %s\n", buf);
+
+  return rc;
+}
 
 int 
 main (int argc, char* argv[])
 {
-  int i;
-  int spid;
-  int psize;
-  int aSession;
-  char jobid[PATH_MAX];  
-  char **daemon_opts = NULL;
-  MPIR_PROCDESC_EXT* proctab;
+  unsigned int i             = 0;
+  int spid                   = 0;
+  int jobidsize              = 0;
+  unsigned int psize         = 0;
+  unsigned int proctabsize   = 0;
+  int aSession               = 0;
+  char jobid[PATH_MAX]       = {0};
+  char **daemon_opts         = NULL;
+  MPIR_PROCDESC_EXT *proctab = NULL;
   lmon_rc_e rc;
 
   if ( argc < 3 )
@@ -75,7 +133,7 @@ main (int argc, char* argv[])
         "%s cannot be executed\n", argv[2] );
 
       fprintf ( stdout, "[LMON FE] FAILED\n" );
-      return EXIT_FAILURE;	      
+      return EXIT_FAILURE;
     }
 
   if ( argc > 3 )
@@ -90,11 +148,30 @@ main (int argc, char* argv[])
       return EXIT_FAILURE;
     }
   
+  if ( getenv ("LMON_ERROR_CB_TEST"))
+    {
+       if ( LMON_fe_regErrorCB(errFunc) != LMON_OK )
+         {
+            fprintf ( stdout, "[LMON FE] FAILED\n");
+            return EXIT_FAILURE;
+         } 
+    } 
+
+
   if ( ( rc = LMON_fe_createSession (&aSession)) 
               != LMON_OK)
     {
       fprintf ( stdout, "[LMON FE] FAILED\n");
       return EXIT_FAILURE;
+    }
+
+  if (getenv ("LMON_STATUS_CB_TEST"))
+    {
+       if ( LMON_fe_regStatusCB(aSession, statusFunc) != LMON_OK )
+         {
+            fprintf ( stdout, "[LMON FE] FAILED\n");
+            return EXIT_FAILURE;
+         }
     }
 
   spid = atoi(argv[1]);
@@ -103,6 +180,10 @@ main (int argc, char* argv[])
       fprintf( stdout, "[LMON FE] FAILED\n");
       return EXIT_FAILURE;
     }
+
+#if MEASURE_TRACING_COST
+  begin_timer ();
+#endif
 
   if (getenv ("FEN_RM_DISTRIBUTED"))
     {
@@ -194,23 +275,58 @@ main (int argc, char* argv[])
             return EXIT_FAILURE;
         } // attachAndSpawn for local
     } 
+#if MEASURE_TRACING_COST
+  time_stamp ( "LMON_fe_attachAndSpawnDaemons perf" );
+#endif
+
+  if ( ( rc = LMON_fe_getProctableSize ( 
+                aSession, 
+                &proctabsize ))
+              !=  LMON_OK )
+    {
+       fprintf ( stdout, 
+         "[LMON FE] FAILED in LMON_fe_getProctableSize\n");
+       return EXIT_FAILURE;
+    }
+
+  if (proctabsize <= 0) 
+    {
+      fprintf ( stdout, 
+        "[LMON FE] FAILED, proctabsize is not equal to the given: %ud\n", 
+        proctabsize);
+      return EXIT_FAILURE;
+    }
 
   proctab = (MPIR_PROCDESC_EXT*) malloc (
-                MAXPCOUNT*sizeof(MPIR_PROCDESC_EXT)); 
+                proctabsize*sizeof (MPIR_PROCDESC_EXT) );
+  
+  if ( !proctab )
+    {
+       fprintf ( stdout, "[LMON FE] malloc returned null\n");
+       return EXIT_FAILURE;
+    }
 
   fprintf ( stdout,
     "[LMON FE] Please check the correctness of the following proctable\n");
+
+#if MEASURE_TRACING_COST
+  begin_timer ();
+#endif 
 
   if ( ( rc = LMON_fe_getProctable (
                 aSession, 
                 proctab,
                 &psize,
-                MAXPCOUNT )) 
+                proctabsize )) 
               !=  LMON_OK)
     {
        fprintf ( stdout, "[LMON FE] FAILED\n" );
        return EXIT_FAILURE;
     }
+
+#if MEASURE_TRACING_COST
+  time_stamp ( "LMON_fe_getProctable perf" );
+#endif
 
   for (i=0; i < psize; i++)
     {
@@ -224,7 +340,7 @@ main (int argc, char* argv[])
     }
 
   rc = LMON_fe_getResourceHandle ( aSession, jobid,
-                                 &psize, PATH_MAX);
+                                   &jobidsize, PATH_MAX);
   if ((rc != LMON_OK) && (rc != LMON_EDUNAV))
     {
       if ( rc != LMON_EDUNAV )
@@ -240,11 +356,27 @@ main (int argc, char* argv[])
           fprintf ( stdout,
             "\n[LMON FE] Please check the correctness of the following resource handle\n");
           fprintf ( stdout,
-            "[LMON FE] resource handle[slurm jobid]: %s\n", jobid);
+            "[LMON FE] resource handle[jobid or job launcher's pid]: %s\n", jobid);
           fprintf ( stdout,
             "[LMON FE]");
        }
     }
+
+  lmon_rm_info_t rminfo;
+  rc = LMON_fe_getRMInfo ( aSession, &rminfo);
+  if (rc != LMON_OK)
+    {
+      fprintf ( stdout, "[LMON FE] FAILED\n");
+      return EXIT_FAILURE;
+    }
+  else
+   {
+      fprintf ( stdout,
+         "\n[LMON FE] RM type is %d\n",
+           rminfo.rm_supported_types[rminfo.index_to_cur_instance]);
+      fprintf ( stdout,
+         "\n[LMON FE] RM launcher's pid is %d\n", rminfo.rm_launcher_pid);
+   }
   
   if ( (getenv ("LMON_FE_SHUTDOWNBE_TEST")) != NULL )
     {
@@ -278,6 +410,22 @@ main (int argc, char* argv[])
         }
     }
 
+  if ( (getenv ("LMON_FE_DETACH_TEST")) != NULL )
+    {
+      if ( ( rc = LMON_fe_detach ( aSession ) ) != LMON_OK )
+        {
+           fprintf ( stdout, "[LMON FE] LMON_fe_kill FAILED\n");
+           return EXIT_FAILURE;
+        }
+      else
+        {
+           system ("ps x");
+           fprintf ( stdout, "[LMON FE] CHECK for LMON_fe_detach\n");
+           fprintf ( stdout, "[LMON FE] PASS Criteria: launcher process(es) must not be traced.\n");
+           return EXIT_SUCCESS;
+        }
+    }
+
   rc = LMON_fe_recvUsrDataBe ( aSession, NULL );
                                                                                                                                                
   if ( (rc == LMON_EBDARG )
@@ -287,7 +435,17 @@ main (int argc, char* argv[])
       fprintf ( stdout, "[LMON FE] FAILED\n");
       return EXIT_FAILURE;
     }
-                                                                                                                                               
+
+  rc = LMON_fe_sendUsrDataBe ( aSession, NULL );
+
+  if ( (rc == LMON_EBDARG )
+       || ( rc == LMON_ENOMEM )
+       || ( rc == LMON_EINVAL ) )
+    {
+      fprintf ( stdout, "[LMON FE] FAILED\n");
+      return EXIT_FAILURE;
+    }
+
   sleep (3); /* wait until all BE outputs are printed */
                                                                                                                                                
   fprintf ( stdout,

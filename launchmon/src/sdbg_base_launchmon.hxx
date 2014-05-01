@@ -1,7 +1,7 @@
 /*
  * $Header: /usr/gapps/asde/cvs-vault/sdb/launchmon/src/sdbg_base_launchmon.hxx,v 1.11.2.2 2008/02/20 17:37:56 dahn Exp $
  *--------------------------------------------------------------------------------
- * Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at 
+ * Copyright (c) 2008 ~ 2012, Lawrence Livermore National Security, LLC. Produced at 
  * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>. 
  * LLNL-CODE-409469. All rights reserved.
  *
@@ -27,6 +27,9 @@
  *			
  *
  *  Update Log:
+ *        Oct 26 2012 DHA: Removed references to ttracer that has been 
+ *                         deprecated.
+ *        May 11 2010 DHA: Removed gettimeofdayD from this file
  *        Sep 24 2008 DHA: Added handle_daemon_exit_event to support
  *                         better error handling 
  *        Sep 22 2008 DHA: Added the last_seen and warm_period members 
@@ -45,7 +48,7 @@
  *        Jun 06 2006 DHA: Added comments on the file scope 
  *                         and the class (launchmon_base_t) 
  *                         itself.
- *        Jan 12 2006 DHA: Created file.          
+ *        Jan 12 2006 DHA: Created file.
  */ 
 
 #ifndef SDBG_BASE_LAUNCHMON_HXX
@@ -55,16 +58,11 @@
 #include <vector>
 
 extern "C" {
-#if HAVE_SYS_TIME_H
 #include <sys/time.h>
-#else
-# error sys/time.h is required 
-#endif
 }
 
 #include "sdbg_base_mach.hxx"
 #include "sdbg_base_tracer.hxx"
-#include "sdbg_base_ttracer.hxx"
 #include "sdbg_self_trace.hxx"
 #include "sdbg_opt.hxx"
 
@@ -82,33 +80,18 @@ extern "C" {
     event occurs.
 */
 
-
-inline double gettimeofdayD ()
-{
-  struct timeval ts;
-  double rt;
-                                                                                                                                      
-  gettimeofday (&ts, NULL);
-  rt = (double) (ts.tv_sec);
-  rt += (double) ((double)(ts.tv_usec))/1000000.0;
-                                                                                                                                      
-  return rt;
-}
-
-
 //! enumerator launchmon_rc_e 
 /*!
-    Defines a set of launchmon's return codes.
+    Defines a set of launchmon engine handler's return codes.
 */
 enum launchmon_rc_e {
-  LAUNCHMON_OK     = 0,
+  LAUNCHMON_OK = 0,
   LAUNCHMON_BP_PROLOGUE,
   LAUNCHMON_STOP_TRACE,
   LAUNCHMON_FAILED,
   LAUNCHMON_MPIR_DEBUG_ABORT,
   LAUNCHMON_MAINPROG_EXITED
 };
-
 
 //! enumerator launchmon_event_e
 /*!
@@ -121,17 +104,17 @@ enum launchmon_event_e {
   LM_STOP_AT_FIRST_ATTACH,
   LM_STOP_AT_LOADER_BP,
   LM_STOP_AT_THREAD_CREATION,
-  LM_STOP_AT_THREAD_DEATH,
-  LM_STOP_AT_FORK_BP,
+  LM_STOP_NEW_THREAD_TRACE,
+  LM_STOP_NEW_FORKED_PROCESS,
   LM_STOP_NOT_INTERESTED,
   LM_STOP_FOR_DETACH,
   LM_STOP_FOR_KILL,
+  LM_REQUEST_NEW_THREAD,
   LM_RELAY_SIGNAL,
   LM_TERMINATED,
   LM_EXITED,
   LM_INVALID
 };
-
 
 //! class launchmon_base_t
 /*!
@@ -142,35 +125,11 @@ template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 class launchmon_base_t {
 
 public:
+  enum engine_state_e {mpir_start, mpir_null, mpir_spawned, mpir_abort, mpir_unknown};
 
   launchmon_base_t ();
-  
-  launchmon_base_t ( 
-                const launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>& l );
-  
-  virtual 
-  ~launchmon_base_t();
 
-  void set_tracer ( 
-                tracer_base_t<SDBG_DEFAULT_TEMPLPARAM>* t );
-  void set_ttracer ( 
-                thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM>* t );
-  tracer_base_t<SDBG_DEFAULT_TEMPLPARAM>* get_tracer ();    
-  thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM>* get_ttracer ();
-
-  virtual 
-  launchmon_rc_e invoke_handler ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
-		launchmon_event_e e,
-		int data );
-
-  virtual 
-  launchmon_event_e decipher_an_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
-		debug_event_t& e );
-
-  launchmon_rc_e say_fetofe_msg ( lmonp_fe_to_fe_msg_e msg_type );
-
+  virtual ~launchmon_base_t();
 
   ////////////////////////////////////////////////////////////
   //
@@ -178,132 +137,12 @@ public:
   //
 
   //
-  // init must be implemented by a derived class, filling all platform
-  // specific initialization procedures. 
+  // Accessors
   //
-  virtual 
-  launchmon_rc_e init ( opts_args_t* opt )                   =0;
- 
   //
-  // defines a set of actions for attaching to a running job 
-  virtual 
-  launchmon_rc_e handle_attach_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
-  //
-  // defines a set of actions when the launch breakpoint 
-  // (e.g. MPIR_Breakpoint) is hit
-  virtual 
-  launchmon_rc_e handle_launch_bp_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
-
-
-  //
-  // defines a set of actions when the detach command is
-  // issued
-  virtual 
-  launchmon_rc_e handle_detach_cmd_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
-
-  //
-  // defines a set of actions when the detach command is
-  // issued
-  virtual 
-  launchmon_rc_e handle_kill_cmd_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
-
-  //
-  // defines a set of actions when the target process gets 
-  // initially fork'ed/exec'ed
-  virtual 
-  launchmon_rc_e handle_trap_after_exec_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
-
-  //
-  // defines a set of actions when the target process gets 
-  // initially attached
-  virtual 
-  launchmon_rc_e handle_trap_after_attach_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
-
-  //
-  // defines a set of actions when the target process 
-  // loads/unloads a shared library
-  virtual 
-  launchmon_rc_e handle_loader_bp_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
-
-  //
-  // defines a set of actions when the target process exits 
-  virtual 
-  launchmon_rc_e handle_exit_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
-
-  //
-  // defines a set of actions when the target process gets 
-  // somehow terminated
-  virtual 
-  launchmon_rc_e handle_term_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
-
-  //
-  // defines a set of actions when a new thread creation event
-  // is notified. 
-  virtual 
-  launchmon_rc_e handle_thrcreate_bp_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
-
-  //
-  // defines a set of actions when a thread death event
-  // is notified.
-  virtual 
-  launchmon_rc_e handle_thrdeath_bp_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
-
-  //
-  // defines a set of actions when a new process is forked 
-  // from the target process.
-  virtual 
-  launchmon_rc_e handle_fork_bp_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
-
-  //
-  // all unwonted stop events.
-  //
-  virtual 
-  launchmon_rc_e handle_not_interested_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p ) =0;
-
-  //
-  // all relay-signal events.
-  //
-  virtual 
-  launchmon_rc_e handle_relay_signal_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, int sig ) =0;
-
-  //
-  // ships the RPDTAB to the FE API client
-  //
-  launchmon_rc_e ship_proctab_msg ( 
-                lmonp_fe_to_fe_msg_e );
-
-  //
-  // ships the resource handle to the FE API client
-  //
-  launchmon_rc_e ship_resourcehandle_msg ( 
-                lmonp_fe_to_fe_msg_e t, int );
-  
-  //
-  // handle a message received from the FE API client
-  //
-  launchmon_rc_e handle_incoming_socket_event (
-		process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p );
-
-  //
-  // defines a set of actions when the back-end daemons exited
-  //
-  launchmon_rc_e handle_daemon_exit_event ( 
-                process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p );
-
+  void set_tracer ( tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *t );
+  void set_engine_state (int); 
+  tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> * get_tracer ();    
   define_gset (int, resid)
   define_gset (int, pcount)
   define_gset (int, toollauncherpid)
@@ -311,24 +150,188 @@ public:
   define_gset (bool, API_mode)
   define_gset (double, last_seen)
   define_gset (double, warm_period)
-  std::map<std::string, std::vector<MPIR_PROCDESC_EXT*> >& get_proctable_copy() 
-                { return proctable_copy; }
+  std::map<std::string, std::vector<MPIR_PROCDESC_EXT *> > & 
+    get_proctable_copy() { return proctable_copy; }
 
+  //
+  // Method that invokes a corresponding handler based on e
+  //
+  //
+  virtual launchmon_rc_e invoke_handler ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, 
+		const launchmon_event_e e,
+		const int data );
+
+  //
+  // Method that send an event msg to the Front-end runtime
+  //
+  //
+  launchmon_rc_e say_fetofe_msg ( lmonp_fe_to_fe_msg_e msg_type );
+
+  //
+  // init must be implemented by a derived class, filling all platform
+  // specific initialization procedures. 
+  //
+  virtual launchmon_rc_e init ( opts_args_t *opt )           =0;
+
+  //
+  // Method that translates a low-level event e to launchmon_event_e
+  //
+  //
+  virtual launchmon_event_e decipher_an_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, 
+		const debug_event_t &e )                     =0;
+ 
+  //
+  // defines a set of actions for attaching to a running job 
+  virtual launchmon_rc_e handle_attach_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
+  //
+  // defines a set of actions when the launch breakpoint 
+  // (e.g. MPIR_Breakpoint) is hit
+  virtual launchmon_rc_e handle_launch_bp_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
+
+  //
+  // defines a set of actions when the detach command is
+  // issued
+  virtual launchmon_rc_e handle_detach_cmd_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
+
+  //
+  // defines a set of actions when the detach command is
+  // issued
+  virtual launchmon_rc_e handle_kill_cmd_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
+
+  //
+  // defines a set of actions when the target process gets 
+  // initially fork'ed/exec'ed
+  virtual launchmon_rc_e handle_trap_after_exec_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
+
+  //
+  // defines a set of actions when the target process gets 
+  // initially attached
+  virtual launchmon_rc_e handle_trap_after_attach_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
+
+  //
+  // defines a set of actions when the target process 
+  // loads/unloads a shared library
+  virtual launchmon_rc_e handle_loader_bp_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
+
+  //
+  // defines a set of actions when the target process exits 
+  virtual launchmon_rc_e handle_exit_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
+
+  //
+  // defines a set of actions when the target process gets 
+  // somehow terminated
+  virtual launchmon_rc_e handle_term_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
+
+  virtual
+  launchmon_rc_e handle_thrcreate_request
+                 ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, int newlwpid ) =0;
+
+
+  //
+  // defines a set of actions when a new thread creation event
+  // is notified. 
+  virtual
+  launchmon_rc_e handle_thrcreate_trap_event
+                 ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) = 0;
+
+  //
+  // defines a set of actions when a new thread stop is reported 
+  // is notified.
+  virtual launchmon_rc_e handle_newthread_trace_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
+
+  //
+  // defines a set of actions when a new process is forked 
+  // and stopped.
+  virtual launchmon_rc_e handle_newproc_forked_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
+
+  //
+  // all unwonted stop events.
+  //
+  virtual launchmon_rc_e handle_not_interested_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p ) =0;
+
+  //
+  // all relay-signal events.
+  //
+  virtual launchmon_rc_e handle_relay_signal_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, 
+                int sig )                                    =0;
+
+  //
+  // ships the RPDTAB to the FE API client
+  //
+  launchmon_rc_e ship_proctab_msg ( lmonp_fe_to_fe_msg_e );
+
+  //
+  // ships the resource handle to the FE API client
+  //
+  launchmon_rc_e ship_resourcehandle_msg ( 
+                lmonp_fe_to_fe_msg_e, int );
+  
+  //
+  // ships the rminfo to the FE API client
+  //
+  launchmon_rc_e ship_rminfo_msg ( 
+                lmonp_fe_to_fe_msg_e, int, rm_catalogue_e);
+
+  //
+  // handle a message received from the FE API client
+  //
+  launchmon_rc_e handle_incoming_socket_event (
+		process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p );
+
+  //
+  // defines a set of actions when the back-end daemons exited
+  //
+  launchmon_rc_e handle_daemon_exit_event ( 
+                process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p );
+
+  
+  bool validate_mpir_state_transition(int s); 
+
+
+  //
+  // Utility method that handles a detach/kill request command
+  //
+  bool request_detach(process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, 
+                pcont_req_reason reason);
+  bool request_kill(process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, 
+                pcont_req_reason reason);
+  bool request_cont_launch_bp(process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p); 
 
 private:
 
-  bool LEVELCHK(self_trace_verbosity level) 
-       { return (self_trace_t::launchmon_module_trace.verbosity_level >= level); }
+  bool LEVELCHK(self_trace_verbosity level) { 
+                return (self_trace_t::launchmon_module_trace.verbosity_level >= level); 
+                }
+
+  launchmon_base_t (const launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> &l);
+
+  launchmon_base_t & operator=(
+                const launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM> &rhs);
 
   //
   // process tracer
   //
   tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *tracer;
-  
+
   //
-  // thread tracer
+  // mpir tracer state
   //
-  thread_tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *ttracer;
+  engine_state_e engine_state;
 
   //
   // resource id, for slurm it is what totalview_jobid contains.
@@ -366,3 +369,4 @@ private:
 };
 
 #endif // __SDBG_BASE_LAUNCHMON_HXX
+

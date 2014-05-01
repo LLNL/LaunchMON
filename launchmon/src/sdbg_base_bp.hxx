@@ -26,10 +26,12 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Oct 26 2010 DHA: Hid status and added status set/unset methods
+ *        Mar 06 2008 DHA: Added indirect breakpoint
  *        Feb 09 2008 DHA: Added LLNS Copyright
  *        Jun 06 2006 DHA: Added DOXYGEN comments on the file scope 
  *                         and the class (breakpoint_base_t) 
- *        Jan 12 2006 DHA: Created file.          
+ *        Jan 12 2006 DHA: Created file.
  */ 
 
 //! FILE: sdbg_base_bp.hxx
@@ -50,7 +52,7 @@
 #ifndef SDBG_BASE_BP_HXX
 #define SDBG_BASE_BP_HXX 1
 
-//! FILE: breakpoint_base_t
+//! breakpoint_base_t:
 /*!
     The platform-independent breakpoint class. A platform
     specific layer should provide this with a virtual 
@@ -58,54 +60,154 @@
 
     A noteworthy feature is that this class attemps to blend
     the original instruction with the provided trap instruction
-    to implement a breakpoint instruction. 
+    to implement a breakpoint instruction. In addition, it supports
+    indirect call.
 */
 template <class VA, class IT>
-class breakpoint_base_t 
+class breakpoint_base_t
 {
 
 public:
 
-  enum bp_status_e { 
-    uninit,
-    set_but_not_inserted,
-    enabled, 
-    disabled
+  enum bp_status_e {
+    bp_unset,
+    bp_set,
+    bp_enabled, 
+    bp_disabled
   };
 
-  bp_status_e status;
   
-  breakpoint_base_t ()                     { status = uninit; }
-  breakpoint_base_t ( const breakpoint_base_t<VA, IT>& b )
-                                           {                 
+  breakpoint_base_t ()                     {
+					     status = bp_unset; 
+					   }
+
+  breakpoint_base_t ( const breakpoint_base_t<VA, IT> &b )
+                                           {
+					     address_at = b.address_at;
+					     indirect_address_at = b.indirect_address_at;
+					     return_addr = b.return_addr;
 					     trap_instruction = b.trap_instruction;
 					     orig_instruction = b.orig_instruction;
-					     status = uninit;
+					     blend_mask = b.blend_mask;
+					     status = b.status;
+					     use_indirection = b.use_indirection;
 					   }
+
   virtual ~breakpoint_base_t ()            { }
 
-  IT& get_trap_instruction ()              { return trap_instruction; }
-  IT& get_orig_instruction ()              { return orig_instruction; }
-  IT& get_blend_mask ()                    { return blend_mask; }
-  VA& get_address_at()                     { return address_at; }
-  VA& get_return_addr()                    { return return_addr; }
-  virtual VA& get_where_pc_would_be()      { return address_at; }
+  bool get_use_indirection() const         { return use_indirection; }
+  VA const & get_address_at() const        { return address_at; }
+  VA const & get_indirect_address_at() const 
+                                           { return indirect_address_at; }
+  VA const & get_return_addr() const       { return return_addr; }
+  IT const & get_trap_instruction () const { return trap_instruction; }
+  IT const & get_orig_instruction () const { return orig_instruction; }
+  IT const & get_blend_mask () const       { return blend_mask; }
+
+  virtual VA const & get_where_pc_would_be() 
+                                           { return address_at; }
   virtual bool is_pc_part_of_bp_op(VA pc)  { return ((pc==address_at)?true: false); }
 
-  void set_trap_instruction ( const IT& i ){ trap_instruction = i; }
-  void set_orig_instruction ( const IT& i ){ orig_instruction = i; }
-  void set_blend_mask ( const IT& i)       { blend_mask = i; }
-  void set_address_at ( const VA& addr )   { address_at = addr; }
-  void set_return_addr (const VA& raddr)   { return_addr = raddr; }
+  void set_use_indirection ()              { use_indirection = true; }
+  void unset_use_indirection ()            { use_indirection = false; }
+  void set_address_at ( const VA &addr )   { address_at = addr; }
+  void set_indirect_address_at(const VA &addr) { indirect_address_at = addr; }
+  void set_return_addr (const VA &raddr)    { return_addr = raddr; }
+  void set_trap_instruction ( const IT &i ) { trap_instruction = i; }
+  void set_orig_instruction ( const IT &i ) { orig_instruction = i; }
+  void set_blend_mask ( const IT &i)        { blend_mask = i; }
+
+  bool enable()                             
+         { 
+           status = ((status == bp_set) || (status == bp_disabled)) ? bp_enabled : status; 
+           return (status == bp_enabled) ? true : false; 
+         }
+                                                 
+  bool disable()
+         { 
+           status = ((status == bp_enabled)) ? bp_disabled : status; 
+           return (status == bp_disabled) ? true : false; 
+         }
+
+  bool set()
+         { 
+           status = ((status == bp_unset)) ? bp_set : status; 
+           return (status == bp_set) ? true : false; 
+         }
+
+  bool is_enabled()
+         { 
+           return (status == bp_enabled) ? true : false; 
+         }
+
+  bool is_disabled()
+         { 
+           return (status == bp_disabled) ? true : false; 
+         }
+
+  bool is_set()
+         { 
+           return (status == bp_set) ? true : false; 
+         }
+
+  bool is_unset() 
+         { 
+           return (status == bp_unset) ? true : false; 
+         }
 
 private:
 
+  //! status
+  /*!
+      status of the BP object
+  */
+  bp_status_e status;
+
+  //! use_indirect:
+  /*!
+      This is to support indirect calls. 
+      E.g., call *foo as opposed to call foo. 
+  */
+  bool use_indirection;
+
+  //! address_at:
+  /*!
+      Target code address
+  */
   VA address_at;
+
+  //! address_at:
+  /*!
+      Target indirect code address 
+  */
+  VA indirect_address_at;
+
+  //! address_at:
+  /*!
+      return address; this is needed in case the next 
+      instruction address is the next instructon of the 
+      caller function 
+  */
   VA return_addr;
+
+  //! trap_instruction:
+  /*!
+      Break point trap instruction to use, which differs by
+      platforms 
+  */
   IT trap_instruction;
+
+  //! orig_instruction:
+  /*!
+      Original insruction at the target code address
+  */
   IT orig_instruction;
+
+  //! blend_mask:
+  /*!
+      This instructs how to blend trap inst with orig inst
+  */
   IT blend_mask;
-  
 };
 
 #endif // SDBG_BASE_BP_HXX

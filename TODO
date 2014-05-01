@@ -1,5 +1,11 @@
 $Header: $
 
+4-30-2014 DHA
+- Drop gcrypt/gpgerror package integration. This can cause conflict when 
+  launchmon is built on a system that already has default versions of
+  these GNU cryptography packages.  
+
+========== OLD items that have been addressed ========================= 
 x add self-tracing for the event manager layer and driver layer.
 x add signal handler and better exit support such that any anomalous event including 
    having a UNIX signal being sent won't leave any deadwood on the resource 
@@ -134,18 +140,20 @@ x some configuration option doesn't build
   one another. deprecated some options, made some options
   mandatory and more importantly changed option specification
   style
-- Investigate how to time when to release the mpirun process properly 
-  so that BGL's APAI extension, which supports co-spawning,
+x add launch string support such that it can be overwritten by users
+  if they want. (as simple as an environment variable support?)
+  NOTE: 10/08/2011 scheduled for 1.0 release.
+x linux_launchmon_t::acquire_proctable performance problem at extreme
+  scale?
+x Re-attaching to the BGL mpirun seems to fail 
+  (I just confirmed that TotalView also fails...)
++ add mutliprocess monitoring support, for now launchmon just monitor
+  a single process. But it is okay so far because there is only one
+  launcher process it needs to monitor.  
+  NOTE: 9/24/2008 not scheduled for 0.6 release.
++ make the selection of low-level communication layer dynamically
+  NOTE: 9/24/2008 not scheduled for 0.6 release.
++ Investigate how to time when to release the mpirun process properly 
+  so that BGL's MPIR extension, which supports co-spawning,
   does not produce a race condition. 
   NOTE: 9/24/2008 not scheduled for 0.6 release.
-- add mutliprocess monitoring support, for now launchmon just monitor
-  a single process. But it is okay so far because there is only one
-  srun process it needs to monitor.  
-  NOTE: 9/24/2008 not scheduled for 0.6 release.
-- add launch string support such that it can be overwritten by users
-  if they want. (as simple as an environment variable support?)
-  NOTE: 9/24/2008 not scheduled for 0.6 release.
-- make the selection of low-level communication layer dynamically
-  NOTE: 9/24/2008 not scheduled for 0.6 release.
-- Re-attaching to the BGL mpirun seems to fail 
-  (I just confirmed that TotalView also fails...)

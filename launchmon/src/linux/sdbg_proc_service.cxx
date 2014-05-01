@@ -31,7 +31,7 @@
  *        Jul  18 2006 DHA: Initial Linux PPC (BG/L) port 
  *        Jul  14 2006 DHA: Initial Linux X86-64 port
  *        Feb  07 2006 DHA: Made it compilable with templated class objects
- *        Jan  10 2006 DHA: Created file.          
+ *        Jan  10 2006 DHA: Created file.
  */ 
 
 
@@ -46,6 +46,7 @@
 #ifndef LINUX_CODE_REQUIRED
 #error This source file requires a LINUX OS
 #endif
+ 
 
 #include "sdbg_proc_service.hxx"
 #include "sdbg_linux_std.hxx"
@@ -56,17 +57,8 @@
 #include "sdbg_linux_mach.hxx"
 
 extern "C" {
-#if HAVE_LIBGEN_H
-# include <libgen.h>
-#else
-# error libgen.h is required
-#endif
-
-#if HAVE_LIMITS_H
-# include <limits.h>
-#else
-# error limits.h is required
-#endif
+#include <libgen.h>
+#include <limits.h>
 }
 
 #if X86_ARCHITECTURE || PPC_ARCHITECTURE
@@ -111,8 +103,14 @@ struct user_desc
 
 linux_ptracer_t<SDBG_LINUX_DFLT_INSTANTIATION> myprocess_tracer;
 
+
+//! PUBLIC: ps_pdread
+/*!
+    a routine to read from the given process, which 
+    the thread debug library uses.
+*/
 extern "C" ps_err_e 
-ps_pdread ( struct ps_prochandle *ph,  psaddr_t addr,  
+ps_pdread ( struct ps_prochandle *ph,  psaddr_t addr,
 	    void *buf,  size_t size )
 {
   bool use_cxt = true; 
@@ -125,10 +123,15 @@ ps_pdread ( struct ps_prochandle *ph,  psaddr_t addr,
     return PS_ERR;
   }
   
-  return PS_OK;    
+  return PS_OK;
 }
 
 
+//! PUBLIC: ps_pdwrite
+/*!
+    a routine to write into the given process, which 
+    the thread debug library uses.
+*/
 extern "C" ps_err_e 
 ps_pdwrite ( struct ps_prochandle *ph,  psaddr_t addr, 
 	     const void *buf, size_t size )
@@ -147,6 +150,11 @@ ps_pdwrite ( struct ps_prochandle *ph,  psaddr_t addr,
 }
 
 
+//! PUBLIC: ps_ptread
+/*!
+    a routine to read from the given thread, which 
+    the thread debug library uses. (Identical to process read)
+*/
 extern "C" ps_err_e 
 ps_ptread ( struct ps_prochandle *ph,  psaddr_t addr,  
 	    void *buf,  size_t size )
@@ -155,6 +163,11 @@ ps_ptread ( struct ps_prochandle *ph,  psaddr_t addr,
 }
 
 
+//! PUBLIC: ps_ptwrite
+/*!
+    a routine to read from the given thread, which 
+    the thread debug library uses. (Identical to process write)
+*/
 extern "C" ps_err_e 
 ps_ptwrite ( struct ps_prochandle *ph,  psaddr_t addr, 
 	     const void *buf, size_t size )
@@ -163,6 +176,11 @@ ps_ptwrite ( struct ps_prochandle *ph,  psaddr_t addr,
 }
 
 
+//! PUBLIC: ps_lgetregs
+/*!
+    a routine to read registers from the given thread, which 
+    the thread debug library uses.
+*/
 extern "C" ps_err_e 
 ps_lgetregs ( struct ps_prochandle* ph, 
 	      lwpid_t id, prgregset_t reg)
@@ -174,38 +192,40 @@ ps_lgetregs ( struct ps_prochandle* ph,
 
     return PS_ERR;
   }
-  
-  // copy ph->p's GPR to reg
-  if ( memcpy((T_GRS*) reg, 
-	 &(ph->p->get_gprset(use_cxt)->get_native_rs()), 
-	 sizeof(T_GRS)) != NULL ) {
 
-  //FIXME: gen_error
-  }
+  // copy ph->p's GPR to reg
+  memcpy((T_GRS*) reg, &(ph->p->get_gprset(use_cxt)->get_native_rs()), sizeof(T_GRS)); 
 
   return PS_OK;
 }
   
 
+//! PUBLIC: ps_lsetregs
+/*!
+    a routine to set registers for the given thread, which 
+    the thread debug library uses.
+*/
 extern "C" ps_err_e 
 ps_lsetregs (struct ps_prochandle* ph, 
 	     lwpid_t id, const prgregset_t reg)
 {
   bool use_cxt = true;
 
-  //
-  // FIXME: set reg into ph->p
-  //
   if ( myprocess_tracer.tracer_setregs (*(ph->p), use_cxt) 
                                        != SDBG_TRACE_OK ) {
 
     return PS_ERR;
   }
-  printf("Please implement ps_lsetregs\n");
+  //printf("Please implement ps_lsetregs\n");
   return PS_OK;
 }
 
 
+//! PUBLIC: ps_lgetfpregs
+/*!
+    a routine to get FP registers for the given thread, which 
+    the thread debug library uses.
+*/
 extern "C" ps_err_e 
 ps_lgetfpregs ( struct ps_prochandle* ph, lwpid_t id, 
 		prfpregset_t* reg )
@@ -222,6 +242,11 @@ ps_lgetfpregs ( struct ps_prochandle* ph, lwpid_t id,
 }
 
 
+//! PUBLIC: ps_lsetfpregs
+/*!
+    a routine to set FP registers for the given thread, which 
+    the thread debug library uses.
+*/
 extern "C" ps_err_e 
 ps_lsetfpregs ( struct ps_prochandle* ph, lwpid_t id, 
 		const prfpregset_t* reg)
@@ -229,9 +254,6 @@ ps_lsetfpregs ( struct ps_prochandle* ph, lwpid_t id,
 {
   bool use_cxt = true;
 
-  //
-  // FIXME: set regs into ph->p
-  //
   if ( myprocess_tracer.tracer_setfpregs (*(ph->p), use_cxt) 
                       != SDBG_TRACE_OK ) {
     return PS_ERR;
@@ -241,12 +263,22 @@ ps_lsetfpregs ( struct ps_prochandle* ph, lwpid_t id,
 }
 
 
+//! PUBLIC: ps_getpid
+/*!
+    a routine to get the pid of the main process, which
+    the thread debug library uses.
+*/
 extern "C" pid_t ps_getpid ( struct ps_prochandle *ph )
 {
   return (ph->p->get_master_thread_pid());
 }
 
 
+//! PUBLIC: ps_get_thread_area
+/*!
+    a routine to get the thread specific area, which
+    the thread debug library uses.
+*/
 extern "C" ps_err_e 
 ps_get_thread_area ( const struct ps_prochandle *ph,
 		     lwpid_t lpid, int x, psaddr_t *addr)
@@ -263,7 +295,7 @@ ps_get_thread_area ( const struct ps_prochandle *ph,
     a linux kernel patch added two new ptrace requests for 
     this architecture "PTRACE_GET_THREAD_AREA" and "
     "PTRACE_SET_THREAD_AREA"
-    
+
     Those macroes are not exported via standard /usr/include 
     header files. So are struct user_desc definition and 
     ifndef PTRACE_GET_THREA_AREA to be 25
@@ -278,11 +310,11 @@ ps_get_thread_area ( const struct ps_prochandle *ph,
     requests for i386, PTRACE_GET_THREAD_AREA and PTRACE_SET_THREAD_AREA.
     These let another process using ptrace do the equivalent of performing
     get_thread_area and set_thread_area system calls for another thread.
-    
+
     We are working on gdb support for the new threading code in the kernel
     using the new NPTL library, and use PTRACE_GET_THREAD_AREA for that.
     This patch has been working fine for that.
-    
+
     I added PTRACE_SET_THREAD_AREA just for completeness, so that you can
     change all the state via ptrace that you can read via ptrace as has
     previously been the case. It doesn't have an equivalent of set_thread_area
@@ -291,13 +323,13 @@ ps_get_thread_area ( const struct ps_prochandle *ph,
     Both requests use the ptrace `addr' argument for the entry number rather
     than the entry_number field in the struct. The `data' parameter gives the
     address of a struct user_desc as used by the set/get_thread_area syscalls.
-    
+
     The code is quite simple, and doesn't need any special synchronization
     because in the ptrace context the thread must be stopped already.
-    
+
     I chose the new request numbers arbitrarily from ones not used on i386.
     I have no opinion on what values should be used.
-    
+
     People I talked to preferred adding this interface over putting an array of
     struct user_desc in struct user as accessed by PTRACE_PEEKUSR/POKEUSR
     (which would be a bit unnatural since those calls access one word at a time).
@@ -309,12 +341,12 @@ ps_get_thread_area ( const struct ps_prochandle *ph,
 				    (T_VA)x, 
 				    (T_WT*)&tsd_desc ) 
                                         != SDBG_TRACE_OK ) 
-    {    
+    {
       return PS_ERR;
     }
-  
+
   *addr = (psaddr_t) (tsd_desc.base_addr);
-    
+
 #elif X86_64_ARCHITECTURE
   /*
    * How to fetch thread-specific area for x86-64/linux
@@ -333,7 +365,7 @@ ps_get_thread_area ( const struct ps_prochandle *ph,
 
       and x86_64's ptrace has PTRACE_ARCH_PRCTL request field in its switch
       statement such that
-      
+
       -----
       " normal 64bit interface to access TLS data.
         Works just like arch_prctl, except that the arguments
@@ -345,7 +377,7 @@ ps_get_thread_area ( const struct ps_prochandle *ph,
 
 
       And do_arch_prctl is defined in x86_64/kernel/process.c 
-      
+
       -----
       ... prctl.h
       #define ARCH_SET_GS 0x1001
@@ -371,11 +403,11 @@ ps_get_thread_area ( const struct ps_prochandle *ph,
 
 	case ARCH_GET_GS: 
 
-      
+
       Assuming thread debug library is passing a valid x which is 
       one of above four
 
-    
+
       -----
       One last piece is found in /usr/include/sys/reg.h
       # define R15    0
@@ -452,32 +484,47 @@ ps_get_thread_area ( const struct ps_prochandle *ph,
    */  
 
 #endif
-  
+
   return PS_OK;
-    
 }
 
 
-static std::string& get_basename( std::string path)
+static 
+bool 
+equal_base(std::string const & path, std::string const & refpath)
 {
   char tmp[PATH_MAX];
-  char* bn;
+  char *bn;
 
-  sprintf(tmp, "%s", path.c_str());
+  sprintf(tmp, "%s", refpath.c_str());
   bn = basename(tmp);
-  std::string* rstr = new std::string(bn);
 
+  return (path == std::string(bn));
+} 
+
+static std::string& get_basename( std::string path)
+{ 
+  char tmp[PATH_MAX];
+  char *bn; 
+ 
+  sprintf(tmp, "%s", path.c_str());
+  bn = basename(tmp); 
+  std::string* rstr = new std::string(bn);
+ 
   return *rstr;
 } 
 
-
+//! PUBLIC: ps_pglobal_lookup
+/*!
+    a routine to fetch a global symbol, which the thread db
+    library uses
+*/
 extern "C" ps_err_e 
 ps_pglobal_lookup ( struct ps_prochandle *ph, 
 			     const char *object_name, 
 			     const char *sym_name, psaddr_t *sym_addr )
 {
   using namespace std;
-
   ps_err_e error_code;
 
   string objpath(object_name);
@@ -486,47 +533,50 @@ ps_pglobal_lookup ( struct ps_prochandle *ph,
   string myimage_path(ph->p->get_myimage()->get_path());
   string loader_path(ph->p->get_mydynloader_image()->get_path());
   
+  if (!object_name)
+    return PS_ERR;
+
   //
   // TODO: This if/else should be modified once process_base_t class 
   // gets to retain std::map obj and maintain each and every library 
   // that the target process brings into its process-address space.
   //
-  if ( object_name && (objpath == get_basename(pthread_path))) {
+  if ( equal_base(objpath, pthread_path) ) {
 
     const symbol_base_t<T_VA>& asym 
       = ph->p->get_mythread_lib_image()->get_a_symbol(sym);
     if (asym.get_raw_address()!= SYMTAB_UNINIT_ADDR && 
 	asym.get_relocated_address()) {
 
-      (*sym_addr) = (psaddr_t) asym.get_relocated_address();      
+      (*sym_addr) = (psaddr_t) asym.get_relocated_address();
       error_code = (*sym_addr)? PS_OK : PS_ERR;
     }
     else {
       error_code = PS_NOSYM;
     }
   }
-  else if ( objpath == get_basename(myimage_path)) {
+  else if ( equal_base(objpath, myimage_path) ) {
 
     const symbol_base_t<T_VA>& asym 
       =  ph->p->get_myimage()->get_a_symbol(sym);
     if (asym.get_raw_address()!= SYMTAB_UNINIT_ADDR && 
 	asym.get_relocated_address()) {
 
-      (*sym_addr) = (psaddr_t) asym.get_relocated_address();      
+      (*sym_addr) = (psaddr_t) asym.get_relocated_address();
       error_code = (*sym_addr)? PS_OK : PS_ERR;
     }
     else {
       error_code = PS_NOSYM;
     }
   }
-  else if ( objpath == get_basename(loader_path)) {
+  else if ( equal_base(objpath, loader_path)) {
 
     const symbol_base_t<T_VA>& asym 
       =  ph->p->get_mydynloader_image()->get_a_symbol(sym);
     if (asym.get_raw_address()!= SYMTAB_UNINIT_ADDR && 
 	asym.get_relocated_address()) {
 
-      (*sym_addr) = (psaddr_t) asym.get_relocated_address();      
+      (*sym_addr) = (psaddr_t) asym.get_relocated_address();
       error_code = (*sym_addr)? PS_OK : PS_ERR;
     }
     else {
@@ -536,17 +586,21 @@ ps_pglobal_lookup ( struct ps_prochandle *ph,
   else {
     error_code = PS_ERR;
   }
-    
+
   return error_code;
 }
 
 
+//! PUBLIC: ps_pstop
+/*!
+    a routine to stop the given process, which the thread db
+    library uses
+*/
 extern "C" ps_err_e 
 ps_pstop ( const struct ps_prochandle *ph)
 {
-  bool use_cxt = true;
-
-  if ( myprocess_tracer.tracer_stop(*(ph->p), use_cxt)                      
+  bool use_cxt = false;
+  if ( myprocess_tracer.tracer_stop(*(ph->p), use_cxt)
                                     != SDBG_TRACE_OK ) {
 
     return PS_ERR;
@@ -556,12 +610,16 @@ ps_pstop ( const struct ps_prochandle *ph)
 }
 
 
+//! PUBLIC: ps_pcontinue
+/*!
+    a routine to continue the given process, which the thread db
+    library uses
+*/
 extern "C" ps_err_e 
 ps_pcontinue ( const struct ps_prochandle *ph )
 {
-  bool use_cxt = true;
-
-  if ( myprocess_tracer.tracer_continue(*(ph->p), use_cxt)  
+  bool use_cxt = false;
+  if ( myprocess_tracer.tracer_continue(*(ph->p), use_cxt)
                                       != SDBG_TRACE_OK ) {
     return PS_ERR;
   }
@@ -570,18 +628,46 @@ ps_pcontinue ( const struct ps_prochandle *ph )
 }
 
 
+//! PUBLIC: ps_lstop
+/*!
+    a routine to stop the given thread, which the thread db
+    library uses
+*/
 extern "C" ps_err_e 
 ps_lstop ( const struct ps_prochandle *ph, lwpid_t lp)
 {
-  // FIXME: Not implemented yet
-  return PS_ERR;
+  bool use_cxt = true;
+
+  ph->p->make_context ( (const int) lp );
+  if (myprocess_tracer.tracer_stop(*(ph->p), use_cxt)
+	                          != SDBG_TRACE_OK) {
+    ph->p->check_and_undo_context( (const int) lp );
+    return PS_ERR;
+  }
+  ph->p->check_and_undo_context( (const int) lp );
+
+  return PS_OK;
 }
 
 
+//! PUBLIC: ps_lcontinue
+/*!
+    a routine to continue the given thread, which the thread db
+    library uses
+*/
 extern "C" ps_err_e 
 ps_lcontinue (const struct ps_prochandle *ph, lwpid_t lp)
 {
-  // FIXME: Not implemented yet
-  return PS_ERR;
+  bool use_cxt = true;
+
+  ph->p->make_context ( (const int) lp );
+  if (myprocess_tracer.tracer_continue(*(ph->p), use_cxt)
+	                          != SDBG_TRACE_OK) {
+    ph->p->check_and_undo_context( (const int) lp );
+    return PS_ERR;
+  }
+  ph->p->check_and_undo_context( (const int) lp );
+
+  return PS_OK;
 }
 

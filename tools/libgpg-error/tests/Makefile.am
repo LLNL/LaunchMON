@@ -19,9 +19,16 @@
 
 ## Process this file with automake to produce Makefile.in
 
-TESTS = t-strerror
+if HAVE_W32CE_SYSTEM
+extra_includes = -idirafter $(top_builddir)/src/gpg-extra
+else
+extra_includes = 
+endif
 
-INCLUDES = -I$(top_builddir)/src
+
+TESTS = t-strerror t-syserror
+
+INCLUDES = -I$(top_builddir)/src $(extra_includes)
 
 LDADD = ../src/libgpg-error.la
 

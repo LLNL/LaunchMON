@@ -26,9 +26,15 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Jun  11 1010 DHA: Remove pipe_t
+ *        Dec  23 2009 DHA: Added explict config.h inclusion 
  *        Feb  09 2008 DHA: Added LLNS Copyright
  *        Dec  29 2006 DHA: Created file.          
  */
+
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
 
 #include <lmon_api/lmon_api_std.h>
 
@@ -37,77 +43,62 @@
 #endif
 
 #include <iostream>
-
-#if HAVE_STDARG_H
-# include <cstdarg>
-#else
-# error stdarg.h is required
-#endif
-
-#if HAVE_UNISTD_H
-# include <unistd.h>
-#else
-# error unistd.h is required 
-#endif
-
-#if TIME_WITH_SYS_TIME
-# include <ctime>
-# include <sys/time.h>
-#else
-# error ctime and sys_time.h is required
-#endif
-
+#include <cstdarg>
+#include <unistd.h>
+#include <ctime>
+#include <sys/time.h>
+#include <limits.h>
 #include <lmon_api/lmon_say_msg.hxx>
 
-const int pipe_t::uninitializedFileDescriptor = -1;
+int (*errorCB) (const char *format, va_list ap) = NULL;
 
-pipe_t::pipe_t () 
-  : readingFd (uninitializedFileDescriptor), 
-    writingFd (uninitializedFileDescriptor)
+double gettimeofdayD ()
 {
-  // other init?
+  struct timeval ts;
+  double rt;
+
+  gettimeofday (&ts, NULL);
+  rt = (double) (ts.tv_sec);
+  rt += (double) ((double)(ts.tv_usec))/1000000.0;
+
+  return rt;
 }
 
-pipe_t::pipe_t ( const int rfd, const int wfd ) 
+int
+LMON_timestamp ( const char *m, const char *ei, const char *fstr, char *obuf, uint32_t len)
 {
-  readingFd = rfd;
-  writingFd = wfd;
-}
+  char timelog[PATH_MAX];
+  const char *format = "%b %d %T";
+  time_t t;
 
-pipe_t::pipe_t ( const pipe_t& dp )
-{
-  readingFd = dp.readingFd;
-  writingFd = dp.writingFd;
-}
+  time(&t);
+  strftime (timelog, PATH_MAX, format, localtime(&t));
+  return (snprintf(obuf, len, "<%s> %s (%s): %s\n", timelog, m, ei, fstr));
 
-pipe_t::~pipe_t ()
-{
-  // destoying routines?
 }
 
 void 
-LMON_say_msg ( const char* m, bool error_or_info, const char* output, ... )
+LMON_say_msg ( const char *m, bool error_or_info, const char *output, ... )
 {
-  using namespace std;
-
   va_list ap;
-
-  char timelog[PATH_MAX];
   char log[PATH_MAX];
-  const char* format = "%b %d %T";
-  //struct timeval tv;
-  time_t t;            
-  string ei_str = error_or_info ? "ERROR" : "INFO";
+  const char *ei_str = error_or_info ? "ERROR" : "INFO";
  
-  //gettimeofday (&tv, NULL);
-  time(&t);
-  strftime ( timelog, PATH_MAX, format, localtime(&t) );
-  sprintf(log, "<%s> %s (%s): %s\n", timelog, m, ei_str.c_str(), output);
-
-  va_start(ap, output);
-  vfprintf(stdout, log, ap);
-  va_end(ap);
-}                                                                                                          
+  if (LMON_timestamp(m, ei_str, output, log, PATH_MAX) >= 0)
+    {
+      va_start(ap, output);
+      if (errorCB)
+        {
+          errorCB (log, ap);
+        }
+      else
+        {
+          vfprintf(stdout, log, ap);
+          fflush(stdout);	
+        }
+      va_end(ap);
+    }
+}
 
 void
 LMON_TotalView_debug ()
@@ -116,12 +107,12 @@ LMON_TotalView_debug ()
   char exen[128];
   char lk[128];
   int len;  
-  sprintf(cmd, "%d", getpid()); 
-  sprintf(exen, "/proc/%d/exe", getpid());  
+  sprintf(cmd, "%d", getpid());
+  sprintf(exen, "/proc/%d/exe", getpid());
   len = readlink (exen, lk, 128);
   if (len >= 0 )
     lk[len]='\0';
-	    
+  	
   if (!fork())
     {
       std::cout << "FE DEBUG SUPPORT: invoking totalview" << std::endl;
@@ -135,3 +126,23 @@ LMON_TotalView_debug ()
   // 	
   while (!stuck);
 }
+
+int
+LMON_get_execpath( int pid, std::string &opath )
+{
+  char path[PATH_MAX];
+  char tar[PATH_MAX];
+  int cnt;
+
+  sprintf(path, "/proc/%d/exe", pid);   
+  cnt = readlink(path, tar, PATH_MAX);
+  if ( cnt >= 0 )
+    {
+      tar[cnt] = '\0';
+      cnt++;
+      opath = tar;
+    }
+
+  return cnt;
+}
+

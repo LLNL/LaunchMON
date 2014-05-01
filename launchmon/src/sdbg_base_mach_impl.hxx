@@ -26,57 +26,30 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Aug 10 2998 DHA: Added thread state transition check
+ *        Mar 06 2008 DHA: Added delay symbol table parsing for libc 
+ *                         and libpthread.
  *        Feb 09 2008 DHA: Added LLNS Copyright 
  *        May 22 2006 DHA: Added exception support for the machine layer
  *        Feb 06 2006 DHA: del support 
- *        Jan 11 2006 DHA: Created file.          
- */ 
+ *        Jan 11 2006 DHA: Created file.
+ */
 
 #ifndef SDBG_BASE_MACH_IMPL_HXX 
 #define SDBG_BASE_MACH_IMPL_HXX 1
 
+#ifndef HAVE_LAUNCHMON_CONFIG_H
+#include "config.h"
+#endif
+
 extern "C" {
-#if HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#else
-# error sys/types.h is required
-#endif 
-
-#if HAVE_SYS_WAIT_H
-# include <sys/wait.h>
-#else
-# error sys/wait.h is required
-#endif
-
-#if HAVE_SYS_STAT_H
-# include <sys/stat.h>
-#else
-# error sys/stat.h is required
-#endif
-
-#if HAVE_SYS_USER_H
-# include <sys/user.h>
-#else
-# error sys/user.h is required
-#endif
-
-#if HAVE_ERRNO_H
-# include <errno.h>
-#else
-# error errno.h is required
-#endif
-
-#if HAVE_UNISTD_H
-# include <unistd.h>
-#else
-# error unistd.h is required
-#endif
-
-#if HAVE_SIGNAL_H
-# include <signal.h>
-#else
-# error signal.h is required
-#endif
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <sys/user.h>
+#include <errno.h>
+#include <unistd.h>
+#include <signal.h>
 }
 
 #include <iostream>
@@ -91,7 +64,7 @@ extern "C" {
 //
 // PUBLIC INTERFACES (class register_set_t
 //
-//
+////////////////////////////////////////////////////////////////////
 
 //! PUBLIC: register_set_base_t
 /*!
@@ -115,7 +88,7 @@ register_set_base_t<NATIVE_RS,VA,WT>::register_set_base_t
 
 template <typename NATIVE_RS,typename VA,typename WT>
 register_set_base_t<NATIVE_RS,VA,WT>::register_set_base_t
-(const register_set_base_t<NATIVE_RS,VA,WT>& r)
+(const register_set_base_t<NATIVE_RS,VA,WT> &r)
 {
   memcpy(&rs, &(r.rs), sizeof(NATIVE_RS));
   offset_in_user = r.offset_in_user;  
@@ -131,6 +104,20 @@ register_set_base_t<NATIVE_RS,VA,WT>::~register_set_base_t ()
 }  
 
 
+template <typename NATIVE_RS,typename VA,typename WT>
+register_set_base_t<NATIVE_RS,VA,WT> & 
+register_set_base_t<NATIVE_RS,VA,WT>::operator=
+(const register_set_base_t<NATIVE_RS,VA,WT> &rhs)
+{
+  memcpy(&rs, &(rhs.rs), sizeof(NATIVE_RS));
+  offset_in_user = rhs.offset_in_user;
+  rs_ptr = &rs + (rhs.rs_ptr - &(rhs.rs));
+  writable_mask = rhs.writable_mask;
+
+  return *this;
+}
+
+
 //! PUBLIC:  size_in_word
 /*!
    
@@ -144,9 +131,49 @@ unsigned int register_set_base_t<NATIVE_RS,VA,WT>::size_in_word()
 
 ////////////////////////////////////////////////////////////////////
 //
+// PRIVATE METHODS (class thread_base_t
+//
+///////////////////////////////////////////////////////////////////
+
+//! PRIVATE
+/*!
+    
+*/
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::thread_base_t(const thread_base_t &t)
+{
+  master_thread = t.master_thread;
+  master_pid = t.master_pid;
+  state = t.state;
+  //
+  // Don't copy GPR/FPR set 
+  //
+  gprset = NULL;
+  fprset = NULL;
+}
+
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+thread_base_t<SDBG_DEFAULT_TEMPLPARAM> &
+thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::operator=
+(const thread_base_t &rhs)
+{
+  master_thread = rhs.master_thread;
+  master_pid = rhs.master_pid;
+  state = rhs.state;
+  //
+  // Don't copy GPR/FPR set 
+  //
+  gprset = NULL;
+  fprset = NULL;
+
+  return *this;
+}
+
+////////////////////////////////////////////////////////////////////
+//
 // PUBLIC INTERFACES (class thread_base_t
 //
-//
+///////////////////////////////////////////////////////////////////
 
 //! PUBLIC: constructors and destructor
 /*!
@@ -155,10 +182,14 @@ unsigned int register_set_base_t<NATIVE_RS,VA,WT>::size_in_word()
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::thread_base_t() 
   : master_thread(false), 
+    traced(false),
+    event_registered(false),
     master_pid(0),
+    state(LMON_RM_CREATED),
     gprset(NULL), 
     fprset(NULL)
 {
+  /* notice the newly created thread gets the LMON_RM_CREATED state */
   /* more init ? */
 }
 
@@ -187,7 +218,8 @@ thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_gprset()
 
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-void thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_gprset
+void 
+thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_gprset
 ( register_set_base_t<GRS,VA,WT>* g )
 {
   gprset = g;
@@ -203,7 +235,8 @@ thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_fprset()
 
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-void thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_fprset
+void 
+thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_fprset
 (register_set_base_t<FRS,VA,WT>* f)
 {
   fprset = f;
@@ -211,9 +244,103 @@ void thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_fprset
 
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-NT& thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_thread_info()
+NT& 
+thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_thread_info()
 {
-   return thread_info;
+  return thread_info;
+}
+
+
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+void
+thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::copy_thread_info(const NT &ct)
+{
+  memcpy(&thread_info, &ct, sizeof(ct)); 
+}
+
+//! PUBLIC: check_transition:
+/*!
+    It checks the validity of the state transition: is valid to 
+    transition from the current state state to the new state e?
+    Returns true if valid; otherwise false.
+*/
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+bool
+thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::check_transition(lwp_state_e s)
+{
+  bool rc = false;
+
+  switch (state)
+    {
+    case LMON_RM_CREATED:
+      {
+        //
+        // if the state is CREATED, transition can go anywhere else
+        //
+        if (s != LMON_RM_CREATED)
+          rc = true;
+
+        break;
+      }
+    case LMON_RM_RUNNING:
+      {
+        //
+        // if the state is RUNNINGD, the transition should be either
+        // STOPPED or EXITED
+        //
+        if ((s == LMON_RM_STOPPED) || (s == LMON_RM_EXITED))
+          rc = true; 
+
+        break;
+      }
+    case LMON_RM_STOPPED:
+      {
+        //
+        // if the state is STOPPED, the transition should be either back to 
+        // RUNNING or EXITED
+        //
+        if ((s == LMON_RM_RUNNING) || (s == LMON_RM_EXITED))
+          rc = true; 
+
+        break; 
+      }
+    case LMON_RM_EXITED:
+      {
+        //
+        // if the state is EXITED, no transition should happened
+        //
+        rc = false;
+        break;
+      }
+    default:
+      {
+        rc = false;
+        break; 
+      }
+    }
+
+  return rc;
+}
+
+////////////////////////////////////////////////////////////////////
+//
+// PRIVATE METHODS (class process_base_t)
+//
+///////////////////////////////////////////////////////////////////
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+process_base_t<SDBG_DEFAULT_TEMPLPARAM>::process_base_t 
+(const process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p) 
+{
+  //making this private so that process object cannot be copied
+}
+
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+process_base_t<SDBG_DEFAULT_TEMPLPARAM> &
+process_base_t<SDBG_DEFAULT_TEMPLPARAM>::operator=
+(const process_base_t<SDBG_DEFAULT_TEMPLPARAM> &rhs) 
+{
+  //making this private so that process object cannot be copied
+  return *this;
 }
 
 
@@ -221,8 +348,7 @@ NT& thread_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_thread_info()
 //
 // PUBLIC INTERFACES (class process_base_t)
 //
-//
-
+///////////////////////////////////////////////////////////////////
 
 //! PUBLIC: process_base_t
 /*!
@@ -238,32 +364,31 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::process_base_t ()
     mydynloader_image(NULL),  
     mythread_lib_image(NULL),
     mylibc_image(NULL),
+    myrmso_image(NULL),
     myopts(NULL),
     launch_hidden_bp(NULL),
     loader_hidden_bp(NULL),
-    thread_creation_hidden_bp(NULL),
-    thread_death_hidden_bp(NULL),
-    fork_hidden_bp(NULL)
-{ }
-
+    sym_attach_fifo(NULL),
+    new_child_pid(0) 
+{ 
+  /* more init ? */
+}
 
 //! PUBLIC: process_base_t
 /*!
     Default constructor with path info
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-process_base_t<SDBG_DEFAULT_TEMPLPARAM>::process_base_t ( const std::string& mi,  
-							  const std::string& md, 
-							  const std::string& mt,  
-							  const std::string& mc)
+process_base_t<SDBG_DEFAULT_TEMPLPARAM>::process_base_t 
+( const std::string &mi, const std::string &md,
+  const std::string &mt, const std::string &mc )
 {
-  protected_init ( mi, md, mt, mc );
+  protected_init( mi, md, mt, mc );
 }
-
 
 //! PUBLIC: ~process_base_t
 /*!
-    Destructor.
+    Destructor of the process_base_t class
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::~process_base_t ()
@@ -280,23 +405,41 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::~process_base_t ()
   if (mylibc_image)
     delete mylibc_image;
 
-  // this should call destructors for each containing thread obj 
-  //
-  thrlist.clear(); 
-}
+  if (mylibc_image)
+    delete myrmso_image;
 
+  if (launch_hidden_bp)
+    delete launch_hidden_bp;
+
+  if (loader_hidden_bp)
+    delete loader_hidden_bp;	
+
+  if (sym_attach_fifo)
+    delete sym_attach_fifo;
+
+  if (!thrlist.empty())
+    {
+      //
+      // this should call destructors for each containing thread obj 
+      //
+      for (thr_iter = thrlist.begin(); thr_iter != thrlist.end(); ++thr_iter)
+        {
+          delete thr_iter->second;
+        }
+      thrlist.clear();
+    }
+}
 
 //! PUBLIC: process_base_t
 /*!
     accessors
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-std::map<int, thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*, ltstr>& 
+std::map<int, thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*, ltstr>&
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_thrlist()
 {
-  return thrlist; 
+  return thrlist;
 }
-
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 const pid_t 
@@ -307,13 +450,13 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_master_thread_pid()
   typename
     map<int,thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*,ltstr>::const_iterator
       tpos;
-  
-  for (tpos=thrlist.begin(); tpos!=thrlist.end(); tpos++) 
+  for (tpos=thrlist.begin(); tpos!=thrlist.end(); tpos++)
     {
-      if (tpos->second->get_master_thread())  
-	return (tpos->second->get_master_pid());      
+      if (tpos->second->is_master_thread())
+	return (tpos->second->get_master_pid());
     }
 
+  //
   // this means, above operation couldn't find the master thread
   //
   return -1;
@@ -321,76 +464,87 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_master_thread_pid()
 
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-image_base_t<VA,EXECHANDLER>* 
+void
+process_base_t<SDBG_DEFAULT_TEMPLPARAM>::debug_iter_thrlist()
+{
+  using namespace std;
+  int i=0;
+  typename
+    map<int,thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*,ltstr>::const_iterator
+      tpos;
+  cout << "+++++++++++++++debug_iter_thrlist called" << endl; 
+  for (tpos=thrlist.begin(); tpos!=thrlist.end(); tpos++)
+    {
+      cout << "(" << i << ")" << endl;
+      if (tpos->second->is_master_thread())
+        {
+          cout << "Main thread" << endl; 
+        }
+      cout << "ti_lid: " << tpos->second->get_thread_info().ti_lid << "| ";
+      cout << "ti_pri: " << tpos->second->get_thread_info().ti_pri << "| ";
+      cout << "ti_ta_p: " << tpos->second->get_thread_info().ti_ta_p << "| ";
+      cout << "ti_tid: " << tpos->second->get_thread_info().ti_tid << "| ";
+      cout << "+++++++++++++++" << endl; 
+      i++;
+    }
+
+}
+
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+image_base_t<VA,EXECHANDLER> * 
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_myimage ()
 {
   return myimage;
 }
 
-
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-image_base_t<VA,EXECHANDLER>* 
+image_base_t<VA,EXECHANDLER> * 
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_mydynloader_image ()
 {
   return mydynloader_image;
 }
 
-
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-image_base_t<VA,EXECHANDLER>* 
+image_base_t<VA,EXECHANDLER> * 
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_mythread_lib_image ()
 {
   return mythread_lib_image;
 }
 
-
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-image_base_t<VA,EXECHANDLER>*
+image_base_t<VA,EXECHANDLER> *
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_mylibc_image ()
 {
   return mylibc_image;
 }
 
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+image_base_t<VA,EXECHANDLER> *
+process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_myrmso_image ()
+{
+  return myrmso_image;
+}
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-breakpoint_base_t<VA,IT>* 
+breakpoint_base_t<VA,IT> * 
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_launch_hidden_bp ()
 {
   return launch_hidden_bp;
 }
 
-
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-breakpoint_base_t<VA,IT>*
-process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_fork_hidden_bp ()
-{
-  return fork_hidden_bp;
-}
-
-
-template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-breakpoint_base_t<VA,IT>* 
+breakpoint_base_t<VA,IT> * 
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_loader_hidden_bp ()
 {
   return loader_hidden_bp;
 }
 
-
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-breakpoint_base_t<VA,IT>* 
-process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_thread_creation_hidden_bp ()
+const symbol_base_t<VA> *
+process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_sym_attach_fifo ()
 {
-  return thread_creation_hidden_bp;
+  return sym_attach_fifo;
 }
-
-
-template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-breakpoint_base_t<VA,IT>* 
-process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_thread_death_hidden_bp ()
-{
-  return thread_death_hidden_bp;
-}
-
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_myimage 
@@ -398,7 +552,6 @@ void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_myimage
 {
   myimage = i;
 }
-
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_mydynloader_image 
@@ -422,12 +575,18 @@ void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_mylibc_image
 }
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_myrmso_image
+(image_base_t<VA,EXECHANDLER>* i)
+{
+  myrmso_image = i;
+}
+
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_launch_hidden_bp
 (breakpoint_base_t<VA,IT>* b)
 {
   launch_hidden_bp = b;
 }
-
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
   void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_loader_hidden_bp
@@ -436,191 +595,71 @@ template <SDBG_DEFAULT_TEMPLATE_WIDTH>
   loader_hidden_bp = b;
 }
 
-
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_thread_creation_hidden_bp
-(breakpoint_base_t<VA,IT>* b)
+void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_sym_attach_fifo
+(symbol_base_t<VA>* o)
 {
-  thread_creation_hidden_bp = b;
+  sym_attach_fifo = o;
 }
 
-
-template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_thread_death_hidden_bp
-(breakpoint_base_t<VA,IT>* b) 
-{
-  thread_death_hidden_bp = b;
-}
-
-
-template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-void process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_fork_hidden_bp
-(breakpoint_base_t<VA,IT>* b)
-{
-  fork_hidden_bp = b;
-}
-
-
-//! PROTECTED: process_base_t
+//! PUBLIC: get_pid
 /*!
-    get_pid: this is context sensitive get_pid
+    get_pid: this is context sensitive get_pid.
+    If context_sensitive is true, this returns the lwp-pid of
+    of the current focus thread; otherwise pid of the process.
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-const pid_t 
+const pid_t
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_pid ( bool context_sensitive )
 {
   pid_t retpid = THREAD_KEY_INVALID;
-
   if (context_sensitive) 
     {
-      if (key_to_thread_context == THREAD_KEY_INVALID) 
-	{
-	  // FIXME: gen_err caller wanted context sensitive
-	  // gprset, yet there is no context set at the moment
-	  retpid = THREAD_KEY_INVALID;
-	}
+      if (new_child_pid != 0)
+        {
+          retpid = new_child_pid;
+        }
+      else
+        {
+          if (thread_ctx_stack.empty())
+	    {
+	      retpid = THREAD_KEY_INVALID;
+	    }
 
-      if ( thrlist.find(key_to_thread_context) != thrlist.end() ) 
-	{    
-	  retpid = thrlist.find(key_to_thread_context)->second->thr2pid();
-	}    
+          if ( thrlist.find(thread_ctx_stack.top()) != thrlist.end() )
+	    {
+	      retpid = thrlist.find(thread_ctx_stack.top())->second->thr2pid();
+	    }
+        }
     }
-  else 
-    {    
+  else
+    {
       retpid = get_master_thread_pid();
     }
 
   return retpid;
 }
 
-//! PROTECTED: process_base_t
-/*!
-    basic_init
-*/
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-bool process_base_t<SDBG_DEFAULT_TEMPLPARAM>::protected_init ( const std::string& mi, 
-							       const std::string& md, 
-							       const std::string& mt, 
-							       const std::string& mc)
+int
+process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_cur_thread_ctx ()
 {
-  try
+  int rc = THREAD_KEY_INVALID;
+  if (!thread_ctx_stack.empty())
     {
-      bool rc = true;
-
-      if (myimage) 
-	{
-	  myimage->init();
-	  myimage->read_linkage_symbols();
-	}
-      else
-	rc = false;      
-
-      if (mydynloader_image) 
-	{
-	  mydynloader_image->init();
-	  mydynloader_image->read_linkage_symbols();
-	}
-      else
-	rc = false;
-
-      if (mythread_lib_image)	
-	{
-	  mythread_lib_image->init();
-	  mythread_lib_image->read_linkage_symbols();
-	}
-      else 
-	rc = false;
-
-      if (mylibc_image) 
-	{               
-	  mylibc_image->init();
-	  mylibc_image->read_linkage_symbols();
-	}
-      else    
-	rc = false;     
-
-      return rc;
+      rc = thread_ctx_stack.top();
     }
-  catch ( symtab_exception_t e ) 
-    {
-      e.report();
-      abort();
-    }
+
+  return rc;
 }
 
-//! PROTECTED: process_base_t
+//! PUBIC: process_base_t::make_context:
 /*!
-    basic_init
-*/
-template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-bool process_base_t<SDBG_DEFAULT_TEMPLPARAM>::protected_init ( const std::string& mi ) 
-{  
-  try
-    {
-      using namespace std;
-
-      bool rc = true;
-      string loader_loc;
-      string libpthread_loc;
-      string libc_loc;
-      bool is_threaded = false;
-      bool found_interp = false;
-      bool found_runtime = false;
-
-      if (myimage) 
-	{
-
-	  myimage->init();
-	  myimage->read_linkage_symbols();
-
-	  myimage->fetch_DSO_info ( loader_loc, 
-				    found_interp, 
-				    libpthread_loc,
-				    is_threaded,
-				    libc_loc,
-				    found_runtime );
-	}
-      else
-	rc = false;      
-  
-      if (found_interp && mydynloader_image) 
-	{    
-	  mydynloader_image->init(loader_loc);
-	  mydynloader_image->read_linkage_symbols();
-	}  
-      else
-	rc = false;   
-
-      if (is_threaded && mythread_lib_image) 
-	{    
-	  mythread_lib_image->init(libpthread_loc);
-	  mythread_lib_image->read_linkage_symbols();
-	}
-
-      if (found_runtime && mylibc_image) 
-	{     
-	  mylibc_image->init(libc_loc);
-	  mylibc_image->read_linkage_symbols();
-	}
-
-      return rc;
-    }
-  catch ( symtab_exception_t e ) 
-    {
-      e.report();
-      abort();
-    }
-}
-
-
-//! PROTECTED: process_base_t
-/*!
-    make_context
+    push a new thread context
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 bool 
-process_base_t<SDBG_DEFAULT_TEMPLPARAM>::make_context ( const int key ) 
-  throw (machine_exception_t)
+process_base_t<SDBG_DEFAULT_TEMPLPARAM>::make_context ( const int key )
 {
   using namespace std;
 
@@ -630,92 +669,156 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::make_context ( const int key )
 
   if ( thrlist.find(key) != thrlist.end() ) 
     {
-      key_to_thread_context = key;
+      thread_ctx_stack.push(key);
       rc = true;
     }
-  else 
-    {    
+  else if ( new_child_pid == 0)
+    {
+      new_child_pid = key;
+    }
+  else
+    {
       e = func + 
-	"no thread with the key value found ";
+	"no thread with the key value found and new child pid is already being used";
       throw (machine_exception_t(e));
     }
 
-  return rc;    
+  return rc;
 }
 
-
-//! PROTECTED: process_base_t
+//! PUBIC: process_base_t::get_lwp_state
 /*!
-    check_and_undo_context
+    set the lwp state of the current focus thread
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-bool process_base_t<SDBG_DEFAULT_TEMPLPARAM>::check_and_undo_context ( const int key ) 
-  throw (machine_exception_t)
+lwp_state_e
+process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_lwp_state (bool use_cxt)
+{
+  lwp_state_e rstate = LMON_RM_EXITED;
+
+  bool rc = true;
+  int lwpid = get_pid(use_cxt);
+
+  if (thrlist.find(lwpid) != thrlist.end())
+    {
+      rstate = thrlist[lwpid]->get_state();
+    }
+
+  return rstate;
+}
+
+//! PUBIC: process_base_t::set_lwp_state
+/*!
+    set the lwp state of the current focus thread
+*/
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+bool
+process_base_t<SDBG_DEFAULT_TEMPLPARAM>::set_lwp_state
+( lwp_state_e s, bool use_cxt )
+{
+  bool rc = true;
+  int lwpid = get_pid(use_cxt);
+  //std::cout << "about to make a transition" << std::endl;
+  if (thrlist.find(lwpid) != thrlist.end())
+    {
+      //std::cout << "this is from " << (int) thrlist[lwpid]->get_state() << " to " << (int) s << std::endl;
+      if (!thrlist[lwpid]->check_transition(s)) 
+        {
+#if 0
+          //
+          // many illegal transitions will be there because this 
+          // processes the head event in the waitpid queue... which can be out of order
+          //
+          self_trace_t::trace ( true,
+            "process base",0,
+              "illegal transition of thread state for %d from %d to %d",
+              lwpid, (int) thrlist[lwpid]->get_state(), (int)s);
+#endif
+        }
+      thrlist[lwpid]->set_state(s);
+    }
+  else
+    {
+      //std::cout << "I can't find this thread" << std::endl;
+      rc = false;
+    }
+
+  return rc;
+}
+
+//! PUBLIC : check_and_undo_context
+/*!
+    Pops the current thread context
+*/
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+bool 
+process_base_t<SDBG_DEFAULT_TEMPLPARAM>::check_and_undo_context ( const int key )
 {
   using namespace std;
-
-  // 3/16 IMPORTANT FIX NEEDED: when thread gets exit event while thread list is being
-  // traversed, this argument "key" can contain garbage. requires a function 
-  // prototype change.
 
   bool rc = false;
   string e;
   string func = "[process_base_t::check_and_undo_context]";
-  if (key_to_thread_context == key) 
-    {      
-      key_to_thread_context = THREAD_KEY_INVALID;
+  if (new_child_pid == key)
+    {
+      new_child_pid = 0;
       rc = true;
     }
-  else 
+  else
     {
-      e = func + 
-	"key_to_thread_context is different from the passed key";
-      throw (machine_exception_t(e));
+      if (!thread_ctx_stack.empty() && (thread_ctx_stack.top() == key)) 
+        {
+          thread_ctx_stack.pop();
+          rc = true;
+        }
+      else 
+        {
+          e = func + 
+	    "thread_ctx_stack.top() is different from the passed key";
+          throw (machine_exception_t(e));
+        }
     }
-  return rc;    
+  return rc;
 }
 
-//! PROTECTED: process_base_t
+//! PUBLIC: process_base_t
 /*!
     get_gprset
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 register_set_base_t<GRS,VA,WT>* 
 process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_gprset
-(bool context_sensitive)
+( bool context_sensitive )
 {
   using namespace std;
   typename
-      map<int,thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*,ltstr>::const_iterator
+    map<int,thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*,ltstr>::const_iterator
       tpos;
-  
 
   if (context_sensitive) 
-    {    
-      if (key_to_thread_context == THREAD_KEY_INVALID) 
+    {
+      if (thread_ctx_stack.empty()) 
 	{ 
 	  return NULL;
 	}
-
-      if ( thrlist.find(key_to_thread_context) != thrlist.end() ) 
-	{    
-	  return (thrlist.find(key_to_thread_context)->second->get_gprset());
+      else if ( thrlist.find(thread_ctx_stack.top()) != thrlist.end() ) 
+	{
+	  return (thrlist.find(thread_ctx_stack.top())->second->get_gprset());
 	}
     }
   else 
-    {         
+    {
       for (tpos=thrlist.begin(); tpos!=thrlist.end(); tpos++) 
-	{	  
-	  if (tpos->second->get_master_thread()) 
-	    {     
+	{
+	  if (tpos->second->is_master_thread()) 
+	    {
 	      return (tpos->second->get_gprset());
 	    }
-	}    
+	}
     }
-            
-  return NULL;  
-}
 
+  return NULL;
+}
 
 //! PROTECTED: process_base_t
 /*!
@@ -732,23 +835,182 @@ process_base_t<SDBG_DEFAULT_TEMPLPARAM>::get_fprset ( bool context_sensitive )
     tpos;
 
   if (context_sensitive) 
-    {    
-      if (key_to_thread_context == THREAD_KEY_INVALID) 	
-	return NULL;	
-
-      if ( thrlist.find(key_to_thread_context) != thrlist.end() )
-	return (thrlist.find(key_to_thread_context)->second->get_fprset());   
+    {
+      if ( thread_ctx_stack.empty() )
+        { 	
+	  return NULL;
+        }
+      else if ( thrlist.find(thread_ctx_stack.top()) != thrlist.end() )
+        {
+	  return (thrlist.find(thread_ctx_stack.top())->second->get_fprset());   
+        }
     }
   else 
-    {      
+    {
       for (tpos=thrlist.begin(); tpos!=thrlist.end(); tpos++) 
 	{
-	  if (tpos->second->get_master_thread()) 	    
-	    return (tpos->second->get_fprset());     
+	  if (tpos->second->is_master_thread())
+	    return (tpos->second->get_fprset());
 	}
     }
-            
-  return NULL;  
+
+  return NULL;
 }
 
+
+////////////////////////////////////////////////////////////////////
+//
+// PROTECTED INTERFACES (class process_base_t)
+//
+///////////////////////////////////////////////////////////////////
+
+//! PROTECTED: protected_init 
+/*!
+    DEPRECATED!
+    protected_init: This should really be something that should
+    be handled by this base layer. But we don't want
+    a component other than its derived class calls this
+    to initialize things. Hence, protected. 
+*/
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+bool 
+process_base_t<SDBG_DEFAULT_TEMPLPARAM>::protected_init 
+( const std::string &mi, const std::string &md,
+  const std::string &mt, const std::string &mc)
+{
+  try
+    {
+      bool rc = true;
+
+      //
+      // init the main RM image 
+      //
+      if (myimage) 
+	{
+	  myimage->init();
+	  myimage->read_linkage_symbols();
+	}
+      else
+        {
+	  rc = false;
+        }
+
+      //
+      // init the dynamic linker image 
+      //
+      if (mydynloader_image) 
+	{
+	  mydynloader_image->init();
+	  mydynloader_image->read_linkage_symbols();
+	}
+      else
+        {
+	  rc = false;
+        }
+
+      //
+      // POSIX thread library image 
+      //
+      if (mythread_lib_image)	
+	{
+	  mythread_lib_image->init();
+	  mythread_lib_image->read_linkage_symbols();
+	}
+      else
+        {
+	  rc = false;
+        }
+
+      //
+      // LIBC library image 
+      //
+      if (mylibc_image) 
+	{
+	  mylibc_image->init();
+	  mylibc_image->read_linkage_symbols();
+	}
+      else
+        {
+	  rc = false;
+        } 
+
+
+      //
+      // If any of above failed, false is returned.
+      //
+      return rc;
+    }
+  catch ( symtab_exception_t e ) 
+    {
+      e.report();
+      //
+      // I don't know how to recover from a symtab exception... 
+      // aborting...
+      //
+      abort();
+    }
+}
+
+//! PROTECTED: process_base_t::protected_init
+/*!
+    protected_init: This should really be something that should
+    be handled by this base layer. But we don't want
+    a component other than its derived class calls this
+    to initialize things. Hence, protected. 
+*/
+template <SDBG_DEFAULT_TEMPLATE_WIDTH>
+bool 
+process_base_t<SDBG_DEFAULT_TEMPLPARAM>::protected_init 
+( const std::string & mi )
+{
+  try
+    {
+      using namespace std;
+
+      bool rc = true;
+      string loader_loc;
+      bool found_interp = false;
+
+      //
+      // init the main RM image 
+      //
+      if (myimage) 
+	{
+	  myimage->init();
+	  myimage->read_linkage_symbols();
+
+	  myimage->fetch_DSO_info ( loader_loc, found_interp );
+	}
+      else
+        {
+	  rc = false;
+        }
+
+  
+      //
+      // init the dynamic linker image 
+      //
+      if (found_interp && mydynloader_image) 
+	{
+	  mydynloader_image->init(loader_loc);
+	  mydynloader_image->read_linkage_symbols();
+	}
+      else
+        {
+	  rc = false;
+        }
+
+      return rc;
+    }
+  catch ( symtab_exception_t e ) 
+    {
+      e.report();
+      //
+      // I don't know how to recover from a symtab exception... 
+      // aborting...
+      //
+      abort();
+    }
+}
 #endif // SDBG_BASE_MACH_IMPL_HXX
+

@@ -1,7 +1,7 @@
 /*
  * $Header: /usr/gapps/asde/cvs-vault/sdb/launchmon/src/lmon_api/lmon_be.h,v 1.7.2.4 2008/02/21 09:26:38 dahn Exp $
  *--------------------------------------------------------------------------------
- * Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at 
+ * Copyright (c) 2008 ~ 2012, Lawrence Livermore National Security, LLC. Produced at 
  * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>. 
  * LLNL-CODE-409469. All rights reserved.
  *
@@ -27,6 +27,12 @@
  *	
  *
  *  Update Log:
+ *        May  31 2012 DHA: Picked LMON_be_assist_mw_coloc from 
+ *                          the 0.8-middleware-support branch.
+ *        Dec  23 2009 DHA: Removed header file macroes for header files that
+ *                          would exit on almost all UNIX based platforms,
+ *                               facilitaing binary distribution.
+ *        Aug  26 2009 DHA: lmon-config.h support
  *        Jun  06 2008 DHA: Remove description comments; the man pages
  *                          now contain most up-to-date info.
  *        Feb  09 2008 DHA: Added LLNS Copyright 
@@ -40,6 +46,7 @@
 
 #include <unistd.h>
 #include <netdb.h>
+
 #include <lmon_api/lmon_api_std.h>
 #include <lmon_api/lmon_proctab.h>
 
@@ -75,6 +82,8 @@ lmon_rc_e LMON_be_handshake ( void* udata );
 
 lmon_rc_e LMON_be_ready ( void* udata );
 
+lmon_rc_e LMON_be_assist_mw_coloc();
+
 lmon_rc_e LMON_be_getMyProctab ( 
                 MPIR_PROCDESC_EXT *proctabbuf, 
                 int *size, 
@@ -94,6 +103,11 @@ lmon_rc_e LMON_be_regUnpackForFeToBe (
 lmon_rc_e LMON_be_recvUsrData ( void* udata );
 
 lmon_rc_e LMON_be_sendUsrData ( void* udata );
+
+lmon_rc_e LMON_be_regErrorCB ( int (*errorCB) (const char *format, va_list ap) );
+
+lmon_rc_e LMON_be_tester_init ( );
+
 
 END_C_DECLS
 

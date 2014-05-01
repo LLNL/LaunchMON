@@ -1,0 +1,35 @@
+.TH LaunchMON 3 "MAY 2014" LaunchMON "LaunchMON Back-End API"
+
+.SH NAME
+LMON_be_assist_mw_coloc \- LaunchMON back-end API: spawns middleware daemons on the nodes where back-end daemons run. 
+
+.SH SYNOPSIS
+.B #include <lmon_be.h>
+.PP
+.BI "lmon_rc_e LMON_be_assist_mw_coloc ( );"
+.PP
+.B cc ... -lmonbeapi
+
+.SH DESCRIPTION
+The \fBLMON_be_assist_mw_coloc()\fR function forks and exec's middleware daemons
+on the back-end nodes in support to the \fBLMON_fe_launchMwDaemons()\fR function.
+For a machine in which no mechanism exists to spawn additional daemons
+on the back-end nodes, this function is required for launching 
+of middleware daemons.
+
+.SH RETURN VALUE
+These functions return \fBLMON_OK\fR
+on success; otherwise, an LMON error code is returned 
+as described below. 
+
+.SH ERRORS
+.TP
+.B LMON_OK
+Success.
+.TP
+.B LMON_ESUBCOM
+Encountered an error during a communication subsystem operation. 
+
+.SH AUTHOR
+Dong H. Ahn <ahn1@llnl.gov>
+
