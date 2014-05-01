@@ -1,6 +1,6 @@
 Name:           launchmon
 Version:        1.0.1
-Release:        2cce
+Release:        4cce
 License:        LGPL
 Group:          Development/Languages
 Summary:        Tool Daemon launching/bootstrapping infrastructure. 
@@ -46,7 +46,7 @@ Requires: numactl-devel
 Requires: numactl
 Requires: glibc
 Requires: elfutils-libelf-devel
-Requires: munge
+Requires: munge-devel
 
 
 
