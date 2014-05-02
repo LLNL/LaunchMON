@@ -84,7 +84,12 @@ make
 make install DESTDIR=$RPM_BUILD_ROOT
 
 mkdir -p ${RPM_BUILD_ROOT}%{module_path}
-cp ${RPM_BUILD_DIR}/%{name}-%{version}/launchmon.module ${RPM_BUILD_ROOT}%{module_path}/%{version}
+
+#
+# the release number -4 must be matched with what's in META
+#
+#
+cp ${RPM_BUILD_DIR}/%{name}-%{version}-4/launchmon.module ${RPM_BUILD_ROOT}%{module_path}/%{version}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
