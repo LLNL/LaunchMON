@@ -236,6 +236,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 tvcmd = @tvcmd@
 noinst_LTLIBRARIES = libhandshake.la 
+INCLUDES = -I$(top_srcdir)/@GCRYPTLOC@ -I$(top_srcdir)/@GPGERRLOC@
 libhandshake_la_SOURCES = handshake.c handshake.h
 libhandshake_la_LIBADD = $(MUNGE_LIBS)
 all: all-am

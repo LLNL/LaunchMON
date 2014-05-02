@@ -28,10 +28,17 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        May 01 2014 DHA: Specify gcrypt header file locations so that
+##                         this module will use the integrated version of
+##                         gcrypt/gpgerr package. TODO: drop support for
+##                         the integrated gcrypt support and make it an
+##                         external dependency.
 ##        Apr 15 2014 DHA: Add handshake.h so that it is included into the distro
 ##        Mar 10 2014 MPL: Add secure handshake
 ##
 
 noinst_LTLIBRARIES = libhandshake.la 
+INCLUDES = -I$(top_srcdir)/@GCRYPTLOC@ -I$(top_srcdir)/@GPGERRLOC@
 libhandshake_la_SOURCES = handshake.c handshake.h
 libhandshake_la_LIBADD = $(MUNGE_LIBS)
+
