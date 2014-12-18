@@ -21,24 +21,25 @@
 # I was not able to build it with 64Megs - 1.6 fixes this.
 # not anymore required: AUTOMAKE_OPTIONS = 1.6
 
-INCLUDES =  -I$(top_srcdir)/src
-ASFLAGS = @MPI_SFLAGS@
+# Need to include ../src in addition to top_srcdir because gcrypt.h is
+# a built header.
+AM_CPPFLAGS = -I../src -I$(top_srcdir)/src
+AM_CFLAGS = $(GPG_ERROR_CFLAGS)
 
-# We don't have .S sources listed, so automake does not autocreate these
-CCASCOMPILE = $(CCAS) $(AM_CCASFLAGS) $(CCASFLAGS)
-LTCCASCOMPILE = $(LIBTOOL) --mode=compile $(CCAS) $(AM_CCASFLAGS) $(CCASFLAGS)
-
+AM_ASFLAGS = $(MPI_SFLAGS)
+AM_CCASFLAGS = $(NOEXECSTACK_FLAGS)
 
 EXTRA_DIST = Manifest config.links
 DISTCLEANFILES = mpi-asm-defs.h \
-                 mpih-add1.S mpih-mul1.S mpih-mul2.S mpih-mul3.S  \
-		 mpih-lshift.S mpih-rshift.S mpih-sub1.S asm-syntax.h sysdep.h
-# Note: we only use .S files so we should delete all left over .s
-CLEANFILES = _*.s __*.s
+                 mpih-add1-asm.S mpih-mul1-asm.S mpih-mul2-asm.S mpih-mul3-asm.S  \
+		 mpih-lshift-asm.S mpih-rshift-asm.S mpih-sub1-asm.S asm-syntax.h \
+                 mpih-add1.c mpih-mul1.c mpih-mul2.c mpih-mul3.c  \
+		 mpih-lshift.c mpih-rshift.c mpih-sub1.c \
+	         sysdep.h mod-source-info.h
 
 # Beware: The following list is not a comment but grepped by
 #         config.links to get the list of symlinked modules
-#         Optional modules are marked with a 0 in the second column.
+#         Optional modules are marked with an O in the second column.
 #BEGIN_ASM_LIST
 # mpih-add1    C
 # mpih-sub1    C
@@ -58,100 +59,102 @@ CLEANFILES = _*.s __*.s
 # And we need to have conditionals for all modules because
 # we don't know whether they are .c or .S.  Very ugly; I know.
 # Remember to define them all in configure.ac
-# if MPI_MOD_ASM_MPIH_ADD1
-# mpih_add1 = mpih-add1.S
-# else
-# if MPI_MOD_C_MPIH_ADD1
-# mpih_add1 = mpih-add1.c
-# else
-# mpih_add1 = 
-# endif
-# endif
-# 
-# if MPI_MOD_ASM_MPIH_SUB1
-# mpih_sub1 = mpih-sub1.S
-# else
-# if MPI_MOD_C_MPIH_SUB1
-# mpih_sub1 = mpih-sub1.c
-# else
-# mpih_sub1 = 
-# endif
-# endif
-# 
-# if MPI_MOD_ASM_MPIH_MUL1
-# mpih_mul1 = mpih-mul1.S
-# else
-# if MPI_MOD_C_MPIH_MUL1
-# mpih_mul1 = mpih-mul1.c
-# else
-# mpih_mul1 = 
-# endif
-# endif
-# 
-# if MPI_MOD_ASM_MPIH_MUL2
-# mpih_mul2 = mpih-mul2.S
-# else
-# if MPI_MOD_C_MPIH_MUL2
-# mpih_mul2 = mpih-mul2.c
-# else
-# mpih_mul2 = 
-# endif
-# endif
-# 
-# if MPI_MOD_ASM_MPIH_MUL3
-# mpih_mul3 = mpih-mul3.S
-# else
-# if MPI_MOD_C_MPIH_MUL3
-# mpih_mul3 = mpih-mul3.c
-# else
-# mpih_mul3 = 
-# endif
-# endif
-# 
-# if MPI_MOD_ASM_MPIH_LSHIFT
-# mpih_lshift = mpih-lshift.S
-# else
-# if MPI_MOD_C_MPIH_LSHIFT
-# mpih_lshift = mpih-lshift.c
-# else
-# mpih_lshift = 
-# endif
-# endif
-# 
-# if MPI_MOD_ASM_MPIH_RSHIFT
-# mpih_rshift = mpih-rshift.S
-# else
-# if MPI_MOD_C_MPIH_RSHIFT
-# mpih_rshift = mpih-rshift.c
-# else
-# mpih_rshift = 
-# endif
-# endif
-# 
-# if MPI_MOD_ASM_UDIV
-# udiv = udiv.S
-# else
-# if MPI_MOD_C_UDIV
-# udiv = udiv.c
-# else
-# udiv = 
-# endif
-# endif
-# 
-# if MPI_MOD_ASM_UDIV_QRNND
-# udiv_qrnnd = udiv-qrnnd.S
-# else
-# if MPI_MOD_C_UDIV_QRNND
-# udiv_qrnnd = udiv-qrnnd.c
-# else
-# udiv_qrnnd = 
-# endif
-# endif
+if MPI_MOD_ASM_MPIH_ADD1
+mpih_add1 = mpih-add1-asm.S
+else
+if MPI_MOD_C_MPIH_ADD1
+mpih_add1 = mpih-add1.c
+else
+mpih_add1 =
+endif
+endif
+
+if MPI_MOD_ASM_MPIH_SUB1
+mpih_sub1 = mpih-sub1-asm.S
+else
+if MPI_MOD_C_MPIH_SUB1
+mpih_sub1 = mpih-sub1.c
+else
+mpih_sub1 =
+endif
+endif
+
+if MPI_MOD_ASM_MPIH_MUL1
+mpih_mul1 = mpih-mul1-asm.S
+else
+if MPI_MOD_C_MPIH_MUL1
+mpih_mul1 = mpih-mul1.c
+else
+mpih_mul1 =
+endif
+endif
+
+if MPI_MOD_ASM_MPIH_MUL2
+mpih_mul2 = mpih-mul2-asm.S
+else
+if MPI_MOD_C_MPIH_MUL2
+mpih_mul2 = mpih-mul2.c
+else
+mpih_mul2 =
+endif
+endif
+
+if MPI_MOD_ASM_MPIH_MUL3
+mpih_mul3 = mpih-mul3-asm.S
+else
+if MPI_MOD_C_MPIH_MUL3
+mpih_mul3 = mpih-mul3.c
+else
+mpih_mul3 =
+endif
+endif
+
+if MPI_MOD_ASM_MPIH_LSHIFT
+mpih_lshift = mpih-lshift-asm.S
+else
+if MPI_MOD_C_MPIH_LSHIFT
+mpih_lshift = mpih-lshift.c
+else
+mpih_lshift =
+endif
+endif
+
+if MPI_MOD_ASM_MPIH_RSHIFT
+mpih_rshift = mpih-rshift-asm.S
+else
+if MPI_MOD_C_MPIH_RSHIFT
+mpih_rshift = mpih-rshift.c
+else
+mpih_rshift =
+endif
+endif
+
+if MPI_MOD_ASM_UDIV
+udiv = udiv-asm.S
+else
+if MPI_MOD_C_UDIV
+udiv = udiv.c
+else
+udiv =
+endif
+endif
+
+if MPI_MOD_ASM_UDIV_QRNND
+udiv_qrnnd = udiv-qrnnd-asm.S
+else
+if MPI_MOD_C_UDIV_QRNND
+udiv_qrnnd = udiv-qrnnd.c
+else
+udiv_qrnnd =
+endif
+endif
 
 noinst_LTLIBRARIES = libmpi.la
 
-AM_CFLAGS = @GPG_ERROR_CFLAGS@
 libmpi_la_LDFLAGS =
+nodist_libmpi_la_SOURCES = $(mpih_add1) $(mpih_sub1) $(mpih_mul1) \
+	$(mpih_mul2) $(mpih_mul3) $(mpih_lshift) $(mpih_rshift) \
+	$(udiv) $(udiv_qrnnd)
 libmpi_la_SOURCES = longlong.h	   \
 	      mpi-add.c      \
 	      mpi-bit.c      \
@@ -163,28 +166,12 @@ libmpi_la_SOURCES = longlong.h	   \
 	      mpi-inline.c   \
 	      mpi-inv.c      \
 	      mpi-mul.c      \
+	      mpi-mod.c      \
 	      mpi-pow.c      \
 	      mpi-mpow.c     \
 	      mpi-scan.c     \
 	      mpicoder.c     \
 	      mpih-div.c     \
 	      mpih-mul.c     \
-	      mpiutil.c
-
-libmpi_la_LIBADD = @MPI_MOD_LIST_LO@
-libmpi_la_DEPENDENCIES = @MPI_MOD_LIST_LO@
-
-
-# Because we are circumventing automake with regards to assembler
-# files, we have to define our own rules.
-
-SUFFIXES = .S .o .obj .lo
-
-.S.o:
-	$(CCASCOMPILE) -c `test -f '$<' || echo '$(srcdir)/'`$<
-
-.S.obj:
-	$(CCASCOMPILE) -c `if test -f '$<'; then $(CYGPATH_W) '$<'; else $(CYGPATH_W) '$(srcdir)/$<'; fi`
-
-.S.lo:
-	$(LTCCASCOMPILE) -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
+	      mpiutil.c      \
+              ec.c ec-internal.h ec-ed25519.c

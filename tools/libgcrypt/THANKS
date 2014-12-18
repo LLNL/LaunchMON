@@ -2,9 +2,13 @@ Libgcrypt is based on the GnuPG code.  Here is a list of people, who
 helped in GnuPG and Libgcrypt development.  Please help us to keep it
 complete and free of errors.
 
+Albert Chin                china at thewrittenword com
 Allan Clark		   allanc@sco.com
 Anand Kumria		   wildfire@progsoc.uts.edu.au
+Andreas Metzler            ametzler at downhill.at.eu.org
 Ariel T Glenn		   ariel@columbia.edu
+Aurelien Jarno             aurel32 at debian.org
+Ben Hutchings              ben decadent org uk
 Bodo Moeller		   Bodo_Moeller@public.uni-hamburg.de
 Brenno de Winter	   brenno@dewinter.com
 Brian Moore		   bem@cmc.net
@@ -14,23 +18,31 @@ Bryan Fullerton 	   bryanf@samurai.com
 Caskey L. Dickson	   caskey@technocage.com
 Cees van de Griend	   cees-list@griend.xs4all.nl
 Charles Levert		   charles@comm.polymtl.ca
-Christian Grothoff         grothoff@cs.purdue.edu
+Christian Biere            christianbiere@gmx.de
+Christian Grothoff         christian at grothoff org
 Christian von Roques	   roques@pond.sub.org
 Christopher Oliver	   oliver@fritz.traverse.net
 Christian Recktenwald	   chris@citecs.de
+Daiki Ueno                 ueno at unixuser org
+Dan Fandrich               dan at coneharvesters com
 Daniel Eisenbud 	   eisenbud@cs.swarthmore.edu
 Daniel Koening		   dan@mail.isis.de
 David Ellement		   ellement@sdd.hp.com
 Detlef Lannert		   lannert@lannert.rz.uni-duesseldorf.de
 Dirk Lattermann 	   dlatt@t-online.de
+Dirk Stoecker              gcrypt@dstoecker.de
 Ed Boraas		   ecxjo@esperanto.org
+Elie De Brauwer            elie@de-brauwer.be
 Enzo Michelangeli	   em@MailAndNews.com
 Ernst Molitor		   ernst.molitor@uni-bonn.de
+Fabian Keil                fk at fabiankeil de
 Fabio Coatti		   cova@felix.unife.it
 Felix von Leitner	   leitner@amdiv.de
 Frank Heckenbach	   heckenb@mi.uni-erlangen.de
 Frank Stajano		   frank.stajano@cl.cam.ac.uk
-GaÎl QuÈri		   gqueri@mail.dotcom.fr
+Gabriele Monti             psicus78 gmail com
+Ga√´l Qu√©ri		   gqueri@mail.dotcom.fr
+Gregor Riepl               seto-kun@freesurf.ch
 Gerlinde Klaes             gk@u64.de
 Greg Louis		   glouis@dynamicro.on.ca
 Greg Troxel		   gdt@ir.bbn.com
@@ -51,41 +63,51 @@ J Horacio MG		   homega@ciberia.es
 Joachim Backes		   backes@rhrk.uni-kl.de
 Jordi Mallach              jordi@sindominio.net
 John A. Martin		   jam@jamux.com
-Johnny Teveﬂen		   j.tevessen@gmx.de
-Jˆrg Schilling		   schilling@fokus.gmd.de
+Johnny Teve√üen		   j.tevessen@gmx.de
+J√∂rg Schilling		   schilling@fokus.gmd.de
 Jun Kuriyama		   kuriyama@sky.rim.or.jp
 Karl Fogel		   kfogel@guanabana.onshore.com
 Karsten Thygesen	   karthy@kom.auc.dk
 Katsuhiro Kondou	   kondou@nec.co.jp
 Kazu Yamamoto		   kazu@iijlab.net
 Lars Kellogg-Stedman	   lars@bu.edu
+Lee Fisher                 blibbet at gmail dot com
 Marco d'Itri               md@linux.it
 Mark Adler		   madler@alumni.caltech.edu
 Mark Elbrecht		   snowball3@bigfoot.com
 Markus Friedl		   Markus.Friedl@informatik.uni-erlangen.de
+Matthias Urlichs           smurf@smurf.noris.de
 Martin Kahlert		   martin.kahlert@provi.de
 Martin Hamilton
 Martin Schulte		   schulte@thp.uni-koeln.de
 Matthew Skala		   mskala@ansuz.sooke.bc.ca
+Max Kellermann             max@duempel.org
 Max Valianskiy		   maxcom@maxcom.ml.org
 Michael Fischer v. Mollard mfvm@gmx.de
 Michael Roth		   mroth@nessie.de
 Michael Sobolev 	   mss@despair.transas.com
+Michele Baldessari	   michele@pupazzo.org
+Modestas Vainius	   geromanas@mailas.com
+Neil Dunbar                neil.dunbar at pobox.com
 Neil Spring		   nspring@cs.washington.edu
 Newton Hammet              newton@hammet.net
 Nicolas Graner		   Nicolas.Graner@cri.u-psud.fr
 NIIBE Yutaka		   gniibe@chroot.org
 Niklas Hernaeus
+Nikolay Sturm		   sturm@sec.informatik.tu-darmstadt.de
 Nikos Mavroyanopoulos      nmav@hellug.gr
 Nimrod Zimerman 	   zimerman@forfree.at
 N J Doye		   nic@niss.ac.uk
 Oliver Haakert		   haakert@hsp.de
-Oskari J‰‰skel‰inen	   f33003a@cc.hut.fi
+Oskari J√§√§skel√§inen	   f33003a@cc.hut.fi
 Paul D. Smith		   psmith@baynetworks.com
 Philippe Laliberte	   arsphl@oeil.qc.ca
 Peter Gutmann		   pgut001@cs.auckland.ac.nz
 QingLong		   qinglong@bolizm.ihep.su
-Ralf Hildebrandt           Ralf.Hildebrandt@innominate.com 
+Rafael √Åvila de Esp√≠ndola  rafael.espindola@gmail.com
+Rafa√´l Carr√©               funman@videolan.org
+Ralf Fassel                ralf@akutech.de
+Ralf Hildebrandt           Ralf.Hildebrandt@innominate.com
 Ralf Schneider             ralf@tapfere-schneiderleins.de
 Ralph Gillen		   gillen@theochem.uni-duesseldorf.de
 Rami Lehti                 Rami.Lehti@finland.sun.com
@@ -93,23 +115,28 @@ Randolph Chung             tausq@debian.org
 Randy			   mcclellr@oit.edu
 Rat			   ratinox@peorth.gweep.net
 Reinhard Wobst		   R.Wobst@ifw-dresden.de
-RÈmi Guyomarch		   rguyom@mail.dotcom.fr
+R√©mi Guyomarch		   rguyom@mail.dotcom.fr
 Reuben Sumner		   rasumner@wisdom.weizmann.ac.il
 Richard Outerbridge	   outer@interlog.com
 Roddy Strachan		   roddy@satlink.com.au
 Roland Rosenfeld	   roland@spinnaker.rhein.de
 Ross Golder		   rossigee@bigfoot.com
 Serge Munhoven		   munhoven@mema.ucl.ac.be
+Sergi Blanch i Torn√©       sergi at calcurco cat
 Simon Josefsson            jas@extundo.com
 SL Baur 		   steve@xemacs.org
 Stephan Austermuehle       au@hcsd.de
+Stephan M√ºller             smueller at atsec com
 Stephane Corthesy          stephane@sente.ch
 Stefan Karrmann 	   S.Karrmann@gmx.net
 Stefan Keller		   dres@cs.tu-berlin.de
+Stefan Kr√ºger              stadtkind2 at gmx de
 Steffen Ullrich 	   ccrlphr@xensei.com
 Steffen Zahn		   zahn@berlin.snafu.de
 Steven Bakker		   steven@icoe.att.com
 Susanne Schultz 	   schultz@hsp.de
+Sven Bjorn
+Szakats Istvan             szaki.ms@gmail.com
 Thiago Jung Bauermann	   jungmann@cwb.matrix.com.br
 Thomas Roessler 	   roessler@guug.de
 Tom Holroyd                tomh@po.crl.go.jp
@@ -118,15 +145,19 @@ Tom Zerucha		   tzeruch@ceddec.com
 Tomas Fasth		   tomas.fasth@twinspot.net
 Tommi Komulainen           Tommi.Komulainen@iki.fi
 Thomas Mikkelsen	   tbm@image.dk
-Ulf Mˆller		   3umoelle@informatik.uni-hamburg.de
+Ulf M√∂ller		   3umoelle@informatik.uni-hamburg.de
+Umberto Salsi		   salsi@icosaedro.it
+Uoti Urpala
 Urko Lusa		   ulusa@euskalnet.net
+Victor Stinner             haypo@inl.fr
 Walter Koch		   koch@u32.de
 Werner Koch		   wk@gnupg.org
 Wim Vandeputte		   wim@kd85.com
 			   nbecker@hns.com
 
 
- Copyright 1998, 1999, 2000, 2001, 2002, 2003 Free Software Foundation, Inc.
+ Copyright 1998, 1999, 2000, 2001, 2002, 2003,
+           2009, 2011 Free Software Foundation, Inc.
 
  This file is free software; as a special exception the author gives
  unlimited permission to copy and/or distribute it, with or without

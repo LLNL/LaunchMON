@@ -1,5 +1,6 @@
 /* des.c - DES and Triple-DES encryption/decryption Algorithm
- * Copyright (C) 1998, 1999, 2001, 2002, 2003 Free Software Foundation, Inc.
+ * Copyright (C) 1998, 1999, 2001, 2002, 2003,
+ *               2008  Free Software Foundation, Inc.
  *
  * This file is part of Libgcrypt.
  *
@@ -21,7 +22,7 @@
  *   Bruce Schneier: Applied Cryptography. Second Edition.
  *   John Wiley & Sons, 1996. ISBN 0-471-12845-7. Pages 358 ff.
  * This implementation is according to the definition of DES in FIPS
- * PUB 46-2 from December 1993. 
+ * PUB 46-2 from December 1993.
  */
 
 
@@ -100,12 +101,12 @@
  *     char *error_msg;
  *
  *     * To perform a selftest of this DES/Triple-DES implementation use the
- *	 function selftest(). It will return an error string if their are
+ *	 function selftest(). It will return an error string if there are
  *	 some problems with this library. *
  *
  *     if ( (error_msg = selftest()) )
  *     {
- *	   fprintf(stderr, "An error in the DES/Tripple-DES implementation occured: %s\n", error_msg);
+ *	   fprintf(stderr, "An error in the DES/Triple-DES implementation occurred: %s\n", error_msg);
  *	   abort();
  *     }
  */
@@ -117,6 +118,7 @@
 #include "types.h"             /* for byte and u32 typedefs */
 #include "g10lib.h"
 #include "cipher.h"
+#include "bufhelp.h"
 
 #if defined(__GNUC__) && defined(__GNU_LIBRARY__)
 #define working_memcmp memcmp
@@ -152,6 +154,9 @@ typedef struct _tripledes_ctx
   {
     u32 encrypt_subkeys[96];
     u32 decrypt_subkeys[96];
+    struct {
+      int no_weak_key;
+    } flags;
   }
 tripledes_ctx[1];
 
@@ -310,7 +315,7 @@ static byte encrypt_rotate_tab[16] =
 
 /*
  * Table with weak DES keys sorted in ascending order.
- * In DES their are 64 known keys wich are weak. They are weak
+ * In DES their are 64 known keys which are weak. They are weak
  * because they produce only one, two or four different
  * subkeys in the subkey scheduling process.
  * The keys in this table have all their parity bits cleared.
@@ -384,7 +389,7 @@ static byte weak_keys[64][8] =
 };
 static unsigned char weak_keys_chksum[20] = {
   0xD0, 0xCF, 0x07, 0x38, 0x93, 0x70, 0x8A, 0x83, 0x7D, 0xD7,
-  0x8A, 0x36, 0x65, 0x29, 0x6C, 0x1F, 0x7C, 0x3F, 0xD3, 0x41 
+  0x8A, 0x36, 0x65, 0x29, 0x6C, 0x1F, 0x7C, 0x3F, 0xD3, 0x41
 };
 
 
@@ -451,14 +456,12 @@ static unsigned char weak_keys_chksum[20] = {
  * Macros to convert 8 bytes from/to 32bit words.
  */
 #define READ_64BIT_DATA(data, left, right)				   \
-    left  = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];  \
-    right = (data[4] << 24) | (data[5] << 16) | (data[6] << 8) | data[7];
+    left = buf_get_be32(data + 0);					   \
+    right = buf_get_be32(data + 4);
 
 #define WRITE_64BIT_DATA(data, left, right)				   \
-    data[0] = (left >> 24) &0xff; data[1] = (left >> 16) &0xff; 	   \
-    data[2] = (left >> 8) &0xff; data[3] = left &0xff;			   \
-    data[4] = (right >> 24) &0xff; data[5] = (right >> 16) &0xff;	   \
-    data[6] = (right >> 8) &0xff; data[7] = right &0xff;
+    buf_put_be32(data + 0, left);					   \
+    buf_put_be32(data + 4, right);
 
 /*
  * Handy macros for encryption and decryption of data
@@ -584,7 +587,7 @@ des_setkey (struct _des_ctx *ctx, const byte * key)
   static const char *selftest_failed;
   int i;
 
-  if (! initialized)
+  if (!fips_mode () && !initialized)
     {
       initialized = 1;
       selftest_failed = selftest ();
@@ -691,7 +694,7 @@ tripledes_set3keys (struct _tripledes_ctx *ctx,
   static const char *selftest_failed;
   int i;
 
-  if (! initialized)
+  if (!fips_mode () && !initialized)
     {
       initialized = 1;
       selftest_failed = selftest ();
@@ -884,20 +887,21 @@ selftest (void)
     if (memcmp (input, result, 8))
       return "Triple-DES test failed.";
   }
-  
+
   /*
    * More Triple-DES test.  These are testvectors as used by SSLeay,
    * thanks to Jeroen C. van Gelderen.
    */
-  { 
-    struct { byte key[24]; byte plain[8]; byte cipher[8]; } testdata[] = {
+  {
+    static const struct { byte key[24]; byte plain[8]; byte cipher[8]; }
+      testdata[] = {
       { { 0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,
           0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,
           0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01  },
         { 0x95,0xF8,0xA5,0xE5,0xDD,0x31,0xD9,0x00  },
         { 0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00  }
       },
-      
+
       { { 0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,
           0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,
           0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01  },
@@ -956,29 +960,20 @@ selftest (void)
 
     byte		result[8];
     int		i;
-    static char	error[80];
     tripledes_ctx	des3;
 
     for (i=0; i<sizeof(testdata)/sizeof(*testdata); ++i)
       {
         tripledes_set3keys (des3, testdata[i].key,
                             testdata[i].key + 8, testdata[i].key + 16);
-        
+
         tripledes_ecb_encrypt (des3, testdata[i].plain, result);
         if (memcmp (testdata[i].cipher, result, 8))
-          {
-            sprintf (error, "Triple-DES SSLeay test pattern no. %d "
-                     "failed on encryption.", i+1);
-            return error;
-          }
+          return "Triple-DES SSLeay test failed on encryption.";
 
         tripledes_ecb_decrypt (des3, testdata[i].cipher, result);
         if (memcmp (testdata[i].plain, result, 8))
-          {
-            sprintf (error, "Triple-DES SSLeay test pattern no. %d "
-                     "failed on decryption.", i+1);
-            return error;
-          }
+          return  "Triple-DES SSLeay test failed on decryption.";;
       }
   }
 
@@ -992,14 +987,14 @@ selftest (void)
     unsigned char *p;
     gcry_md_hd_t h;
 
-    if (gcry_md_open (&h, GCRY_MD_SHA1, 0))
+    if (_gcry_md_open (&h, GCRY_MD_SHA1, 0))
       return "SHA1 not available";
 
     for (i = 0; i < 64; ++i)
-      gcry_md_write (h, weak_keys[i], 8);
-    p = gcry_md_read (h, GCRY_MD_SHA1);
+      _gcry_md_write (h, weak_keys[i], 8);
+    p = _gcry_md_read (h, GCRY_MD_SHA1);
     i = memcmp (p, weak_keys_chksum, 20);
-    gcry_md_close (h);
+    _gcry_md_close (h);
     if (i)
       return "weak key table defect";
 
@@ -1022,7 +1017,9 @@ do_tripledes_setkey ( void *context, const byte *key, unsigned keylen )
 
   tripledes_set3keys ( ctx, key, key+8, key+16);
 
-  if( is_weak_key( key ) || is_weak_key( key+8 ) || is_weak_key( key+16 ) )
+  if (ctx->flags.no_weak_key)
+    ; /* Detection has been disabled.  */
+  else if (is_weak_key (key) || is_weak_key (key+8) || is_weak_key (key+16))
     {
       _gcry_burn_stack (64);
       return GPG_ERR_WEAK_KEY;
@@ -1033,21 +1030,45 @@ do_tripledes_setkey ( void *context, const byte *key, unsigned keylen )
 }
 
 
-static void
+static gcry_err_code_t
+do_tripledes_set_extra_info (void *context, int what,
+                             const void *buffer, size_t buflen)
+{
+  struct _tripledes_ctx *ctx = (struct _tripledes_ctx *)context;
+  gpg_err_code_t ec = 0;
+
+  (void)buffer;
+  (void)buflen;
+
+  switch (what)
+    {
+    case CIPHER_INFO_NO_WEAK_KEY:
+      ctx->flags.no_weak_key = 1;
+      break;
+
+    default:
+      ec = GPG_ERR_INV_OP;
+      break;
+    }
+  return ec;
+}
+
+
+static unsigned int
 do_tripledes_encrypt( void *context, byte *outbuf, const byte *inbuf )
 {
   struct _tripledes_ctx *ctx = (struct _tripledes_ctx *) context;
 
   tripledes_ecb_encrypt ( ctx, inbuf, outbuf );
-  _gcry_burn_stack (32);
+  return /*burn_stack*/ (32);
 }
 
-static void
+static unsigned int
 do_tripledes_decrypt( void *context, byte *outbuf, const byte *inbuf )
 {
   struct _tripledes_ctx *ctx = (struct _tripledes_ctx *) context;
   tripledes_ecb_decrypt ( ctx, inbuf, outbuf );
-  _gcry_burn_stack (32);
+  return /*burn_stack*/ (32);
 }
 
 static gcry_err_code_t
@@ -1070,26 +1091,85 @@ do_des_setkey (void *context, const byte *key, unsigned keylen)
 }
 
 
-static void
+static unsigned int
 do_des_encrypt( void *context, byte *outbuf, const byte *inbuf )
 {
   struct _des_ctx *ctx = (struct _des_ctx *) context;
 
   des_ecb_encrypt ( ctx, inbuf, outbuf );
-  _gcry_burn_stack (32);
+  return /*burn_stack*/ (32);
 }
 
-static void
+static unsigned int
 do_des_decrypt( void *context, byte *outbuf, const byte *inbuf )
 {
   struct _des_ctx *ctx = (struct _des_ctx *) context;
 
   des_ecb_decrypt ( ctx, inbuf, outbuf );
-  _gcry_burn_stack (32);
+  return /*burn_stack*/ (32);
 }
 
+
+
+
+/*
+     Self-test section.
+ */
+
+
+/* Selftest for TripleDES.  */
+static gpg_err_code_t
+selftest_fips (int extended, selftest_report_func_t report)
+{
+  const char *what;
+  const char *errtxt;
+
+  (void)extended; /* No extended tests available.  */
+
+  what = "low-level";
+  errtxt = selftest ();
+  if (errtxt)
+    goto failed;
+
+  /* The low-level self-tests are quite extensive and thus we can do
+     without high level tests.  This is also justified because we have
+     no custom block code implementation for 3des but always use the
+     standard high level block code.  */
+
+  return 0; /* Succeeded. */
+
+ failed:
+  if (report)
+    report ("cipher", GCRY_CIPHER_3DES, what, errtxt);
+  return GPG_ERR_SELFTEST_FAILED;
+}
+
+
+
+/* Run a full self-test for ALGO and return 0 on success.  */
+static gpg_err_code_t
+run_selftests (int algo, int extended, selftest_report_func_t report)
+{
+  gpg_err_code_t ec;
+
+  switch (algo)
+    {
+    case GCRY_CIPHER_3DES:
+      ec = selftest_fips (extended, report);
+      break;
+    default:
+      ec = GPG_ERR_CIPHER_ALGO;
+      break;
+
+    }
+  return ec;
+}
+
+
+
 gcry_cipher_spec_t _gcry_cipher_spec_des =
   {
+    GCRY_CIPHER_DES, {0, 0},
     "DES", NULL, NULL, 8, 64, sizeof (struct _des_ctx),
     do_des_setkey, do_des_encrypt, do_des_decrypt
   };
@@ -1106,6 +1186,10 @@ static gcry_cipher_oid_spec_t oids_tripledes[] =
 
 gcry_cipher_spec_t _gcry_cipher_spec_tripledes =
   {
+    GCRY_CIPHER_3DES, {0, 1},
     "3DES", NULL, oids_tripledes, 8, 192, sizeof (struct _tripledes_ctx),
-    do_tripledes_setkey, do_tripledes_encrypt, do_tripledes_decrypt
+    do_tripledes_setkey, do_tripledes_encrypt, do_tripledes_decrypt,
+    NULL, NULL,
+    run_selftests,
+    do_tripledes_set_extra_info
   };
