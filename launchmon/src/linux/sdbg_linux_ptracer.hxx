@@ -234,7 +234,7 @@ public:
 private:
   
   bool LEVELCHK(self_trace_verbosity level) 
-       { return (self_trace_t::tracer_module_trace.verbosity_level >= level); }
+       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
 
   long Pptrace ( __ptrace_request request, 
 		 pid_t pid, 

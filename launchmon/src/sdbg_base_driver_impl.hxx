@@ -106,7 +106,7 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::driver_base_t()
   //
   // sets the module name for debugging support
   //
-  MODULENAME = self_trace_t::driver_module_trace.module_name;
+  MODULENAME = self_trace_t::self_trace().driver_module_trace.module_name;
 }
 
 //!

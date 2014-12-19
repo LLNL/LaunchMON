@@ -53,20 +53,51 @@ struct self_trace_entry_t {
   self_trace_verbosity verbosity_level;
   std::string module_name;
   std::string module_symbol;
+
+  self_trace_entry_t(void) { ; }
+
+  self_trace_entry_t(
+    self_trace_verbosity v,
+    std::string m_name,
+    std::string m_symbol
+  ) : verbosity_level(v)
+    , module_name(m_name)
+    , module_symbol(m_symbol) { ; }
 };
 
 struct self_trace_t {
-  static self_trace_entry_t launchmon_module_trace;
-  static self_trace_entry_t tracer_module_trace;
-  static self_trace_entry_t symtab_module_trace;
-  static self_trace_entry_t thread_tracer_module_trace;
-  static self_trace_entry_t event_module_trace;
-  static self_trace_entry_t driver_module_trace;
-  static self_trace_entry_t machine_module_trace;
-  static self_trace_entry_t opt_module_trace;
-  static self_trace_entry_t rm_module_trace;
-  static self_trace_entry_t sighandler_module_trace;
+  self_trace_entry_t launchmon_module_trace;
+  self_trace_entry_t tracer_module_trace;
+  self_trace_entry_t symtab_module_trace;
+  self_trace_entry_t thread_tracer_module_trace;
+  self_trace_entry_t event_module_trace;
+  self_trace_entry_t driver_module_trace;
+  self_trace_entry_t machine_module_trace;
+  self_trace_entry_t opt_module_trace;
+  self_trace_entry_t rm_module_trace;
+  self_trace_entry_t sighandler_module_trace;
 
+  self_trace_t(void) {
+    launchmon_module_trace =
+        self_trace_entry_t(quiet, "<Launchmon>", "launchmon");
+    tracer_module_trace =
+        self_trace_entry_t(quiet, "<ProcTracer>", "tracer");
+    symtab_module_trace =
+        self_trace_entry_t(quiet, "<Symtable>", "symtab");
+    machine_module_trace =
+        self_trace_entry_t(quiet, "<Machine>", "machine");
+    event_module_trace =
+        self_trace_entry_t(quiet, "<EventMgr>", "event");
+    driver_module_trace =
+        self_trace_entry_t(quiet, "<Driver>", "driver");
+    opt_module_trace =
+        self_trace_entry_t(quiet, "<OptionParser>", "option");
+    rm_module_trace =
+        self_trace_entry_t(quiet, "<ResourceMgr>", "resmgr");
+    sighandler_module_trace =
+        self_trace_entry_t(quiet, "<SigHandler>", "sighandler");
+  }
+  static self_trace_t &self_trace(void);
   static bool trace(bool, const std::string&, bool, const char*, ... );
   static FILE* tracefptr;
 };

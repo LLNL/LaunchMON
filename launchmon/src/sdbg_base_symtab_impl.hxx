@@ -196,7 +196,7 @@ image_base_t<BASE_IMAGE_TEMPLPARAM>::image_base_t ()
 { 
   path = SYMTAB_UNINIT_STRING;
   base_image_name = SYMTAB_UNINIT_STRING;
-  MODULENAME = self_trace_t::symtab_module_trace.module_name;
+  MODULENAME = self_trace_t::self_trace().symtab_module_trace.module_name;
 }
 
 
@@ -214,7 +214,7 @@ image_base_t<BASE_IMAGE_TEMPLPARAM>::image_base_t
   // some memory checkers complain about basename...
   //  
   base_image_name = basename((char*) tempstr);
-  MODULENAME = self_trace_t::symtab_module_trace.module_name;
+  MODULENAME = self_trace_t::self_trace().symtab_module_trace.module_name;
 }
 
 

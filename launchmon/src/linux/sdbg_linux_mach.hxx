@@ -179,7 +179,7 @@ public:
 
 private:
   bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::tracer_module_trace.verbosity_level >= level); }
+       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
 
   std::string MODULENAME;
 };
@@ -285,7 +285,7 @@ public:
 
 private:
   bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::tracer_module_trace.verbosity_level >= level); }
+       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
 
   std::string MODULENAME;
 };
@@ -314,7 +314,7 @@ public:
 
 private:
   bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::tracer_module_trace.verbosity_level >= level); }
+       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
 
   std::string MODULENAME;
 };
@@ -360,7 +360,7 @@ protected:
 private:
   void launcher_symbols_init();
   bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::tracer_module_trace.verbosity_level >= level); }
+       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
 
   std::string MODULENAME;
 
@@ -449,7 +449,7 @@ public:
 
 private:
   bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::tracer_module_trace.verbosity_level >= level); }
+       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
 
   std::string MODULENAME;
 };
@@ -522,7 +522,7 @@ public:
 
 private:
   bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::tracer_module_trace.verbosity_level >= level); }
+       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
 
   std::string MODULENAME;
 };
@@ -551,7 +551,7 @@ public:
 
 private:
   bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::tracer_module_trace.verbosity_level >= level); }
+       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
 
   std::string MODULENAME;
 };
@@ -597,7 +597,7 @@ protected:
 private:
   void launcher_symbols_init();
   bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::tracer_module_trace.verbosity_level >= level); }
+       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
 
   std::string MODULENAME; 
 };

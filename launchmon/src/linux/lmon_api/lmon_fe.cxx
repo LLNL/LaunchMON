@@ -2470,13 +2470,13 @@ LMON_set_options (
   else
     ver = quiet;	
 
-  self_trace_t::launchmon_module_trace.verbosity_level     = ver;
-  self_trace_t::tracer_module_trace.verbosity_level        = ver;
-  self_trace_t::symtab_module_trace.verbosity_level        = ver;
-  self_trace_t::event_module_trace.verbosity_level         = ver;
-  self_trace_t::driver_module_trace.verbosity_level        = ver;
-  self_trace_t::machine_module_trace.verbosity_level       = ver;
-  self_trace_t::opt_module_trace.verbosity_level           = ver;
+  self_trace_t::self_trace().launchmon_module_trace.verbosity_level     = ver;
+  self_trace_t::self_trace().tracer_module_trace.verbosity_level        = ver;
+  self_trace_t::self_trace().symtab_module_trace.verbosity_level        = ver;
+  self_trace_t::self_trace().event_module_trace.verbosity_level         = ver;
+  self_trace_t::self_trace().driver_module_trace.verbosity_level        = ver;
+  self_trace_t::self_trace().machine_module_trace.verbosity_level       = ver;
+  self_trace_t::self_trace().opt_module_trace.verbosity_level           = ver;
 
   sprintf ( portinfo, 
 	      "%d", 

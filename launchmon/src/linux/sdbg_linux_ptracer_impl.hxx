@@ -76,7 +76,7 @@ extern "C" {
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::linux_ptracer_t()
-  : MODULENAME (self_trace_t::tracer_module_trace.module_name)
+  : MODULENAME (self_trace_t::self_trace().tracer_module_trace.module_name)
 {
 
 }
