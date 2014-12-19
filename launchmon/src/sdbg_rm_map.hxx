@@ -315,7 +315,7 @@ public:
 private:
 
   bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::rm_module_trace.verbosity_level >= level); }
+       { return (self_trace_t::self_trace().rm_module_trace.verbosity_level >= level); }
 
   bool read_supported_rm_confs(const std::string &os_isa_string,
                  const std::string &rm_info_conf_path,
@@ -343,7 +343,7 @@ template <BASE_IMAGE_TEMPLATELIST>
 class rc_rm_plat_matcher
 {
 public:
-  rc_rm_plat_matcher() { MODULENAME = self_trace_t::rm_module_trace.module_name; }
+  rc_rm_plat_matcher() { MODULENAME = self_trace_t::self_trace().rm_module_trace.module_name; }
   rc_rm_plat_matcher(const rc_rm_plat_matcher &o) { MODULENAME = o.MODULENAME; }
   ~rc_rm_plat_matcher() {}
 

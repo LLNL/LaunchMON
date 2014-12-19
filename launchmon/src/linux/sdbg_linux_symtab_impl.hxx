@@ -410,7 +410,7 @@ template <LINUX_IMAGE_TEMPLATELIST>
 linux_image_t<LINUX_IMAGE_TEMPLPARAM>::linux_image_t ()
   : image_base_t<LINUX_IMAGE_TEMPLPARAM,elf_wrapper>()
 {
-  MODULENAME = self_trace_t::symtab_module_trace.module_name;
+  MODULENAME = self_trace_t::self_trace().symtab_module_trace.module_name;
 }
 
 
@@ -419,7 +419,7 @@ linux_image_t<LINUX_IMAGE_TEMPLPARAM>::linux_image_t
 (const std::string& lib) 
   : image_base_t<LINUX_IMAGE_TEMPLPARAM,elf_wrapper>(lib)
 {
-  MODULENAME = self_trace_t::symtab_module_trace.module_name;
+  MODULENAME = self_trace_t::self_trace().self_trace().symtab_module_trace.module_name;
 }
 
 template <LINUX_IMAGE_TEMPLATELIST>

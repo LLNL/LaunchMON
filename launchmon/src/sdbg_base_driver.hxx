@@ -109,7 +109,7 @@ public:
 private:
 
   bool LEVELCHK(self_trace_verbosity level) 
-       { return (self_trace_t::driver_module_trace.verbosity_level >= level); }
+       { return (self_trace_t::self_trace().driver_module_trace.verbosity_level >= level); }
 
   //
   // make the copy constructor and operator= private 

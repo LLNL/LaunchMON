@@ -132,7 +132,7 @@ launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::launchmon_base_t ()
     toollauncherpid(-1),
     FE_sockfd(-1),
     API_mode(false),
-    MODULENAME(self_trace_t::launchmon_module_trace.module_name)    
+    MODULENAME(self_trace_t::self_trace().launchmon_module_trace.module_name)
 {
   char *warm_interval;
   last_seen = gettimeofdayD ();

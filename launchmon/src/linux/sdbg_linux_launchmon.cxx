@@ -1591,7 +1591,7 @@ linux_launchmon_t::check_dependent_SOs (
 
 */
 linux_launchmon_t::linux_launchmon_t () 
-  : MODULENAME(self_trace_t::launchmon_module_trace.module_name)
+  : MODULENAME(self_trace_t::self_trace().launchmon_module_trace.module_name)
 {
   // more initialization here
 }

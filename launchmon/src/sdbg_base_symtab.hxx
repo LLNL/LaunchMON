@@ -256,7 +256,7 @@ protected:
 private:
 
   bool LEVELCHK(self_trace_verbosity level) 
-       { return (self_trace_t::symtab_module_trace.verbosity_level >= level); }
+       { return (self_trace_t().symtab_module_trace.verbosity_level >= level); }
 
   // For self tracing
   //
