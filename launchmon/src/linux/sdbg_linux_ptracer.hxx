@@ -198,7 +198,7 @@ public:
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt );
 
   virtual tracer_error_e tracer_setoptions
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt, pid_t newtid )
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt, pid_t newtid=-1)
     throw (linux_tracer_exception_t);
 
   virtual tracer_error_e tracer_unsetoptions
@@ -206,7 +206,7 @@ public:
     throw (linux_tracer_exception_t);
 
   virtual tracer_error_e tracer_attach  
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt, pid_t newtid )
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt, pid_t newtid=-1)
     throw (linux_tracer_exception_t);
   
   virtual tracer_error_e status
