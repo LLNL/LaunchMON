@@ -175,7 +175,7 @@ private:
   void free_engine_resources(process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p);
 
   bool LEVELCHK(self_trace_verbosity level) 
-       { return (self_trace_t::launchmon_module_trace.verbosity_level >= level); }
+       { return (self_trace_t::self_trace().launchmon_module_trace.verbosity_level >= level); }
 
   ////////////////////////////////////////////////////////////
   //  

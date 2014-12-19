@@ -67,7 +67,7 @@ extern "C" {
     Default constructor.
 */
 linux_x86_gpr_set_t::linux_x86_gpr_set_t() 
-   : MODULENAME (self_trace_t::machine_module_trace.module_name)
+   : MODULENAME (self_trace_t::self_trace().machine_module_trace.module_name)
 {
   // This part of the code may be difficult to read. It was trial and error
   //   to detemine what registers are writable and what are not.
@@ -210,7 +210,7 @@ linux_x86_gpr_set_t::set_pc(T_VA addr)
     Default constructor.
 */
 linux_x86_fpr_set_t::linux_x86_fpr_set_t() 
-   : MODULENAME (self_trace_t::machine_module_trace.module_name)
+   : MODULENAME (self_trace_t::self_trace().machine_module_trace.module_name)
 {
 
   unsigned int fpr_writable_mask = 0xffffff80;
@@ -231,7 +231,7 @@ linux_x86_fpr_set_t::linux_x86_fpr_set_t()
     Default constructor.
 */
 linux_x86_thread_t::linux_x86_thread_t() 
-   : MODULENAME (self_trace_t::machine_module_trace.module_name)
+   : MODULENAME (self_trace_t::self_trace().machine_module_trace.module_name)
 {
   set_gprset(new linux_x86_gpr_set_t());
   set_fprset(new linux_x86_fpr_set_t());
@@ -278,7 +278,7 @@ linux_x86_thread_t::thr2pid()
     Default constructor.
 */
 linux_x86_process_t::linux_x86_process_t ( )
-   : MODULENAME (self_trace_t::machine_module_trace.module_name)
+   : MODULENAME (self_trace_t::self_trace().machine_module_trace.module_name)
 {
  
 }
@@ -293,7 +293,7 @@ linux_x86_process_t::linux_x86_process_t (
                  const std::string& md, 
                  const std::string& mt,
                  const std::string& mc )
-   : MODULENAME (self_trace_t::machine_module_trace.module_name)
+   : MODULENAME (self_trace_t::self_trace().machine_module_trace.module_name)
 {
   basic_init(mi, md, mt, mc);
 }
@@ -305,7 +305,7 @@ linux_x86_process_t::linux_x86_process_t (
 */
 linux_x86_process_t::linux_x86_process_t ( 
                  const pid_t& pid )
-   : MODULENAME (self_trace_t::machine_module_trace.module_name)
+   : MODULENAME (self_trace_t::self_trace().machine_module_trace.module_name)
 {
   using namespace std;
 
@@ -328,7 +328,7 @@ linux_x86_process_t::linux_x86_process_t (
 */
 linux_x86_process_t::linux_x86_process_t ( 
                  const pid_t &pid, const std::string &mi )
-   : MODULENAME (self_trace_t::machine_module_trace.module_name)
+   : MODULENAME (self_trace_t::self_trace().machine_module_trace.module_name)
 {
   using namespace std;
 
@@ -378,7 +378,7 @@ linux_x86_process_t::linux_x86_process_t (
                  const std::string& md, 
                  const std::string& mt,
                  const std::string& mc )
-   : MODULENAME (self_trace_t::machine_module_trace.module_name)
+   : MODULENAME (self_trace_t::self_trace().machine_module_trace.module_name)
 {
   using namespace std;
 

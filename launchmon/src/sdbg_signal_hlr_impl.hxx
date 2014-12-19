@@ -107,7 +107,7 @@ signal_handler_t<SDBG_DEFAULT_TEMPLPARAM>::signal_handler_t ( )
   monitoring_signals.push_back(SIGSEGV);  
   monitoring_signals.push_back(SIGILL);  
 
-  MODULENAME = self_trace_t::sighandler_module_trace.module_name;
+  MODULENAME = self_trace_t::self_trace().sighandler_module_trace.module_name;
 }
 
 

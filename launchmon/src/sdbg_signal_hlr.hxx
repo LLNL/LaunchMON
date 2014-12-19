@@ -71,7 +71,7 @@ public:
 
 private:
   static bool LEVELCHK(self_trace_verbosity level) 
-       { return (self_trace_t::sighandler_module_trace.verbosity_level >= level); }
+       { return (self_trace_t::self_trace().sighandler_module_trace.verbosity_level >= level); }
  
   static std::vector<int> monitoring_signals;  
   static tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *tracer;

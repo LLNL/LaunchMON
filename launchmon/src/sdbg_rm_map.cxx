@@ -472,7 +472,7 @@ resource_manager_t::fill_attach_fifo_path(const std::string &v)
 
 rc_rm_t::rc_rm_t()
 {
-  MODULENAME = self_trace_t::rm_module_trace.module_name;
+  MODULENAME = self_trace_t::self_trace().rm_module_trace.module_name;
 }
 
 

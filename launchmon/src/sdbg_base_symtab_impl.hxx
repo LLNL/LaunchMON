@@ -85,8 +85,8 @@ template <BASE_SYMTAB_TEMPLATELIST>
 symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::symbol_base_t (
                  const std::string &n, 
 		 const std::string &bln, 
-		 const VA rd=SYMTAB_UNINIT_ADDR, 
-		 const VA rla=SYMTAB_UNINIT_ADDR )
+		 const VA rd,
+		 const VA rla)
 {
   name = n;
   base_lib_name = bln;
@@ -196,7 +196,7 @@ image_base_t<BASE_IMAGE_TEMPLPARAM>::image_base_t ()
 { 
   path = SYMTAB_UNINIT_STRING;
   base_image_name = SYMTAB_UNINIT_STRING;
-  MODULENAME = self_trace_t::symtab_module_trace.module_name;
+  MODULENAME = self_trace_t::self_trace().symtab_module_trace.module_name;
 }
 
 
@@ -214,7 +214,7 @@ image_base_t<BASE_IMAGE_TEMPLPARAM>::image_base_t
   // some memory checkers complain about basename...
   //  
   base_image_name = basename((char*) tempstr);
-  MODULENAME = self_trace_t::symtab_module_trace.module_name;
+  MODULENAME = self_trace_t::self_trace().symtab_module_trace.module_name;
 }
 
 

@@ -118,11 +118,14 @@ public:
   // constructosr & destructor
   //
   symbol_base_t ();
+
   symbol_base_t ( const std::string &n, 
 		  const std::string &bln, 
-		  const VA rd, 
-		  const VA rla);
+		  const VA rd=SYMTAB_UNINIT_ADDR,
+		  const VA rla=SYMTAB_UNINIT_ADDR);
+
   symbol_base_t ( const symbol_base_t &sobj ); 
+
   virtual ~symbol_base_t();
 
   //
@@ -253,7 +256,7 @@ protected:
 private:
 
   bool LEVELCHK(self_trace_verbosity level) 
-       { return (self_trace_t::symtab_module_trace.verbosity_level >= level); }
+       { return (self_trace_t().symtab_module_trace.verbosity_level >= level); }
 
   // For self tracing
   //

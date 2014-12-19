@@ -171,9 +171,9 @@
 #include "lmon_api/lmon_coloc_spawner.hxx"
 #include "lmon_api/lmon_say_msg.hxx"
 
-#include <lmon_api/lmon_proctab.h>
-#include <lmon_api/lmon_lmonp_msg.h>
-#include <lmon_api/lmon_fe.h>
+#include "lmon_api/lmon_proctab.h"
+#include "lmon_api/lmon_lmonp_msg.h"
+#include "lmon_api/lmon_fe.h"
 
 #if COBO_BASED
 extern "C" {
@@ -875,7 +875,7 @@ LMON_fe_handleFeBeUsrData ( int sessionHandle,
 
   mydesc = &sess.sessionDescArray[sessionHandle];   
 
-  if ( (mydesc->registered == LMON_FALSE))
+  if (mydesc->registered == LMON_FALSE)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "session is invalid, the job has been killed?");
@@ -989,7 +989,7 @@ LMON_fe_handleFeMwUsrData (int sessionHandle,
 
   mydesc = &sess.sessionDescArray[sessionHandle];   
 
-  if ( (mydesc->registered == LMON_FALSE))
+  if (mydesc->registered == LMON_FALSE)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "session is invalid for LMON_fe_handleFeMwUsrData,"
@@ -1107,7 +1107,7 @@ LMON_fe_handleBeFeUsrData (int sessionHandle,
 
   mydesc = &sess.sessionDescArray[sessionHandle];   
 
-  if ( (mydesc->registered == LMON_FALSE))
+  if (mydesc->registered == LMON_FALSE)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "session is invalid for handling backend-frontend user payload,"
@@ -1206,7 +1206,7 @@ LMON_fe_handleMwFeUsrData (int sessionHandle,
 
   mydesc = &sess.sessionDescArray[sessionHandle];   
   
-  if ( (mydesc->registered == LMON_FALSE))
+  if (mydesc->registered == LMON_FALSE)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "session is invalid in handling middleware-frontent user payload,"
@@ -1995,7 +1995,7 @@ LMON_fe_beHandshakeSequence (
 
   if ( ( msg.msgclass != lmonp_fetobe )
        || ( msg.type.fetobe_type != lmonp_befe_hostname )
-       || ( (msg.lmon_payload_length + msg.usr_payload_length) < 0 ) )
+       || (msg.lmon_payload_length + msg.usr_payload_length) < 0 )
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
 	             "Received an invalid LMONP msg: "
@@ -2076,7 +2076,7 @@ LMON_fe_beHandshakeSequence (
     {
       lmonp_fe_to_be_msg_e tracemode = lmonp_febe_launch;
       const char *dontstop;
-      if (dontstop = getenv("LMON_DONT_STOP_APP") )
+      if ((dontstop = getenv("LMON_DONT_STOP_APP")))
         {
           if (atoi(dontstop) == 1)
             {
@@ -2092,7 +2092,7 @@ LMON_fe_beHandshakeSequence (
     {
       lmonp_fe_to_be_msg_e tracemode = lmonp_febe_attach;
       const char *dontstop;
-      if (dontstop = getenv("LMON_DONT_STOP_APP") )
+      if ((dontstop = getenv("LMON_DONT_STOP_APP")))
         {
           if (atoi(dontstop) == 0)
             {
@@ -2470,13 +2470,13 @@ LMON_set_options (
   else
     ver = quiet;	
 
-  self_trace_t::launchmon_module_trace.verbosity_level     = ver;
-  self_trace_t::tracer_module_trace.verbosity_level        = ver;
-  self_trace_t::symtab_module_trace.verbosity_level        = ver;
-  self_trace_t::event_module_trace.verbosity_level         = ver;
-  self_trace_t::driver_module_trace.verbosity_level        = ver;
-  self_trace_t::machine_module_trace.verbosity_level       = ver;
-  self_trace_t::opt_module_trace.verbosity_level           = ver;
+  self_trace_t::self_trace().launchmon_module_trace.verbosity_level     = ver;
+  self_trace_t::self_trace().tracer_module_trace.verbosity_level        = ver;
+  self_trace_t::self_trace().symtab_module_trace.verbosity_level        = ver;
+  self_trace_t::self_trace().event_module_trace.verbosity_level         = ver;
+  self_trace_t::self_trace().driver_module_trace.verbosity_level        = ver;
+  self_trace_t::self_trace().machine_module_trace.verbosity_level       = ver;
+  self_trace_t::self_trace().opt_module_trace.verbosity_level           = ver;
 
   sprintf ( portinfo, 
 	      "%d", 
@@ -3879,7 +3879,7 @@ LMON_fe_regPackForFeToBe (
   mydesc = &(sess.sessionDescArray[(sessionHandle)]);
 
   pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
-  if ( (mydesc->registered == LMON_FALSE))
+  if (mydesc->registered == LMON_FALSE)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "session is invalid, the job killed?");
@@ -3943,7 +3943,7 @@ LMON_fe_regUnpackForBeToFe (
 
   mydesc = &(sess.sessionDescArray[(sessionHandle)]);
   pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
-  if ( (mydesc->registered == LMON_FALSE))
+  if (mydesc->registered == LMON_FALSE)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "session is invalid, the job killed?");
@@ -4005,7 +4005,7 @@ LMON_fe_regPackForFeToMw (
   
   mydesc = &(sess.sessionDescArray[(sessionHandle)]);
   pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
-  if ( (mydesc->registered == LMON_FALSE))
+  if (mydesc->registered == LMON_FALSE)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "session is invalid, the job killed?");
@@ -4067,7 +4067,7 @@ LMON_fe_regUnpackForMwToFe (
 
   mydesc = &(sess.sessionDescArray[(sessionHandle)]);
   pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
-  if ( (mydesc->registered == LMON_FALSE))
+  if (mydesc->registered == LMON_FALSE)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "session is invalid, the job killed?");
@@ -4123,7 +4123,7 @@ LMON_fe_putToBeDaemonEnv (
   rc = LMON_OK;
   mydesc = &(sess.sessionDescArray[(sessionHandle)]); 
   pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
-  if ( (mydesc->registered == LMON_FALSE))
+  if (mydesc->registered == LMON_FALSE)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "session is invalid, the job killed?");
@@ -4175,7 +4175,7 @@ LMON_fe_putToMwDaemonEnv (
   mydesc = &(sess.sessionDescArray[(sessionHandle)]); 
 
   pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
-  if ( (mydesc->registered == LMON_FALSE))
+  if (mydesc->registered == LMON_FALSE)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "session is invalid, the job killed?");
@@ -4536,7 +4536,7 @@ LMON_fe_shutdownDaemons ( int sessionHandle )
 
   mydesc = &sess.sessionDescArray[sessionHandle];   
   pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
-  if ( (mydesc->registered == LMON_FALSE))
+  if (mydesc->registered == LMON_FALSE)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "session is invalid, the job killed?");
@@ -4627,7 +4627,7 @@ LMON_fe_getProctableSize (
 
   mydesc = &(sess.sessionDescArray[(sessionHandle)]);
   pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
-  if ( (mydesc->registered == LMON_FALSE))
+  if (mydesc->registered == LMON_FALSE)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "session is invalid, the job killed?");
@@ -4702,7 +4702,7 @@ LMON_fe_getProctable (
 
   mydesc = &(sess.sessionDescArray[(sessionHandle)]); 
   pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
-  if ( (mydesc->registered == LMON_FALSE))
+  if (mydesc->registered == LMON_FALSE)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "session is invalid, the job killed?");
@@ -4947,7 +4947,7 @@ LMON_fe_getResourceHandle (
 
   mydesc = &(sess.sessionDescArray[(sessionHandle)]); 
   pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
-  if ( (mydesc->registered == LMON_FALSE))
+  if (mydesc->registered == LMON_FALSE)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "session is invalid, the job killed?");
@@ -5081,7 +5081,7 @@ LMON_fe_launchAndSpawnDaemons (
 
   mydesc = &(sess.sessionDescArray[sessionHandle]);     
   pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
-  if ( (mydesc->registered == LMON_FALSE))
+  if (mydesc->registered == LMON_FALSE)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
 		     "session is invalid, the job killed?");
@@ -5315,7 +5315,7 @@ LMON_fe_attachAndSpawnDaemons (
   
   mydesc = &sess.sessionDescArray[sessionHandle];       
   pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
-  if ( (mydesc->registered == LMON_FALSE))
+  if (mydesc->registered == LMON_FALSE)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
 	"the session is invalid, the job killed?");
@@ -5685,7 +5685,7 @@ LMON_fe_getMwHostlist(
 
   mydesc = &(sess.sessionDescArray[(sessionHandle)]);
   pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
-  if ( (mydesc->registered == LMON_FALSE))
+  if (mydesc->registered == LMON_FALSE)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "session is invalid, the job killed?");
@@ -5757,7 +5757,7 @@ LMON_fe_getMwHostlistSize(
 
   mydesc = &(sess.sessionDescArray[(sessionHandle)]);
   pthread_mutex_lock(&(mydesc->watchdogThr.eventMutex));
-  if ( (mydesc->registered == LMON_FALSE))
+  if (mydesc->registered == LMON_FALSE)
     {
       LMON_say_msg ( LMON_FE_MSG_PREFIX, true,
         "session is invalid, the job killed?");

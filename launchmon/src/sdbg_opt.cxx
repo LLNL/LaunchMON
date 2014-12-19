@@ -111,7 +111,7 @@ opts_args_t::opts_args_t ()
   my_rmconfig = new rc_rm_t();
   has_parse_error = false;
 
-  MODULENAME = self_trace_t::opt_module_trace.module_name;
+  MODULENAME = self_trace_t::self_trace().opt_module_trace.module_name;
 }
 
 
@@ -225,14 +225,14 @@ opts_args_t::process_args ( int *argc, char ***argv )
 	      else
 		my_opt->verbose = 1;
 
-	      self_trace_t::launchmon_module_trace.verbosity_level = ver;
-	      self_trace_t::tracer_module_trace.verbosity_level = ver;
-	      self_trace_t::symtab_module_trace.verbosity_level = ver;
-	      self_trace_t::event_module_trace.verbosity_level = ver;
-	      self_trace_t::driver_module_trace.verbosity_level = ver;
-	      self_trace_t::machine_module_trace.verbosity_level = ver;
-	      self_trace_t::opt_module_trace.verbosity_level = ver;
-              self_trace_t::rm_module_trace.verbosity_level = ver;
+	      self_trace_t::self_trace().launchmon_module_trace.verbosity_level = ver;
+	      self_trace_t::self_trace().tracer_module_trace.verbosity_level = ver;
+	      self_trace_t::self_trace().symtab_module_trace.verbosity_level = ver;
+	      self_trace_t::self_trace().event_module_trace.verbosity_level = ver;
+	      self_trace_t::self_trace().driver_module_trace.verbosity_level = ver;
+	      self_trace_t::self_trace().machine_module_trace.verbosity_level = ver;
+	      self_trace_t::self_trace().opt_module_trace.verbosity_level = ver;
+          self_trace_t::self_trace().rm_module_trace.verbosity_level = ver;
 
 	      i++;
 	      break;
@@ -312,32 +312,32 @@ opts_args_t::process_args ( int *argc, char ***argv )
 	      else
 		ver = level1;
 
-	      if ( modulename== self_trace_t::launchmon_module_trace.module_symbol )
-		self_trace_t::launchmon_module_trace.verbosity_level = ver;
+	      if ( modulename== self_trace_t::self_trace().launchmon_module_trace.module_symbol )
+		self_trace_t::self_trace().launchmon_module_trace.verbosity_level = ver;
 	      else if ( modulename
-			== self_trace_t::tracer_module_trace.module_symbol )
-		self_trace_t::tracer_module_trace.verbosity_level = ver;
+			== self_trace_t::self_trace().tracer_module_trace.module_symbol )
+		self_trace_t::self_trace().tracer_module_trace.verbosity_level = ver;
 	      else if ( modulename
-			== self_trace_t::symtab_module_trace.module_symbol )
-		self_trace_t::symtab_module_trace.verbosity_level = ver;
+			== self_trace_t::self_trace().symtab_module_trace.module_symbol )
+		self_trace_t::self_trace().symtab_module_trace.verbosity_level = ver;
 	      else if ( modulename
-			== self_trace_t::machine_module_trace.module_symbol )
-		self_trace_t::machine_module_trace.verbosity_level = ver;
+			== self_trace_t::self_trace().machine_module_trace.module_symbol )
+		self_trace_t::self_trace().machine_module_trace.verbosity_level = ver;
 	      else if ( modulename
-			== self_trace_t::event_module_trace.module_symbol )
-		self_trace_t::event_module_trace.verbosity_level = ver;
+			== self_trace_t::self_trace().event_module_trace.module_symbol )
+		self_trace_t::self_trace().event_module_trace.verbosity_level = ver;
 	      else if ( modulename
-			== self_trace_t::driver_module_trace.module_symbol )
-		self_trace_t::driver_module_trace.verbosity_level = ver;
+			== self_trace_t::self_trace().driver_module_trace.module_symbol )
+		self_trace_t::self_trace().driver_module_trace.verbosity_level = ver;
 	      else if ( modulename
-			== self_trace_t::opt_module_trace.module_symbol )
-		self_trace_t::opt_module_trace.verbosity_level = ver;
+			== self_trace_t::self_trace().opt_module_trace.module_symbol )
+		self_trace_t::self_trace().opt_module_trace.verbosity_level = ver;
 	      else if ( modulename
-			== self_trace_t::rm_module_trace.module_symbol )
-		self_trace_t::rm_module_trace.verbosity_level = ver;
+			== self_trace_t::self_trace().rm_module_trace.module_symbol )
+		self_trace_t::self_trace().rm_module_trace.verbosity_level = ver;
 	      else if ( modulename
-			== self_trace_t::sighandler_module_trace.module_symbol )
-		self_trace_t::sighandler_module_trace.verbosity_level = ver;
+			== self_trace_t::self_trace().sighandler_module_trace.module_symbol )
+		self_trace_t::self_trace().sighandler_module_trace.verbosity_level = ver;
 
 	      i++;
 	      break;
@@ -394,13 +394,13 @@ opts_args_t::process_args ( int *argc, char ***argv )
 
         }
 
-      self_trace_t::launchmon_module_trace.verbosity_level = verbo;
-      self_trace_t::tracer_module_trace.verbosity_level = verbo;
-      self_trace_t::symtab_module_trace.verbosity_level = verbo;
-      self_trace_t::event_module_trace.verbosity_level = verbo;
-      self_trace_t::driver_module_trace.verbosity_level = verbo;
-      self_trace_t::machine_module_trace.verbosity_level = verbo;
-      self_trace_t::opt_module_trace.verbosity_level = verbo;
+      self_trace_t::self_trace().launchmon_module_trace.verbosity_level = verbo;
+      self_trace_t::self_trace().tracer_module_trace.verbosity_level = verbo;
+      self_trace_t::self_trace().symtab_module_trace.verbosity_level = verbo;
+      self_trace_t::self_trace().event_module_trace.verbosity_level = verbo;
+      self_trace_t::self_trace().driver_module_trace.verbosity_level = verbo;
+      self_trace_t::self_trace().machine_module_trace.verbosity_level = verbo;
+      self_trace_t::self_trace().opt_module_trace.verbosity_level = verbo;
     }
 
   if ( !has_parse_error && !construct_rm_map() )

@@ -198,7 +198,7 @@ public:
     ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt );
 
   virtual tracer_error_e tracer_setoptions
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt, pid_t newtid )
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt, pid_t newtid=-1)
     throw (linux_tracer_exception_t);
 
   virtual tracer_error_e tracer_unsetoptions
@@ -206,7 +206,7 @@ public:
     throw (linux_tracer_exception_t);
 
   virtual tracer_error_e tracer_attach  
-    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt, pid_t newtid )
+    ( process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt, pid_t newtid=-1)
     throw (linux_tracer_exception_t);
   
   virtual tracer_error_e status
@@ -234,7 +234,7 @@ public:
 private:
   
   bool LEVELCHK(self_trace_verbosity level) 
-       { return (self_trace_t::tracer_module_trace.verbosity_level >= level); }
+       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
 
   long Pptrace ( __ptrace_request request, 
 		 pid_t pid, 
