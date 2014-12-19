@@ -23,9 +23,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
+
 #include "g10lib.h"
-#include "memory.h"
 #include "cipher.h"
 
 #include "bithelp.h"
@@ -129,8 +128,9 @@ static u32 crc32_table[256] = {
  *
  */
 static u32
-update_crc32 (u32 crc, char *buf, size_t len)
+update_crc32 (u32 crc, const void *buf_arg, size_t len)
 {
+  const char *buf = buf_arg;
   size_t n;
 
   for (n = 0; n < len; n++)
@@ -149,14 +149,17 @@ CRC_CONTEXT;
 /* CRC32 */
 
 static void
-crc32_init (void *context)
+crc32_init (void *context, unsigned int flags)
 {
   CRC_CONTEXT *ctx = (CRC_CONTEXT *) context;
+
+  (void)flags;
+
   ctx->CRC = 0 ^ 0xffffffffL;
 }
 
 static void
-crc32_write (void *context, byte * inbuf, size_t inlen)
+crc32_write (void *context, const void *inbuf, size_t inlen)
 {
   CRC_CONTEXT *ctx = (CRC_CONTEXT *) context;
   if (!inbuf)
@@ -184,9 +187,12 @@ crc32_final (void *context)
 
 /* CRC32 a'la RFC 1510 */
 static void
-crc32rfc1510_init (void *context)
+crc32rfc1510_init (void *context, unsigned int flags)
 {
   CRC_CONTEXT *ctx = (CRC_CONTEXT *) context;
+
+  (void)flags;
+
   ctx->CRC = 0;
 }
 
@@ -237,15 +243,19 @@ crc32rfc1510_final (void *context)
 #define CRC24_POLY 0x1864cfbL
 
 static void
-crc24rfc2440_init (void *context)
+crc24rfc2440_init (void *context, unsigned int flags)
 {
   CRC_CONTEXT *ctx = (CRC_CONTEXT *) context;
+
+  (void)flags;
+
   ctx->CRC = CRC24_INIT;
 }
 
 static void
-crc24rfc2440_write (void *context, byte * inbuf, size_t inlen)
+crc24rfc2440_write (void *context, const void *inbuf_arg, size_t inlen)
 {
+  const unsigned char *inbuf = inbuf_arg;
   int i;
   CRC_CONTEXT *ctx = (CRC_CONTEXT *) context;
 
@@ -271,8 +281,12 @@ crc24rfc2440_final (void *context)
   ctx->buf[2] = (ctx->CRC      ) & 0xFF;
 }
 
+/* We allow the CRC algorithms even in FIPS mode because they are
+   actually no cryptographic primitives.  */
+
 gcry_md_spec_t _gcry_digest_spec_crc32 =
   {
+    GCRY_MD_CRC32, {0, 1},
     "CRC32", NULL, 0, NULL, 4,
     crc32_init, crc32_write, crc32_final, crc32_read,
     sizeof (CRC_CONTEXT)
@@ -280,6 +294,7 @@ gcry_md_spec_t _gcry_digest_spec_crc32 =
 
 gcry_md_spec_t _gcry_digest_spec_crc32_rfc1510 =
   {
+    GCRY_MD_CRC32_RFC1510, {0, 1},
     "CRC32RFC1510", NULL, 0, NULL, 4,
     crc32rfc1510_init, crc32_write,
     crc32rfc1510_final, crc32_read,
@@ -288,6 +303,7 @@ gcry_md_spec_t _gcry_digest_spec_crc32_rfc1510 =
 
 gcry_md_spec_t _gcry_digest_spec_crc24_rfc2440 =
   {
+    GCRY_MD_CRC24_RFC2440, {0, 1},
     "CRC24RFC2440", NULL, 0, NULL, 3,
     crc24rfc2440_init, crc24rfc2440_write,
     crc24rfc2440_final, crc32_read,

@@ -6,12 +6,13 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: libgpg-error 1.10\n"
+"Project-Id-Version: libgpg-error 1.17\n"
 "Report-Msgid-Bugs-To: translations@gnupg.org\n"
-"POT-Creation-Date: 2010-10-26 11:22+0200\n"
+"POT-Creation-Date: 2014-10-15 15:18+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -77,26 +78,34 @@ msgid "G13"
 msgstr ""
 
 #: src/err-sources.h:43
-msgid "Any source"
+msgid "Assuan"
 msgstr ""
 
 #: src/err-sources.h:44
-msgid "User defined source 1"
+msgid "TLS"
 msgstr ""
 
 #: src/err-sources.h:45
-msgid "User defined source 2"
+msgid "Any source"
 msgstr ""
 
 #: src/err-sources.h:46
-msgid "User defined source 3"
+msgid "User defined source 1"
 msgstr ""
 
 #: src/err-sources.h:47
-msgid "User defined source 4"
+msgid "User defined source 2"
 msgstr ""
 
 #: src/err-sources.h:48
+msgid "User defined source 3"
+msgstr ""
+
+#: src/err-sources.h:49
+msgid "User defined source 4"
+msgstr ""
+
+#: src/err-sources.h:50
 msgid "Unknown source"
 msgstr ""
 
@@ -413,7 +422,7 @@ msgid "No agent running"
 msgstr ""
 
 #: src/err-codes.h:106
-msgid "agent error"
+msgid "Agent error"
 msgstr ""
 
 #: src/err-codes.h:107
@@ -845,251 +854,411 @@ msgid "Missing issuer certificate"
 msgstr ""
 
 #: src/err-codes.h:214
-msgid "Operation fully cancelled"
+msgid "No keyserver available"
 msgstr ""
 
 #: src/err-codes.h:215
-msgid "Operation not yet finished"
+msgid "Invalid elliptic curve"
 msgstr ""
 
 #: src/err-codes.h:216
-msgid "Buffer too short"
+msgid "Unknown elliptic curve"
 msgstr ""
 
 #: src/err-codes.h:217
-msgid "Invalid length specifier in S-expression"
+msgid "Duplicated key"
 msgstr ""
 
 #: src/err-codes.h:218
-msgid "String too long in S-expression"
+msgid "Ambiguous result"
 msgstr ""
 
 #: src/err-codes.h:219
-msgid "Unmatched parentheses in S-expression"
+msgid "No crypto context"
 msgstr ""
 
 #: src/err-codes.h:220
-msgid "S-expression not canonical"
+msgid "Wrong crypto context"
 msgstr ""
 
 #: src/err-codes.h:221
-msgid "Bad character in S-expression"
+msgid "Bad crypto context"
 msgstr ""
 
 #: src/err-codes.h:222
-msgid "Bad quotation in S-expression"
+msgid "Conflict in the crypto context"
 msgstr ""
 
 #: src/err-codes.h:223
-msgid "Zero prefix in S-expression"
+msgid "Broken public key"
 msgstr ""
 
 #: src/err-codes.h:224
-msgid "Nested display hints in S-expression"
+msgid "Broken secret key"
 msgstr ""
 
 #: src/err-codes.h:225
-msgid "Unmatched display hints"
+msgid "Invalid MAC algorithm"
 msgstr ""
 
 #: src/err-codes.h:226
-msgid "Unexpected reserved punctuation in S-expression"
+msgid "Operation fully cancelled"
 msgstr ""
 
 #: src/err-codes.h:227
-msgid "Bad hexadecimal character in S-expression"
+msgid "Operation not yet finished"
 msgstr ""
 
 #: src/err-codes.h:228
-msgid "Odd hexadecimal numbers in S-expression"
+msgid "Buffer too short"
 msgstr ""
 
 #: src/err-codes.h:229
-msgid "Bad octal character in S-expression"
+msgid "Invalid length specifier in S-expression"
 msgstr ""
 
 #: src/err-codes.h:230
-msgid "General IPC error"
+msgid "String too long in S-expression"
 msgstr ""
 
 #: src/err-codes.h:231
-msgid "IPC accept call failed"
+msgid "Unmatched parentheses in S-expression"
 msgstr ""
 
 #: src/err-codes.h:232
-msgid "IPC connect call failed"
+msgid "S-expression not canonical"
 msgstr ""
 
 #: src/err-codes.h:233
-msgid "Invalid IPC response"
+msgid "Bad character in S-expression"
 msgstr ""
 
 #: src/err-codes.h:234
-msgid "Invalid value passed to IPC"
+msgid "Bad quotation in S-expression"
 msgstr ""
 
 #: src/err-codes.h:235
-msgid "Incomplete line passed to IPC"
+msgid "Zero prefix in S-expression"
 msgstr ""
 
 #: src/err-codes.h:236
-msgid "Line passed to IPC too long"
+msgid "Nested display hints in S-expression"
 msgstr ""
 
 #: src/err-codes.h:237
-msgid "Nested IPC commands"
+msgid "Unmatched display hints"
 msgstr ""
 
 #: src/err-codes.h:238
-msgid "No data callback in IPC"
+msgid "Unexpected reserved punctuation in S-expression"
 msgstr ""
 
 #: src/err-codes.h:239
-msgid "No inquire callback in IPC"
+msgid "Bad hexadecimal character in S-expression"
 msgstr ""
 
 #: src/err-codes.h:240
-msgid "Not an IPC server"
+msgid "Odd hexadecimal numbers in S-expression"
 msgstr ""
 
 #: src/err-codes.h:241
-msgid "Not an IPC client"
+msgid "Bad octal character in S-expression"
 msgstr ""
 
 #: src/err-codes.h:242
-msgid "Problem starting IPC server"
+msgid "No certificate chain"
 msgstr ""
 
 #: src/err-codes.h:243
-msgid "IPC read error"
+msgid "Certificate is too large"
 msgstr ""
 
 #: src/err-codes.h:244
-msgid "IPC write error"
+msgid "Invalid record"
 msgstr ""
 
 #: src/err-codes.h:245
-msgid "Too much data for IPC layer"
+msgid "The MAC does not verify"
 msgstr ""
 
 #: src/err-codes.h:246
-msgid "Unexpected IPC command"
+msgid "Unexpected message"
 msgstr ""
 
 #: src/err-codes.h:247
-msgid "Unknown IPC command"
+msgid "Compression or decompression failed"
 msgstr ""
 
 #: src/err-codes.h:248
-msgid "IPC syntax error"
+msgid "A counter would wrap"
 msgstr ""
 
 #: src/err-codes.h:249
-msgid "IPC call has been cancelled"
+msgid "Fatal alert message received"
 msgstr ""
 
 #: src/err-codes.h:250
-msgid "No input source for IPC"
+msgid "No cipher algorithm"
 msgstr ""
 
 #: src/err-codes.h:251
-msgid "No output source for IPC"
+msgid "Missing client certificate"
 msgstr ""
 
 #: src/err-codes.h:252
-msgid "IPC parameter error"
+msgid "Close notification received"
 msgstr ""
 
 #: src/err-codes.h:253
-msgid "Unknown IPC inquire"
+msgid "Ticket expired"
 msgstr ""
 
 #: src/err-codes.h:254
-msgid "User defined error code 1"
+msgid "Bad ticket"
 msgstr ""
 
 #: src/err-codes.h:255
-msgid "User defined error code 2"
+msgid "Unknown identity"
 msgstr ""
 
 #: src/err-codes.h:256
-msgid "User defined error code 3"
+msgid "Bad certificate message in handshake"
 msgstr ""
 
 #: src/err-codes.h:257
-msgid "User defined error code 4"
+msgid "Bad certificate request message in handshake"
 msgstr ""
 
 #: src/err-codes.h:258
-msgid "User defined error code 5"
+msgid "Bad certificate verify message in handshake"
 msgstr ""
 
 #: src/err-codes.h:259
-msgid "User defined error code 6"
+msgid "Bad change cipher messsage in handshake"
 msgstr ""
 
 #: src/err-codes.h:260
-msgid "User defined error code 7"
+msgid "Bad client hello message in handshake"
 msgstr ""
 
 #: src/err-codes.h:261
-msgid "User defined error code 8"
+msgid "Bad server hello message in handshake"
 msgstr ""
 
 #: src/err-codes.h:262
-msgid "User defined error code 9"
+msgid "Bad server hello done message in hanshake"
 msgstr ""
 
 #: src/err-codes.h:263
-msgid "User defined error code 10"
+msgid "Bad finished message in handshake"
 msgstr ""
 
 #: src/err-codes.h:264
-msgid "User defined error code 11"
+msgid "Bad server key exchange message in handshake"
 msgstr ""
 
 #: src/err-codes.h:265
-msgid "User defined error code 12"
+msgid "Bad client key exchange message in handshake"
 msgstr ""
 
 #: src/err-codes.h:266
-msgid "User defined error code 13"
+msgid "Bogus string"
 msgstr ""
 
 #: src/err-codes.h:267
-msgid "User defined error code 14"
+msgid "Key disabled"
 msgstr ""
 
 #: src/err-codes.h:268
-msgid "User defined error code 15"
+msgid "Not possible with a card based key"
 msgstr ""
 
 #: src/err-codes.h:269
-msgid "User defined error code 16"
+msgid "Invalid lock object"
 msgstr ""
 
 #: src/err-codes.h:270
-msgid "System error w/o errno"
+msgid "General IPC error"
 msgstr ""
 
 #: src/err-codes.h:271
-msgid "Unknown system error"
+msgid "IPC accept call failed"
 msgstr ""
 
 #: src/err-codes.h:272
-msgid "End of file"
+msgid "IPC connect call failed"
 msgstr ""
 
 #: src/err-codes.h:273
+msgid "Invalid IPC response"
+msgstr ""
+
+#: src/err-codes.h:274
+msgid "Invalid value passed to IPC"
+msgstr ""
+
+#: src/err-codes.h:275
+msgid "Incomplete line passed to IPC"
+msgstr ""
+
+#: src/err-codes.h:276
+msgid "Line passed to IPC too long"
+msgstr ""
+
+#: src/err-codes.h:277
+msgid "Nested IPC commands"
+msgstr ""
+
+#: src/err-codes.h:278
+msgid "No data callback in IPC"
+msgstr ""
+
+#: src/err-codes.h:279
+msgid "No inquire callback in IPC"
+msgstr ""
+
+#: src/err-codes.h:280
+msgid "Not an IPC server"
+msgstr ""
+
+#: src/err-codes.h:281
+msgid "Not an IPC client"
+msgstr ""
+
+#: src/err-codes.h:282
+msgid "Problem starting IPC server"
+msgstr ""
+
+#: src/err-codes.h:283
+msgid "IPC read error"
+msgstr ""
+
+#: src/err-codes.h:284
+msgid "IPC write error"
+msgstr ""
+
+#: src/err-codes.h:285
+msgid "Too much data for IPC layer"
+msgstr ""
+
+#: src/err-codes.h:286
+msgid "Unexpected IPC command"
+msgstr ""
+
+#: src/err-codes.h:287
+msgid "Unknown IPC command"
+msgstr ""
+
+#: src/err-codes.h:288
+msgid "IPC syntax error"
+msgstr ""
+
+#: src/err-codes.h:289
+msgid "IPC call has been cancelled"
+msgstr ""
+
+#: src/err-codes.h:290
+msgid "No input source for IPC"
+msgstr ""
+
+#: src/err-codes.h:291
+msgid "No output source for IPC"
+msgstr ""
+
+#: src/err-codes.h:292
+msgid "IPC parameter error"
+msgstr ""
+
+#: src/err-codes.h:293
+msgid "Unknown IPC inquire"
+msgstr ""
+
+#: src/err-codes.h:294
+msgid "User defined error code 1"
+msgstr ""
+
+#: src/err-codes.h:295
+msgid "User defined error code 2"
+msgstr ""
+
+#: src/err-codes.h:296
+msgid "User defined error code 3"
+msgstr ""
+
+#: src/err-codes.h:297
+msgid "User defined error code 4"
+msgstr ""
+
+#: src/err-codes.h:298
+msgid "User defined error code 5"
+msgstr ""
+
+#: src/err-codes.h:299
+msgid "User defined error code 6"
+msgstr ""
+
+#: src/err-codes.h:300
+msgid "User defined error code 7"
+msgstr ""
+
+#: src/err-codes.h:301
+msgid "User defined error code 8"
+msgstr ""
+
+#: src/err-codes.h:302
+msgid "User defined error code 9"
+msgstr ""
+
+#: src/err-codes.h:303
+msgid "User defined error code 10"
+msgstr ""
+
+#: src/err-codes.h:304
+msgid "User defined error code 11"
+msgstr ""
+
+#: src/err-codes.h:305
+msgid "User defined error code 12"
+msgstr ""
+
+#: src/err-codes.h:306
+msgid "User defined error code 13"
+msgstr ""
+
+#: src/err-codes.h:307
+msgid "User defined error code 14"
+msgstr ""
+
+#: src/err-codes.h:308
+msgid "User defined error code 15"
+msgstr ""
+
+#: src/err-codes.h:309
+msgid "User defined error code 16"
+msgstr ""
+
+#: src/err-codes.h:310
+msgid "System error w/o errno"
+msgstr ""
+
+#: src/err-codes.h:311
+msgid "Unknown system error"
+msgstr ""
+
+#: src/err-codes.h:312
+msgid "End of file"
+msgstr ""
+
+#: src/err-codes.h:313
 msgid "Unknown error code"
 msgstr ""
 
-#: src/gpg-error.c:392
+#: src/gpg-error.c:388
 #, c-format
 msgid "Usage: %s GPG-ERROR [...]\n"
 msgstr ""
 
-#: src/gpg-error.c:448
+#: src/gpg-error.c:444
 #, c-format
 msgid "%s: warning: could not recognize %s\n"
 msgstr ""

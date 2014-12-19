@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (C) 1999, 2002, 2003, 2004 Free Software Foundation, Inc.
+# Copyright (C) 1999, 2002, 2003, 2004, 2011 Free Software Foundation, Inc.
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -8,6 +8,8 @@
 # This file is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# File: @configure_input@
 
 # General.
 prefix="@prefix@"
@@ -25,6 +27,9 @@ cflags="@LIBGCRYPT_CONFIG_CFLAGS@"
 # API info
 api_version="@LIBGCRYPT_CONFIG_API_VERSION@"
 
+# Configured for host
+my_host="@LIBGCRYPT_CONFIG_HOST@"
+
 # Misc information.
 symmetric_ciphers="@LIBGCRYPT_CIPHERS@"
 asymmetric_ciphers="@LIBGCRYPT_PUBKEY_CIPHERS@"
@@ -38,6 +43,7 @@ echo_algorithms=no
 echo_exec_prefix=no
 echo_version=no
 echo_api_version=no
+echo_host=no
 
 # Prints usage information.
 usage()
@@ -52,6 +58,7 @@ Options:
 	[--libs]
 	[--cflags]
 	[--algorithms]
+        [--host]
 EOF
     exit $1
 }
@@ -75,7 +82,7 @@ while test $# -gt 0; do
     case $1 in
 	--thread=*)
 	    echo "$0: --thread option obsolete: use the thread callback interface" 1>&2
-	    # exit 1  <-- enable this for 1.2.0.
+	    exit 1
 	    ;;
         --prefix=*)
             # For compatibility reasons with old M4 macros, we ignore
@@ -104,6 +111,9 @@ while test $# -gt 0; do
 	--algorithms)
 	    echo_algorithms=yes
 	    ;;
+        --host)
+            echo_host=yes
+            ;;
 	*)
 	    usage 1 1>&2
 	    ;;
@@ -130,7 +140,13 @@ if test "$echo_cflags" = "yes"; then
     # Set up `cflags_final'.
     cflags_final="$cflags_final $gpg_error_cflags"
 
-    echo "$includes $cflags_final"
+    tmp=""
+    for i in $includes $cflags_final; do
+       if echo "$tmp" | fgrep -v -- "$i" >/dev/null; then
+           tmp="$tmp $i"
+       fi
+    done
+    echo $tmp
 fi
 
 if test "$echo_libs" = "yes"; then
@@ -145,7 +161,13 @@ if test "$echo_libs" = "yes"; then
     # Set up `libs_final'.
     libs_final="$libs_final $gpg_error_libs"
 
-    echo "$libdirs $libs_final"
+    tmp=""
+    for i in $libdirs $libs_final; do
+       if echo "$tmp" | fgrep -v -- "$i" >/dev/null; then
+           tmp="$tmp $i"
+       fi
+    done
+    echo $tmp
 fi
 
 if test "$echo_version" = "yes"; then
@@ -154,6 +176,10 @@ fi
 
 if test "$echo_api_version" = "yes"; then
     echo "$api_version"
+fi
+
+if test "$echo_host" = "yes"; then
+    echo "$my_host"
 fi
 
 if test "$echo_algorithms" = "yes"; then

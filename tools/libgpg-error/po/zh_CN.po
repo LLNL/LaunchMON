@@ -7,11 +7,12 @@ msgid ""
 msgstr ""
 "Project-Id-Version: libgpg-error 1.7\n"
 "Report-Msgid-Bugs-To: translations@gnupg.org\n"
-"POT-Creation-Date: 2010-10-26 11:22+0200\n"
-"PO-Revision-Date: 2009-08-19 17:45+0800\n"
+"POT-Creation-Date: 2014-10-15 15:18+0200\n"
+"PO-Revision-Date: 2013-02-23 20:11+0100\n"
 "Last-Translator: Aron Xu <happyaron.xu@gmail.com>\n"
 "Language-Team: Chinese (simplified) <translation-team-zh-cn@lists."
 "sourceforge.net>\n"
+"Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -78,26 +79,34 @@ msgid "G13"
 msgstr ""
 
 #: src/err-sources.h:43
+msgid "Assuan"
+msgstr "Assuan"
+
+#: src/err-sources.h:44
+msgid "TLS"
+msgstr ""
+
+#: src/err-sources.h:45
 msgid "Any source"
 msgstr "任何来源"
 
-#: src/err-sources.h:44
+#: src/err-sources.h:46
 msgid "User defined source 1"
 msgstr "用户定义的来源1"
 
-#: src/err-sources.h:45
+#: src/err-sources.h:47
 msgid "User defined source 2"
 msgstr "用户定义的来源2"
 
-#: src/err-sources.h:46
+#: src/err-sources.h:48
 msgid "User defined source 3"
 msgstr "用户定义的来源3"
 
-#: src/err-sources.h:47
+#: src/err-sources.h:49
 msgid "User defined source 4"
 msgstr "用户定义的来源4"
 
-#: src/err-sources.h:48
+#: src/err-sources.h:50
 msgid "Unknown source"
 msgstr "来源不明"
 
@@ -414,7 +423,9 @@ msgid "No agent running"
 msgstr "未运行代理"
 
 #: src/err-codes.h:106
-msgid "agent error"
+#, fuzzy
+#| msgid "agent error"
+msgid "Agent error"
 msgstr "代理错误"
 
 #: src/err-codes.h:107
@@ -852,252 +863,451 @@ msgid "Missing issuer certificate"
 msgstr "缺失证书"
 
 #: src/err-codes.h:214
+msgid "No keyserver available"
+msgstr ""
+
+#: src/err-codes.h:215
+#, fuzzy
+msgid "Invalid elliptic curve"
+msgstr "无效的时间"
+
+#: src/err-codes.h:216
+#, fuzzy
+msgid "Unknown elliptic curve"
+msgstr "来源不明"
+
+#: src/err-codes.h:217
+#, fuzzy
+#| msgid "Duplicated value"
+msgid "Duplicated key"
+msgstr "重复值"
+
+#: src/err-codes.h:218
+msgid "Ambiguous result"
+msgstr ""
+
+#: src/err-codes.h:219
+#, fuzzy
+msgid "No crypto context"
+msgstr "无效的加密引擎"
+
+#: src/err-codes.h:220
+#, fuzzy
+msgid "Wrong crypto context"
+msgstr "无效的加密引擎"
+
+#: src/err-codes.h:221
+#, fuzzy
+#| msgid "Invalid crypto engine"
+msgid "Bad crypto context"
+msgstr "无效的加密引擎"
+
+#: src/err-codes.h:222
+msgid "Conflict in the crypto context"
+msgstr ""
+
+#: src/err-codes.h:223
+#, fuzzy
+#| msgid "No public key"
+msgid "Broken public key"
+msgstr "没有公钥"
+
+#: src/err-codes.h:224
+#, fuzzy
+#| msgid "No secret key"
+msgid "Broken secret key"
+msgstr "没有秘匙"
+
+#: src/err-codes.h:225
+#, fuzzy
+#| msgid "Invalid digest algorithm"
+msgid "Invalid MAC algorithm"
+msgstr "无效的摘要算法"
+
+#: src/err-codes.h:226
 #, fuzzy
 msgid "Operation fully cancelled"
 msgstr "操作已取消"
 
-#: src/err-codes.h:215
+#: src/err-codes.h:227
 msgid "Operation not yet finished"
 msgstr "操作尚未完成"
 
-#: src/err-codes.h:216
+#: src/err-codes.h:228
 msgid "Buffer too short"
 msgstr "缓冲区太短"
 
-#: src/err-codes.h:217
+#: src/err-codes.h:229
 msgid "Invalid length specifier in S-expression"
 msgstr ""
 
-#: src/err-codes.h:218
+#: src/err-codes.h:230
 msgid "String too long in S-expression"
 msgstr ""
 
-#: src/err-codes.h:219
+#: src/err-codes.h:231
 msgid "Unmatched parentheses in S-expression"
 msgstr ""
 
-#: src/err-codes.h:220
+#: src/err-codes.h:232
 msgid "S-expression not canonical"
 msgstr ""
 
-#: src/err-codes.h:221
+#: src/err-codes.h:233
 msgid "Bad character in S-expression"
 msgstr ""
 
-#: src/err-codes.h:222
+#: src/err-codes.h:234
 msgid "Bad quotation in S-expression"
 msgstr ""
 
-#: src/err-codes.h:223
+#: src/err-codes.h:235
 msgid "Zero prefix in S-expression"
 msgstr ""
 
-#: src/err-codes.h:224
+#: src/err-codes.h:236
 msgid "Nested display hints in S-expression"
 msgstr ""
 
-#: src/err-codes.h:225
+#: src/err-codes.h:237
 msgid "Unmatched display hints"
 msgstr ""
 
-#: src/err-codes.h:226
+#: src/err-codes.h:238
 msgid "Unexpected reserved punctuation in S-expression"
 msgstr ""
 
-#: src/err-codes.h:227
+#: src/err-codes.h:239
 msgid "Bad hexadecimal character in S-expression"
 msgstr ""
 
-#: src/err-codes.h:228
+#: src/err-codes.h:240
 msgid "Odd hexadecimal numbers in S-expression"
 msgstr ""
 
-#: src/err-codes.h:229
+#: src/err-codes.h:241
 msgid "Bad octal character in S-expression"
 msgstr ""
 
-#: src/err-codes.h:230
-msgid "General IPC error"
-msgstr "一般IPC 错误"
-
-#: src/err-codes.h:231
-msgid "IPC accept call failed"
-msgstr ""
-
-#: src/err-codes.h:232
-msgid "IPC connect call failed"
-msgstr ""
-
-#: src/err-codes.h:233
-msgid "Invalid IPC response"
-msgstr ""
-
-#: src/err-codes.h:234
-msgid "Invalid value passed to IPC"
-msgstr ""
-
-#: src/err-codes.h:235
-msgid "Incomplete line passed to IPC"
-msgstr ""
-
-#: src/err-codes.h:236
-msgid "Line passed to IPC too long"
-msgstr ""
-
-#: src/err-codes.h:237
-msgid "Nested IPC commands"
-msgstr ""
-
-#: src/err-codes.h:238
-msgid "No data callback in IPC"
-msgstr ""
-
-#: src/err-codes.h:239
-msgid "No inquire callback in IPC"
-msgstr ""
-
-#: src/err-codes.h:240
-msgid "Not an IPC server"
-msgstr "不是IPC 服务器"
-
-#: src/err-codes.h:241
-msgid "Not an IPC client"
-msgstr "不是IPC 客户端"
-
 #: src/err-codes.h:242
-msgid "Problem starting IPC server"
-msgstr ""
+#, fuzzy
+#| msgid "Bad certificate chain"
+msgid "No certificate chain"
+msgstr "损坏的证书链"
 
 #: src/err-codes.h:243
-msgid "IPC read error"
-msgstr "IPC 读取错误"
+#, fuzzy
+#| msgid "Certificate too young"
+msgid "Certificate is too large"
+msgstr "证书太新"
 
 #: src/err-codes.h:244
-msgid "IPC write error"
-msgstr "IPC写入 错误"
+#, fuzzy
+#| msgid "Invalid card"
+msgid "Invalid record"
+msgstr "无效的卡"
 
 #: src/err-codes.h:245
-msgid "Too much data for IPC layer"
+msgid "The MAC does not verify"
 msgstr ""
 
 #: src/err-codes.h:246
-msgid "Unexpected IPC command"
-msgstr ""
+#, fuzzy
+#| msgid "Unexpected error"
+msgid "Unexpected message"
+msgstr "意外错误"
 
 #: src/err-codes.h:247
-msgid "Unknown IPC command"
-msgstr "未知IPC 命令"
+msgid "Compression or decompression failed"
+msgstr ""
 
 #: src/err-codes.h:248
-msgid "IPC syntax error"
-msgstr "IPC 语法错误"
+msgid "A counter would wrap"
+msgstr ""
 
 #: src/err-codes.h:249
-msgid "IPC call has been cancelled"
+msgid "Fatal alert message received"
 msgstr ""
 
 #: src/err-codes.h:250
+#, fuzzy
+#| msgid "Invalid cipher algorithm"
+msgid "No cipher algorithm"
+msgstr "无效的密码算法"
+
+#: src/err-codes.h:251
+#, fuzzy
+msgid "Missing client certificate"
+msgstr "缺失证书"
+
+#: src/err-codes.h:252
+#, fuzzy
+#| msgid "Certificate revoked"
+msgid "Close notification received"
+msgstr "证书已吊销"
+
+#: src/err-codes.h:253
+#, fuzzy
+#| msgid "Key expired"
+msgid "Ticket expired"
+msgstr "密钥已过期"
+
+#: src/err-codes.h:254
+#, fuzzy
+#| msgid "Bad public key"
+msgid "Bad ticket"
+msgstr "损坏的公钥"
+
+#: src/err-codes.h:255
+#, fuzzy
+#| msgid "Unknown packet"
+msgid "Unknown identity"
+msgstr "未知的包"
+
+#: src/err-codes.h:256
+#, fuzzy
+#| msgid "Bad certificate chain"
+msgid "Bad certificate message in handshake"
+msgstr "损坏的证书链"
+
+#: src/err-codes.h:257
+msgid "Bad certificate request message in handshake"
+msgstr ""
+
+#: src/err-codes.h:258
+msgid "Bad certificate verify message in handshake"
+msgstr ""
+
+#: src/err-codes.h:259
+msgid "Bad change cipher messsage in handshake"
+msgstr ""
+
+#: src/err-codes.h:260
+msgid "Bad client hello message in handshake"
+msgstr ""
+
+#: src/err-codes.h:261
+msgid "Bad server hello message in handshake"
+msgstr ""
+
+#: src/err-codes.h:262
+msgid "Bad server hello done message in hanshake"
+msgstr ""
+
+#: src/err-codes.h:263
+msgid "Bad finished message in handshake"
+msgstr ""
+
+#: src/err-codes.h:264
+msgid "Bad server key exchange message in handshake"
+msgstr ""
+
+#: src/err-codes.h:265
+msgid "Bad client key exchange message in handshake"
+msgstr ""
+
+#: src/err-codes.h:266
+msgid "Bogus string"
+msgstr ""
+
+#: src/err-codes.h:267
+#, fuzzy
+#| msgid "Key expired"
+msgid "Key disabled"
+msgstr "密钥已过期"
+
+#: src/err-codes.h:268
+msgid "Not possible with a card based key"
+msgstr ""
+
+#: src/err-codes.h:269
+#, fuzzy
+#| msgid "Invalid object"
+msgid "Invalid lock object"
+msgstr "无效的对象"
+
+#: src/err-codes.h:270
+msgid "General IPC error"
+msgstr "一般IPC 错误"
+
+#: src/err-codes.h:271
+msgid "IPC accept call failed"
+msgstr ""
+
+#: src/err-codes.h:272
+msgid "IPC connect call failed"
+msgstr ""
+
+#: src/err-codes.h:273
+msgid "Invalid IPC response"
+msgstr ""
+
+#: src/err-codes.h:274
+msgid "Invalid value passed to IPC"
+msgstr ""
+
+#: src/err-codes.h:275
+msgid "Incomplete line passed to IPC"
+msgstr ""
+
+#: src/err-codes.h:276
+msgid "Line passed to IPC too long"
+msgstr ""
+
+#: src/err-codes.h:277
+msgid "Nested IPC commands"
+msgstr ""
+
+#: src/err-codes.h:278
+msgid "No data callback in IPC"
+msgstr ""
+
+#: src/err-codes.h:279
+msgid "No inquire callback in IPC"
+msgstr ""
+
+#: src/err-codes.h:280
+msgid "Not an IPC server"
+msgstr "不是IPC 服务器"
+
+#: src/err-codes.h:281
+msgid "Not an IPC client"
+msgstr "不是IPC 客户端"
+
+#: src/err-codes.h:282
+msgid "Problem starting IPC server"
+msgstr ""
+
+#: src/err-codes.h:283
+msgid "IPC read error"
+msgstr "IPC 读取错误"
+
+#: src/err-codes.h:284
+msgid "IPC write error"
+msgstr "IPC写入 错误"
+
+#: src/err-codes.h:285
+msgid "Too much data for IPC layer"
+msgstr ""
+
+#: src/err-codes.h:286
+msgid "Unexpected IPC command"
+msgstr ""
+
+#: src/err-codes.h:287
+msgid "Unknown IPC command"
+msgstr "未知IPC 命令"
+
+#: src/err-codes.h:288
+msgid "IPC syntax error"
+msgstr "IPC 语法错误"
+
+#: src/err-codes.h:289
+msgid "IPC call has been cancelled"
+msgstr ""
+
+#: src/err-codes.h:290
 msgid "No input source for IPC"
 msgstr ""
 
-#: src/err-codes.h:251
+#: src/err-codes.h:291
 msgid "No output source for IPC"
 msgstr ""
 
-#: src/err-codes.h:252
+#: src/err-codes.h:292
 msgid "IPC parameter error"
 msgstr "IPC 参数错误"
 
-#: src/err-codes.h:253
+#: src/err-codes.h:293
 msgid "Unknown IPC inquire"
 msgstr ""
 
-#: src/err-codes.h:254
+#: src/err-codes.h:294
 msgid "User defined error code 1"
 msgstr "用户定义的错误代码1"
 
-#: src/err-codes.h:255
+#: src/err-codes.h:295
 msgid "User defined error code 2"
 msgstr "用户定义的错误代码2"
 
-#: src/err-codes.h:256
+#: src/err-codes.h:296
 msgid "User defined error code 3"
 msgstr "用户定义的错误代码3"
 
-#: src/err-codes.h:257
+#: src/err-codes.h:297
 msgid "User defined error code 4"
 msgstr "用户定义的错误代码4"
 
-#: src/err-codes.h:258
+#: src/err-codes.h:298
 msgid "User defined error code 5"
 msgstr "用户定义的错误代码5"
 
-#: src/err-codes.h:259
+#: src/err-codes.h:299
 msgid "User defined error code 6"
 msgstr "用户定义的错误代码6"
 
-#: src/err-codes.h:260
+#: src/err-codes.h:300
 msgid "User defined error code 7"
 msgstr "用户定义的错误代码7"
 
-#: src/err-codes.h:261
+#: src/err-codes.h:301
 msgid "User defined error code 8"
 msgstr "用户定义的错误代码8"
 
-#: src/err-codes.h:262
+#: src/err-codes.h:302
 msgid "User defined error code 9"
 msgstr "用户定义的错误码9"
 
-#: src/err-codes.h:263
+#: src/err-codes.h:303
 msgid "User defined error code 10"
 msgstr "用户定义的错误代码10"
 
-#: src/err-codes.h:264
+#: src/err-codes.h:304
 msgid "User defined error code 11"
 msgstr "用户定义的错误代码11"
 
-#: src/err-codes.h:265
+#: src/err-codes.h:305
 msgid "User defined error code 12"
 msgstr "用户定义的错误代码12"
 
-#: src/err-codes.h:266
+#: src/err-codes.h:306
 msgid "User defined error code 13"
 msgstr "用户定义的错误代码13"
 
-#: src/err-codes.h:267
+#: src/err-codes.h:307
 msgid "User defined error code 14"
 msgstr "用户定义的错误代码14"
 
-#: src/err-codes.h:268
+#: src/err-codes.h:308
 msgid "User defined error code 15"
 msgstr "用户定义的错误代码15"
 
-#: src/err-codes.h:269
+#: src/err-codes.h:309
 msgid "User defined error code 16"
 msgstr "用户定义的错误代码16"
 
-#: src/err-codes.h:270
+#: src/err-codes.h:310
 msgid "System error w/o errno"
 msgstr ""
 
-#: src/err-codes.h:271
+#: src/err-codes.h:311
 msgid "Unknown system error"
 msgstr "未知的系统错误"
 
-#: src/err-codes.h:272
+#: src/err-codes.h:312
 msgid "End of file"
 msgstr "文件结尾"
 
-#: src/err-codes.h:273
+#: src/err-codes.h:313
 msgid "Unknown error code"
 msgstr "未知的错误代码"
 
-#: src/gpg-error.c:392
+#: src/gpg-error.c:388
 #, c-format
 msgid "Usage: %s GPG-ERROR [...]\n"
 msgstr ""
 
-#: src/gpg-error.c:448
+#: src/gpg-error.c:444
 #, c-format
 msgid "%s: warning: could not recognize %s\n"
 msgstr "%s：警告：无法识别 %s\n"

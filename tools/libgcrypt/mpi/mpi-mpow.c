@@ -21,10 +21,10 @@
 #include <config.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "mpi-internal.h"
 #include "longlong.h"
 #include "g10lib.h"
-#include <assert.h>
 
 
 /* Barrett is slower than the classical way.  It can be tweaked by
@@ -39,7 +39,7 @@ static void barrett_mulm( gcry_mpi_t w, gcry_mpi_t u, gcry_mpi_t v, gcry_mpi_t m
 static gcry_mpi_t init_barrett( gcry_mpi_t m, int *k, gcry_mpi_t *r1, gcry_mpi_t *r2 );
 static int calc_barrett( gcry_mpi_t r, gcry_mpi_t x, gcry_mpi_t m, gcry_mpi_t y, int k, gcry_mpi_t r1, gcry_mpi_t r2  );
 #else
-#define barrett_mulm( w, u, v, m, y, k, r1, r2 ) gcry_mpi_mulm( (w), (u), (v), (m) )
+#define barrett_mulm( w, u, v, m, y, k, r1, r2 ) _gcry_mpi_mulm( (w), (u), (v), (m) )
 #endif
 
 
@@ -77,7 +77,7 @@ _gcry_mpi_mulpowm( gcry_mpi_t res, gcry_mpi_t *basearray, gcry_mpi_t *exparray, 
 
     for(k=0; basearray[k]; k++ )
 	;
-    assert(k);
+    gcry_assert(k);
     for(t=0, i=0; (tmp=exparray[i]); i++ ) {
 	/*log_mpidump("exp: ", tmp );*/
 	j = mpi_get_nbits(tmp);
@@ -85,11 +85,11 @@ _gcry_mpi_mulpowm( gcry_mpi_t res, gcry_mpi_t *basearray, gcry_mpi_t *exparray, 
 	    t = j;
     }
     /*log_mpidump("mod: ", m );*/
-    assert(i==k);
-    assert(t);
-    assert( k < 10 );
+    gcry_assert (i==k);
+    gcry_assert (t);
+    gcry_assert (k < 10);
 
-    G = gcry_xcalloc( (1<<k) , sizeof *G );
+    G = xcalloc( (1<<k) , sizeof *G );
 #ifdef USE_BARRETT
     barrett_y = init_barrett( m, &barrett_k, &barrett_r1, &barrett_r2 );
 #endif
@@ -100,7 +100,7 @@ _gcry_mpi_mulpowm( gcry_mpi_t res, gcry_mpi_t *basearray, gcry_mpi_t *exparray, 
 	barrett_mulm(tmp, res, res, m, barrett_y, barrett_k,
 				       barrett_r1, barrett_r2 );
 	idx = build_index( exparray, k, i, t );
-	assert( idx >= 0 && idx < (1<<k) );
+	gcry_assert (idx >= 0 && idx < (1<<k));
 	if( !G[idx] ) {
 	    if( !idx )
 		 G[0] = mpi_alloc_set_ui( 1 );
@@ -130,7 +130,7 @@ _gcry_mpi_mulpowm( gcry_mpi_t res, gcry_mpi_t *basearray, gcry_mpi_t *exparray, 
 #endif
     for(i=0; i < (1<<k); i++ )
 	mpi_free(G[i]);
-    gcry_free(G);
+    xfree(G);
 }
 
 
@@ -204,7 +204,7 @@ calc_barrett( gcry_mpi_t r, gcry_mpi_t x, gcry_mpi_t m, gcry_mpi_t y, int k, gcr
 	r2->nlimbs = k+1;
     mpi_sub( r, r1, r2 );
 
-    if( mpi_is_neg( r ) ) {
+    if( mpi_has_sign (r) ) {
 	gcry_mpi_t tmp;
 
 	tmp = mpi_alloc( k + 2 );
@@ -221,4 +221,3 @@ calc_barrett( gcry_mpi_t r, gcry_mpi_t x, gcry_mpi_t m, gcry_mpi_t y, int k, gcr
     return 0;
 }
 #endif /* USE_BARRETT */
-

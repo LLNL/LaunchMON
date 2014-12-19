@@ -1,4 +1,4 @@
-# Copyright (C) 2001, 2002, 2003 Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2003, 2005 Free Software Foundation, Inc.
 #
 # This file is part of Libgcrypt.
 #
@@ -18,12 +18,45 @@
 
 ## Process this file with automake to produce Makefile.in
 
-TESTS = prime register ac basic tsexp keygen pubkey benchmark
+tests_bin = \
+        version mpitests tsexp t-convert \
+	t-mpi-bit t-mpi-point curves t-lock \
+	prime basic keygen pubkey hmac hashtest t-kdf keygrip \
+	fips186-dsa aeswrap pkcs1v2 random dsa-rfc6979 t-ed25519
 
-INCLUDES = -I$(top_srcdir)/src
-LDADD = ../src/libgcrypt.la
+tests_bin_last = benchmark bench-slope
 
-EXTRA_PROGRAMS = testapi
-noinst_PROGRAMS = $(TESTS)
+tests_sh =
 
-AM_CFLAGS = @GPG_ERROR_CFLAGS@
+tests_sh_last = hashtest-256g
+
+TESTS = $(tests_bin) $(tests_sh) $(tests_bin_last) $(tests_sh_last)
+
+# Force sequential run of some tests.
+bench-slope.log:    benchmark.log
+hashtest-256g.log:  bench-slope.log
+
+
+TESTS_ENVIRONMENT = GCRYPT_IN_REGRESSION_TEST=1
+
+
+# Need to include ../src in addition to top_srcdir because gcrypt.h is
+# a built header.
+AM_CPPFLAGS = -I../src -I$(top_srcdir)/src
+AM_CFLAGS = $(GPG_ERROR_CFLAGS)
+AM_LDFLAGS = -no-install
+
+default_ldadd = \
+	../src/libgcrypt.la $(DL_LIBS) \
+        ../compat/libcompat.la $(GPG_ERROR_LIBS)
+
+EXTRA_PROGRAMS = testapi pkbench
+noinst_PROGRAMS = $(tests_bin) $(tests_bin_last) fipsdrv rsacvt genhashdata
+noinst_HEADERS = t-common.h
+
+EXTRA_DIST = README rsa-16k.key cavs_tests.sh cavs_driver.pl \
+	     pkcs1v2-oaep.h pkcs1v2-pss.h pkcs1v2-v15c.h pkcs1v2-v15s.h \
+	     t-ed25519.inp stopwatch.h hashtest-256g.in
+
+LDADD = $(default_ldadd) $(LIBTHREAD)
+t_lock_LDADD = $(default_ldadd) $(LIBMULTITHREAD)

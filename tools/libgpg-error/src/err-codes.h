@@ -9,12 +9,12 @@
    modify it under the terms of the GNU Lesser General Public License
    as published by the Free Software Foundation; either version 2.1 of
    the License, or (at your option) any later version.
- 
+
    libgpg-error is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
    Lesser General Public License for more details.
- 
+
    You should have received a copy of the GNU Lesser General Public
    License along with libgpg-error; if not, write to the Free
    Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
@@ -103,7 +103,7 @@ static const char msgstr[] =
   gettext_noop ("Incomplete line") "\0"
   gettext_noop ("Invalid response") "\0"
   gettext_noop ("No agent running") "\0"
-  gettext_noop ("agent error") "\0"
+  gettext_noop ("Agent error") "\0"
   gettext_noop ("Invalid data") "\0"
   gettext_noop ("Unspecific Assuan server fault") "\0"
   gettext_noop ("General Assuan error") "\0"
@@ -211,6 +211,18 @@ static const char msgstr[] =
   gettext_noop ("Limit reached") "\0"
   gettext_noop ("Not initialized") "\0"
   gettext_noop ("Missing issuer certificate") "\0"
+  gettext_noop ("No keyserver available") "\0"
+  gettext_noop ("Invalid elliptic curve") "\0"
+  gettext_noop ("Unknown elliptic curve") "\0"
+  gettext_noop ("Duplicated key") "\0"
+  gettext_noop ("Ambiguous result") "\0"
+  gettext_noop ("No crypto context") "\0"
+  gettext_noop ("Wrong crypto context") "\0"
+  gettext_noop ("Bad crypto context") "\0"
+  gettext_noop ("Conflict in the crypto context") "\0"
+  gettext_noop ("Broken public key") "\0"
+  gettext_noop ("Broken secret key") "\0"
+  gettext_noop ("Invalid MAC algorithm") "\0"
   gettext_noop ("Operation fully cancelled") "\0"
   gettext_noop ("Operation not yet finished") "\0"
   gettext_noop ("Buffer too short") "\0"
@@ -227,6 +239,34 @@ static const char msgstr[] =
   gettext_noop ("Bad hexadecimal character in S-expression") "\0"
   gettext_noop ("Odd hexadecimal numbers in S-expression") "\0"
   gettext_noop ("Bad octal character in S-expression") "\0"
+  gettext_noop ("No certificate chain") "\0"
+  gettext_noop ("Certificate is too large") "\0"
+  gettext_noop ("Invalid record") "\0"
+  gettext_noop ("The MAC does not verify") "\0"
+  gettext_noop ("Unexpected message") "\0"
+  gettext_noop ("Compression or decompression failed") "\0"
+  gettext_noop ("A counter would wrap") "\0"
+  gettext_noop ("Fatal alert message received") "\0"
+  gettext_noop ("No cipher algorithm") "\0"
+  gettext_noop ("Missing client certificate") "\0"
+  gettext_noop ("Close notification received") "\0"
+  gettext_noop ("Ticket expired") "\0"
+  gettext_noop ("Bad ticket") "\0"
+  gettext_noop ("Unknown identity") "\0"
+  gettext_noop ("Bad certificate message in handshake") "\0"
+  gettext_noop ("Bad certificate request message in handshake") "\0"
+  gettext_noop ("Bad certificate verify message in handshake") "\0"
+  gettext_noop ("Bad change cipher messsage in handshake") "\0"
+  gettext_noop ("Bad client hello message in handshake") "\0"
+  gettext_noop ("Bad server hello message in handshake") "\0"
+  gettext_noop ("Bad server hello done message in hanshake") "\0"
+  gettext_noop ("Bad finished message in handshake") "\0"
+  gettext_noop ("Bad server key exchange message in handshake") "\0"
+  gettext_noop ("Bad client key exchange message in handshake") "\0"
+  gettext_noop ("Bogus string") "\0"
+  gettext_noop ("Key disabled") "\0"
+  gettext_noop ("Not possible with a card based key") "\0"
+  gettext_noop ("Invalid lock object") "\0"
   gettext_noop ("General IPC error") "\0"
   gettext_noop ("IPC accept call failed") "\0"
   gettext_noop ("IPC connect call failed") "\0"
@@ -461,76 +501,117 @@ static const int msgidx[] =
     3158,
     3174,
     3201,
-    3227,
-    3254,
-    3271,
-    3312,
-    3344,
-    3382,
+    3224,
+    3247,
+    3270,
+    3285,
+    3302,
+    3320,
+    3341,
+    3360,
+    3391,
     3409,
-    3439,
-    3469,
-    3497,
-    3534,
-    3558,
-    3606,
-    3648,
-    3688,
-    3724,
-    3742,
-    3765,
-    3789,
-    3810,
-    3838,
-    3868,
+    3427,
+    3449,
+    3475,
+    3502,
+    3519,
+    3560,
+    3592,
+    3630,
+    3657,
+    3687,
+    3717,
+    3745,
+    3782,
+    3806,
+    3854,
     3896,
-    3916,
-    3940,
-    3967,
-    3985,
-    4003,
-    4031,
-    4046,
-    4062,
-    4090,
-    4113,
+    3936,
+    3972,
+    3993,
+    4018,
+    4033,
+    4057,
+    4076,
+    4112,
     4133,
-    4150,
-    4178,
-    4202,
-    4227,
-    4247,
-    4267,
-    4293,
-    4319,
-    4345,
-    4371,
-    4397,
-    4423,
-    4449,
-    4475,
-    4501,
-    4528,
-    4555,
-    4582,
-    4609,
-    4636,
-    4663,
-    4690,
-    4713,
-    4734,
-    4746
+    4162,
+    4182,
+    4209,
+    4237,
+    4252,
+    4263,
+    4280,
+    4317,
+    4362,
+    4406,
+    4446,
+    4484,
+    4522,
+    4564,
+    4598,
+    4643,
+    4688,
+    4701,
+    4714,
+    4749,
+    4769,
+    4787,
+    4810,
+    4834,
+    4855,
+    4883,
+    4913,
+    4941,
+    4961,
+    4985,
+    5012,
+    5030,
+    5048,
+    5076,
+    5091,
+    5107,
+    5135,
+    5158,
+    5178,
+    5195,
+    5223,
+    5247,
+    5272,
+    5292,
+    5312,
+    5338,
+    5364,
+    5390,
+    5416,
+    5442,
+    5468,
+    5494,
+    5520,
+    5546,
+    5573,
+    5600,
+    5627,
+    5654,
+    5681,
+    5708,
+    5735,
+    5758,
+    5779,
+    5791
   };
 
-static inline int
+static GPG_ERR_INLINE int
 msgidxof (int code)
 {
   return (0 ? 0
-  : ((code >= 0) && (code <= 185)) ? (code - 0)
-  : ((code >= 198) && (code <= 213)) ? (code - 12)
-  : ((code >= 257) && (code <= 271)) ? (code - 55)
-  : ((code >= 273) && (code <= 281)) ? (code - 56)
-  : ((code >= 1024) && (code <= 1039)) ? (code - 798)
-  : ((code >= 16381) && (code <= 16383)) ? (code - 16139)
-  : 16384 - 16139);
+  : ((code >= 0) && (code <= 213)) ? (code - 0)
+  : ((code >= 226) && (code <= 250)) ? (code - 12)
+  : ((code >= 252) && (code <= 254)) ? (code - 13)
+  : ((code >= 257) && (code <= 271)) ? (code - 15)
+  : ((code >= 273) && (code <= 281)) ? (code - 16)
+  : ((code >= 1024) && (code <= 1039)) ? (code - 758)
+  : ((code >= 16381) && (code <= 16383)) ? (code - 16099)
+  : 16384 - 16099);
 }

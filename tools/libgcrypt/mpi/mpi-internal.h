@@ -92,7 +92,7 @@ typedef int mpi_size_t;        /* (must be a signed type) */
     do {				\
 	mpi_size_t _i;			\
 	for( _i = 0; _i < (n); _i++ )	\
-	    (d)[_i] = (d)[_i];		\
+	    (d)[_i] = (s)[_i];		\
     } while (0)
 
 #define MPN_COPY_DECR( d, s, n ) \
@@ -145,7 +145,8 @@ typedef int mpi_size_t;        /* (must be a signed type) */
  */
 #define UDIV_QRNND_PREINV(q, r, nh, nl, d, di) \
     do {							    \
-	mpi_limb_t _q, _ql, _r; 				    \
+        mpi_limb_t _ql GCC_ATTR_UNUSED;                               \
+	mpi_limb_t _q, _r;                                          \
 	mpi_limb_t _xh, _xl;					    \
 	umul_ppmm (_q, _ql, (nh), (di));			    \
 	_q += (nh);	/* DI is 2**BITS_PER_MPI_LIMB too small */  \
@@ -175,6 +176,9 @@ void _gcry_mpi_free_limb_space( mpi_ptr_t a, unsigned int nlimbs );
 void _gcry_mpi_assign_limb_space( gcry_mpi_t a, mpi_ptr_t ap, unsigned nlimbs );
 
 /*-- mpi-bit.c --*/
+#define mpi_rshift_limbs(a,n)  _gcry_mpi_rshift_limbs ((a), (n))
+#define mpi_lshift_limbs(a,n)  _gcry_mpi_lshift_limbs ((a), (n))
+
 void _gcry_mpi_rshift_limbs( gcry_mpi_t a, unsigned int count );
 void _gcry_mpi_lshift_limbs( gcry_mpi_t a, unsigned int count );
 
@@ -272,4 +276,3 @@ mpi_limb_t _gcry_mpih_rshift( mpi_ptr_t wp, mpi_ptr_t up, mpi_size_t usize,
 #endif
 
 #endif /*G10_MPI_INTERNAL_H*/
-
