@@ -85,8 +85,8 @@ template <BASE_SYMTAB_TEMPLATELIST>
 symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::symbol_base_t (
                  const std::string &n, 
 		 const std::string &bln, 
-		 const VA rd=SYMTAB_UNINIT_ADDR, 
-		 const VA rla=SYMTAB_UNINIT_ADDR )
+		 const VA rd,
+		 const VA rla)
 {
   name = n;
   base_lib_name = bln;

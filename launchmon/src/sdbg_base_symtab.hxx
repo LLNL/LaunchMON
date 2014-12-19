@@ -118,11 +118,14 @@ public:
   // constructosr & destructor
   //
   symbol_base_t ();
+
   symbol_base_t ( const std::string &n, 
 		  const std::string &bln, 
-		  const VA rd, 
-		  const VA rla);
+		  const VA rd=SYMTAB_UNINIT_ADDR,
+		  const VA rla=SYMTAB_UNINIT_ADDR);
+
   symbol_base_t ( const symbol_base_t &sobj ); 
+
   virtual ~symbol_base_t();
 
   //

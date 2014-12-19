@@ -794,7 +794,7 @@ tracer_error_e
 linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_unsetoptions ( 
                  process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
 		 bool use_cxt, 
-		 pid_t newtid=-1 ) throw (linux_tracer_exception_t)
+		 pid_t newtid) throw (linux_tracer_exception_t)
 {
   using namespace std;
 
@@ -838,7 +838,7 @@ tracer_error_e
 linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setoptions ( 
                  process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
 		 bool use_cxt, 
-		 pid_t newtid=-1 ) throw (linux_tracer_exception_t)
+		 pid_t newtid) throw (linux_tracer_exception_t)
 {
   using namespace std;
 
@@ -886,7 +886,7 @@ tracer_error_e
 linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_attach ( 
                  process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, 
 		 bool use_cxt, 
-		 pid_t newtid=-1 ) throw (linux_tracer_exception_t)
+		 pid_t newtid) throw (linux_tracer_exception_t)
 {
   using namespace std;
   
