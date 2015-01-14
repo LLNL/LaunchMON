@@ -50,8 +50,8 @@
 self_trace_t &
 self_trace_t::self_trace(void)
 {
-    static self_trace_t *singleton = new self_trace_t();
-    return *singleton;
+    static self_trace_t singleton;
+    return singleton;
 }
 
 FILE *self_trace_t::tracefptr = stdout;
