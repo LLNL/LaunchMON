@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Feb 20 2015 andrewg@cray.com: Added support for RMs that build the
+ *                         proctable on demand. Fixed a misplaced brace bug.
  *        Oct 26 2012 DHA: Removed catch clauses for deprecated thread tracers 
  *                         exceptions.
  *        Jul 31 2012 DHA: Added a fix for a thread race-related hang problem.
@@ -1030,13 +1032,13 @@ linux_launchmon_t::acquire_proctable (
                   // -1 is the init value that SLURM sets internally 
                   // for "totalview_jobid"
                   if ( get_resid() == -1 )
-	           {
-	             self_trace_t::trace ( LEVELCHK(level1),
-	               MODULENAME, 1,
-	               "resource ID is not valid!");
+	                {
+	                  self_trace_t::trace ( LEVELCHK(level1),
+	                  MODULENAME, 1,
+	                  "resource ID is not valid!");
 
-	             return LAUNCHMON_FAILED;
-	           }
+	                  return LAUNCHMON_FAILED;
+	                }
                 }
               else if (r_mgr.get_job_id().dtype == integer32)
                 {
@@ -1051,12 +1053,12 @@ linux_launchmon_t::acquire_proctable (
                   set_resid(int_val);
                   p.set_rid(get_resid());
                 }
+            }
           else if (p.get_myopts()->get_my_rmconfig()->is_rid_via_pid())
             {
               set_resid (p.get_pid(false));
               p.set_rid (get_resid());
             }
-        }
       }
 
 
@@ -2014,21 +2016,32 @@ linux_launchmon_t::handle_trap_after_attach_event (
       else
         {
            //
-           // Without MPIR Colocation service, you would have
-           // Proctable available on attach and you would be 
-           // ready to launch daemon at this point
-           // 
-           // 
-           acquire_proctable ( p, use_cxt );
-           ship_proctab_msg ( lmonp_proctable_avail );
-           ship_resourcehandle_msg ( lmonp_resourcehandle_avail, get_resid() );
-	   ship_rminfo_msg ( lmonp_rminfo,
-			     (int) p.get_pid(false),
-			      p.rmgr()->get_resource_manager().get_rm());
-           say_fetofe_msg ( lmonp_stop_at_first_attach );
-           launch_tool_daemons(p);
-	   get_tracer()->tracer_continue (p, use_cxt);
-        }
+           // Some RMs will build the Proctable on demand. If so, continue until
+           // the MPIR_Breakpoint is hit.
+           //
+           if (p.rmgr()->is_cont_on_att())
+             {
+               get_tracer()->tracer_continue (p, use_cxt);
+             }
+           else
+             {
+               //
+               // Without MPIR Colocation service, you would have
+               // Proctable available on attach and you would be 
+               // ready to launch daemon at this point
+               // 
+               // 
+               acquire_proctable ( p, use_cxt );
+               ship_proctab_msg ( lmonp_proctable_avail );
+               ship_resourcehandle_msg ( lmonp_resourcehandle_avail, get_resid() );
+               ship_rminfo_msg ( lmonp_rminfo,
+                                 (int) p.get_pid(false),
+                                 p.rmgr()->get_resource_manager().get_rm());
+               say_fetofe_msg ( lmonp_stop_at_first_attach );
+               launch_tool_daemons(p);
+               get_tracer()->tracer_continue (p, use_cxt);
+             }
+         }
 
       {
 	self_trace_t::trace ( 

@@ -26,6 +26,7 @@
  *-------------------------------------------------------------------------------- 
  *
  *  Update Log:
+ *        Feb 20 2015 andrewg@cray.com: Added Cray support.
  *        Dec 07 2012 DHA: init_rm_instance returns a meaningful return code
  *        Oct 06 2011 DHA: Restructuring to support
  *                         runtime detection of target resource managers
@@ -62,6 +63,7 @@
 
 enum mpir_catalogue_e {
   standard,
+  x_cray,
   x_coloc,
   x_fifo,
   x_coloc_fifo,
@@ -287,6 +289,8 @@ public:
   bool is_coloc_sup();
 
   bool is_attfifo_sup();
+  
+  bool is_cont_on_att();
 
   bool is_rid_sup();
 

@@ -1,3 +1,6 @@
+2015-02-20 Andrew Gontarek <andrewg@cray.com>
+    o Added Cray XE/XK/XC support. Created new Cray fork.
+
 2014-05-30 Dong H. Ahn <ahn1@llnl.gov>
 	o LaunchMON version 1.0.1 released. Please see NEWS 
 

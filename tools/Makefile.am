@@ -45,7 +45,7 @@ endif
   OPT_GPG = libgpg-error
 OPT_HANDSHAKE = handshake
 
-SUBDIRS =  $(OPT_HANDSHAKE) $(OPT_COBO) $(OPT_CIOD) $(OPT_ALPS) $(OPT_GPG)
+SUBDIRS =  $(OPT_GPG) $(OPT_HANDSHAKE) $(OPT_COBO) $(OPT_CIOD) $(OPT_ALPS)
 
 all-local:
 	if test -f libgcrypt/Makefile; then \
