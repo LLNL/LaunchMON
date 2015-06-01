@@ -56,6 +56,9 @@
 
 #include <iostream>
 
+//include inih files
+#include "ini_reader.h"
+
 #include "sdbg_rm_map.hxx"
 
 
@@ -913,57 +916,30 @@ rc_rm_t::read_supported_rm_confs(const std::string &os_isa_string,
   bool plat_found = false;
   std::string a_line;
 
-  ri_conf.open(rm_info_conf_path.c_str());
-  if (ri_conf.is_open())
-    {
-       while (!ri_conf.eof())
-         {
-           ri_conf.getline(line_max, PATH_MAX);
-           if (ri_conf.bad() || ri_conf.fail())
-             {
-               self_trace_t::trace ( LEVELCHK(level1),
-                 MODULENAME,1,
-                 "getline enountered an error.");
+  //use inih reader
+  INIReader reader(rm_info_conf_path);
 
-               break;
-             }
+  if (reader.ParseError() < 0) {
+    self_trace_t::trace ( LEVELCHK(level1), MODULENAME, 1, "Conf INI file parsing error by INIH code.");
+  }
 
-           a_line = line_max;
+  std::string aggregate = reader.Get(os_isa_string, "file", "???");
 
-           if (a_line[0] == '#' || a_line[0] == '\0')
-             continue;
+  //check for no returned filenames
+  if (strcmp(aggregate.c_str(), "") == 0 || strcmp(aggregate.c_str(), "???" == 0))
+    return false;
 
-           if (!plat_found) 
-             {
-               if (a_line[0] == '[')
-                 {
-                   size_t ix = a_line.find_first_of(']', 1);
-                   if (ix != std::string::npos)
-                     {
-                       std::string found_os_isa = a_line.substr(1, ix-1);
-                       if (found_os_isa == os_isa_string)
-                         plat_found = true;
-                     }
-                   else
-                     {
-                       self_trace_t::trace ( LEVELCHK(level1),
-                         MODULENAME,1,
-                         "ill-formed line.");
-                     }
-                  }
-             }
-           else
-             {
-               if (a_line[0] == '[')
-                 break; // OK, done with parsing for my platform
-               supported_rm_fnames.push_back(a_line);
-               found = true;
-             }
-         }
-       ri_conf.close();
-    }
+  char * input = strdup(aggregate.c_str());
+  char * pch;
+  const char delimiter = '\n';
+  pch = strtok(input, &delimiter);
 
-  return found;
+  while (pch != NULL) {
+    supported_rm_fnames.push_back(pch);
+    pch = strtok(NULL, &delimiter);
+  }
+
+  return true;
 }
 
 
