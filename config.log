@@ -1307,7 +1307,7 @@ configure:20075: $? = 0
 configure:20097: result: yes
 configure:20106: checking for _doprnt
 configure:20162: gcc -o conftest -g    conftest.c  >&5
-/var/tmp/liu50/ccKbk7fx.o: In function `main':
+/var/tmp/liu50/ccF5xMix.o: In function `main':
 /g/g19/liu50/workspace/launchmon-dev/conftest.c:107: undefined reference to `_doprnt'
 collect2: ld returned 1 exit status
 configure:20169: $? = 1

@@ -994,6 +994,7 @@ rc_rm_t::parse_and_fill_rm(const std::string &rm_conf_path,
   };
 
   int i;
+  std::string beach; 
   for (i = 0; i < 10; i++) {
     std::string aggregate = reader.Get(section, keys[i], "");
 
@@ -1008,10 +1009,18 @@ rc_rm_t::parse_and_fill_rm(const std::string &rm_conf_path,
     if (token.empty())
       continue;
 
+    /*
+    for (std::vector<std::string>::const_iterator c_i = token.begin(); c_i != token.end(); c_i++) {
+      std::cout << keys[i] << ":" << *c_i << "\n";
+    }
+    */
+
     //actions based on index in keys[]
     switch (i) {
       case 0:
         a_rm.fill_rm_type(token.front());
+        beach = token.front();
+
         break;
       case 1:
         a_rm.fill_rm_type(token.front());
@@ -1045,7 +1054,9 @@ rc_rm_t::parse_and_fill_rm(const std::string &rm_conf_path,
         break;
     }
   }  
-
+  //we must re-set the rm type afterwards for some reason or else execvp will not start for tests
+  a_rm.fill_rm_type(beach);
+ 
   return false;
 }
 

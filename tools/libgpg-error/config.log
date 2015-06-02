@@ -64,7 +64,7 @@ configure:2963: result: x86_64-unknown-linux-gnu
 configure:2987: autobuild project... libgpg-error
 configure:2989: autobuild revision... 1.10
 configure:2993: autobuild hostname... cab670
-configure:3002: autobuild timestamp... 20150602-105546
+configure:3002: autobuild timestamp... 20150602-143702
 configure:3056: checking for gcc
 configure:3072: found /usr/local/bin/gcc
 configure:3083: result: gcc
