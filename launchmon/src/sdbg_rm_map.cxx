@@ -910,6 +910,9 @@ rc_rm_t::read_supported_rm_confs(const std::string &os_isa_string,
                  const std::string &rm_info_conf_path,
                  std::vector<std::string> &supported_rm_fnames)
 {
+std::cout << "POINT" << "\n";
+  printf("POINT\n");
+
   std::ifstream ri_conf;
   char line_max[PATH_MAX];
   bool found = false;
@@ -928,6 +931,9 @@ rc_rm_t::read_supported_rm_confs(const std::string &os_isa_string,
   //check for no returned filenames
   if (strcmp(aggregate.c_str(), "") == 0 || strcmp(aggregate.c_str(), "???" == 0))
     return false;
+
+  std::cout << aggregate << "\n";
+  printf("%s\n", aggregate.c_str());
 
   char * input = strdup(aggregate.c_str());
   char * pch;

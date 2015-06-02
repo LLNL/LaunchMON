@@ -63,6 +63,9 @@ libmonfeapi_la_SOURCES       = lmon_fe.cxx \
                                lmon_lmonp_msg.cxx \
                                lmon_coloc_spawner.cxx \
                                lmon_say_msg.cxx \
+			       ../../ini_reader.cpp \
+			       ../../ini_reader.h \
+			       ../../ini.c \
                                ../../sdbg_rm_map.cxx \
                                ../../sdbg_self_trace.cxx \
                                ../../sdbg_opt.cxx \

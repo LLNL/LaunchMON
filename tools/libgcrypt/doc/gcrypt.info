@@ -1,4 +1,4 @@
-This is gcrypt.info, produced by makeinfo version 4.8 from gcrypt.texi.
+This is gcrypt.info, produced by makeinfo version 4.13 from gcrypt.texi.
 
 INFO-DIR-SECTION GNU Libraries
 START-INFO-DIR-ENTRY
@@ -1422,8 +1422,8 @@ File: gcrypt.info,  Node: Hashing,  Next: Public Key cryptography (I),  Prev: Sy
 *********
 
 Libgcrypt provides an easy and consistent to use interface for hashing.
-Hashing is buffered and several hash algorithms can be updated at
-once.  It is possible to calculate a MAC using the same routines.  The
+Hashing is buffered and several hash algorithms can be updated at once.
+It is possible to calculate a MAC using the same routines.  The
 programming model follows an open/process/close paradigm and is in that
 similar to other building blocks provided by Libgcrypt.
 
@@ -4606,38 +4606,38 @@ Function and Data Index
 
 
 Tag Table:
-Node: Top741
-Node: Introduction6184
-Node: Getting Started6558
-Node: Features7444
-Node: Overview8234
-Node: Preparation8882
-Node: Header9681
-Node: Building sources10564
-Node: Building sources using Automake12486
-Node: Initializing the library13667
-Node: Multi Threading14710
-Ref: Multi Threading-Footnote-117311
-Node: Generalities17719
-Node: Controlling the library18045
-Node: Modules18430
-Node: Error Handling19208
-Node: Error Values21733
-Node: Error Sources26676
-Node: Error Codes28947
-Node: Error Strings31908
-Node: Handler Functions33060
-Node: Progress handler33619
-Node: Allocation handler35566
-Node: Error handler36856
-Node: Logging handler37913
-Node: Symmetric cryptography38419
-Node: Available ciphers39208
-Node: Cipher modules41112
-Node: Available cipher modes45636
-Node: Working with cipher handles46315
-Node: General cipher functions54227
-Node: Hashing56704
+Node: Top742
+Node: Introduction6185
+Node: Getting Started6559
+Node: Features7445
+Node: Overview8235
+Node: Preparation8883
+Node: Header9682
+Node: Building sources10565
+Node: Building sources using Automake12487
+Node: Initializing the library13668
+Node: Multi Threading14711
+Ref: Multi Threading-Footnote-117312
+Node: Generalities17720
+Node: Controlling the library18046
+Node: Modules18431
+Node: Error Handling19209
+Node: Error Values21734
+Node: Error Sources26677
+Node: Error Codes28948
+Node: Error Strings31909
+Node: Handler Functions33061
+Node: Progress handler33620
+Node: Allocation handler35567
+Node: Error handler36857
+Node: Logging handler37914
+Node: Symmetric cryptography38420
+Node: Available ciphers39209
+Node: Cipher modules41113
+Node: Available cipher modes45637
+Node: Working with cipher handles46316
+Node: General cipher functions54228
+Node: Hashing56705
 Node: Available hash algorithms57509
 Node: Hash algorithm modules59536
 Node: Working with hash algorithms63383
