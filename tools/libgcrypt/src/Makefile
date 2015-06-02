@@ -67,7 +67,7 @@ CC = gcc
 CCAS = $(CC)
 CCASFLAGS = $(CFLAGS)
 CCDEPMODE = depmode=gcc3
-CFLAGS = -g -O2 -Wall
+CFLAGS = -g  -Wall
 CPP = gcc -E
 CPPFLAGS = 
 CROSS_COMPILING_FALSE = 
@@ -75,7 +75,7 @@ CROSS_COMPILING_TRUE = #
 CXX = g++
 CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -g -O2
+CXXFLAGS = -g 
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps

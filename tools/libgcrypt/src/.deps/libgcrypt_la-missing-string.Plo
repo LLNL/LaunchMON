@@ -11,8 +11,8 @@ libgcrypt_la-missing-string.lo: missing-string.c ../config.h \
  /usr/include/sys/select.h /usr/include/bits/select.h \
  /usr/include/bits/sigset.h /usr/include/bits/time.h \
  /usr/include/sys/sysmacros.h /usr/include/bits/pthreadtypes.h \
- /usr/include/alloca.h /usr/include/string.h /usr/include/bits/string.h \
- /usr/include/bits/string2.h /usr/include/ctype.h g10lib.h gcrypt.h \
+ /usr/include/alloca.h /usr/include/string.h /usr/include/ctype.h \
+ g10lib.h gcrypt.h \
  /usr/lib/gcc/x86_64-redhat-linux/4.4.7/include/stdarg.h \
  /g/g19/liu50/bin/cab/include/gpg-error.h /usr/include/sys/socket.h \
  /usr/include/sys/uio.h /usr/include/bits/uio.h \
@@ -72,10 +72,6 @@ libgcrypt_la-missing-string.lo: missing-string.c ../config.h \
 /usr/include/alloca.h:
 
 /usr/include/string.h:
-
-/usr/include/bits/string.h:
-
-/usr/include/bits/string2.h:
 
 /usr/include/ctype.h:
 

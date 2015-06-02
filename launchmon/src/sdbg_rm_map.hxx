@@ -230,7 +230,7 @@ public:
   void fill_launcher_id(const std::vector<std::string> &vect);
   void fill_id(rm_id_t &id, const std::string &v);
   void fill_fail_detection(const std::string &vect);
-  void fill_kill_singals(const std::string &v);
+  void fill_kill_signals(const std::string &v);
   void fill_launcher_so(const std::string &v);
   void fill_launch_helper(const std::string &v);
   void fill_launch_string(const std::string &v);

@@ -8,16 +8,14 @@ libgcrypt_la-module.lo: module.c /usr/include/assert.h \
  /usr/lib/gcc/x86_64-redhat-linux/4.4.7/include/stdarg.h \
  /usr/include/string.h \
  /usr/lib/gcc/x86_64-redhat-linux/4.4.7/include/stddef.h \
- /usr/include/xlocale.h /usr/include/bits/string.h \
- /usr/include/bits/string2.h /usr/include/endian.h \
+ /usr/include/xlocale.h /g/g19/liu50/bin/cab/include/gpg-error.h \
+ /usr/include/sys/types.h /usr/include/bits/types.h \
+ /usr/include/bits/typesizes.h /usr/include/time.h /usr/include/endian.h \
  /usr/include/bits/endian.h /usr/include/bits/byteswap.h \
- /usr/include/bits/types.h /usr/include/bits/typesizes.h \
- /usr/include/stdlib.h /g/g19/liu50/bin/cab/include/gpg-error.h \
- /usr/include/sys/types.h /usr/include/time.h /usr/include/sys/select.h \
- /usr/include/bits/select.h /usr/include/bits/sigset.h \
- /usr/include/bits/time.h /usr/include/sys/sysmacros.h \
- /usr/include/bits/pthreadtypes.h /usr/include/sys/socket.h \
- /usr/include/sys/uio.h /usr/include/bits/uio.h \
+ /usr/include/sys/select.h /usr/include/bits/select.h \
+ /usr/include/bits/sigset.h /usr/include/bits/time.h \
+ /usr/include/sys/sysmacros.h /usr/include/bits/pthreadtypes.h \
+ /usr/include/sys/socket.h /usr/include/sys/uio.h /usr/include/bits/uio.h \
  /usr/include/bits/socket.h /usr/include/bits/sockaddr.h \
  /usr/include/asm/socket.h /usr/include/asm-generic/socket.h \
  /usr/include/asm/sockios.h /usr/include/asm-generic/sockios.h \
@@ -61,27 +59,21 @@ gcrypt.h:
 
 /usr/include/xlocale.h:
 
-/usr/include/bits/string.h:
+/g/g19/liu50/bin/cab/include/gpg-error.h:
 
-/usr/include/bits/string2.h:
+/usr/include/sys/types.h:
+
+/usr/include/bits/types.h:
+
+/usr/include/bits/typesizes.h:
+
+/usr/include/time.h:
 
 /usr/include/endian.h:
 
 /usr/include/bits/endian.h:
 
 /usr/include/bits/byteswap.h:
-
-/usr/include/bits/types.h:
-
-/usr/include/bits/typesizes.h:
-
-/usr/include/stdlib.h:
-
-/g/g19/liu50/bin/cab/include/gpg-error.h:
-
-/usr/include/sys/types.h:
-
-/usr/include/time.h:
 
 /usr/include/sys/select.h:
 
