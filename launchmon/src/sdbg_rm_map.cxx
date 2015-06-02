@@ -61,6 +61,21 @@
 
 #include "sdbg_rm_map.hxx"
 
+///////////////////////////////////////////////////////////////////
+//                                                               //
+// PRIVATE METHOD using stringstream to tokenize                 //
+//                                                               //
+///////////////////////////////////////////////////////////////////
+
+std::vector<std::string>splitByDelimiter(std::string toSplit, const char delimiter) {
+  std::istringstream split(toSplit);
+  std::vector<std::string> token;
+  std::string each;
+  while (std::getline(split, each, delimiter)) {
+    token.push_back(each);
+  }
+  return token;
+}
 
 ///////////////////////////////////////////////////////////////////
 //                                                               //
@@ -300,30 +315,32 @@ resource_manager_t::fill_id(rm_id_t &target_id, const std::string &v)
   std::string id = na;
   std::string dt = na;
 
-  size_t ix = v.find_first_of("|", 0);
-  if (ix != std::string::npos)
-    {
-      key = v.substr(0, ix);
-      size_t ix2 = v.find_first_of("|", ix+1);
-      if (ix2 != std::string::npos)
-        {
-          method = v.substr(ix+1, ix2-(ix+1));
-          size_t ix3 = v.find_first_of("|", ix2+1);
-          if (ix3 != std::string::npos)
-            {
-              id = v.substr(ix2+1, ix3-(ix2+1));
-              dt = v.substr(ix3+1, std::string::npos);
-            }
-          else
-            {
-              id = v.substr(ix2+1, std::string::npos);
-            }
-        }
-      else
-        {
-           method = v.substr(ix+1, std::string::npos);
-        }
+  //std::cout << v << "\n";
+  
+  std::vector<std::string> token = splitByDelimiter(v, '|');
+  int i = 0;
+  for (std::vector<std::string>::const_iterator c_i = token.begin(); c_i != token.end(); c_i++) { 
+    switch (i) {
+      case 0:
+        key = *c_i;
+        break;
+      case 1:
+        method = *c_i;
+        break;
+      case 2:
+        id = *c_i;
+        break;
+      case 3:
+        dt = *c_i;
+        break;
+      default:
+        std::cout << "Unknown part at end of " << v << "\n";
+        break;
     }
+    i++;
+  }
+
+  //std::cout << "NEW" << "\n" << key << "\n" << method << "\n" << id << "\n" << dt << "\n";
 
   if (key == std::string("RM_launcher"))
     {
@@ -879,7 +896,6 @@ rc_rm_t::set_resource_manager(const resource_manager_t &rmgr)
   resource_manager = rmgr;
 }
 
-
 ///////////////////////////////////////////////////////////////////
 //
 // PRIVATE METHODS of the rc_rm_t-related class
@@ -902,16 +918,6 @@ resource_manager_t::resolve_signal(const std::string &v)
     }
 
   return ret_sig;
-}
-
-std::vector<std::string>splitByDelimiter(std::string toSplit, const char delimiter) {
-  std::istringstream split(toSplit);
-  std::vector<std::string> token;
-  std::string each;
-  while (std::getline(split, each, delimiter)) {
-    token.push_back(each);
-  }
-  return token;
 }
 
 bool
