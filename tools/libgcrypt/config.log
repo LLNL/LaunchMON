@@ -1299,9 +1299,9 @@ configure:24206: $? = 0
 configure:24218: result: yes
 configure:24225: checking for _doprnt
 configure:24282: gcc -o conftest -g    conftest.c -lnsl  -lnsl >&5
-/var/tmp/liu50/ccJUkbMA.o: In function `main':
+/var/tmp/liu50/cc0W77OH.o: In function `main':
 /g/g19/liu50/workspace/launchmon-dev/tools/libgcrypt/conftest.c:85: undefined reference to `_doprnt'
-/var/tmp/liu50/ccJUkbMA.o:(.data+0x0): undefined reference to `_doprnt'
+/var/tmp/liu50/cc0W77OH.o:(.data+0x0): undefined reference to `_doprnt'
 collect2: ld returned 1 exit status
 configure:24288: $? = 1
 configure: failed program was:
@@ -1431,9 +1431,9 @@ configure:24513: $? = 0
 configure:24525: result: yes
 configure:24438: checking for stricmp
 configure:24495: gcc -o conftest -g    conftest.c -lnsl  -lnsl >&5
-/var/tmp/liu50/cciNWaKl.o: In function `main':
+/var/tmp/liu50/ccZRQ3jk.o: In function `main':
 /g/g19/liu50/workspace/launchmon-dev/tools/libgcrypt/conftest.c:89: undefined reference to `stricmp'
-/var/tmp/liu50/cciNWaKl.o:(.data+0x0): undefined reference to `stricmp'
+/var/tmp/liu50/ccZRQ3jk.o:(.data+0x0): undefined reference to `stricmp'
 collect2: ld returned 1 exit status
 configure:24501: $? = 1
 configure: failed program was:
@@ -1612,9 +1612,9 @@ configure:24724: $? = 0
 configure:24736: result: yes
 configure:24649: checking for gethrtime
 configure:24706: gcc -o conftest -g    conftest.c -lnsl  -lnsl >&5
-/var/tmp/liu50/ccYJsk2F.o: In function `main':
+/var/tmp/liu50/ccFwqEZv.o: In function `main':
 /g/g19/liu50/workspace/launchmon-dev/tools/libgcrypt/conftest.c:99: undefined reference to `gethrtime'
-/var/tmp/liu50/ccYJsk2F.o:(.data+0x0): undefined reference to `gethrtime'
+/var/tmp/liu50/ccFwqEZv.o:(.data+0x0): undefined reference to `gethrtime'
 collect2: ld returned 1 exit status
 configure:24712: $? = 1
 configure: failed program was:
@@ -1723,9 +1723,9 @@ configure: failed program was:
 configure:24736: result: no
 configure:24649: checking for clock_gettime
 configure:24706: gcc -o conftest -g    conftest.c -lnsl  -lnsl >&5
-/var/tmp/liu50/ccXWTjBP.o: In function `main':
+/var/tmp/liu50/cceVqdHD.o: In function `main':
 /g/g19/liu50/workspace/launchmon-dev/tools/libgcrypt/conftest.c:99: undefined reference to `clock_gettime'
-/var/tmp/liu50/ccXWTjBP.o:(.data+0x0): undefined reference to `clock_gettime'
+/var/tmp/liu50/cceVqdHD.o:(.data+0x0): undefined reference to `clock_gettime'
 collect2: ld returned 1 exit status
 configure:24712: $? = 1
 configure: failed program was:
