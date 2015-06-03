@@ -10,13 +10,13 @@
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 # General.
-prefix="/g/g0/dahn/svnwork/hera"
+prefix="/g/g19/liu50/bin/cab"
 exec_prefix="${prefix}"
 version="1.2.0"
 includedir="${prefix}/include"
 libdir="${exec_prefix}/lib"
-gpg_error_libs="-L/g/g0/dahn/svnwork/hera/lib -L/g/g0/dahn/svnwork/launchmon-0.6.4/tools/libgpg-error/src -lgpg-error"
-gpg_error_cflags="-I/g/g0/dahn/svnwork/hera/include -I/g/g0/dahn/svnwork/launchmon-0.6.4/tools/libgpg-error/src"
+gpg_error_libs="-L/g/g19/liu50/bin/cab/lib -L/g/g19/liu50/workspace/launchmon-dev/tools/libgpg-error/src -lgpg-error"
+gpg_error_cflags="-I/g/g19/liu50/bin/cab/include -I/g/g19/liu50/workspace/launchmon-dev/tools/libgpg-error/src"
 
 # libgcrypt values.
 libs="-lgcrypt"

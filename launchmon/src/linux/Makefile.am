@@ -59,6 +59,9 @@ launchmon_SOURCES       = main.cxx \
                           sdbg_linux_mach.cxx \
                           lmon_api/lmon_say_msg.cxx \
                           sdbg_proc_service.cxx \
+	                  ../ini_reader.cpp \
+                          ../ini_reader.h \
+			  ../ini.c \	
                           ../sdbg_self_trace.cxx \
                           ../sdbg_opt.cxx \
                           ../sdbg_rm_map.cxx \

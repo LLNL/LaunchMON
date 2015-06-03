@@ -54,10 +54,26 @@
 //# error boost/tokenizer is required; no alternative tokenizer
 //#endif
 
-#include <iostream>
+//include inih files
+#include "ini_reader.h"
 
 #include "sdbg_rm_map.hxx"
 
+///////////////////////////////////////////////////////////////////
+//                                                               //
+// PRIVATE METHOD using stringstream to tokenize                 //
+//                                                               //
+///////////////////////////////////////////////////////////////////
+
+std::vector<std::string>splitByDelimiter(std::string toSplit, const char delimiter) {
+  std::istringstream split(toSplit);
+  std::vector<std::string> token;
+  std::string each;
+  while (std::getline(split, each, delimiter)) {
+    token.push_back(each);
+  }
+  return token;
+}
 
 ///////////////////////////////////////////////////////////////////
 //                                                               //
@@ -297,30 +313,32 @@ resource_manager_t::fill_id(rm_id_t &target_id, const std::string &v)
   std::string id = na;
   std::string dt = na;
 
-  size_t ix = v.find_first_of("|", 0);
-  if (ix != std::string::npos)
-    {
-      key = v.substr(0, ix);
-      size_t ix2 = v.find_first_of("|", ix+1);
-      if (ix2 != std::string::npos)
-        {
-          method = v.substr(ix+1, ix2-(ix+1));
-          size_t ix3 = v.find_first_of("|", ix2+1);
-          if (ix3 != std::string::npos)
-            {
-              id = v.substr(ix2+1, ix3-(ix2+1));
-              dt = v.substr(ix3+1, std::string::npos);
-            }
-          else
-            {
-              id = v.substr(ix2+1, std::string::npos);
-            }
-        }
-      else
-        {
-           method = v.substr(ix+1, std::string::npos);
-        }
+  //std::cout << v << "\n";
+  
+  std::vector<std::string> token = splitByDelimiter(v, '|');
+  int i = 0;
+  for (std::vector<std::string>::const_iterator c_i = token.begin(); c_i != token.end(); c_i++) { 
+    switch (i) {
+      case 0:
+        key = *c_i;
+        break;
+      case 1:
+        method = *c_i;
+        break;
+      case 2:
+        id = *c_i;
+        break;
+      case 3:
+        dt = *c_i;
+        break;
+      default:
+        std::cout << "Unknown part at end of " << v << "\n";
+        break;
     }
+    i++;
+  }
+
+  //std::cout << "NEW" << "\n" << key << "\n" << method << "\n" << id << "\n" << dt << "\n";
 
   if (key == std::string("RM_launcher"))
     {
@@ -395,7 +413,7 @@ resource_manager_t::fill_launcher_so(const std::string &v)
 
 
 void
-resource_manager_t::fill_kill_singals(const std::string &v)
+resource_manager_t::fill_kill_signals(const std::string &v)
 {
   int signal_type = 0;
   size_t ix = 0;
@@ -876,7 +894,6 @@ rc_rm_t::set_resource_manager(const resource_manager_t &rmgr)
   resource_manager = rmgr;
 }
 
-
 ///////////////////////////////////////////////////////////////////
 //
 // PRIVATE METHODS of the rc_rm_t-related class
@@ -901,196 +918,150 @@ resource_manager_t::resolve_signal(const std::string &v)
   return ret_sig;
 }
 
-
 bool
 rc_rm_t::read_supported_rm_confs(const std::string &os_isa_string,
                  const std::string &rm_info_conf_path,
                  std::vector<std::string> &supported_rm_fnames)
 {
-  std::ifstream ri_conf;
-  char line_max[PATH_MAX];
-  bool found = false;
-  bool plat_found = false;
-  std::string a_line;
+  //use inih reader
+  INIReader reader(rm_info_conf_path);
 
-  ri_conf.open(rm_info_conf_path.c_str());
-  if (ri_conf.is_open())
-    {
-       while (!ri_conf.eof())
-         {
-           ri_conf.getline(line_max, PATH_MAX);
-           if (ri_conf.bad() || ri_conf.fail())
-             {
-               self_trace_t::trace ( LEVELCHK(level1),
-                 MODULENAME,1,
-                 "getline enountered an error.");
+  if (reader.ParseError() < 0) {
+    self_trace_t::trace ( LEVELCHK(level1), MODULENAME, 1, "Conf INI file parsing error by INIH code.");
+  }
 
-               break;
-             }
+  //std::cout << "PATH:" << rm_info_conf_path << "\n";
+  //std::cout << "ISA:" << os_isa_string << "\n";
 
-           a_line = line_max;
 
-           if (a_line[0] == '#' || a_line[0] == '\0')
-             continue;
+  std::string aggregate = reader.Get(os_isa_string, "file", "???");
 
-           if (!plat_found) 
-             {
-               if (a_line[0] == '[')
-                 {
-                   size_t ix = a_line.find_first_of(']', 1);
-                   if (ix != std::string::npos)
-                     {
-                       std::string found_os_isa = a_line.substr(1, ix-1);
-                       if (found_os_isa == os_isa_string)
-                         plat_found = true;
-                     }
-                   else
-                     {
-                       self_trace_t::trace ( LEVELCHK(level1),
-                         MODULENAME,1,
-                         "ill-formed line.");
-                     }
-                  }
-             }
-           else
-             {
-               if (a_line[0] == '[')
-                 break; // OK, done with parsing for my platform
-               supported_rm_fnames.push_back(a_line);
-               found = true;
-             }
-         }
-       ri_conf.close();
-    }
+  //std::cout << "file:" << aggregate << "\n";
+  
+  //check for no returned filenames
+  if (strcmp(aggregate.c_str(), "") == 0 || strcmp(aggregate.c_str(), "???") == 0)
+    return false;
 
-  return found;
+  std::vector<std::string> token = splitByDelimiter(aggregate, '\n');
+
+  for (std::vector<std::string>::const_iterator c_i = token.begin(); c_i != token.end(); c_i++) {
+    //std::cout << "filetoken:" << *c_i << "\n";
+    supported_rm_fnames.push_back(*c_i);
+  }
+  
+
+  /*
+  //strtok_r method does not work
+  char * input = strdup(aggregate.c_str());
+  char * pch;
+  char * saveptr;
+  const char delimiter = '\n';
+  pch = strtok_r(input, &delimiter, &saveptr);
+
+  while (pch != NULL) {
+    std::cout << "token:" << pch << "\n";
+    supported_rm_fnames.push_back(pch);
+    pch = strtok_r(NULL, &delimiter, &saveptr);
+  }
+  */
+
+  return true;
 }
-
 
 bool
 rc_rm_t::parse_and_fill_rm(const std::string &rm_conf_path,
                            resource_manager_t &a_rm)
 {
-  std::ifstream inputfile;
-  std::map<std::string, std::vector<std::string> > key_value_pair;
-  std::map<std::string, std::vector<std::string> >::iterator iter;
-  bool error_found = false;
-  char line_max[PATH_MAX];
-  std::string a_line;
+  
+  //use inih reader
+  INIReader reader(rm_conf_path);
 
-  inputfile.open(rm_conf_path.c_str());
+  if (reader.ParseError() < 0) {
+    return true;
+  }
 
-  if (inputfile.is_open())
-    {
-      while (!inputfile.eof())
-        {
-          inputfile.getline(line_max, PATH_MAX);
-          if (inputfile.bad() || inputfile.fail())
-            {
-              self_trace_t::trace ( LEVELCHK(level1),
-                MODULENAME,1,
-                "getline encountered an error.");
+  //std::cout << "PATH:" << rm_conf_path << "\n";
 
-              break;
-            }
+  std::string section = "configuration";
 
-          a_line = line_max;
-          if (a_line[0] == '#' || a_line[0] == '\n')
-            continue;
+  std::string keys[] = {
+    "RM", 
+    "RM_MPIR", 
+    "RM_launcher", 
+    "RM_launcher_id", 
+    "RM_launcher_so", 
+    "RM_jobid", 
+    "RM_signal_for_kill", 
+    "RM_fail_detection",
+    "RM_launch_helper", 
+    "RM_launch_str"
+  };
 
-          size_t equal = a_line.find_first_of('=', 0);
-          if (equal != std::string::npos)
-            {
-              std::string key = a_line.substr(0, equal);
-              std::string value = a_line.substr(equal+1, std::string::npos);
-              iter = key_value_pair.find(key);
+  int i;
+  std::string beach; 
+  for (i = 0; i < 10; i++) {
+    std::string aggregate = reader.Get(section, keys[i], "");
 
-              if (iter == key_value_pair.end())
-                {
-                  std::vector<std::string> value_vect;
-                  value_vect.push_back(value);
-                  key_value_pair[key] = value_vect;
-                }
-              else
-                {
-                  iter->second.push_back(value);
-                }
-            }
-          else
-            {
-              self_trace_t::trace ( LEVELCHK(level1),
-                MODULENAME,1,
-                "ill-formed line.");
-
-              error_found = true;
-            }
-        }
-      inputfile.close();
+    //check for blank or not found
+    if (strcmp(aggregate.c_str(), "") == 0) {
+      //std::cout << "Alert: No value found for key " << keys[i] << "\n";
+      continue;
     }
 
-  iter = key_value_pair.find(std::string("RM"));
-  if (iter != key_value_pair.end())
-    {
-      a_rm.fill_rm_type (iter->second[0]);
-    }
+    std::vector<std::string> token = splitByDelimiter(aggregate, '\n');
 
-  iter = key_value_pair.find(std::string("RM_MPIR"));
-  if (iter != key_value_pair.end())
-    {
-      a_rm.fill_mpir_type (iter->second[0]);
-    }
+    if (token.empty())
+      continue;
 
-  iter = key_value_pair.find(std::string("RM_launcher"));
-  if (iter != key_value_pair.end())
-    {
-      a_rm.fill_launchers(iter->second);
+    /*
+    for (std::vector<std::string>::const_iterator c_i = token.begin(); c_i != token.end(); c_i++) {
+      std::cout << keys[i] << ":" << *c_i << "\n";
     }
+    */
 
-  iter = key_value_pair.find(std::string("RM_launcher_id"));
-  if (iter != key_value_pair.end())
-    {
-      a_rm.fill_launcher_id(iter->second);
+    //actions based on index in keys[]
+    switch (i) {
+      case 0:
+        a_rm.fill_rm_type(token.front());
+        beach = token.front();
+
+        break;
+      case 1:
+        a_rm.fill_rm_type(token.front());
+        break;
+      case 2:
+        a_rm.fill_launchers(token);
+        break;
+      case 3:
+        a_rm.fill_launcher_id(token);
+        break;
+      case 4:
+        a_rm.fill_launcher_so(token.front());
+        break;
+      case 5:
+        a_rm.fill_job_id(token.front());
+        break;
+      case 6:
+        a_rm.fill_kill_signals(token.front());
+        break;
+      case 7:
+        a_rm.fill_fail_detection(token.front());
+        break;
+      case 8:
+        a_rm.fill_launch_helper(token.front());
+        break;
+      case 9:
+        a_rm.fill_launch_string(token.front());
+        break;
+      default:
+        std::cout << "Alert: Out of bounds" << "\n";
+        break;
     }
-
-  iter = key_value_pair.find(std::string("RM_launcher_so"));
-  if (iter != key_value_pair.end())
-    {
-      a_rm.fill_launcher_so(iter->second[0]);
-    }
-
-  iter = key_value_pair.find(std::string("RM_jobid"));
-  if (iter != key_value_pair.end())
-    {
-      a_rm.fill_job_id(iter->second[0]);
-    }
-
-  iter
-    = key_value_pair.find(std::string("RM_signal_for_kill"));
-  if (iter != key_value_pair.end())
-    {
-      a_rm.fill_kill_singals(iter->second[0]);
-    }
-
-  iter
-    = key_value_pair.find(std::string("RM_fail_detection"));
-  if (iter != key_value_pair.end())
-    {
-      a_rm.fill_fail_detection(iter->second[0]);
-    }
-
-  iter = key_value_pair.find(std::string("RM_launch_helper"));
-  if (iter != key_value_pair.end())
-    {
-      a_rm.fill_launch_helper(iter->second[0]);
-    }
-
-  iter = key_value_pair.find(std::string("RM_launch_str"));
-  if (iter != key_value_pair.end())
-    {
-      a_rm.fill_launch_string(iter->second[0]);
-    }
-
-  return error_found;
+  }  
+  //we must re-set the rm type afterwards for some reason or else execvp will not start for tests
+  a_rm.fill_rm_type(beach);
+ 
+  return false;
 }
 
 
