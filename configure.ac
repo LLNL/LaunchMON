@@ -28,6 +28,7 @@ dnl  Place, Suite 330, Boston, MA 02111-1307 USA
 dnl --------------------------------------------------------------------------------
 dnl
 dnl   Update Log:
+dnl         Feb 20 2015 andrewg@cray.com: Added Cray support.
 dnl         Apr 30 2014 DHA: Declare 1.0.1 -- this doesn't have Cray support though.
 dnl         Apr 15 2014 DHA: Drop tools/cobo/test
 dnl         Mar 10 2014 MPL: Add secure handshake
@@ -70,6 +71,10 @@ AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE(launchmon, 1.0.1)
 AC_CANONICAL_HOST
 
+dnl
+dnl Check for pkg-config
+dnl
+PKG_PROG_PKG_CONFIG
 
 dnl -----------------------------------------------
 dnl Checks for the OS and CPU type

@@ -26,6 +26,9 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Feb 20 2015 andrewg@cray.com: Added support for RMs that build the
+ *                         proctable on demand. Checks added for launch helpers
+ *                         that are included with launchmon.
  *        Oct 06 2011 DHA: Created file.
  */
 
@@ -259,6 +262,10 @@ resource_manager_t::fill_mpir_type(const std::string &v)
     {
       mpir = standard;
     }
+  else if (v == std::string("STD_CRAY"))
+    {
+      mpir = x_cray;
+    }
   else if (v == std::string("STD_COLOC"))
     {
       mpir = x_coloc;
@@ -436,7 +443,27 @@ resource_manager_t::fill_launch_helper(const std::string &v)
   else
     {
       launch_helper.launch_method = launch_helper_method;
-      launch_helper.launcher_command = v;
+      // Some RMs will package their launch helper with launchmon. If v is not
+      // found, then we will test to see if it is included with launchmon.
+      std::string v2 = v;
+      if (access(v.c_str(), R_OK) < 0)
+        {
+          char *pref;
+          if (pref = getenv("LMON_PREFIX"))
+            {
+              v2.clear();
+              v2 = std::string(pref) + std::string("/bin/") + v;
+              // Check for packaged launch helper, if it is not found then we
+              // assume that v is found in PATH.
+              if (access(v2.c_str(), R_OK) < 0)
+                {
+                  // reset back to v, it is in PATH.
+                  v2.clear();
+                  v2 = v;
+                }
+            }
+        }
+      launch_helper.launcher_command = v2;
     }
 }
 
@@ -791,6 +818,13 @@ rc_rm_t::is_attfifo_sup()
 {
   return ((resource_manager.get_mpir() == x_fifo)
           || (resource_manager.get_mpir() == x_coloc_fifo));
+}
+
+
+bool
+rc_rm_t::is_cont_on_att()
+{
+  return (resource_manager.get_mpir() == x_cray);
 }
 
 

@@ -39,7 +39,6 @@
 
 extern "C" {
 # include <cstdio>
-# include <cstdlib>
 # include <cstring>
 # include <unistd.h>
 # include <stdint.h>
@@ -60,8 +59,8 @@ extern "C" {
 # else
 #  error libelf.h is required
 #endif
-# include "apInfo.h"
-# include "libalps.h"
+# include "alps/apInfo.h"
+# include "alps/libalps.h"
 extern char *alpsGetMyNid(int *nid);
 }
 
