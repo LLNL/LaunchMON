@@ -24,8 +24,83 @@
 /* env command found */
 #undef ENVCMD
 
-/* 1 if defined */
-#undef GCRYPT
+/* Algorithm AES in gcrypt library */
+#undef GCRYPT_WITH_AES
+
+/* Algorithm ARCFOUR in gcrypt library */
+#undef GCRYPT_WITH_ARCFOUR
+
+/* Algorithm BLOWFISH in gcrypt library */
+#undef GCRYPT_WITH_BLOWFISH
+
+/* Algorithm CAST5 in gcrypt library */
+#undef GCRYPT_WITH_CAST5
+
+/* Algorithm CRC in gcrypt library */
+#undef GCRYPT_WITH_CRC
+
+/* Algorithm DES in gcrypt library */
+#undef GCRYPT_WITH_DES
+
+/* Algorithm DSA in gcrypt library */
+#undef GCRYPT_WITH_DSA
+
+/* Algorithm ELGAMAL in gcrypt library */
+#undef GCRYPT_WITH_ELGAMAL
+
+/* Algorithm HAVAL in gcrypt library */
+#undef GCRYPT_WITH_HAVAL
+
+/* Algorithm IDEA in gcrypt library */
+#undef GCRYPT_WITH_IDEA
+
+/* Algorithm MD2 in gcrypt library */
+#undef GCRYPT_WITH_MD2
+
+/* Algorithm MD4 in gcrypt library */
+#undef GCRYPT_WITH_MD4
+
+/* Algorithm MD5 in gcrypt library */
+#undef GCRYPT_WITH_MD5
+
+/* Algorithm RFC2268 in gcrypt library */
+#undef GCRYPT_WITH_RFC2268
+
+/* Algorithm RMD160 in gcrypt library */
+#undef GCRYPT_WITH_RMD160
+
+/* Algorithm RSA in gcrypt library */
+#undef GCRYPT_WITH_RSA
+
+/* Algorithm SERPENT in gcrypt library */
+#undef GCRYPT_WITH_SERPENT
+
+/* Algorithm SHA0 in gcrypt library */
+#undef GCRYPT_WITH_SHA0
+
+/* Algorithm SHA1 in gcrypt library */
+#undef GCRYPT_WITH_SHA1
+
+/* Algorithm SHA224 in gcrypt library */
+#undef GCRYPT_WITH_SHA224
+
+/* Algorithm SHA256 in gcrypt library */
+#undef GCRYPT_WITH_SHA256
+
+/* Algorithm SHA384 in gcrypt library */
+#undef GCRYPT_WITH_SHA384
+
+/* Algorithm SHA512 in gcrypt library */
+#undef GCRYPT_WITH_SHA512
+
+/* Algorithm TIGER in gcrypt library */
+#undef GCRYPT_WITH_TIGER
+
+/* Algorithm TWOFISH in gcrypt library */
+#undef GCRYPT_WITH_TWOFISH
+
+/* Algorithm WHIRLPOOL in gcrypt library */
+#undef GCRYPT_WITH_WHIRLPOOL
 
 /* Define to 1 if you have the <algorithm> header file. */
 #undef HAVE_ALGORITHM
@@ -44,6 +119,9 @@
 
 /* Define to 1 if you have the <fstream> header file. */
 #undef HAVE_FSTREAM
+
+/* Gcrypt library is available */
+#undef HAVE_GCRYPT
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY

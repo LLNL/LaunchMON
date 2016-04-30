@@ -28,14 +28,15 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        Apr 28 2016 DHA: Don't install cobo.h as it should not be public
 ##        Mar 10 2014 MPL: Add secure handshake
 ##        Dec 16 2009 DHA: Made for COBO
 ##
 
-lib_LTLIBRARIES = libcobo.la 
+lib_LTLIBRARIES    = libcobo.la 
 libcobo_la_SOURCES = cobo.c \
-	          cobo.h
-include_HEADERS = cobo.h 
+                     cobo.h
+noinst_HEADERS     = cobo.h 
 libcobo_la_LDFLAGS = -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
-libcobo_la_CFLAGS = -I$(top_srcdir)/tools/handshake
-libcobo_la_LIBADD = $(top_builddir)/tools/handshake/libhandshake.la
+libcobo_la_CFLAGS  = -I$(top_srcdir)/tools/handshake
+libcobo_la_LIBADD  = $(top_builddir)/tools/handshake/libhandshake.la

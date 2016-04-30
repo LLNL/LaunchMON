@@ -28,6 +28,7 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        Apr 28 2016 DHA: Modernized build system 
 ##        Jan 11 2013 DHA: Added launchmon.spec and launchmon.module for
 ##                         RPM support. Added INSTALL.launchmon, as 'make dist'
 ##                         was not distributing that file.
@@ -40,12 +41,16 @@
 ##        Mar 27 2006 DHA: Created file.
 ##
 
-SUBDIRS         = tools launchmon test
-EXTRA_DIST      = config/ap \
-		  README.ERROR_HANDLING \
-		  package.conf \
-		  launchmon.spec \
-                  launchmon.module \
-		  bootstrap \
-		  INSTALL.launchmon
+SUBDIRS = \
+  tools \
+  launchmon \
+  etc \
+  test
+
+EXTRA_DIST = \
+  config/ap \
+  README.ERROR_HANDLING \
+  README.md
+
 ACLOCAL_AMFLAGS = -I config
+

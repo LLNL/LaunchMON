@@ -73,7 +73,7 @@ AC_DEFUN([X_AC_BOOTFABRIC], [
     AC_DEFINE(MPI_BASED, 1, [Define 1 for MPI_BASED])
     AC_MSG_ERROR([MPI as a underlying comm. fabric no longer supported])	
   elif test "x$with_fab" = "xcobo" -o "x$with_fab" = "xyes"; then
-    if test -d tools/cobo; then
+    if test -d $srcdir/tools/cobo; then
       #
       # Following defines macroes to pick up the customization 
       # added to the original COBO implementation.
@@ -86,7 +86,7 @@ AC_DEFUN([X_AC_BOOTFABRIC], [
       AC_DEFINE(TOOL_PORT_ENV, "LMON_FE_WHERETOCONNECT_PORT", [Define TOOL_PORT_ENV] )
       AC_DEFINE(TOOL_SS_ENV, "LMON_SHARED_SECRET", [Define TOOL_SS_ENV])
       AC_DEFINE(TOOL_SCH_ENV, "LMON_SEC_CHK", [Define TOOL_SCH_ENV])
-      AC_SUBST(COMMLOC, tools/cobo/src)
+      AC_SUBST(COMMLOC, $builddir/tools/cobo/src)
       AC_SUBST(LIBCOMM, libcobo.la)
 
       if test "x$with_cobo_port" != "xcheck" -a "x$with_cobo_port" != "xyes"; then
@@ -103,7 +103,7 @@ AC_DEFUN([X_AC_BOOTFABRIC], [
     #
     # Making COBO default
     #  
-    if test -d tools/cobo; then
+    if test -d $srcdir/tools/cobo; then
       #
       # Following defines macroes to pick up the customization 
       # added to the original COBO implementation.
@@ -116,7 +116,7 @@ AC_DEFUN([X_AC_BOOTFABRIC], [
       AC_DEFINE(TOOL_PORT_ENV, "LMON_FE_WHERETOCONNECT_PORT", [Define TOOL_PORT_ENV] )
       AC_DEFINE(TOOL_SS_ENV, "LMON_SHARED_SECRET", [Define TOOL_SS_ENV])
       AC_DEFINE(TOOL_SCH_ENV, "LMON_SEC_CHK", [Define TOOL_SCH_ENV])
-      AC_SUBST(COMMLOC, tools/cobo/src)
+      AC_SUBST(COMMLOC, $builddir/tools/cobo/src)
       AC_SUBST(LIBCOMM, libcobo.la)
 
       if test "x$with_cobo_port" != "xcheck" -a "x$with_cobo_port" != "xyes"; then
