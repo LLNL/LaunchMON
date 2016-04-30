@@ -1,0 +1,8 @@
+# Compiled Object files
+*.o
+*.so
+*.la
+*.a
+*.lib
+*~
+*breakpoints*

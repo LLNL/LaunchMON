@@ -27,14 +27,22 @@
 #--------------------------------------------------------------------------------
 #
 #  Update Log:
+#        Apr 28 2016 DHA: Added debug prints 
 #        Mar 11 2008 DHA: Added rm -f tools/libgcrypt/Makefile
 #        Jun 06 2008 DHA: Created file.
 #
 
-set -x 
+echo "Running aclocal ..."
 aclocal -I config
-libtoolize --force --copy
+echo "Running libtoolize ..."
+libtoolize --copy
+echo "Running autoheader ..."
 autoheader
-automake --foreign --add-missing --copy 
+echo "Running automake ..."
+touch NEWS README AUTHORS ChangeLog
+automake --add-missing --copy 
+echo "Running autoconf ..."
 autoconf
-rm -f tools/libgcrypt/Makefile
+mv aclocal.m4 config/
+rm -rf autom4te.cache tools/libgcrypt/Makefile
+echo "Now run ./configure."
