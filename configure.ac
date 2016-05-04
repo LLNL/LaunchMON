@@ -104,16 +104,45 @@ dnl -----------------------------------------------
 X_AC_ENABLE_VERBOSE
 
 dnl -----------------------------------------------
-dnl underlying comm. fab to use to bootstrap launchmon's 
+dnl COBO is now the only comm. fab choice use to
+dnl bootstrap launchmon's 
 dnl distributed components  
 dnl -----------------------------------------------
-X_AC_BOOTFABRIC
+AC_DEFINE(COBO_BASED, 1, [Define 1 for COBO_BASED])
+AC_DEFINE(TEST_MORE_COLL, 1, [Define test more coll support])
+AC_DEFINE(TOOL_HOST_ENV, "LMON_FE_WHERETOCONNECT_ADDR", [Define TOOL_HOST_ENV])
+AC_DEFINE(TOOL_PORT_ENV, "LMON_FE_WHERETOCONNECT_PORT", [Define TOOL_PORT_ENV] )
+AC_DEFINE(TOOL_SS_ENV, "LMON_SHARED_SECRET", [Define TOOL_SS_ENV])
+AC_DEFINE(TOOL_SCH_ENV, "LMON_SEC_CHK", [Define TOOL_SCH_ENV])
+AC_SUBST(COMMLOC, $builddir/tools/cobo/src)
+AC_SUBST(LIBCOMM, libcobo.la)
+AC_ARG_VAR(COBOPORT, [Beginning port for COBO port scanning])
+if test "x$COBOPORT" = "x"; then
+    AC_DEFINE(COBO_BEGIN_PORT, 20101, [
+        Define the beginning port for COBO port scanning])
+else
+    AC_DEFINE_UNQUOTED(COBO_BEGIN_PORT, [$COBOPORT], [
+        Define the beginning port for COBO port scanning])
+fi
+AC_DEFINE(COBO_PORT_RANGE, 32, [Define 32 for COBO_BASED])
 
 dnl -----------------------------------------------
 dnl with GCRYPT support?
 dnl -----------------------------------------------
 #X_AC_GCRYPT
-AX_LIB_GCRYPT([yes])
+#AX_LIB_GCRYPT([yes])
+AM_PATH_LIBGCRYPT([1.2.0],[
+    AC_DEFINE([HAVE_GCRYPT],[1],[Gcrypt library is available])
+    HAVE_GCRYPT=1
+    # checking for available algorithms...
+    GCRYPT_CFLAGS=`$LIBGCRYPT_CONFIG --cflags`
+    GCRYPT_LIBS=`$LIBGCRYPT_CONFIG --libs`
+    AC_SUBST(GCRYPT_CFLAGS)
+    AC_SUBST(GCRYPT_LIBS)
+    ],[
+    # complain only if explicitely required
+    AC_MSG_ERROR([cannot configure required gcrypt library])
+    ])
 
 dnl -----------------------------------------------
 dnl Choose a security model for handshakes
@@ -194,7 +223,7 @@ else
      AC_MSG_ERROR([libdl is needed to build this package])
 fi
 
-X_AC_MPICC
+LX_FIND_MPI
 
 dnl -----------------------------------------------
 dnl Checks for header files.

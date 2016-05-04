@@ -50,7 +50,7 @@ the LaunchMON package from the source checked out from this repo.
 
    `% make install`
 
-6) Smoke test:
+(6) Smoke test:
  
    `cd share/launchmon/tests` directory under the prefix directory
    and run `test.launch_1` and `test.attach_1` as your smoke tests.
