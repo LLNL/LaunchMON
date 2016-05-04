@@ -53,7 +53,7 @@ AM_CPPFLAGS = -I$(BASE_SRC_DIR) -I$(PLAT_SRC_DIR) \
 API_LIB_DIR = $(top_builddir)/launchmon/src/linux/lmon_api
 
 testdir = ${pkgdatadir}/tests
-test_PROGRAMS = \
+check_PROGRAMS = \
   fe_jobsnap \
   be_jobsnap \
   LE_model_checker \
@@ -175,8 +175,8 @@ test_input_files =\
   test.fe_regErrorCB.in \
   test.fe_regStatusCB.in
 
-test_SCRIPTS = $(test_input_files:.in=)
-CLEANFILES = $(test_SCRIPTS)
+check_SCRIPTS = $(test_input_files:.in=)
+CLEANFILES = $(check_SCRIPTS)
 EXTRA_DIST = $(test_input_files)
 
 do_subst = \
@@ -189,7 +189,7 @@ do_subst = \
 	  -e 's,@NNODES@,$(TESTNNODES),g' \
       -e 's,@EXE@,$(EXEEXT),g' 
 
-$(test_SCRIPTS): %: %.in
+$(check_SCRIPTS): %: %.in
 	$(do_subst) < $< > $@
 	chmod +x $@
 
