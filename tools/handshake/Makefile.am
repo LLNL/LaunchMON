@@ -28,6 +28,7 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        Apr 28 2016 DHA: Minor cleanup
 ##        May 01 2014 DHA: Specify gcrypt header file locations so that
 ##                         this module will use the integrated version of
 ##                         gcrypt/gpgerr package. TODO: drop support for
@@ -38,7 +39,6 @@
 ##
 
 noinst_LTLIBRARIES = libhandshake.la 
-INCLUDES = -I$(top_srcdir)/@GCRYPTLOC@ -I$(top_srcdir)/@GPGERRLOC@
 libhandshake_la_SOURCES = handshake.c handshake.h
 libhandshake_la_LIBADD = $(MUNGE_LIBS)
 

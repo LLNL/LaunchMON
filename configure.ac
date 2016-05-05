@@ -28,6 +28,7 @@ dnl  Place, Suite 330, Boston, MA 02111-1307 USA
 dnl --------------------------------------------------------------------------------
 dnl
 dnl   Update Log:
+dnl         Apr 28 2016 DHA: Modernize autotool support 
 dnl         Apr 30 2014 DHA: Declare 1.0.1 -- this doesn't have Cray support though.
 dnl         Apr 15 2014 DHA: Drop tools/cobo/test
 dnl         Mar 10 2014 MPL: Add secure handshake
@@ -44,7 +45,11 @@ dnl         Jun 06 2008 DHA: File created.
 dnl
 
 AC_PREREQ(2.59)
-AC_INIT(LaunchMON, 1.0.1, ahn1@llnl.gov)
+
+dnl Users shouldn't bootstrap configure from the release tarball so 
+dnl this technique should be okay
+AC_INIT([LaunchMON],
+        m4_esyscmd([git describe --always | awk '/.*/ {printf "%s",$1; exit}'])) 
 
 dnl
 dnl This implements 2nd LMON interface (increase current when the 
@@ -61,18 +66,30 @@ AC_SUBST(LMON_REVISION, 0)
 dnl
 dnl Increase age when the interface has been added not removed.
 dnl
-AC_SUBST(LMON_AGE, 0)
+AC_SUBST(LMON_AGE, 1)
 
+dnl -----------------------------------------------
+dnl AC_CONFIG support 
+dnl -----------------------------------------------
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_HEADER([config.h])
-AM_INIT_AUTOMAKE(launchmon, 1.0.1)
-AC_CANONICAL_HOST
-
+dnl config.guess and config.sub must be distributed 
+AC_CANONICAL_SYSTEM
 
 dnl -----------------------------------------------
-dnl Checks for the OS and CPU type
+dnl Automake support
+dnl -----------------------------------------------
+dnl The new form for AM_INIT_AUTOMAKE takes only one argument 
+AM_INIT_AUTOMAKE
+dnl If you don't want silent make, make V=1
+AM_SILENT_RULES([yes])
+dnl You don't want configure to rebuild Makefile.ins
+AM_MAINTAINER_MODE
+
+dnl -----------------------------------------------
+dnl Checks for the OS/CPU/RM type
 dnl -----------------------------------------------
 X_AC_PLATFORM
 
@@ -81,24 +98,49 @@ dnl enable debug support
 dnl -----------------------------------------------
 X_AC_ENABLE_DEBUG
 
-
 dnl -----------------------------------------------
 dnl enable verbose support
 dnl -----------------------------------------------
 X_AC_ENABLE_VERBOSE
 
-
 dnl -----------------------------------------------
-dnl underlying comm. fab to use to bootstrap launchmon's 
+dnl COBO is now the only comm. fab choice use to
+dnl bootstrap launchmon's 
 dnl distributed components  
 dnl -----------------------------------------------
-X_AC_BOOTFABRIC
-
+AC_DEFINE(COBO_BASED, 1, [Define 1 for COBO_BASED])
+AC_DEFINE(TEST_MORE_COLL, 1, [Define test more coll support])
+AC_DEFINE(TOOL_HOST_ENV, "LMON_FE_WHERETOCONNECT_ADDR", [Define TOOL_HOST_ENV])
+AC_DEFINE(TOOL_PORT_ENV, "LMON_FE_WHERETOCONNECT_PORT", [Define TOOL_PORT_ENV] )
+AC_DEFINE(TOOL_SS_ENV, "LMON_SHARED_SECRET", [Define TOOL_SS_ENV])
+AC_DEFINE(TOOL_SCH_ENV, "LMON_SEC_CHK", [Define TOOL_SCH_ENV])
+AC_SUBST(COMMLOC, $builddir/tools/cobo/src)
+AC_SUBST(LIBCOMM, libcobo.la)
+AC_ARG_VAR(COBOPORT, [Beginning port for COBO port scanning])
+if test "x$COBOPORT" = "x"; then
+    AC_DEFINE(COBO_BEGIN_PORT, 20101, [
+        Define the beginning port for COBO port scanning])
+else
+    AC_DEFINE_UNQUOTED(COBO_BEGIN_PORT, [$COBOPORT], [
+        Define the beginning port for COBO port scanning])
+fi
+AC_DEFINE(COBO_PORT_RANGE, 32, [Define 32 for COBO_BASED])
 
 dnl -----------------------------------------------
 dnl with GCRYPT support?
 dnl -----------------------------------------------
-X_AC_GCRYPT
+AM_PATH_LIBGCRYPT([1.2.0],[
+    AC_DEFINE([HAVE_GCRYPT],[1],[Gcrypt library is available])
+    HAVE_GCRYPT=1
+    # checking for available algorithms...
+    GCRYPT_CFLAGS=`$LIBGCRYPT_CONFIG --cflags`
+    GCRYPT_LIBS=`$LIBGCRYPT_CONFIG --libs`
+    AC_SUBST(GCRYPT_CFLAGS)
+    AC_SUBST(GCRYPT_LIBS)
+    ],[
+    # complain only if explicitely required
+    AC_MSG_ERROR([cannot configure required gcrypt library])
+    ])
 
 dnl -----------------------------------------------
 dnl Choose a security model for handshakes
@@ -107,40 +149,19 @@ AC_CHECK_HEADERS([sys/types.h])
 X_AC_HANDSHAKE
 
 dnl -----------------------------------------------
-dnl with MY BOOST support?
-dnl -----------------------------------------------
-X_AC_MYBOOST
-
-
-dnl -----------------------------------------------
 dnl enable tracing cost measurement codes? 
 dnl -----------------------------------------------
 X_AC_TRACING_COST
 
-
 dnl -----------------------------------------------
-dnl Checks for the Resource Manager type
-dnl -----------------------------------------------
-dnl X_AC_RM
-
-dnl AC_MSG_CHECKING(whether a supported MPI job launcher has been found)
-dnl if test -z "$ac_job_launcher_path" ; then
-dnl   AC_MSG_ERROR([No supported MPI job launcher has been found])
-dnl else
-dnl   AC_DEFINE_UNQUOTED(TARGET_JOB_LAUNCHER_PATH,["$ac_job_launcher_path"], [launcher path])
-dnl   AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
-dnl   AC_MSG_RESULT([$ac_job_launcher_bits bit $ac_job_launcher_path])
-dnl fi
-
-
-dnl -----------------------------------------------
-dnl Checks for NNODES and Ncores per node for test cases 
+dnl Checks for NNODES and Ncores per node 
+dnl for testing 
 dnl -----------------------------------------------
 X_AC_TESTNNODES
 X_AC_NCORE_SMP
 X_AC_TEST_RM
 X_AC_MW_HOSTLIST
-
+X_AC_TEST_INSTALLED
 
 dnl -----------------------------------------------
 dnl Checks for programs
@@ -149,6 +170,7 @@ AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 AC_PROG_CC_C_O
+AM_PROG_CC_C_O
 AC_PATH_PROGS(envcmd,env,[/bin/env], /usr/local/bin:/usr/bin:/bin)
 AC_PATH_PROGS(sshcmd,ssh rsh,[/usr/bin/ssh],/usr/local/bin:/usr/bin:/bin)
 AC_PATH_PROGS(rshcmd,rsh ssh,[/usr/bin/rsh],/usr/local/bin:/usr/bin:/bin)
@@ -194,27 +216,25 @@ else
      AC_MSG_ERROR([libdl is needed to build this package])
 fi
 
-dnl DHA: decrecate thread db checking in favor of runtime checking
-dnl X_AC_THREAD_DB
-dnl
-X_AC_MPICC
-
+LX_FIND_MPI
 
 dnl -----------------------------------------------
 dnl Checks for header files.
+dnl Note: I don't think we made the code base conditionally
+dnl compiled depending on the existence of these checks.
+dnl But the code at least errors out during compililation 
+dnl if they don't exist
 dnl -----------------------------------------------
 AC_LANG_PUSH([C++])
 AC_CHECK_HEADERS([stack vector map list iostream string algorithm fstream sstream cxxabi.h])
 AC_LANG_POP([C++])
 AC_HEADER_SYS_WAIT
+
 dnl
 dnl Jun 07 2012 DHA TODO: We need to check boost/tokenizer.hpp; 
 dnl doing so generates whole lot of errors on some platforms
 dnl so I'm skipping that check for now. We need to 
 dnl revisit that issue.
-dnl
-dnl 
-dnl AC_CHECK_HEADERS([sys/time.h stdio.h stdint.h syscall.h unistd.h libelf.h libelf/libelf.h poll.h signal.h errno.h sys/user.h libgen.h assert.h link.h thread_db.h netdb.h arpa/inet.h sys/un.h sys/socket.h netinet/in.h limits.h sys/ptrace.h execinfo.h fcntl.h sys/procfs.h pthread.h sys/resource.h stdarg.h dlfcn.h stddef.h][][])
 
 AC_CHECK_HEADERS([libelf.h libelf/libelf.h],[],[],
 [[#include <elf.h>]])
@@ -228,7 +248,6 @@ elif test "$ac_cv_header_libelf_libelf_h" = "yes"; then
        [Define to header that first defines elf.])
 fi
 
-
 dnl -----------------------------------------------
 dnl Checks for typedefs, structures, and compiler characteristics.
 dnl -----------------------------------------------
@@ -236,7 +255,6 @@ AC_HEADER_STDBOOL
 AC_C_CONST
 AC_TYPE_PID_T
 AC_HEADER_TIME
-
 
 dnl -----------------------------------------------
 dnl Checks for library functions.
@@ -250,23 +268,27 @@ AC_FUNC_STRFTIME
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([gettimeofday memset strdup])
 
-
 dnl -----------------------------------------------
 dnl configure's OUTPUTS 
 dnl -----------------------------------------------
-AC_CONFIG_FILES([Makefile
-                 tools/Makefile
-                 tools/ciod/Makefile
-                 tools/cobo/Makefile
-                 tools/cobo/src/Makefile
-                 tools/alps/Makefile
-                 tools/alps/src/Makefile
-                 tools/handshake/Makefile
-                 launchmon/Makefile
-                 launchmon/src/Makefile
-                 launchmon/src/linux/Makefile
-                 launchmon/src/linux/lmon_api/Makefile
-                 launchmon/man/Makefile
-                 test/Makefile
-                 test/src/Makefile])
+AC_CONFIG_FILES([
+  Makefile
+  tools/Makefile
+  tools/ciod/Makefile
+  tools/cobo/Makefile
+  tools/cobo/src/Makefile
+  tools/alps/Makefile
+  tools/alps/src/Makefile
+  tools/handshake/Makefile
+  launchmon/Makefile
+  launchmon/src/Makefile
+  launchmon/src/linux/Makefile
+  launchmon/src/linux/lmon_api/Makefile
+  launchmon/man/Makefile
+  etc/Makefile
+  etc/pkg-specs/Makefile
+  etc/pkg-specs/llnl/Makefile
+  test/Makefile
+  test/src/Makefile])
 AC_OUTPUT
+

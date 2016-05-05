@@ -253,6 +253,8 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive_engine(opts_args_t *opt)
       std::string bestub(RM_BE_STUB_CMD);
       if (pref = getenv("LMON_PREFIX"))
         bestub = std::string(pref) + std::string("/bin/") + bestub;
+      else if (pref = getenv("LMON_COLOC_UTIL_DIR"))
+        bestub = std::string(pref) + ("/") + bestub;
 #endif
 
       std::string bulklauncher = opt->get_my_opt()->debugtarget;
@@ -265,8 +267,14 @@ driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive_engine(opts_args_t *opt)
       bulklauncher = RM_FE_COLOC_CMD;
       if (pref2 = getenv("LMON_PREFIX"))
         {
-           bulklauncher = std::string(pref)
+           bulklauncher = std::string(pref2)
                          + std::string("/bin/")
+                         + bulklauncher;
+        }
+      else if (pref2 = getenv("LMON_COLOC_UTIL_DIR"))
+        {
+           bulklauncher = std::string(pref2)
+                         + std::string("/")
                          + bulklauncher;
         }
 #endif

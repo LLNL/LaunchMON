@@ -9,7 +9,7 @@
 /* Define 1 for COBO_BASED */
 #undef COBO_BASED
 
-/* Define a beginning port for COBO_BASED */
+/* Define the beginning port for COBO port scanning */
 #undef COBO_BEGIN_PORT
 
 /* Define 32 for COBO_BASED */
@@ -23,9 +23,6 @@
 
 /* env command found */
 #undef ENVCMD
-
-/* 1 if defined */
-#undef GCRYPT
 
 /* Define to 1 if you have the <algorithm> header file. */
 #undef HAVE_ALGORITHM
@@ -44,6 +41,9 @@
 
 /* Define to 1 if you have the <fstream> header file. */
 #undef HAVE_FSTREAM
+
+/* Gcrypt library is available */
+#undef HAVE_GCRYPT
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
@@ -78,6 +78,9 @@
 
 /* Define to 1 if you have the `memset' function. */
 #undef HAVE_MEMSET
+
+/* Define to 1 if you have MPI libs and headers. */
+#undef HAVE_MPI
 
 /* Define to 1 if you have the <sstream> header file. */
 #undef HAVE_SSTREAM
@@ -169,9 +172,6 @@
 /* Define 1 for MEASURE_TRACING_COST */
 #undef MEASURE_TRACING_COST
 
-/* Define 1 for MPI_BASED */
-#undef MPI_BASED
-
 /* Use munge for authentication */
 #undef MUNGE
 
@@ -192,6 +192,9 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION

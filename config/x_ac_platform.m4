@@ -40,10 +40,11 @@ AC_DEFUN([X_AC_PLATFORM], [
     *linux*) AC_DEFINE(LINUX_CODE_REQUIRED,1,[Define 1 for LINUX_CODE_REQUIRED])
              ac_have_known_os="yes"
              ac_target_os="linux"
-             LMONENABSLOC=`config/ap launchmon/src/linux`
+             #LMONENABSLOC=`config/ap $top_srcdir/launchmon/src/linux`
+             LMONENABSLOC=`$srcdir/config/ap $srcdir/launchmon/src/linux`
              AC_SUBST(LMONENABSLOC)
-             AC_SUBST(LMONENLOC,[launchmon/src/linux])
-             AC_SUBST(LMONAPILOC,[launchmon/src/linux/lmon_api])
+             AC_SUBST(LMONENLOC,[$srcdir/launchmon/src/linux])
+             AC_SUBST(LMONAPILOC,[$srcdir/launchmon/src/linux/lmon_api])
              ;;
     *aix*)   AC_DEFINE(AIX_CODE_REQUIRED,1,[Define 1 for AIX_CODE_REQUIRED])
              ac_have_known_os="yes"	

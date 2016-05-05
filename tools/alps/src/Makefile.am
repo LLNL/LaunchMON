@@ -28,35 +28,36 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        Apr 29 2016 DHA: Mondernize build support
 ##        Nov 23 2010 DHA: Changed bin_SCRIPTS to etc_SCRIPTS for CLE dso list
 ##        Nov 04 2010 DHA: Added lib_SCRIPTS 
 ##        Jun 10 2010 DHA: Added alps_fe_colocator support
 ##        May 13 2010 DHA: Made for alps_be_starter
 ##
 
+AM_CPPFLAGS = \
+  -I$(top_srcdir) \
+  -I$(top_srcdir)/launchmon/src \
+  -I$(top_srcdir)/@LMONAPILOC@ \
+  -I@RMINC@
 
-INCLUDES                          = -I$(top_srcdir) \
-				    -I$(top_srcdir)/launchmon/src \
-				    -I$(top_srcdir)/@LMONAPILOC@ \
-				    -I@RMINC@
-
-bin_PROGRAMS              = alps_be_starter alps_fe_colocator 
-alps_be_starter_SOURCES   = alps_be_starter.c 
+bin_PROGRAMS = alps_be_starter alps_fe_colocator 
+alps_be_starter_SOURCES = alps_be_starter.c 
 alps_fe_colocator_SOURCES = alps_fe_colocator.cxx
+alps_fe_colocator_CXXFLAGS = @LNCHR_BIT_FLAGS@
+alps_fe_colocator_LDADD = @LIBELF@ @RMLIB@
 
-alps_be_starter: alps_be_starter.c Makefile
+alps_be_starter$(EXEEXT): alps_be_starter.c Makefile
 	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CFLAGS) $(CFLAGS) -o $@ $<   
 
-alps_fe_colocator_CXXFLAGS      = @LNCHR_BIT_FLAGS@
-alps_fe_colocator_LDADD         = @LIBELF@ @RMLIB@
+etcdir = ${prefix}/etc
+etc_SCRIPTS = \
+  CLE-dso.conf \
+  CLE_2_2-dso.conf \
+  CLE_3_1-dso.conf
 
-etcdir                          = ${prefix}/etc
-etc_SCRIPTS                     = CLE-dso.conf \
-                                  CLE_2_2-dso.conf \
-                                  CLE_3_1-dso.conf
-
-CLEANFILES                      = $(bin_SCRIPTS)
-EXTRA_DIST                      = CLE-dso.conf \
-                                  CLE_2_2-dso.conf \
-                                  CLE_3_1-dso.conf
+EXTRA_DIST = \
+  CLE-dso.conf \
+  CLE_2_2-dso.conf \
+  CLE_3_1-dso.conf
 

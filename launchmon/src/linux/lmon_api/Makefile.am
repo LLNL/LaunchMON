@@ -29,6 +29,7 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        Apr 28 2016 DHA: Modernize autotools and build support 
 ##        Jun 01 2012 DHA: Merged with the 0.8-middleware-support branch.
 ##        Nov 28 2011 DHA: Added MPI-tool sync layer.
 ##        Jun 12 2008 DHA: Added header files to the dependency list
@@ -40,109 +41,120 @@
 ##        Dec 27 2006 DHA: Created file.
 ##
 
+PLAT_SRC_DIR = $(top_srcdir)/launchmon/src/linux
+BASE_SRC_DIR = $(top_srcdir)/launchmon/src
+VPATH = $(PLAT_SRC_DIR):$(BASE_SRC_DIR):$(srcdir)
 if WITH_CIOD
-CIOD_SUPPORT                 = -I$(top_srcdir)/@CIODLOC@
+CIOD_SUPPORT =-I$(top_srcdir)/@CIODLOC@
 endif
+AM_CPPFLAGS = \
+  -I@ARCHHEADER@ \
+  $(CIOD_SUPPORT) \
+  -I$(PLAT_SRC_DIR)/ \
+  -I$(BASE_SRC_DIR)/ \
+  -I$(top_srcdir)/tools/cobo/src \
+  -I$(top_srcdir)/tools/handshake
 
-GCRYPT_SUPPORT               = -I$(top_srcdir)/@GCRYPTLOC@ \
-                               -I$(top_srcdir)/@GPGERRLOC@
+lib_LTLIBRARIES = \
+  libmonbeapi.la \
+  libmonfeapi.la \
+  libmonmwapi.la
 
-MYBOOST_SUPPORT              = -I$(top_srcdir)/@MYBOOSTLOC@
+####################################################
+# Frontend API
+####################################################
+libmonfeapi_la_SOURCES = \
+  lmon_fe.cxx \
+  lmon_lmonp_msg.cxx \
+  lmon_coloc_spawner.cxx \
+  lmon_say_msg.cxx \
+  $(BASE_SRC_DIR)/sdbg_rm_map.cxx \
+  $(BASE_SRC_DIR)/sdbg_self_trace.cxx \
+  $(BASE_SRC_DIR)/sdbg_opt.cxx \
+  $(PLAT_SRC_DIR)/sdbg_rsh_spawner.cxx \
+  lmon_coloc_spawner.hxx \
+  $(PLAT_SRC_DIR)/sdbg_rsh_spawner.hxx \
+  $(BASE_SRC_DIR)/lmon_api/lmon_api_std.h \
+  $(BASE_SRC_DIR)/lmon_api/lmon_fe.h \
+  $(BASE_SRC_DIR)/lmon_api/lmon_proctab.h \
+  $(BASE_SRC_DIR)/lmon_api/lmon_lmonp_msg.h \
+  $(BASE_SRC_DIR)/sdbg_opt.hxx \
+  $(BASE_SRC_DIR)/sdbg_rm_map.hxx \
+  $(BASE_SRC_DIR)/lmon_api/lmon_say_msg.hxx \
+  $(BASE_SRC_DIR)/sdbg_base_spawner.hxx 
+libmonfeapi_la_CFLAGS = $(AM_CFLAGS)
+libmonfeapi_la_CXXFLAGS = $(AM_CXXFLAGS)
+libmonfeapi_la_LDFLAGS = \
+  $(AM_LDFLAGS) -version-info \
+  @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
+libmonfeapi_la_LIBADD = \
+  @LIBPTHREAD@ \
+  $(top_builddir)/@COMMLOC@/@LIBCOMM@ \
+  $(GCRYPT_LIBS) \
+  @LIBRT@
 
-INCLUDES                     = -I@ARCHHEADER@ \
-                                $(CIOD_SUPPORT) \
-                                $(GCRYPT_SUPPORT) \
-                                $(MYBOOST_SUPPORT) \
-                               -I.. -I../.. \
-                               -I$(top_srcdir)/@COMMLOC@ \
-                               -I$(top_srcdir)/tools/handshake
+####################################################
+# Backend API
+####################################################
+libmonbeapi_la_SOURCES = \
+  lmon_be.cxx \
+  lmon_daemon_internal.cxx \
+  lmon_coloc_spawner.cxx \
+  lmon_lmonp_msg.cxx \
+  lmon_say_msg.cxx \
+  lmon_be_sync_mpi.cxx \
+  lmon_be_sync_mpi_generic.cxx \
+  lmon_be_sync_mpi_bg.cxx \
+  lmon_be_sync_mpi_bgq.cxx \
+  lmon_coloc_spawner.hxx \
+  lmon_daemon_internal.hxx \
+  lmon_be_sync_mpi.hxx \
+  lmon_be_sync_mpi_generic.hxx \
+  lmon_be_sync_mpi_bg.hxx \
+  lmon_be_sync_mpi_bgq.hxx \
+  $(BASE_SRC_DIR)/lmon_api/lmon_api_std.h \
+  $(BASE_SRC_DIR)/lmon_api/lmon_be.h \
+  $(BASE_SRC_DIR)/lmon_api/lmon_proctab.h \
+  $(BASE_SRC_DIR)/lmon_api/lmon_lmonp_msg.h \
+  $(BASE_SRC_DIR)/lmon_api/lmon_say_msg.hxx \
+  $(BASE_SRC_DIR)/sdbg_base_spawner.hxx
+libmonbeapi_la_CFLAGS = $(AM_CFLAGS)
+libmonbeapi_la_CXXFLAGS = $(AM_CXXFLAGS)
+libmonbeapi_la_LDFLAGS = \
+  $(AM_LDFLAGS) \
+  -version-info \
+  @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
+libmonbeapi_la_LIBADD = \
+  $(top_builddir)/@COMMLOC@/@LIBCOMM@ \
+  $(GCRYPT_LIBS) 
 
-lib_LTLIBRARIES              = libmonbeapi.la libmonfeapi.la libmonmwapi.la
-
-libmonfeapi_la_SOURCES       = lmon_fe.cxx \
-                               lmon_lmonp_msg.cxx \
-                               lmon_coloc_spawner.cxx \
-                               lmon_say_msg.cxx \
-                               ../../sdbg_rm_map.cxx \
-                               ../../sdbg_self_trace.cxx \
-                               ../../sdbg_opt.cxx \
-                               ../sdbg_rsh_spawner.cxx \
-                               lmon_coloc_spawner.hxx \
-                               ../sdbg_rsh_spawner.hxx \
-                               ../../lmon_api/lmon_api_std.h \
-                               ../../lmon_api/lmon_fe.h \
-                               ../../lmon_api/lmon_proctab.h \
-                               ../../lmon_api/lmon_lmonp_msg.h \
-                               ../../sdbg_opt.hxx \
-                               ../../sdbg_rm_map.hxx \
-                               ../../lmon_api/lmon_say_msg.hxx \
-                               ../../sdbg_base_spawner.hxx 
-
-libmonfeapi_la_CFLAGS        = $(AM_CFLAGS)
-libmonfeapi_la_CXXFLAGS      = $(AM_CXXFLAGS)
-
-libmonfeapi_la_LDFLAGS       =  $(AM_LDFLAGS) \
-                                -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
-
-libmonfeapi_la_LIBADD        = @LIBPTHREAD@ $(top_builddir)/@COMMLOC@/@LIBCOMM@ $(top_builddir)/@GCRYPTLOC@/@LIBGCRYPT@ $(top_builddir)/@GPGERRLOC@/@LIBGPGERR@ @LIBRT@
-
-libmonbeapi_la_SOURCES       = lmon_be.cxx \
-                               lmon_daemon_internal.cxx \
-                               lmon_coloc_spawner.cxx \
-                               lmon_lmonp_msg.cxx \
-                               lmon_say_msg.cxx \
-                               lmon_be_sync_mpi.cxx \
-                               lmon_be_sync_mpi_generic.cxx \
-                               lmon_be_sync_mpi_bg.cxx \
-                               lmon_be_sync_mpi_bgq.cxx \
-                               lmon_coloc_spawner.hxx \
-                               lmon_daemon_internal.hxx \
-                               lmon_be_sync_mpi.hxx \
-			       lmon_be_sync_mpi_generic.hxx \
-			       lmon_be_sync_mpi_bg.hxx \
-			       lmon_be_sync_mpi_bgq.hxx \
-                               ../../lmon_api/lmon_api_std.h \
-                               ../../lmon_api/lmon_be.h \
-                               ../../lmon_api/lmon_proctab.h \
-                               ../../lmon_api/lmon_lmonp_msg.h \
-                               ../../lmon_api/lmon_say_msg.hxx \
-                               ../../sdbg_base_spawner.hxx
-
-libmonbeapi_la_CFLAGS        = $(AM_CFLAGS)
-libmonbeapi_la_CXXFLAGS      = $(AM_CXXFLAGS)
-
-libmonbeapi_la_LDFLAGS       = $(AM_LDFLAGS) \
-                               -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
-
-libmonbeapi_la_LIBADD        = $(top_builddir)/@COMMLOC@/@LIBCOMM@ $(top_builddir)/@GCRYPTLOC@/@LIBGCRYPT@ $(top_builddir)/@GPGERRLOC@/@LIBGPGERR@
-
-
-#
+#####################################################
 # Middleware API
-#
-libmonmwapi_la_SOURCES       = lmon_mw.cxx \
-                               lmon_daemon_internal.cxx \
-                               lmon_lmonp_msg.cxx \
-                               lmon_say_msg.cxx \
-                               lmon_coloc_spawner.cxx \
-                               ../sdbg_rsh_spawner.cxx \
-                               lmon_coloc_spawner.hxx \
-                               lmon_daemon_internal.hxx \
-                               ../sdbg_rsh_spawner.hxx \
-                               ../sdbg_rm_spawner.hxx \
-                               ../../lmon_api/lmon_api_std.h \
-                               ../../lmon_api/lmon_mw.h \
-                               ../../lmon_api/lmon_proctab.h \
-                               ../../lmon_api/lmon_lmonp_msg.h \
-                               ../../lmon_api/lmon_say_msg.hxx \
-                               ../../sdbg_base_spawner.hxx
+####################################################
+libmonmwapi_la_SOURCES = \
+  lmon_mw.cxx \
+  lmon_daemon_internal.cxx \
+  lmon_lmonp_msg.cxx \
+  lmon_say_msg.cxx \
+  lmon_coloc_spawner.cxx \
+  $(PLAT_SRC_DIR)/sdbg_rsh_spawner.cxx \
+  lmon_coloc_spawner.hxx \
+  lmon_daemon_internal.hxx \
+  $(PLAT_SRC_DIR)/sdbg_rsh_spawner.hxx \
+  $(PLAT_SRC_DIR)/sdbg_rm_spawner.hxx \
+  $(BASE_SRC_DIR)/lmon_api/lmon_api_std.h \
+  $(BASE_SRC_DIR)/lmon_api/lmon_mw.h \
+  $(BASE_SRC_DIR)/lmon_api/lmon_proctab.h \
+  $(BASE_SRC_DIR)/lmon_api/lmon_lmonp_msg.h \
+  $(BASE_SRC_DIR)/lmon_api/lmon_say_msg.hxx \
+  $(BASE_SRC_DIR)/sdbg_base_spawner.hxx
+libmonmwapi_la_CFLAGS = $(AM_CFLAGS)
+libmonmwapi_la_CXXFLAGS = $(AM_CXXFLAGS)
+libmonmwapi_la_LDFLAGS = \
+  $(AM_LDFLAGS) \
+  -version-info \
+  @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
+libmonmwapi_la_LIBADD = \
+  $(top_builddir)/@COMMLOC@/@LIBCOMM@ \
+  $(GCRYPT_LIBS) 
 
-libmonmwapi_la_CFLAGS        = $(AM_CFLAGS)
-
-libmonmwapi_la_CXXFLAGS      = $(AM_CXXFLAGS)
-
-libmonmwapi_la_LDFLAGS       = $(AM_LDFLAGS) \
-                               -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
-
-
-libmonmwapi_la_LIBADD        = $(top_builddir)/@COMMLOC@/@LIBCOMM@ $(top_builddir)/@GCRYPTLOC@/@LIBGCRYPT@ $(top_builddir)/@GPGERRLOC@/@LIBGPGERR@

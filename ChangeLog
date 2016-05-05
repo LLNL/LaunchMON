@@ -1,3 +1,16 @@
+2016-05-04 Dong H. Ahn <ahn1@llnl.gov>
+	* git show --stat 42a9e 37e25 3b491 \
+	bc791 fecc9 dac19 81dcf 07417 39efd 6727:
+	Modernize the use of autotools 
+	    Drop support for bundling foreign library sources for easier packaging
+	    `make` now only builds the main binaries and libraries
+	    `make install` will install them but not the test codes/scripts
+	    `make check` will build the tests and scripts
+	    Add --with-test-installed to run tests on installed launchmon.
+	Too many files have been changed and use git show --stat above
+	so that one can retrieve the list of files that have changed
+
+
 2014-04-30 Matt LeGendre <legendre1@llnl.gov> Dong H. Ahn <ahn1@llnl.gov>
 	* configure.ac,
 	config/x_ac_handshake.m4,

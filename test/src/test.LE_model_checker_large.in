@@ -28,12 +28,19 @@
 #--------------------------------------------------------------------------------
 #
 #  Update Log:
+#        May 04 2016 DHA: Add test in-tree and installed support 
 #        Mar 06 2009 DHA: Changed bglrm to bgrm
 #        Jun 12 2008 DHA: Created file.
 #
 
 NUMTASKS=8192
 LMON_OPTS=""
-export LMON_PREFIX=@LMONPREFIX@
+export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
+if test "x@LMONPREFIX@" != "x0"; then
+    export LMON_PREFIX=@LMONPREFIX@
+else
+    export LMON_RM_CONFIG_DIR=@RMCONFIGDIR@
+    export LMON_COLOC_UTIL_DIR=@COLOCDIR@
+fi
 
 @LMON@ $LMON_OPTS -d `pwd`/be_standalone_kicker@EXE@ `pwd`/LE_model_checker@EXE@ -a -p$NUMTASKS -t1

@@ -102,7 +102,6 @@ AC_DEFUN([X_AC_TEST_RM], [
 
 
   rm_found="no"
-  echo $with_rm
   #
   # Whether builder gave an RM and launcher path available??
   #
@@ -116,7 +115,7 @@ AC_DEFUN([X_AC_TEST_RM], [
       # launcher path given
       #
       if test ! -z "$with_launcher" -a -f "$with_launcher"; then
-        pth=`config/ap $with_launcher`
+        pth=`$srcdir/config/ap $with_launcher`
         ac_job_launcher_path=$pth
         rm_found="yes"
         AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
@@ -130,7 +129,7 @@ AC_DEFUN([X_AC_TEST_RM], [
         fi
 
         if test ! -z "$rm_dir/srun" -a -f "$rm_dir/srun"; then
-	  pth=`config/ap $rm_dir/srun`
+	  pth=`$srcdir/config/ap $rm_dir/srun`
           ac_job_launcher_path=$pth
           rm_found="yes"
           AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
@@ -154,7 +153,7 @@ AC_DEFUN([X_AC_TEST_RM], [
       # launcher path given
       #
       if test ! -z "$with_launcher" -a -f "$with_launcher"; then
-        pth=`config/ap $with_launcher`
+        pth=`$srcdir/config/ap $with_launcher`
         ac_job_launcher_path=$pth
         rm_found="yes"
         AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
@@ -168,7 +167,7 @@ AC_DEFUN([X_AC_TEST_RM], [
         fi
 
         if test ! -z "$rm_dir/orterun" -a -f "$rm_dir/orterun"; then
-          pth=`config/ap $rm_dir/srun`
+          pth=`$srcdir/config/ap $rm_dir/srun`
           ac_job_launcher_path=$pth
           rm_found="yes"
           AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
@@ -192,7 +191,7 @@ AC_DEFUN([X_AC_TEST_RM], [
       # launcher path given
       #
       if test ! -z "$with_launcher" -a -f "$with_launcher"; then
-        pth=`config/ap $with_launcher`
+        pth=`$srcdir/config/ap $with_launcher`
         ac_job_launcher_path=$pth
         rm_found="yes"
         AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
@@ -206,7 +205,7 @@ AC_DEFUN([X_AC_TEST_RM], [
         fi
 
         if test ! -z "$rm_dir/aprun" -a -f "$rm_dir/aprun"; then
-          pth=`config/ap $rm_dir/aprun`
+          pth=`$srcdir/config/ap $rm_dir/aprun`
           ac_job_launcher_path=$pth
           rm_found="yes"
           AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
@@ -221,83 +220,7 @@ AC_DEFUN([X_AC_TEST_RM], [
     #
     AC_MSG_RESULT($with_rm:$rm_found)
 
-  elif test "x$with_rm" = "xbglrm" ; then
-    #
-    # Configure for Blue Gene P RM
-    #
-    if test "x$with_launcher" != "xcheck"; then
-      #
-      # launcher path given
-      #
-      if test ! -z "$with_launcher" -a -f "$with_launcher"; then
-        pth=`config/ap $with_launcher`
-        ac_job_launcher_path=$pth
-        rm_found="yes"
-        AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
-        AC_SUBST(RM_TYPE, RC_bglrm)
-      fi
-    else 
-      rm_default_dirs="/bgl/BlueLight/ppcfloor/bglsys/bin"
-      for rm_dir in $rm_default_dirs; do
-        if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
-          continue;
-        fi
-
-        if test ! -z "$rm_dir/mpirun" -a -f "$rm_dir/mpirun"; then
-          pth=`config/ap $rm_dir/mpirun`
-          ac_job_launcher_path=$pth
-          rm_found="yes"
-          AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
-          AC_SUBST(RM_TYPE, RC_bglrm)
-          break
-        fi
-      done
-    fi
-
-    #
-    # This answers whether RM given and found
-    #
-    AC_MSG_RESULT($with_rm:$rm_found)
-
-  elif test "x$with_rm" = "xbgprm" -o "x$dflt_str" = "xcheck-linux-power"; then
-    #
-    # Configure for Blue Gene P RM
-    #
-    if test "x$with_launcher" != "xcheck"; then
-      #
-      # launcher path given
-      #
-      if test ! -z "$with_launcher" -a -f "$with_launcher"; then
-        pth=`config/ap $with_launcher`
-        ac_job_launcher_path=$pth
-        rm_found="yes"
-        AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
-        AC_SUBST(RM_TYPE, RC_bgprm)
-      fi
-    else 
-      rm_default_dirs="/bgsys/drivers/ppcfloor/bin"
-      for rm_dir in $rm_default_dirs; do
-        if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
-          continue;
-        fi
-
-        if test ! -z "$rm_dir/mpirun" -a -f "$rm_dir/mpirun"; then
-          pth=`config/ap $rm_dir/mpirun`
-          ac_job_launcher_path=$pth
-          rm_found="yes"
-          AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
-          AC_SUBST(RM_TYPE, RC_bgprm)
-          break
-        fi
-      done
-    fi
-
-    #
-    # This answers whether RM given and found
-    #
-    AC_MSG_RESULT($with_rm:$rm_found)
-
-  elif test "x$with_rm" = "xbgqrm" -o "x$dflt_str" = "xcheck-linux-power64"; then
+  elif test "x$with_rm" = "xbgqrm" -o "x$ac_target_rm" = "xbgqrm"; then
     #
     # Configure for Blue Gene Q RM
     #
@@ -306,7 +229,7 @@ AC_DEFUN([X_AC_TEST_RM], [
       # launcher path given
       #
       if test ! -z "$with_launcher" -a -f "$with_launcher"; then
-        pth=`config/ap $with_launcher`
+        pth=`$srcdir/config/ap $with_launcher`
         ac_job_launcher_path=$pth
         rm_found="yes"
         AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
@@ -321,16 +244,15 @@ AC_DEFUN([X_AC_TEST_RM], [
         if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
           continue;
         fi
-
         if test ! -z "$rm_dir/srun" -a -f "$rm_dir/srun"; then
-          pth=`config/ap $rm_dir/srun`
+          pth=`$srcdir/config/ap $rm_dir/srun`
           ac_job_launcher_path=$pth
           rm_found="yes"
           AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
           AC_SUBST(RM_TYPE, RC_bgq_slurm)
           break
         elif test ! -z "$rm_dir/runjob" -a -f "$rm_dir/runjob"; then
-          pth=`config/ap $rm_dir/runjob`
+          pth=`$srcdir/config/ap $rm_dir/runjob`
           ac_job_launcher_path=$pth
           rm_found="yes"
           AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
@@ -368,5 +290,17 @@ AC_DEFUN([X_AC_MW_HOSTLIST], [
   #
   AC_SUBST(LMONHL,$hostlist)
   AC_MSG_RESULT($hostlist)
+])
+
+
+AC_DEFUN([X_AC_TEST_INSTALLED], [
+  AC_MSG_CHECKING([whether to configure tests on installed launchmon])
+  AC_ARG_WITH([test-installed],
+    AS_HELP_STRING(--with-test-installed,configure tests on installed launchmon),
+    [with_test_inst=$withval],
+    [with_test_inst=no])
+
+  AC_MSG_RESULT($with_test_inst)
+  AM_CONDITIONAL([WITH_TEST_INSTALLED], [test "x$with_test_inst" = "xyes"])
 ])
 

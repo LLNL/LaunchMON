@@ -31,14 +31,20 @@
 #  one daemon per node, which unlocks the initial hang of all tasks.
 #
 #  Update Log:
+#        May 04 2016 DHA: Add test in-tree and installed support 
 #        Jun 04 2012 DHA: Adjust the test script to 1.0 testing environment.
 #        Aug 03 2010 DHA: Created file.
 #
 
 export RM_TYPE=@TEST_RMTP@
 export MPI_JOB_LAUNCHER_PATH=@TJLPATH@
-export LMON_PREFIX=@LMONPREFIX@
 export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
+if test "x@LMONPREFIX@" != "x0"; then
+    export LMON_PREFIX=@LMONPREFIX@
+else
+    export LMON_RM_CONFIG_DIR=@RMCONFIGDIR@
+    export LMON_COLOC_UTIL_DIR=@COLOCDIR@
+fi
 export LMON_MW_HOSTLIST_TEST=1
 export LMON_MW_HOSTLIST=@LMONMWHL@
 
