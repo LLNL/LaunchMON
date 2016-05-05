@@ -30,10 +30,17 @@
 #  Check if attachAndSpawnDaemons can handle an invalid pid case correctly. 
 #
 #  Update Log:
+#        May 04 2016 DHA: Add test in-tree and installed support 
 #        Jun 16 2008 DHA: Created file.
 #
 
 export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
+if test "x@LMONPREFIX@" != "x0"; then
+    export LMON_PREFIX=@LMONPREFIX@
+else
+    export LMON_RM_CONFIG_DIR=@RMCONFIGDIR@
+    export LMON_COLOC_UTIL_DIR=@COLOCDIR@
+fi
 export LMON_INVALIDPID_TEST=1
 
 fe_attach_smoketest@EXE@ 1234 `pwd`/be_kicker@EXE@ $SIGNUM -k 20

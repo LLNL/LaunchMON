@@ -3372,6 +3372,12 @@ bld_exec_lmon_launch_str ( bool isLocal,
         {
            cmdlist.push_back(string("LMON_PREFIX=") + string(pref));
         }
+      else if ( pref = getenv("LMON_RM_CONFIG_DIR") )
+       {
+           cmdlist.push_back(string("LMON_RM_CONFIG_DIR=") + string(pref));
+           if ( pref = getenv("LMON_COLOC_UTIL_DIR"))
+               cmdlist.push_back(string("LMON_COLOC_UTIL_DIR=") + string(pref));
+       }
 
       if ( getenv("LMON_DEBUG_LAUNCHMON_ENGINE") )
 	{
@@ -5787,5 +5793,3 @@ LMON_fe_getMwHostlistSize(
   pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
   return LMON_OK;
 }
-
-

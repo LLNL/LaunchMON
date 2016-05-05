@@ -31,6 +31,7 @@
 #  of its associated job.
 #
 #  Update Log:
+#        May 04 2016 DHA: Add test in-tree and installed support 
 #        Oct 21 2011 DHA: Added dynamic RM detection support.
 #        Dec 17 2009 DHA: Added minimum waittime
 #        Mar 06 2009 DHA: Changed bglrm to bgrm
@@ -52,8 +53,13 @@ if test $NUMNODES -lt 20 ; then
 fi
 SIGNUM=10
 MPI_JOB_LAUNCHER_PATH=@TJLPATH@
-export LMON_PREFIX=@LMONPREFIX@
 export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
+if test "x@LMONPREFIX@" != "x0"; then
+    export LMON_PREFIX=@LMONPREFIX@
+else
+    export LMON_RM_CONFIG_DIR=@RMCONFIGDIR@
+    export LMON_COLOC_UTIL_DIR=@COLOCDIR@
+fi
 export FEN_RM_DISTRIBUTED=1
 
 if test "x$RM_TYPE" = "xRC_slurm" ; then

@@ -30,6 +30,7 @@
 #  Attach the tool to a running program and unlock the hang. 
 #
 #  Update Log:
+#        May 04 2016 DHA: Add test in-tree and installed support 
 #        Oct 21 2011 DHA: Added dynamic RM detection support.
 #        Mar 06 2009 DHA: Changed bglrm to bgrm
 #        Jun 16 2008 DHA: Created file.
@@ -44,8 +45,13 @@ fi
 SIGNUM=10
 MPI_JOB_LAUNCHER_PATH=@TJLPATH@
 RM_TYPE=@TEST_RMTP@
-export LMON_PREFIX=@LMONPREFIX@
 export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
+if test "x@LMONPREFIX@" != "x0"; then
+    export LMON_PREFIX=@LMONPREFIX@
+else
+    export LMON_RM_CONFIG_DIR=@RMCONFIGDIR@
+    export LMON_COLOC_UTIL_DIR=@COLOCDIR@
+fi
 
 if test "x$RM_TYPE" = "xRC_bglrm" -o "x$RM_TYPE" = "xRC_bgprm"; then
   echo "[LMON FE] Test Not Implemented Yet"

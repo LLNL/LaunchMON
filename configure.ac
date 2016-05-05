@@ -129,8 +129,6 @@ AC_DEFINE(COBO_PORT_RANGE, 32, [Define 32 for COBO_BASED])
 dnl -----------------------------------------------
 dnl with GCRYPT support?
 dnl -----------------------------------------------
-#X_AC_GCRYPT
-#AX_LIB_GCRYPT([yes])
 AM_PATH_LIBGCRYPT([1.2.0],[
     AC_DEFINE([HAVE_GCRYPT],[1],[Gcrypt library is available])
     HAVE_GCRYPT=1
@@ -151,12 +149,6 @@ AC_CHECK_HEADERS([sys/types.h])
 X_AC_HANDSHAKE
 
 dnl -----------------------------------------------
-dnl with MY BOOST support? Boost should be a hard
-dnl requirement
-dnl -----------------------------------------------
-dnl X_AC_MYBOOST
-
-dnl -----------------------------------------------
 dnl enable tracing cost measurement codes? 
 dnl -----------------------------------------------
 X_AC_TRACING_COST
@@ -169,6 +161,7 @@ X_AC_TESTNNODES
 X_AC_NCORE_SMP
 X_AC_TEST_RM
 X_AC_MW_HOSTLIST
+X_AC_TEST_INSTALLED
 
 dnl -----------------------------------------------
 dnl Checks for programs

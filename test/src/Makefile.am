@@ -41,16 +41,37 @@ TESTNNODES = @TESTNNODES@
 TARGET_JOB_LAUNCHER_PATH = @TARGET_JOB_LAUNCHER_PATH@
 RM_TYPE = @RM_TYPE@
 LMONHOSTLIST = @LMONHL@
-PLAT_SRC_DIR = $(top_srcdir)/launchmon/src/linux
-BASE_SRC_DIR = $(top_srcdir)/launchmon/src
-API_SRC_DIR = $(top_srcdir)/launchmon/src/linux/lmon_api
+PLAT_SRC_DIR = $(abs_top_srcdir)/launchmon/src/linux
+API_SRC_DIR = $(abs_top_srcdir)/launchmon/src/linux/lmon_api
+BASE_SRC_DIR = ${abs_top_srcdir}/launchmon/src
+
 if WITH_CIOD
 CIOD_INC_FLAGS = -I@ARCHHEADER@ \
-                 -I$(top_srcdir)/@CIODLOC@
+                 -I$(abs_top_srcdir)/@CIODLOC@
 endif
-AM_CPPFLAGS = -I$(BASE_SRC_DIR) -I$(PLAT_SRC_DIR) \
-  $(CIOD_INC_FLAGS) -I$(API_SRC_DIR)
-API_LIB_DIR = $(top_builddir)/launchmon/src/linux/lmon_api
+
+if WITH_TEST_INSTALLED
+API_DIR = $(prefix)/include
+API_LIB_DIR = $(prefix)/lib
+ENGINE_PATH = $(prefix)/bin/launchmon$(EXEEXT)
+LMONPREFIX = $(prefix)
+IN_TREE_RM_CONFIG_DIR = 0
+IN_TREE_COLOC_UTIL_DIR = 0
+else
+API_DIR = ${abs_top_srcdir}/launchmon/src
+API_LIB_DIR = $(abs_top_builddir)/launchmon/src/linux/lmon_api
+ENGINE_PATH = $(abs_top_builddir)/launchmon/src/linux/launchmon$(EXEEXT)
+LMONPREFIX = 0
+IN_TREE_RM_CONFIG_DIR = $(abs_top_srcdir)/etc
+IN_TREE_COLOC_UTIL_DIR = $(abs_top_builddir)/tools/alps/src
+endif
+
+AM_CPPFLAGS = \
+  -I$(API_DIR) \
+  -I$(BASE_SRC_DIR) \
+  -I$(PLAT_SRC_DIR) \
+  $(CIOD_INC_FLAGS) \
+  -I$(API_SRC_DIR)
 
 testdir = ${pkgdatadir}/tests
 check_PROGRAMS = \
@@ -79,13 +100,13 @@ LE_model_checker_LDFLAGS = @LNCHR_BIT_FLAGS@ @LIBPTHREAD@ $(AM_LDFLAGS)
 fe_launch_smoketest_SOURCES = fe_launch_smoketest.cxx util.c
 fe_launch_smoketest_CFLAGS = $(AM_CFLAGS)
 fe_launch_smoketest_CXXFLAGS = $(AM_CXXFLAGS)
-fe_launch_smoketest_LDFLAGS = -L$(top_builddir)/launchmon/src/linux/lmon_api
+fe_launch_smoketest_LDFLAGS = -L$(API_LIB_DIR)
 fe_launch_smoketest_LDADD = -lmonfeapi 
 
 fe_launch_usrpayload_test_SOURCES = fe_launch_usrpayload_test.cxx util.c
 fe_launch_usrpayload_test_CFLAGS = $(AM_CFLAGS)
 fe_launch_usrpayload_test_CXXFLAGS = $(AM_CXXFLAGS)
-fe_launch_usrpayload_test_LDFLAGS = -L$(top_builddir)/launchmon/src/linux/lmon_api
+fe_launch_usrpayload_test_LDFLAGS = -L$(API_LIB_DIR)
 fe_launch_usrpayload_test_LDADD = -lmonfeapi 
 
 fe_attach_smoketest_SOURCES = fe_attach_smoketest.cxx util.c
@@ -180,14 +201,16 @@ CLEANFILES = $(check_SCRIPTS)
 EXTRA_DIST = $(test_input_files)
 
 do_subst = \
-  sed -e 's,@LMON@,$(prefix)/bin/launchmon$(EXEEXT),g' \
-      -e 's,@LMONMWHL@,$(LMONHOSTLIST),g' \
-	  -e 's,@LMONPREFIX@,$(prefix),g' \
-      -e 's,@TJLPATH@,$(TARGET_JOB_LAUNCHER_PATH),g' \
-      -e 's,@TEST_RMTP@,$(RM_TYPE),g' \
-	  -e 's,@SMP@,$(SMPFACTOR),g' \
-	  -e 's,@NNODES@,$(TESTNNODES),g' \
-      -e 's,@EXE@,$(EXEEXT),g' 
+    sed -e 's,@LMON@,$(ENGINE_PATH),g' \
+        -e 's,@LMONMWHL@,$(LMONHOSTLIST),g' \
+	    -e 's,@LMONPREFIX@,$(LMONPREFIX),g' \
+	    -e 's,@RMCONFIGDIR@,$(IN_TREE_RM_CONFIG_DIR),g' \
+	    -e 's,@COLOCDIR@,$(IN_TREE_COLOC_UTIL_DIR),g' \
+        -e 's,@TJLPATH@,$(TARGET_JOB_LAUNCHER_PATH),g' \
+        -e 's,@TEST_RMTP@,$(RM_TYPE),g' \
+	    -e 's,@SMP@,$(SMPFACTOR),g' \
+	    -e 's,@NNODES@,$(TESTNNODES),g' \
+        -e 's,@EXE@,$(EXEEXT),g'
 
 $(check_SCRIPTS): %: %.in
 	$(do_subst) < $< > $@
