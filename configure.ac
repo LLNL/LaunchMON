@@ -92,6 +92,7 @@ dnl -----------------------------------------------
 dnl Checks for the OS/CPU/RM type
 dnl -----------------------------------------------
 X_AC_PLATFORM
+X_AC_SLURM_MPAO_WR
 
 dnl -----------------------------------------------
 dnl enable debug support
