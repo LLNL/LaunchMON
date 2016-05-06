@@ -617,12 +617,9 @@ linux_launchmon_t::launch_tool_daemons (
         {
           hnstream << pos->first;
           count++;
-          if (count < get_proctable_copy().size())
-            {
-              hnstream << "\n";
-            } 
+          hnstream << "\n";
         }
-
+      hnstream.flush();
       hnstream.close();
 
       p.rmgr()->set_paramset(
