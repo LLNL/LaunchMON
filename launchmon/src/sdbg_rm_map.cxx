@@ -244,6 +244,10 @@ resource_manager_t::fill_rm_type(const std::string &v)
     {
       rm = RC_slurm;
     }
+  else if (v == std::string("intel_hydra"))
+    {
+      rm = RC_intel_hydra;
+    }
   else if (v == std::string("gupc"))
     {
       rm = RC_gupc;
