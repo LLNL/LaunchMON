@@ -28,6 +28,7 @@
 # --------------------------------------------------------------------------------
 #
 #   Update Log:
+#         Feb 20 2015 andrewg@cray.com: Fixes for Cray systems.
 #         Jun 11 2008 DHA: File created.
 #
 
@@ -115,12 +116,24 @@ AC_DEFUN([X_AC_PLATFORM], [
         ac_target_rm="bgqrm"
     fi
   elif test "x$ac_target_os" = "xlinux" -a "x$ac_target_isa" = "xx86_64"; then
-    if test ! -z "/use/bin/aprun" -a -f "/usr/bin/aprun"; then
+    if test -f "/opt/cray/alps/default/bin/aprun"; then
+        dnl This is the new OBS system
         AC_DEFINE(SUB_ARCH_ALPS,1,[Define 1 for SUB_ARCH_ALPS])
         AC_DEFINE(RM_BE_STUB_CMD, "alps_be_starter", [be starter stub location])
         AC_DEFINE(RM_FE_COLOC_CMD, "alps_fe_colocator", [bulk launcher location])
-	AC_SUBST(RMINC,"/usr/include/alps")
-	AC_SUBST(RMLIB,"/usr/lib/alps/libalps.a")
+        PKG_CHECK_MODULES([CRAY_ALPS], [cray-alps])
+        AC_SUBST(ARCHHEADER,"/")
+        AC_SUBST(ARCHLIB,"/")
+        ac_target_rm="alps"
+    elif test -f "/usr/bin/aprun"; then
+        dnl This is the old system. We hack things to work without pkg-config
+        AC_DEFINE(SUB_ARCH_ALPS,1,[Define 1 for SUB_ARCH_ALPS])
+        AC_DEFINE(RM_BE_STUB_CMD, "alps_be_starter", [be starter stub location])
+        AC_DEFINE(RM_FE_COLOC_CMD, "alps_fe_colocator", [bulk launcher location])
+        AC_SUBST(CRAY_ALPS_CFLAGS,"-I/usr/include")
+        AC_SUBST(CRAY_ALPS_LIBS,"-L/usr/lib/alps -lalps")
+        AC_SUBST(ARCHHEADER,"/")
+        AC_SUBST(ARCHLIB,"/")
         ac_target_rm="alps"
     else
         AC_SUBST(ARCHHEADER,"/")
@@ -133,7 +146,7 @@ AC_DEFUN([X_AC_PLATFORM], [
 
   AC_DEFINE_UNQUOTED(TARGET_OS_ISA_STRING, "$ac_target_os-$ac_target_isa", [Define os-isa string])
   AC_DEFINE_UNQUOTED(TARGET_RM_STRING, "$ac_target_rm" ,[Define rm string])
-  AM_CONDITIONAL([WITH_ALPS], [test "x$ac_target_rm" = "alps"])
+  AM_CONDITIONAL([WITH_ALPS], [test "x$ac_target_rm" = "xalps"])
   AM_CONDITIONAL([WITH_CIOD], [test "x$ac_target_rm" = "xbglrm" \
                                     -o "x$ac_target_rm" = "xbgprm" \
                                     -o "x$ac_target_rm" = "xbgqrm"])

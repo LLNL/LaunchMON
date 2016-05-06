@@ -1,3 +1,15 @@
+2016-05-05 Andrew Gontarek <andrewg@cray.com>
+	*  AUTHORS,
+	config/x_ac_platform.m4,
+	configure.ac,
+	etc/rm_alps.conf,
+	launchmon/src/linux/sdbg_linux_launchmon.cxx,
+	launchmon/src/sdbg_rm_map.cxx,
+	launchmon/src/sdbg_rm_map.hxx,
+	tools/alps/src/Makefile.am,
+	tools/alps/src/alps_fe_colocator.cxx:
+	Added Cray XE/XK/XC support. 
+
 2016-05-04 Dong H. Ahn <ahn1@llnl.gov>
 	* git show --stat 42a9e 37e25 3b491 \
 	bc791 fecc9 dac19 81dcf 07417 39efd 6727:

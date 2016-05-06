@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------                      
  *
  *  Update Log:
+ *        May 05 2016 DHA: Applied @agontarek's Cray patch
  *        Nov 05 2010 DHA: Support for excluding existing system DSOs from 
  *                         being broadcast. Credit to Andrew Gontarek at Cray
  *                         for providing DSO list for CLE3.1 and CLE2.2
@@ -39,7 +40,6 @@
 
 extern "C" {
 # include <cstdio>
-# include <cstdlib>
 # include <cstring>
 # include <unistd.h>
 # include <stdint.h>
@@ -60,8 +60,8 @@ extern "C" {
 # else
 #  error libelf.h is required
 #endif
-# include "apInfo.h"
-# include "libalps.h"
+# include "alps/apInfo.h"
+# include "alps/libalps.h"
 extern char *alpsGetMyNid(int *nid);
 }
 
