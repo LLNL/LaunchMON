@@ -242,9 +242,13 @@ LMON_be_procctl_initdone_ptrace ( MPIR_PROCDESC_EXT* ptab,
   int i;
   int status;
 
+#ifdef LMON_SLURM_MPAO_WR
   //
-  // initdone need to harvest a trap event due to SIGCONT 
-  // sent to the target process by the RM controller first 
+  // initdone need to harvest a trap event due to SIGCONT
+  // sent to the target process by the RM controller first.
+  //
+  // This can happen on a system because of a brittle code
+  // desribed in Issue #16.
   //
   for ( i = 0; i < psize; ++i )
     {
@@ -262,6 +266,8 @@ LMON_be_procctl_initdone_ptrace ( MPIR_PROCDESC_EXT* ptab,
           rc = LMON_EINVAL;
         }
     }
+
+#endif
 
   //
   // Send a SIGSTOP for the target processes so that you 

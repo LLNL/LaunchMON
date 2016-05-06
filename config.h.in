@@ -158,6 +158,9 @@
 /* install prefix */
 #undef LMON_PREFIX
 
+/* Enable a workaround to cope with additional SIGCONT sent by slurmstepd */
+#undef LMON_SLURM_MPAO_WR
+
 /* Define to header that first defines elf. */
 #undef LOCATION_OF_LIBELFHEADER
 
