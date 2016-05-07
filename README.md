@@ -10,11 +10,12 @@ into the relevant nodes.
 LaunchMON requires the following packages to build
 
 ```
+libelf
+boost 
 libgcrypt >= 1.4.5
 libgpg-error >= 1.7.0
-boost >= 1.41.0
 # for secure handshake
-munge-devel 
+munge
 ```
 
 The following is the simplest way to configure, build and install
