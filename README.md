@@ -61,4 +61,3 @@ the LaunchMON package from the source checked out from this repo.
    and execute a parallel target application.
 
 If you are building from a distribution, skip step (1) and (2).
-
