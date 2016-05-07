@@ -1,0 +1,26 @@
+language: c
+
+sudo: false
+
+compiler:
+  - gcc
+  - clang
+  - gcc+install
+
+addons:
+  apt:
+    sources:
+    packages:
+      - libelf-dev
+      - libboost-dev
+      - libopenmpi-dev
+      - munge
+
+before_install:
+  - case "$CC" in *+install)  CC=${CC//+*}; export TEST_INSTALL=it;; esac
+
+script:
+ - export MAKECMDS="make -j3 && make -j3 check"
+ - if test "x${TEST_INSTALL}" = "xit"; then ARGS="--prefix=$HOME/local --with-test-installed"; MAKECMDS="make -j3 && make install && make -j3 check"; fi
+ - ./bootstrap && mkdir build && cd build 
+ - ../configure ${ARGS} --with-test-rm=orte --with-test-ncore-per-CN=2 && eval ${MAKECMDS}
