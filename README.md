@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/LLNL/LaunchMON.svg?branch=master)](https://travis-ci.org/LLNL/LaunchMON)
+
 ##LaunchMON 
 
 LaunchMON is a software infrastructure that enables HPC run-time tools
