@@ -29,6 +29,7 @@ dnl ----------------------------------------------------------------------------
 dnl
 dnl   Update Log:
 dnl         Apr 28 2016 DHA: Modernize autotool support 
+dnl         Feb 20 2015 andrewg@cray.com: Added Cray support.
 dnl         Apr 30 2014 DHA: Declare 1.0.1 -- this doesn't have Cray support though.
 dnl         Apr 15 2014 DHA: Drop tools/cobo/test
 dnl         Mar 10 2014 MPL: Add secure handshake
@@ -77,6 +78,12 @@ AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_HEADER([config.h])
 dnl config.guess and config.sub must be distributed 
 AC_CANONICAL_SYSTEM
+
+dnl
+dnl Check for pkg-config
+dnl
+PKG_PROG_PKG_CONFIG
+
 
 dnl -----------------------------------------------
 dnl Automake support

@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Feb 20 2015 andrewg@cray.com: Added support for RMs that build the
+ *                         proctable on demand. Fixed a misplaced brace bug.
  *        Oct 26 2012 DHA: Removed catch clauses for deprecated thread tracers 
  *                         exceptions.
  *        Jul 31 2012 DHA: Added a fix for a thread race-related hang problem.
@@ -848,7 +850,7 @@ linux_launchmon_t::acquire_proctable (
       // fetching the RPDTAB size
       //
       symbol_base_t<T_VA> debug_ps 
-	= main_im->get_a_symbol ( p.get_launch_proctable_size() );
+        = main_im->get_a_symbol ( p.get_launch_proctable_size() );
 
       if (!debug_ps && p.get_myrmso_image())
         {
@@ -866,10 +868,10 @@ linux_launchmon_t::acquire_proctable (
       set_pcount (local_pcount);
       if (get_pcount() <= 0 )
         {
-	  self_trace_t::trace ( 
-             true, 
-	     MODULENAME, 1, 
-	     "MPIR_proctable_size is negative");  
+          self_trace_t::trace ( 
+          true, 
+	      MODULENAME, 1, 
+	      "MPIR_proctable_size is negative");  
           return false;
         }
 
@@ -880,15 +882,15 @@ linux_launchmon_t::acquire_proctable (
       // perform separate read operations using those addresses.
       //
       MPIR_PROCDESC* launcher_proctable 
-	= (MPIR_PROCDESC *) malloc (sizeof (MPIR_PROCDESC) * get_pcount());   
+        = (MPIR_PROCDESC *) malloc (sizeof (MPIR_PROCDESC) * get_pcount());   
 
       if (!launcher_proctable)
         {
-	  self_trace_t::trace ( 
-             true, 
-	     MODULENAME, 
-             1, 
-	     "Out of memory!");  
+	      self_trace_t::trace ( 
+          true, 
+	      MODULENAME, 
+          1, 
+	      "Out of memory!");  
 
           return false;
         }
@@ -920,72 +922,72 @@ linux_launchmon_t::acquire_proctable (
       //
       maxcount = (unsigned long long) get_pcount();
       for ( i = 0; i < maxcount; ++i ) 
-	{
-	  MPIR_PROCDESC_EXT* an_entry 
-	    = (MPIR_PROCDESC_EXT* ) malloc(sizeof(MPIR_PROCDESC_EXT));
+        {
+          MPIR_PROCDESC_EXT* an_entry 
+            = (MPIR_PROCDESC_EXT* ) malloc(sizeof(MPIR_PROCDESC_EXT));
 
           if (!an_entry)
             {
-	      self_trace_t::trace ( 
-                true, 
-	        MODULENAME, 1, 
-	       "Out of memory!");  
+              self_trace_t::trace ( 
+              true, 
+	          MODULENAME, 1, 
+	         "Out of memory!");  
 
               return false;
             }
 
-	  //
-	  // allocating storages for "an_entry"
-	  //	
-	  an_entry->pd.host_name 
+          //
+          // allocating storages for "an_entry"
+          //	
+          an_entry->pd.host_name 
                  = (char*) malloc(MAX_STRING_SIZE);
-	  an_entry->pd.executable_name 
+          an_entry->pd.executable_name 
                  = (char*) malloc(MAX_STRING_SIZE);
 #if SUB_ARCH_BGQ
-	  an_entry->cnodeid
+	      an_entry->cnodeid
                  = launcher_proctable[i].pid;      
 #else
-	  an_entry->pd.pid 
+	      an_entry->pd.pid 
                  = launcher_proctable[i].pid;      
-	  an_entry->cnodeid = -1;      
+	      an_entry->cnodeid = -1;      
 #endif
-	  an_entry->mpirank = i; /* The mpi rank is the index into the global tab */
+	      an_entry->mpirank = i; /* The mpi rank is the index into the global tab */
 
 #if SUB_ARCH_BGQ
-	  an_entry->pd.pid = i; /* The mpi rank is the index into the global tab */
+	      an_entry->pd.pid = i; /* The mpi rank is the index into the global tab */
 #endif
 
-	  //
-	  // memory-fetching to get the "host_name" 
           //
-	  get_tracer()->tracer_read_string(p, 
+          // memory-fetching to get the "host_name" 
+          //
+          get_tracer()->tracer_read_string(p, 
 			  (T_VA) launcher_proctable[i].host_name,
 			  (void*) (an_entry->pd.host_name),
 			  MAX_STRING_SIZE,
 			  use_cxt );   
    
-	  //
-    	  // memory-fetching to get the "executable name" 
-	  //	 
-	  get_tracer()->tracer_read_string(p, 
-		          (T_VA)launcher_proctable[i].executable_name,
+          //
+          // memory-fetching to get the "executable name" 
+          //	 
+          get_tracer()->tracer_read_string(p, 
+              (T_VA)launcher_proctable[i].executable_name,
 			  (void*)an_entry->pd.executable_name,
 			  MAX_STRING_SIZE,
 			  use_cxt );
 
-	  get_proctable_copy()[an_entry->pd.host_name].push_back(an_entry);
-	} 
+          get_proctable_copy()[an_entry->pd.host_name].push_back(an_entry);
+        }
 
       free ( launcher_proctable );
 
       if ( get_proctable_copy().empty() )
-	{
-	  self_trace_t::trace ( LEVELCHK(level1),
-	     MODULENAME, 1,
-	     "proctable is empty!");
+        {
+          self_trace_t::trace ( LEVELCHK(level1),
+          MODULENAME, 1,
+          "proctable is empty!");
 
-	  return LAUNCHMON_FAILED;
-	}
+          return false;
+        }
 
       if (p.get_myopts()->get_my_rmconfig()->is_rid_sup())
         {
@@ -1027,13 +1029,13 @@ linux_launchmon_t::acquire_proctable (
                   // -1 is the init value that SLURM sets internally 
                   // for "totalview_jobid"
                   if ( get_resid() == -1 )
-	           {
-	             self_trace_t::trace ( LEVELCHK(level1),
-	               MODULENAME, 1,
-	               "resource ID is not valid!");
+                    {
+                      self_trace_t::trace ( LEVELCHK(level1),
+                      MODULENAME, 1,
+                      "resource ID is not valid!");
 
-	             return LAUNCHMON_FAILED;
-	           }
+	                  return false;
+                    }
                 }
               else if (r_mgr.get_job_id().dtype == integer32)
                 {
@@ -1048,14 +1050,13 @@ linux_launchmon_t::acquire_proctable (
                   set_resid(int_val);
                   p.set_rid(get_resid());
                 }
+            }
           else if (p.get_myopts()->get_my_rmconfig()->is_rid_via_pid())
             {
               set_resid (p.get_pid(false));
               p.set_rid (get_resid());
             }
         }
-      }
-
 
 #if MEASURE_TRACING_COST
       c_end_ts = gettimeofdayD();
@@ -1067,7 +1068,7 @@ linux_launchmon_t::acquire_proctable (
       }
 #endif
 
-      return LAUNCHMON_OK;
+      return true;
     }
   catch ( symtab_exception_t e ) 
     {
@@ -2011,28 +2012,39 @@ linux_launchmon_t::handle_trap_after_attach_event (
       else
         {
            //
-           // Without MPIR Colocation service, you would have
-           // Proctable available on attach and you would be 
-           // ready to launch daemon at this point
-           // 
-           // 
-           acquire_proctable ( p, use_cxt );
-           ship_proctab_msg ( lmonp_proctable_avail );
-           ship_resourcehandle_msg ( lmonp_resourcehandle_avail, get_resid() );
-	   ship_rminfo_msg ( lmonp_rminfo,
-			     (int) p.get_pid(false),
-			      p.rmgr()->get_resource_manager().get_rm());
-           say_fetofe_msg ( lmonp_stop_at_first_attach );
-           launch_tool_daemons(p);
-	   get_tracer()->tracer_continue (p, use_cxt);
-        }
+           // Some RMs will build the Proctable on demand. If so, continue until
+           // the MPIR_Breakpoint is hit.
+           //
+           if (p.rmgr()->is_cont_on_att())
+             {
+               get_tracer()->tracer_continue (p, use_cxt);
+             }
+           else
+             {
+               //
+               // Without MPIR Colocation service, you would have
+               // Proctable available on attach and you would be 
+               // ready to launch daemon at this point
+               // 
+               // 
+               acquire_proctable ( p, use_cxt );
+               ship_proctab_msg ( lmonp_proctable_avail );
+               ship_resourcehandle_msg ( lmonp_resourcehandle_avail, get_resid() );
+               ship_rminfo_msg ( lmonp_rminfo,
+                                 (int) p.get_pid(false),
+                                 p.rmgr()->get_resource_manager().get_rm());
+               say_fetofe_msg ( lmonp_stop_at_first_attach );
+               launch_tool_daemons(p);
+               get_tracer()->tracer_continue (p, use_cxt);
+             }
+         }
 
       {
-	self_trace_t::trace ( 
+        self_trace_t::trace ( 
           LEVELCHK(level2), 
-	  MODULENAME,
+          MODULENAME,
           0,
-	  "trap after attach event handler completed.");
+	      "trap after attach event handler completed.");
       }
   
 #if MEASURE_TRACING_COST

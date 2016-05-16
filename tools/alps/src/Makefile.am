@@ -28,6 +28,7 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        May 05 2016 DHA: Adapt @agontarek's Cray port patch 
 ##        Apr 29 2016 DHA: Mondernize build support
 ##        Nov 23 2010 DHA: Changed bin_SCRIPTS to etc_SCRIPTS for CLE dso list
 ##        Nov 04 2010 DHA: Added lib_SCRIPTS 
@@ -36,16 +37,15 @@
 ##
 
 AM_CPPFLAGS = \
-  -I$(top_srcdir) \
-  -I$(top_srcdir)/launchmon/src \
-  -I$(top_srcdir)/@LMONAPILOC@ \
-  -I@RMINC@
+  -I$(abs_top_srcdir) \
+  -I$(abs_top_srcdir)/launchmon/src \
+  -I$(abs_top_srcdir)/@LMONAPILOC@ 
 
 bin_PROGRAMS = alps_be_starter alps_fe_colocator 
 alps_be_starter_SOURCES = alps_be_starter.c 
 alps_fe_colocator_SOURCES = alps_fe_colocator.cxx
-alps_fe_colocator_CXXFLAGS = @LNCHR_BIT_FLAGS@
-alps_fe_colocator_LDADD = @LIBELF@ @RMLIB@
+alps_fe_colocator_CXXFLAGS = @LNCHR_BIT_FLAGS@ $(CRAY_ALPS_CFLAGS)
+alps_fe_colocator_LDADD = @LIBELF@ $(CRAY_ALPS_LIBS)
 
 alps_be_starter$(EXEEXT): alps_be_starter.c Makefile
 	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CFLAGS) $(CFLAGS) -o $@ $<   
