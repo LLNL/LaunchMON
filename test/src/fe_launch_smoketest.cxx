@@ -270,6 +270,18 @@ main (int argc, char *argv[])
                "[LMON_FE] launching the job/daemons via %s\n",
                mylauncher);
     }
+  else if (rmenv_str == std::string("RC_intel_hydra"))
+    {
+      launcher_argv    = (char **) malloc(5*sizeof(char*));
+      launcher_argv[0] = strdup(mylauncher);
+      launcher_argv[1] = strdup("-n");
+      launcher_argv[2] = strdup(argv[2]);
+      launcher_argv[3] = strdup(argv[1]);
+      launcher_argv[4] = NULL;
+      fprintf (stdout,
+               "[LMON_FE] launching the job/daemons via %s\n",
+               mylauncher);
+    }
 
   if ( ( rc = LMON_fe_init ( LMON_VERSION ) ) 
               != LMON_OK )

@@ -127,6 +127,7 @@ LMON_be_procctl_init ( rm_catalogue_e rmtype,
     case RC_orte:
     case RC_alps:
     case RC_gupc:
+    case RC_intel_hydra:
       //
       // Call generic Linux init
       //
@@ -153,6 +154,7 @@ LMON_be_procctl_init ( rm_catalogue_e rmtype,
 
     case RC_mchecker_rm:
     case RC_none:
+    default:
 #if VERBOSE
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
         "Unsupported RM Type (%d) for procctl_init", rmtype );
@@ -183,6 +185,7 @@ LMON_be_procctl_stop ( rm_catalogue_e rmtype,
     case RC_orte:
     case RC_alps:
     case RC_gupc:
+    case RC_intel_hydra:
       //
       // Call generic Linux stop
       //
@@ -209,6 +212,7 @@ LMON_be_procctl_stop ( rm_catalogue_e rmtype,
 
     case RC_mchecker_rm:
     case RC_none:
+    default:
 #if VERBOSE
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
         "Unsupported RM Type (%d) for procctl_stop", rmtype );
@@ -251,6 +255,7 @@ LMON_be_procctl_run ( rm_catalogue_e rmtype,
     case RC_orte:
     case RC_alps:
     case RC_gupc:
+    case RC_intel_hydra:
       //
       // Call generic Linux run
       //
@@ -277,6 +282,7 @@ LMON_be_procctl_run ( rm_catalogue_e rmtype,
 
     case RC_mchecker_rm:
     case RC_none:
+    default:
 #if VERBOSE
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
         "Unsupported RM Type (%d) for procctl_run", rmtype );
@@ -316,6 +322,7 @@ LMON_be_procctl_initdone( rm_catalogue_e rmtype,
     case RC_orte:
     case RC_alps:
     case RC_gupc:
+    case RC_intel_hydra:
       //
       // Call generic Linux initdone
       //
@@ -342,6 +349,7 @@ LMON_be_procctl_initdone( rm_catalogue_e rmtype,
 
     case RC_mchecker_rm:
     case RC_none:
+    default:
 #if VERBOSE
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
         "Unsupported RM Type (%d) for procctl_initdone", rmtype );
@@ -372,6 +380,7 @@ LMON_be_procctl_done(rm_catalogue_e rmtype,
     case RC_orte:
     case RC_alps:
     case RC_gupc:
+    case RC_intel_hydra:
       //
       // You need to do nothing for these resource managers
       //
@@ -398,6 +407,7 @@ LMON_be_procctl_done(rm_catalogue_e rmtype,
 
     case RC_mchecker_rm:
     case RC_none:
+    default:
 #if VERBOSE
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
         "Unsupported RM Type (%d) for procctl_done", rmtype );
@@ -432,6 +442,7 @@ LMON_be_procctl_perf ( rm_catalogue_e rmtype,
     case RC_orte:
     case RC_alps:
     case RC_gupc:
+    case RC_intel_hydra:
       //
       // You need to do nothing for these resource managers
       //
@@ -463,6 +474,7 @@ LMON_be_procctl_perf ( rm_catalogue_e rmtype,
 
     case RC_mchecker_rm:
     case RC_none:
+    default:
 #if VERBOSE
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
         "Unsupported RM Type (%d) for procctl_perf", rmtype );

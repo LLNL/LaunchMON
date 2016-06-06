@@ -44,7 +44,8 @@ etc_SCRIPTS = \
   rm_bgq_slurm.conf \
   rm_mchecker.conf \
   rm_openrte.conf \
-  rm_slurm.conf
+  rm_slurm.conf \
+  rm_intel_hydra.conf
 
 EXTRA_DIST = \
   rm_info.conf \
@@ -56,5 +57,6 @@ EXTRA_DIST = \
   rm_bgq_slurm.conf \
   rm_mchecker.conf \
   rm_openrte.conf \
-  rm_slurm.conf
+  rm_slurm.conf \
+  rm_intel_hydra.conf
 
