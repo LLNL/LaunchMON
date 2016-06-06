@@ -274,8 +274,8 @@ main (int argc, char *argv[])
     {
       launcher_argv    = (char **) malloc(5*sizeof(char*));
       launcher_argv[0] = strdup(mylauncher);
-      launcher_argv[1] = strdup("-f");
-      launcher_argv[2] = strdup("nodelist");
+      launcher_argv[1] = strdup("-n");
+      launcher_argv[2] = strdup(argv[2]);
       launcher_argv[3] = strdup(argv[1]);
       launcher_argv[4] = NULL;
       fprintf (stdout,

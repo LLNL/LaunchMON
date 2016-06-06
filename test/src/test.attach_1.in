@@ -81,6 +81,9 @@ elif test "x$RM_TYPE" = "xRC_alps" ; then
 elif test "x$RM_TYPE" = "xRC_orte" ; then
   WAITAMOUNT=`expr $WAITAMOUNT`
   $MPI_JOB_LAUNCHER_PATH -mca debugger mpirx -np $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
+elif test "x$RM_TYPE" = "xRC_intel_hydra" ; then
+  WAITAMOUNT=`expr $WAITAMOUNT`
+  $MPI_JOB_LAUNCHER_PATH -n $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
 else
   echo "This RM is not supported yet" 
 fi
