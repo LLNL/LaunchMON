@@ -158,6 +158,10 @@
 /* install prefix */
 #undef LMON_PREFIX
 
+/* Enable use of SGI hostnames as a fallback if no matches in /etc/hosts for
+   the hostname returned by mpiexec.hydra */
+#undef LMON_SGI_HOSTNAMES
+
 /* Enable a workaround to cope with additional SIGCONT sent by slurmstepd */
 #undef LMON_SLURM_MPAO_WR
 
@@ -168,8 +172,7 @@
    slash. */
 #undef LSTAT_FOLLOWS_SLASHED_SYMLINK
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* Define 1 for MEASURE_TRACING_COST */

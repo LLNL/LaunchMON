@@ -102,6 +102,11 @@ X_AC_PLATFORM
 X_AC_SLURM_MPAO_WR
 
 dnl -----------------------------------------------
+dnl Checks whether to enable SGI hostnames
+dnl -----------------------------------------------
+X_AC_SGI_HOSTNAMES
+
+dnl -----------------------------------------------
 dnl enable debug support
 dnl -----------------------------------------------
 X_AC_ENABLE_DEBUG

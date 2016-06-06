@@ -44,3 +44,17 @@ AC_DEFUN([X_AC_SLURM_MPAO_WR], [
   fi
   AC_MSG_RESULT($enable_mpao_workaround)
 ])
+
+AC_DEFUN([X_AC_SGI_HOSTNAMES], [
+  AC_MSG_CHECKING([whether to enable use of SGI hostnames])
+  AC_ARG_ENABLE([sgi-hostnames],
+    AS_HELP_STRING(--enable-sgi-hostnames, enables the use of SGI hostnames as fallback if there are no matches in /etc/hosts for the hostname returned by mpiexec.hydra),
+    [enable_sgi_hostnames=$enableval],
+    [enable_sgi_hostnames=no])
+
+  if test "x$enable_sgi_hostnames" = "xyes"; then
+    AC_DEFINE(LMON_SGI_HOSTNAMES, 1,
+      [Enable use of SGI hostnames as a fallback if no matches in /etc/hosts for the hostname returned by mpiexec.hydra])
+  fi
+  AC_MSG_RESULT($enable_sgi_hostnames)
+])

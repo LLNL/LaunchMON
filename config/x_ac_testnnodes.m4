@@ -79,9 +79,9 @@ AC_DEFUN([X_AC_NCORE_SMP], [
 
 
 AC_DEFUN([X_AC_TEST_RM], [
-  AC_MSG_CHECKING([resource manager to test @<:@slurm bgqrm alps orte@:>@])
+  AC_MSG_CHECKING([resource manager to test @<:@slurm bgqrm alps orte intel_hydra@:>@])
   AC_ARG_WITH([test-rm],
-    AS_HELP_STRING(--with-test-rm@<:@=RM@:>@,specify a resource manager type to test @<:@slurm bgqrm alps orte@:>@ @<:@default=slurm on linux-x86 and linux-x86_64; alps on Cray; bgqrm on linux-power64@:>@),
+    AS_HELP_STRING(--with-test-rm@<:@=RM@:>@,specify a resource manager type to test @<:@slurm bgqrm alps orte intel_hydra@:>@ @<:@default=slurm on linux-x86 and linux-x86_64; alps on Cray; bgqrm on linux-power64@:>@),
     [with_rm=$withval],
     [with_rm="check"])
 
@@ -266,6 +266,45 @@ AC_DEFUN([X_AC_TEST_RM], [
     # This answers whether RM given and found
     #
     AC_MSG_RESULT($with_rm:$rm_found)
+
+  elif test "x$with_rm" = "xintel_hydra" ; then
+    #
+    # Configure for Intel MPI (mpiexec.hydra)
+    #
+    if test "x$with_launcher" != "xcheck"; then
+      #
+      # launcher path given
+      #
+      if test ! -z "$with_launcher" -a -f "$with_launcher"; then
+        pth=`$srcdir/config/ap $with_launcher`
+        ac_job_launcher_path=$pth
+        rm_found="yes"
+        AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
+        AC_SUBST(RM_TYPE, RC_intel_hydra)
+      fi
+    else
+      rm_default_dirs="/usr/bin /usr/local/bin"
+      for rm_dir in $rm_default_dirs; do
+        if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
+          continue;
+        fi
+
+        if test ! -z "$rm_dir/orterun" -a -f "$rm_dir/mpiexec.hydra"; then
+          pth=`$srcdir/config/ap $rm_dir/srun`
+          ac_job_launcher_path=$pth
+          rm_found="yes"
+          AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
+          AC_SUBST(RM_TYPE, RC_intel_hydra)
+          break
+        fi
+      done
+    fi
+
+    #
+    # This answers whether RM given and found
+    #
+    AC_MSG_RESULT($with_rm:$rm_found)
+
   fi
 ])
 
