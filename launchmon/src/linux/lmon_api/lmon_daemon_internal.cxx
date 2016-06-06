@@ -1055,6 +1055,26 @@ LMON_daemon_gethostname(bool bgion, char *my_hostname, int hlen, char *my_ip, in
                  }
              }
          }
+#if LMON_SGI_HOSTNAMES
+      if ((h_nameStr = hent->h_name) != my_hostnameStr)
+        {
+          size_t dot_pos = h_nameStr.find(".");
+          if (dot_pos < h_nameStr.length())
+            {
+              std::string h_nameStr_ib0, h_nameStr_ib1;
+
+              h_nameStr_ib0 = h_nameStr.substr(0, dot_pos);
+              h_nameStr_ib0 += ".ib0";
+              h_nameStr_ib0 += h_nameStr.substr(dot_pos);
+              aliases.push_back(h_nameStr_ib0);
+
+              h_nameStr_ib1 = h_nameStr.substr(0, dot_pos);
+              h_nameStr_ib1 += ".ib1";
+              h_nameStr_ib1 += h_nameStr.substr(dot_pos);
+              aliases.push_back(h_nameStr_ib1);
+            }
+        }
+#endif
      }
 
   return LMON_OK;
