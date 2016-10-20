@@ -114,6 +114,9 @@ AC_DEFUN([X_AC_PLATFORM], [
         AC_SUBST(ARCHLIB,"/bgsys/drivers/ppcfloor")
         AC_SUBST(CIODLOC, [tools/ciod])
         ac_target_rm="bgqrm"
+    else
+        AC_SUBST(ARCHHEADER,"/")
+        AC_SUBST(ARCHLIB,"/")
     fi
   elif test "x$ac_target_os" = "xlinux" -a "x$ac_target_isa" = "xx86_64"; then
     if test -f "/opt/cray/alps/default/bin/aprun"; then
