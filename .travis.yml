@@ -2,14 +2,18 @@ language: c
 
 cache:
   directories:
-    - $HOME/openmpi-gcc
-    - $HOME/openmpi-clang
+    - $HOME/local
 
 sudo: required
 
-compiler:
-  - gcc
-  - clang
+matrix:
+  include:
+    - compiler: gcc
+      env:
+    - compiler: gcc
+      env: T_INSTALL=t ARGS=--with-test-installed
+    - compiler: clang
+      env: CC=clang CXX=clang++
 
 addons:
   apt:
@@ -19,38 +23,14 @@ addons:
       - libboost-dev
       - munge
 
-env:
-  global:
-    - export PATH=./:$HOME/openmpi/bin:$PATH
-    - export LD_LIBRARY_PATH=$HOME/openmpi/lib:$LD_LIBRARY_PATH
-
-install:
-  # This should all be cached, so only run commands below when we want to update the cache
-#  - export VERBOSE=1
-#  - export V=1
-#  # Download and install OpenMPI v2.0.2
-#  - pushd $HOME/build
-#  - wget https://www.open-mpi.org/software/ompi/v2.0/downloads/openmpi-2.0.2.tar.gz
-#  - tar xf openmpi-2.0.2.tar.gz
-#  - cd openmpi-2.0.2
-#  - ./configure --prefix=$HOME/openmpi-$CC
-#  - make && make install
-#  - popd
+before_install:
+  - eval $(./test/src/travis-dep-builder.sh --printenv)
+  - ./test/src/travis-dep-builder.sh --cachedir=$HOME/local/.cache
 
 script:
- - export PATH=./:$HOME/openmpi-$CC/bin:$PATH
- - export LD_LIBRARY_PATH=$HOME/openmpi-$CC/lib:$LD_LIBRARY_PATH
+ - export MAKECMDS="make -j3 && make -j3 check"
  - ./bootstrap && mkdir build && cd build 
- - ../configure --prefix=$HOME/local  --with-test-rm=orte --with-test-installed  --with-test-rm-launcher=$HOME/openmpi-$CC/bin/mpirun --with-test-ncore-per-CN=2 --with-test-nnodes=1
- - make -j3
- - make install
- - make -j3 check
- - echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
- - cd test/src
- - cat test.launch_1
- - ./test.launch_1
- - sleep 60
- - cat test.attach_1
- - ./test.attach_1
- - sleep 60
- - echo 'done'
+ - if test "$T_INSTALL" = "t" ; then ARGS="$ARGS --prefix=/tmp/lmon"; MAKECMDS="make -j3 && make install && make -j3 check"; fi
+ - ../configure --with-test-rm=orte $ARGS --with-test-rm-launcher=$HOME/local/bin/mpirun --with-test-ncore-per-CN=2 --with-test-nnodes=1
+ - eval ${MAKECMDS}
+ - if test "$T_INSTALL" = "t"; then ../test/src/travis-run-test.sh; fi
