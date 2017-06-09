@@ -23,6 +23,8 @@ munge
 The following is the simplest way to configure, build and install
 the LaunchMON package from the source checked out from this repo. 
 
+If you are building from a distribution, skip step (2).
+
 (1) `cd` into the root directory of this package
 
 (2) Bootstrap the package:
@@ -55,11 +57,13 @@ the LaunchMON package from the source checked out from this repo.
 
 (6) Smoke test:
  
-   `cd share/launchmon/tests` directory under the prefix directory
+   `% make check`
+
+   will build the test codes in the test/src directory within the source tree.
+   `cd test/src` directory under the source directory
    and run `test.launch_1` and `test.attach_1` as your smoke tests.
    Note that these test cases assume that you alreay have an
    allocation (or interactive partition) under the invoking
    shell so that RM job launcher (e.g. srun) can launch
-   and execute a parallel target application.
-
-If you are building from a distribution, skip step (1) and (2).
+   and execute a parallel target application. Also ensure that '.' is in
+   your $PATH when you run the smoke test scripts.
