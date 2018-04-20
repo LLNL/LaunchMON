@@ -68,7 +68,7 @@ elif test "x$RM_TYPE" = "xRC_alps" ; then
 elif test "x$RM_TYPE" = "xRC_orte" ; then
   WAITAMOUNT=`expr $WAITAMOUNT`
   $MPI_JOB_LAUNCHER_PATH -gmca orte_enable_debug_cospawn_while_running 1 -np $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
-elif test "x$RM_TYPE" = "xRC_intel_hydra" ; then
+elif test "x$RM_TYPE" = "xRC_mpiexec_hydra" ; then
   WAITAMOUNT=`expr $WAITAMOUNT`
   $MPI_JOB_LAUNCHER_PATH -n $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
 else

@@ -63,7 +63,7 @@ if test "x$RM_TYPE" = "xalps" ; then
   echo "[LMON FE] this test is disabled on CRAY ALPS"
   exit 1
 fi
-if test "x$RM_TYPE" = "xintel_hydra" ; then
+if test "x$RM_TYPE" = "xmpiexec_hydra" ; then
   echo "[LMON FE] this test is disabled for Intel mpiexec.hydra"
   exit 1
 fi

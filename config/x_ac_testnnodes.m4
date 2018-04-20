@@ -79,9 +79,9 @@ AC_DEFUN([X_AC_NCORE_SMP], [
 
 
 AC_DEFUN([X_AC_TEST_RM], [
-  AC_MSG_CHECKING([resource manager to test @<:@slurm bgqrm alps orte intel_hydra@:>@])
+  AC_MSG_CHECKING([resource manager to test @<:@slurm bgqrm alps orte mpiexec_hydra@:>@])
   AC_ARG_WITH([test-rm],
-    AS_HELP_STRING(--with-test-rm@<:@=RM@:>@,specify a resource manager type to test @<:@slurm bgqrm alps orte intel_hydra@:>@ @<:@default=slurm on linux-x86 and linux-x86_64; alps on Cray; bgqrm on linux-power64@:>@),
+    AS_HELP_STRING(--with-test-rm@<:@=RM@:>@,specify a resource manager type to test @<:@slurm bgqrm alps orte mpiexec_hydra@:>@ @<:@default=slurm on linux-x86 and linux-x86_64; alps on Cray; bgqrm on linux-power64@:>@),
     [with_rm=$withval],
     [with_rm="check"])
 
@@ -267,7 +267,7 @@ AC_DEFUN([X_AC_TEST_RM], [
     #
     AC_MSG_RESULT($with_rm:$rm_found)
 
-  elif test "x$with_rm" = "xintel_hydra" ; then
+  elif test "x$with_rm" = "xmpiexec_hydra" ; then
     #
     # Configure for Intel MPI (mpiexec.hydra)
     #
@@ -280,7 +280,7 @@ AC_DEFUN([X_AC_TEST_RM], [
         ac_job_launcher_path=$pth
         rm_found="yes"
         AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
-        AC_SUBST(RM_TYPE, RC_intel_hydra)
+        AC_SUBST(RM_TYPE, RC_mpiexec_hydra)
       fi
     else
       rm_default_dirs="/usr/bin /usr/local/bin"
@@ -294,7 +294,7 @@ AC_DEFUN([X_AC_TEST_RM], [
           ac_job_launcher_path=$pth
           rm_found="yes"
           AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
-          AC_SUBST(RM_TYPE, RC_intel_hydra)
+          AC_SUBST(RM_TYPE, RC_mpiexec_hydra)
           break
         fi
       done

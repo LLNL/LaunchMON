@@ -326,7 +326,7 @@ main (int argc, char* argv[])
                "[LMON_FE] launching the job/daemons via %s\n",
                mylauncher);
     }
-  else if (rmenv_str == std::string("RC_intel_hydra"))
+  else if (rmenv_str == std::string("RC_mpiexec_hydra"))
     {
       launcher_argv    = (char **) malloc(5*sizeof(char*));
       launcher_argv[0] = strdup(mylauncher);
