@@ -116,7 +116,7 @@ typedef enum _rm_catalogue_e
   RC_bgrm,
   RC_alps,
   RC_orte,
-  RC_intel_hydra,
+  RC_mpiexec_hydra,
   RC_gupc,
   RC_none
   /*
