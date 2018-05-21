@@ -28,6 +28,8 @@
 # --------------------------------------------------------------------------------
 #
 #   Update Log:
+#         May 02 2018 KMD: Added aarch64 support
+#         Apr 01 2015 ADG: Added Cray CTI support.
 #         Feb 20 2015 andrewg@cray.com: Fixes for Cray systems.
 #         Jun 11 2008 DHA: File created.
 #
@@ -65,6 +67,11 @@ AC_DEFUN([X_AC_PLATFORM], [
               ac_target_isa="x86_64"
               AC_SUBST(LNCHR_BIT_FLAGS, -m64)
               AC_DEFINE(BIT64, 1, [64bit])
+              ;;
+    *aarch64*)AC_DEFINE(AARCH64_ARCHITECTURE,1,[Define 1 for AARCH64_ARCHITECTURE])
+              ac_have_known_isa="yes"
+              ac_target_isa="aarch64"
+	      AC_DEFINE(BIT64, 1, [64bit])
               ;;
     *i686*)   AC_DEFINE(X86_ARCHITECTURE,1,[Define 1 for X86_ARCHITECTURE])
               ac_have_known_isa="yes"
@@ -118,8 +125,24 @@ AC_DEFUN([X_AC_PLATFORM], [
         AC_SUBST(ARCHHEADER,"/")
         AC_SUBST(ARCHLIB,"/")
     fi
-  elif test "x$ac_target_os" = "xlinux" -a "x$ac_target_isa" = "xx86_64"; then
-    if test -f "/opt/cray/alps/default/bin/aprun"; then
+  elif test "x$ac_target_os" = "xlinux" -a "x$ac_target_isa" = "xx86_64" \
+      -o "x$ac_target_os" = "xlinux" -a "x$ac_target_isa" = "xaarch64"; then
+    #
+    # Check for Cray CTI before falling back to the alps method.
+    #
+    PKG_CHECK_EXISTS([craytools_fe], [ac_have_cray_cti="yes"], [ac_have_cray_cti="no"])
+    if test "x$ac_have_cray_cti" = "xyes"; then
+      AC_DEFINE(SUB_ARCH_CRAY,1,[Define 1 for SUB_ARCH_CRAY])
+      AC_DEFINE(RM_FE_COLOC_CMD, "cti_fe_colocator", [bulk launcher location])
+      PKG_CHECK_MODULES([CRAY_CTI], [craytools_fe])
+      AC_SUBST(ARCHHEADER,"/")
+      AC_SUBST(ARCHLIB,"/")
+      ac_target_rm="cray"
+    else
+dnl For the cray build, we always want to force alps to tbe the target rm. We
+dnl might be building on a whitebox without aprun installed.
+      PKG_CHECK_EXISTS([cray-alps], [ac_have_alps="yes"], [ac_have_alps="no"])
+      if test "x$ac_have_alps" = "xyes"; then
         dnl This is the new OBS system
         AC_DEFINE(SUB_ARCH_ALPS,1,[Define 1 for SUB_ARCH_ALPS])
         AC_DEFINE(RM_BE_STUB_CMD, "alps_be_starter", [be starter stub location])
@@ -128,19 +151,10 @@ AC_DEFUN([X_AC_PLATFORM], [
         AC_SUBST(ARCHHEADER,"/")
         AC_SUBST(ARCHLIB,"/")
         ac_target_rm="alps"
-    elif test -f "/usr/bin/aprun"; then
-        dnl This is the old system. We hack things to work without pkg-config
-        AC_DEFINE(SUB_ARCH_ALPS,1,[Define 1 for SUB_ARCH_ALPS])
-        AC_DEFINE(RM_BE_STUB_CMD, "alps_be_starter", [be starter stub location])
-        AC_DEFINE(RM_FE_COLOC_CMD, "alps_fe_colocator", [bulk launcher location])
-        AC_SUBST(CRAY_ALPS_CFLAGS,"-I/usr/include")
-        AC_SUBST(CRAY_ALPS_LIBS,"-L/usr/lib/alps -lalps")
+      else
         AC_SUBST(ARCHHEADER,"/")
         AC_SUBST(ARCHLIB,"/")
-        ac_target_rm="alps"
-    else
-        AC_SUBST(ARCHHEADER,"/")
-        AC_SUBST(ARCHLIB,"/")
+      fi
     fi
   else
         AC_SUBST(ARCHHEADER,"/")
@@ -149,6 +163,7 @@ AC_DEFUN([X_AC_PLATFORM], [
 
   AC_DEFINE_UNQUOTED(TARGET_OS_ISA_STRING, "$ac_target_os-$ac_target_isa", [Define os-isa string])
   AC_DEFINE_UNQUOTED(TARGET_RM_STRING, "$ac_target_rm" ,[Define rm string])
+  AM_CONDITIONAL([WITH_CTI], [test "x$ac_target_rm" = "xcray"])
   AM_CONDITIONAL([WITH_ALPS], [test "x$ac_target_rm" = "xalps"])
   AM_CONDITIONAL([WITH_CIOD], [test "x$ac_target_rm" = "xbglrm" \
                                     -o "x$ac_target_rm" = "xbgprm" \

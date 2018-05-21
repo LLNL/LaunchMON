@@ -115,6 +115,7 @@ typedef enum _rm_catalogue_e
   RC_bgq_slurm,
   RC_bgrm,
   RC_alps,
+  RC_cray,
   RC_orte,
   RC_mpiexec_hydra,
   RC_gupc,

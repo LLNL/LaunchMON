@@ -31,6 +31,7 @@
 ##        Apr 28 2016 DHA: Modernize build environment:
 ##                           Make handshake and cobo mandatory and
 ##                           Drop bundling of grypt/gpg packages
+##        Apr 01 2015 ADG: Added Cray CTI support
 ##        Mar 10 2014 MPL: Add secure handshake
 ##        Dec 16 2009 DHA: Added COBO support
 ##        Jun 10 2007 DHA: Copied from the old Makefile.
@@ -42,7 +43,10 @@ endif
 if WITH_ALPS
   OPT_ALPS = alps
 endif
+if WITH_CTI
+  OPT_CTI = cti
+endif
   OPT_HANDSHAKE = handshake
 
-SUBDIRS =  handshake cobo $(OPT_CIOD) $(OPT_ALPS) 
+SUBDIRS =  handshake cobo $(OPT_CIOD) $(OPT_ALPS) $(OPT_CTI)
 

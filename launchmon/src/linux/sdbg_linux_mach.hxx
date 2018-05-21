@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        May  02 2018 KMD: Added aarch64 support
  *        Mar  06 2009 DHA: Remove dynloader_iden
  *        Mar  11 2008 DHA: Linux PowerPC support 
  *        Feb  09 2008 DHA: Added LLNS Copyright
@@ -372,6 +373,185 @@ struct ps_prochandle {
   process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>* p;
 };
 
+#elif AARCH64_ARCHITECTURE
+
+//! linux_aarch64_gpr_set_t: 
+/*!
+    The class represents linux aarch64 general purpose register set.
+ 
+    The offset in the USER area is calculated as following.
+    (This is defined in sys/user.h) 
+ 
+    === AARCH64 (64 bit process) ===
+
+    struct user_regs_struct
+    {	
+      unsigned long long regs[31];	
+      unsigned long long sp;	
+      unsigned long long pc;	
+      unsigned long long pstate;	
+    };	
+	    	
+    struct user_fpsimd_struct
+    {	
+      __uint128_t  vregs[32];	
+      unsigned int fpsr;	
+      unsigned int fpcr;	
+    };
+
+    General purpose register set resides at the zero offset.
+*/
+
+class linux_aarch64_gpr_set_t 
+  : public register_set_base_t<T_GRS, T_VA, T_WT>
+{
+
+public:
+
+  // constructors and destructor
+  //
+  linux_aarch64_gpr_set_t  ();
+  virtual ~linux_aarch64_gpr_set_t () { }  
+
+  virtual void set_pc  (T_VA addr);
+  virtual T_VA const get_pc () const; 
+  virtual T_VA const get_ret_addr() const;
+  virtual T_VA const get_memloc_for_ret_addr() const;
+
+private:
+  bool LEVELCHK(self_trace_verbosity level)
+       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
+
+  std::string MODULENAME;
+};
+
+
+
+//! linux_aarch64_fpr_set_t
+/*!
+    The class represents linux aarch64 general purpose register set.
+ 
+    The offset in the USER area is calculated as following.
+    (This is defined in sys/user.h) 
+ 
+    === AARCH64 (64 bit process) ===
+
+    struct user_regs_struct
+    {	
+      unsigned long long regs[31];	
+      unsigned long long sp;	
+      unsigned long long pc;	
+      unsigned long long pstate;	
+    };	
+	    	
+    struct user_fpsimd_struct
+    {	
+      __uint128_t  vregs[32];	
+      unsigned int fpsr;	
+      unsigned int fpcr;	
+    };
+
+    General purpose register set resides at the zero offset.
+*/
+class linux_aarch64_fpr_set_t 
+  : public register_set_base_t<T_FRS, T_VA, T_WT>
+{
+
+public:
+
+  // constructors and destructor
+  //
+  linux_aarch64_fpr_set_t ();
+  virtual ~linux_aarch64_fpr_set_t() { }
+
+private:
+  bool LEVELCHK(self_trace_verbosity level)
+       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
+
+  std::string MODULENAME;
+};
+
+
+//! class linux_aarch64_thread_t:
+/*!
+    linux_aarch64_thread_t is linux AARCH64 implementation of thread_base_t
+    class. The constructor sets register model. 
+*/
+class linux_aarch64_thread_t 
+  : public thread_base_t<SDBG_LINUX_DFLT_INSTANTIATION> 
+{
+
+public:
+  
+  // constructors and destructor
+  //
+  linux_aarch64_thread_t();
+  virtual ~linux_aarch64_thread_t();
+
+  // virtual method to convert thread id to lwp
+  // which the kernel understands
+  virtual pid_t thr2pid();
+   
+
+private:
+  bool LEVELCHK(self_trace_verbosity level)
+       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
+
+  std::string MODULENAME;
+};
+
+
+//! linux_aarch64_process_t:
+/*!
+  linux_aarch64_process_t is AARCH64 implementation of process_base_t
+  class. The constructor sets register model. 
+*/
+class linux_aarch64_process_t 
+  : public process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> 
+{
+
+public:
+
+  // constructors and destructor
+  //
+  linux_aarch64_process_t ();
+  linux_aarch64_process_t ( const std::string& mi, 
+			const std::string& md, 
+			const std::string& mt,
+			const std::string& mc );
+  linux_aarch64_process_t ( const pid_t& pid, 
+			const std::string& mi, 
+			const std::string& md,
+			const std::string& mt,
+		        const std::string& mc );
+  linux_aarch64_process_t ( const pid_t& pid, 
+			const std::string& mi );
+
+  explicit linux_aarch64_process_t ( const pid_t& pid );
+  ~linux_aarch64_process_t() { } 
+
+protected:
+  bool basic_init ( const std::string& mi, 
+		    const std::string& md, 
+		    const std::string& mt,
+		    const std::string& mc );
+
+  bool basic_init ( const std::string& mi );
+
+private:
+  void launcher_symbols_init();
+  bool LEVELCHK(self_trace_verbosity level)
+       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
+
+  std::string MODULENAME;
+
+};
+
+// data structure needed by proc service layer
+//
+struct ps_prochandle {
+  process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>* p;
+};
 
 #elif PPC_ARCHITECTURE
 

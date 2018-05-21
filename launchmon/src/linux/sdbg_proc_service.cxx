@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        May  02 2018 KMD: Added aarch64 support
  *        Mar  11 2008 DHA: Added PowerPC support
  *        Feb  09 2008 DHA: Added LLNS Copyright
  *        Jul  18 2006 DHA: Initial Linux PPC (BG/L) port 
@@ -81,7 +82,7 @@ struct user_desc
   unsigned int empty:25;
 };
 
-#elif X86_64_ARCHITECTURE
+#elif X86_64_ARCHITECTURE || AARCH64_ARCHITECTURE
 
 #ifndef PTRACE_ARCH_PRCTL
 #define PTRACE_ARCH_PRCTL       30    /* arch_prctl for child */
@@ -347,7 +348,7 @@ ps_get_thread_area ( const struct ps_prochandle *ph,
 
   *addr = (psaddr_t) (tsd_desc.base_addr);
 
-#elif X86_64_ARCHITECTURE
+#elif X86_64_ARCHITECTURE || AARCH64_ARCHITECTURE
   /*
    * How to fetch thread-specific area for x86-64/linux
    *

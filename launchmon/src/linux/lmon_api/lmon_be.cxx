@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Apr 01 2015 ADG: Added Cray CTI support.
  *        Dec 11 2012 DHA: Added mods to initialize process control before 
  *        		   MPIR_Breakpoint release.
  *        		   This fixes an apparent race where the early release 
@@ -181,7 +182,7 @@ LMON_be_init ( int ver, int *argc, char ***argv )
       LMON_say_msg ( LMON_BE_MSG_PREFIX, true,
         "LMON BE fails to enable verbosity %d", lrc );
     }
-#elif SUB_ARCH_ALPS
+#elif SUB_ARCH_ALPS || SUB_ARCH_CRAY
   //
   // Without this, the no-verbose build will hang under ALPS
   //

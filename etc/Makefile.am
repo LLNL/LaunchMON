@@ -29,6 +29,7 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        May 18 2018 ADG: Added Cray CTI support
 ##        Apr 28 2016 DHA: Created file.
 ##
 
@@ -42,6 +43,7 @@ etc_SCRIPTS = \
   rm_bgprm.conf \
   rm_bgqrm.conf \
   rm_bgq_slurm.conf \
+  rm_cray.conf \
   rm_mchecker.conf \
   rm_openrte.conf \
   rm_slurm.conf \
@@ -53,6 +55,7 @@ EXTRA_DIST = \
   rm_bglrm.conf \
   rm_bgprm.conf \
   rm_bgqrm.conf \
+  rm_cray.conf \
   rm_gupc.conf \
   rm_bgq_slurm.conf \
   rm_mchecker.conf \

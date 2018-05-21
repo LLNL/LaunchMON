@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        May 02 2018 KMD/ADG: Added aarch64 support
  *        Mar 06 2008 DHA: Added indirection Breakpoint support.
  *                         insert_breakpoint 
  *                         and pullout_breakpoint method.
@@ -55,8 +56,11 @@ extern "C" {
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/ptrace.h>
+#include <sys/uio.h>
 #include <errno.h>
 #include <signal.h>
+#include <sys/user.h>
+#include <elf.h>
 }
 
 #include <fstream>
@@ -102,14 +106,11 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setregs (
 {
   using namespace std;
 
-  WT r;
-  unsigned int i;
-  unsigned int num_regs;
-  VA offset;
   string e;
   string func = "[linux_ptracer_t::tracer_setregs]";
-  register_set_base_t<GRS,VA,WT> *regset = p.get_gprset(use_cxt);
   pid_t tpid = p.get_pid(use_cxt); 
+
+  register_set_base_t<GRS,VA,WT> *regset = p.get_gprset(use_cxt);
 
   if (!regset) 
     {
@@ -119,9 +120,30 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setregs (
     }
 
   regset->set_ptr_to_regset();
-  num_regs = regset->size_in_word();
-  offset = regset->get_offset_in_user();
 
+#if AARCH64_ARCHITECTURE
+
+  struct iovec iov;
+  int ret;
+
+  iov.iov_base = (void *)regset->get_rs_ptr();
+  iov.iov_len = regset->size();
+
+  // Write all general purpose registers in one go
+  ret = Pptrace(PTRACE_SETREGSET, tpid, (void *)NT_PRSTATUS, (void *)&iov);
+  if (ret < 0)
+  {
+      e = func + ERRMSG_PTRACE + strerror (errno);
+      throw linux_tracer_exception_t(e,convert_error_code (errno));
+  }
+
+#else
+
+  WT r;
+  VA offset = regset->get_offset_in_user();
+  unsigned int num_regs = regset->size_in_word();
+  unsigned int i;
+  
   for ( i=0; i < num_regs; i++ ) 
     {
       if ( ((1 << i) & regset->get_writable_mask()) == 0 ) 
@@ -149,6 +171,8 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setregs (
     offset += sizeof(WT);
   } // for ( i=0; i < num_regs; i++ )
 
+#endif
+
   return SDBG_TRACE_OK;
 
 } // tracer_error_e linux_ptracer_t::tracer_setregs
@@ -168,14 +192,11 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getregs (
 {
   using namespace std;
 
-  WT r;
-  unsigned int i;
-  unsigned int num_regs;
-  VA offset;
   string e;
   string func = "[linux_ptracer_t::tracer_getregs]";
+  pid_t tpid = p.get_pid(use_cxt);
+    
   register_set_base_t<GRS,VA,WT> *regset = p.get_gprset(use_cxt);
-  pid_t tpid = p.get_pid(use_cxt); 
 
   if (!regset)
     {
@@ -185,13 +206,34 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getregs (
     }
   
   regset->set_ptr_to_regset();
-  num_regs = regset->size_in_word();
-  offset = regset->get_offset_in_user();
-  
-  for ( i=0; i < num_regs; i++ ) 
-    {
 
-      r = Pptrace (PTRACE_PEEKUSER, tpid, (void*) offset, NULL);    
+#if AARCH64_ARCHITECTURE
+
+  struct iovec iov;
+  int ret;
+
+  iov.iov_base = (void *)regset->get_rs_ptr();
+  iov.iov_len = regset->size();
+
+  // Read all general purpose registers in one go
+  ret = Pptrace(PTRACE_GETREGSET, tpid, (void *)NT_PRSTATUS, (void *)&iov);
+  if ( ret < 0 )
+  {
+      e = func + ERRMSG_PTRACE + strerror ( errno );
+      throw linux_tracer_exception_t(e,convert_error_code (errno));
+  }
+
+#else
+
+  WT r;
+  VA offset = regset->get_offset_in_user();
+  unsigned int num_regs = regset->size_in_word();
+  unsigned int i;
+
+  for ( i=0; i < num_regs; i++ ) 
+  {
+
+      r = Pptrace (PTRACE_PEEKUSER, tpid, (void *)offset, NULL);    
 
       if (errno) 
 	{
@@ -203,8 +245,9 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getregs (
       regset->inc_ptr_by_word();
       offset += sizeof(WT);
 
-  } // for ( i=0; i < num_regs; i++ )
-
+  }
+#endif
+  
   return SDBG_TRACE_OK;  
 
 } // tracer_error_e linux_ptracer_t::tracer_getfpregs
@@ -223,29 +266,48 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getfpregs (
 {
   using namespace std;
 
-  WT r;
-  int i, num_regs;
-  VA offset;
   string e;
   string func = "[linux_ptracer_t::tracer_getfpregs]";
-  register_set_base_t<FRS,VA,WT>* regset = p.get_fprset(use_cxt);
   pid_t tpid = p.get_pid(use_cxt); 
 
+  register_set_base_t<FRS,VA,WT>* regset = p.get_fprset(use_cxt);
+  
   if (!regset) 
     {   
       e = func + 
 	" No register set is found with the thread ";
       throw linux_tracer_exception_t(e,SDBG_TRACE_FAILED);
-    }   
+    }
 
   regset->set_ptr_to_regset();
-  num_regs = regset->size_in_word();
-  offset = regset->get_offset_in_user();
- 
+
+#if AARCH64_ARCHITECTURE
+
+  struct iovec iov;
+  int ret;
+
+  iov.iov_base = (void *)regset->get_rs_ptr();
+  iov.iov_len = regset->size();
+
+  // Read all floating point registers in one go
+  ret = Pptrace(PTRACE_GETREGSET, tpid, (void *)NT_FPREGSET, (void *)&iov);
+  if (ret < 0)
+  {
+      e = func + ERRMSG_PTRACE + strerror ( errno );
+      throw linux_tracer_exception_t(e,convert_error_code (errno));
+  }
+
+#else
+
+  WT r;
+  VA offset = regset->get_offset_in_user();
+  unsigned int num_regs = regset->size_in_word();
+  unsigned int i;
+  
   for ( i=0; i < num_regs; i++ ) 
     {
 
-      r = Pptrace (PTRACE_PEEKUSER, tpid , (void*) offset, NULL);
+      r = Pptrace (PTRACE_PEEKUSER, tpid, (void *)offset, NULL);
 
       if (errno) 
 	{
@@ -257,6 +319,8 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getfpregs (
       regset->inc_ptr_by_word();
       offset += sizeof(WT);
     }
+
+#endif
 
   return SDBG_TRACE_OK;  
  

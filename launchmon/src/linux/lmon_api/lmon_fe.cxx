@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Apr 01 2015 ADG: Added Cray CTI support.
  *        Apr 22 2014 DHA: Applied a patch to store RM args/opts into
  *                         a std::list object instead of a std:string string.
  *        Apr 15 2014 DHA: Integrate COBO secure handshake 
@@ -2582,7 +2583,7 @@ LMON_openBindAndListen ( int *sfd )
   // Changed RM_BGL_MPIRUN to RM_BG_MPIRUN to genericize BlueGene Support
   //
   strcat (hn, "-io");
-#elif SUB_ARCH_ALPS
+#elif SUB_ARCH_ALPS || SUB_ARCH_CRAY
   //
   // Cray uses its own way to name a node, so overwriting 
   // hn with the name generated with their method

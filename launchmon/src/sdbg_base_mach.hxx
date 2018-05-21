@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        May 02 2018 ADG: Added aarch64 support
  *        Sep 02 2010 DHA: Added MPIR_attach_fifo support
  *        May 08 2008 DHA: Added an alias (is_master_thread) for get_master_thread
  *                         because the latter isn't entirely intuitive.
@@ -82,7 +83,7 @@ public:
   virtual ~machine_exception_t()                  { }
 
 };
-  
+
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -131,6 +132,7 @@ public:
   void inc_ptr_by_word ()                    { rs_ptr++; }
   void write_word_to_ptr (WT w)              { (*rs_ptr) = w; }
   unsigned int size_in_word ();
+  size_t size()                              { return sizeof(NATIVE_RS); }
 
 protected:
   // "rs" retains register set object in its native data structure. 

@@ -242,6 +242,9 @@
 /* Define 1 for SUB_ARCH_BGQ */
 #undef SUB_ARCH_BGQ
 
+/* Define 1 for SUB_ARCH_CRAY */
+#undef SUB_ARCH_CRAY
+
 /* Define os-isa string */
 #undef TARGET_OS_ISA_STRING
 
