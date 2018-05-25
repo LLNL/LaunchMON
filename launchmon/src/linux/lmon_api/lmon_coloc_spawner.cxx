@@ -122,7 +122,7 @@ spawner_coloc_t::do_frontend()
       memcpy(lmonpl, (*iter).c_str(), (*iter).size() + 1);
       lmonpl += (*iter).size() + 1;
     }
-  lmonpl = '\0'; /* ending null */
+  *lmonpl = '\0'; /* ending null */
 
   if (write_lmonp_long_msg(m_be_master_sockfd, msg, msgsize) < 0)
     {
