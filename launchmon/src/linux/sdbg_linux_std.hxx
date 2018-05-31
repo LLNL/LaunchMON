@@ -332,6 +332,8 @@ bool glic_backtrace_wrapper (std::string &bt)
   const T_IT IT_UNINIT_HEX                    = 0xdeadbeefdeadbeefULL;
   const T_VA T_UNINIT_HEX                     = 0xdeadbeefdeadbeef;
 # else
+  // 32 bit arm is untested...
+  #error 32-bit target is not supported for the ARM architecture
   //
   // if the target is 32 bit, use the following
   //
