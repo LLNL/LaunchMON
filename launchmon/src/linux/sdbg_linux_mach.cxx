@@ -363,9 +363,10 @@ linux_x86_process_t::linux_x86_process_t (
   //
   // now is the time to initialize my images!
   //
-  if (!basic_init(mi)) {
-    throw (machine_exception_t("fail to initialize a process"));
-  }
+  if (!basic_init(mi))
+    {
+      throw (machine_exception_t("fail to initialize a process"));
+    }
 }
 
 
@@ -507,9 +508,9 @@ linux_x86_process_t::basic_init (const std::string &mi)
 bool
 linux_x86_process_t::basic_init (
                  const std::string& mi,
-		 const std::string& md,
-		 const std::string& mt,
-		 const std::string& mc )
+     const std::string& md,
+     const std::string& mt,
+     const std::string& mc )
 {
   struct stat pathchk;
 
@@ -1094,7 +1095,7 @@ linux_ppc_process_t::basic_init (
     Default constructor.
 */
 linux_aarch64_gpr_set_t::linux_aarch64_gpr_set_t ()
-   : MODULENAME (self_trace_t::machine_module_trace.module_name)
+   : MODULENAME (self_trace_t::self_trace().machine_module_trace.module_name)
 {
   // This part of the code may be difficult to read. It was trial and error
   //   to detemine what registers are writable and what are not.
@@ -1202,7 +1203,7 @@ linux_aarch64_gpr_set_t::set_pc (T_VA addr)
     Default constructor.
 */
 linux_aarch64_fpr_set_t::linux_aarch64_fpr_set_t()
-   : MODULENAME (self_trace_t::machine_module_trace.module_name)
+   : MODULENAME (self_trace_t::self_trace().machine_module_trace.module_name)
 {
 
   unsigned int fpr_writable_mask = 0xffffffff;
@@ -1221,7 +1222,7 @@ linux_aarch64_fpr_set_t::linux_aarch64_fpr_set_t()
     Default constructor.
 */
 linux_aarch64_thread_t::linux_aarch64_thread_t()
-   : MODULENAME (self_trace_t::machine_module_trace.module_name)
+   : MODULENAME (self_trace_t::self_trace().machine_module_trace.module_name)
 {
   set_gprset (new linux_aarch64_gpr_set_t());
   set_fprset (new linux_aarch64_fpr_set_t());
@@ -1268,7 +1269,7 @@ linux_aarch64_thread_t::thr2pid()
     Default constructor.
 */
 linux_aarch64_process_t::linux_aarch64_process_t ( )
-   : MODULENAME (self_trace_t::machine_module_trace.module_name)
+   : MODULENAME (self_trace_t::self_trace().machine_module_trace.module_name)
 {
   
 }
@@ -1294,7 +1295,7 @@ linux_aarch64_process_t::linux_aarch64_process_t (
 */
 linux_aarch64_process_t::linux_aarch64_process_t ( 
                  const pid_t& pid )
-   : MODULENAME (self_trace_t::machine_module_trace.module_name)
+   : MODULENAME (self_trace_t::self_trace().machine_module_trace.module_name)
 {
   using namespace std;
 
@@ -1332,7 +1333,7 @@ linux_aarch64_process_t::linux_aarch64_process_t (
 */
 linux_aarch64_process_t::linux_aarch64_process_t (
                  const pid_t& pid, const std::string& mi )
-   : MODULENAME (self_trace_t::machine_module_trace.module_name)
+   : MODULENAME (self_trace_t::self_trace().machine_module_trace.module_name)
 {
   using namespace std;
  
@@ -1381,7 +1382,7 @@ linux_aarch64_process_t::linux_aarch64_process_t (
                  const std::string& md,
                  const std::string& mt,
                  const std::string& mc )
-   : MODULENAME (self_trace_t::machine_module_trace.module_name)
+   : MODULENAME (self_trace_t::self_trace().machine_module_trace.module_name)
 {
   using namespace std;
  
@@ -1516,7 +1517,7 @@ linux_aarch64_process_t::basic_init (
   if ( stat( mt.c_str(), &pathchk ) != 0 ) 
     {
  
-      self_trace_t::trace ( 1
+      self_trace_t::trace ( 1,
             MODULENAME,1,
             "Machine: invalid path %s", mt.c_str ());
 

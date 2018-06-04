@@ -269,6 +269,12 @@ AC_HEADER_STDBOOL
 AC_C_CONST
 AC_TYPE_PID_T
 AC_HEADER_TIME
+AC_CHECK_TYPES([struct user_regs_struct, 
+                struct user_pt_regs,
+                struct user_fpregs_struct,
+                struct user_fpsimd_struct,
+                struct user_fpsimd_state],
+                ,,[#include <sys/user.h>])
 
 dnl -----------------------------------------------
 dnl Checks for library functions.

@@ -231,6 +231,27 @@ bool glic_backtrace_wrapper (std::string &bt)
   return true;
 }
 
+// The register and fp register structures are defined differently on
+// various levels of linux. This sets the appropriate struct based on
+// configure checks.
+#if X86_ARCHITECTURE || X86_64_ARCHITECTURE || AARCH64_ARCHITECTURE
+  #if defined(HAVE_STRUCT_USER_REGS_STRUCT)
+    #define SDBG_LINUX_REGS_STRUCT struct user_regs_struct
+  #elif defined(HAVE_STRUCT_USER_PT_REGS)
+    #define SDBG_LINUX_REGS_STRUCT struct user_pt_regs
+  #else
+    #error Missing required definition from <sys/user.h> for cpu registers!
+  #endif
+  #if defined(HAVE_STRUCT_USER_FPREGS_STRUCT)
+    #define SDBG_LINUX_FPREGS_STRUCT struct user_fpregs_struct
+  #elif defined(HAVE_STRUCT_USER_FPSIMD_STRUCT)
+    #define SDBG_LINUX_FPREGS_STRUCT struct user_fpsimd_struct
+  #elif defined(HAVE_STRUCT_USER_FPSIMD_STATE)
+    #define SDBG_LINUX_FPREGS_STRUCT struct user_fpsimd_state
+  #else
+    #error Missing required definition from <sys/user.h> for floating point registers!
+  #endif
+#endif
 
 #if X86_ARCHITECTURE
 
@@ -248,8 +269,8 @@ bool glic_backtrace_wrapper (std::string &bt)
   // T_IT is fine to represent an instruction
   //
   typedef u_int32_t                             T_IT;
-  typedef struct user_regs_struct               T_GRS;
-  typedef struct user_fpregs_struct             T_FRS;
+  typedef SDBG_LINUX_REGS_STRUCT                T_GRS;
+  typedef SDBG_LINUX_FPREGS_STRUCT              T_FRS;
 
   const T_IT T_TRAP_INSTRUCTION               = 0x000000cc;
   const T_IT T_BLEND_MASK                     = 0xffffff00;
@@ -280,8 +301,8 @@ bool glic_backtrace_wrapper (std::string &bt)
   typedef u_int64_t                             T_VA;
   typedef u_int64_t                             T_WT;
   typedef u_int64_t                             T_IT;
-  typedef struct user_regs_struct               T_GRS;
-  typedef struct user_fpregs_struct             T_FRS;
+  typedef SDBG_LINUX_REGS_STRUCT                T_GRS;
+  typedef SDBG_LINUX_FPREGS_STRUCT              T_FRS;
   const T_IT T_TRAP_INSTRUCTION               = 0x00000000000000cc;
   const T_IT T_BLEND_MASK                     = 0xffffffffffffff00;
   const T_IT IT_UNINIT_HEX                    = 0xdeadbeefdeadbeefULL;
@@ -293,8 +314,8 @@ bool glic_backtrace_wrapper (std::string &bt)
   typedef u_int32_t                             T_VA;
   typedef u_int32_t                             T_WT;
   typedef u_int32_t                             T_IT;
-  typedef struct user_regs_struct               T_GRS;
-  typedef struct user_fpregs_struct             T_FRS;
+  typedef SDBG_LINUX_REGS_STRUCT                T_GRS;
+  typedef SDBG_LINUX_FPREGS_STRUCT              T_FRS;
   const T_IT T_TRAP_INSTRUCTION               = 0x000000cc;
   const T_IT T_BLEND_MASK                     = 0xffffff00;
   const T_IT IT_UNINIT_HEX                    = 0xdeadbeef;
@@ -325,8 +346,8 @@ bool glic_backtrace_wrapper (std::string &bt)
   typedef u_int64_t                             T_VA;
   typedef u_int64_t                             T_WT;
   typedef u_int32_t                             T_IT;
-  typedef struct user_regs_struct               T_GRS;
-  typedef struct user_fpsimd_struct             T_FRS;
+  typedef SDBG_LINUX_REGS_STRUCT                T_GRS;
+  typedef SDBG_LINUX_FPREGS_STRUCT              T_FRS;
   const T_IT T_TRAP_INSTRUCTION               = 0x00000000d4200000;
   const T_IT T_BLEND_MASK                     = 0xffffffff00000000;
   const T_IT IT_UNINIT_HEX                    = 0xdeadbeefdeadbeefULL;
@@ -340,8 +361,8 @@ bool glic_backtrace_wrapper (std::string &bt)
   typedef u_int32_t                             T_VA;
   typedef u_int32_t                             T_WT;
   typedef u_int32_t                             T_IT;
-  typedef struct user_regs_struct               T_GRS;
-  typedef struct user_fpsimd_struct             T_FRS;
+  typedef SDBG_LINUX_REGS_STRUCT                T_GRS;
+  typedef SDBG_LINUX_FPREGS_STRUCT              T_FRS;
   const T_IT T_TRAP_INSTRUCTION               = 0xd4200000;
   const T_IT T_BLEND_MASK                     = 0x00000000;
   const T_IT IT_UNINIT_HEX                    = 0xdeadbeef;

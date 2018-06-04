@@ -290,6 +290,8 @@ public:
 
   bool is_attfifo_sup();
 
+  bool is_cont_on_att();
+
   bool is_rid_sup();
 
   bool is_rid_via_symbol();
