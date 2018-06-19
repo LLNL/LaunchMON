@@ -1,37 +1,38 @@
 /*
  * $Header: /usr/gapps/asde/cvs-vault/sdb/launchmon/src/linux/sdbg_linux_mach.hxx,v 1.3.2.1 2008/02/20 17:37:57 dahn Exp $
  *--------------------------------------------------------------------------------
- * Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at 
- * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>. 
+ * Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at
+ * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>.
  * LLNL-CODE-409469. All rights reserved.
  *
- * This file is part of LaunchMON. For details, see 
+ * This file is part of LaunchMON. For details, see
  * https://computing.llnl.gov/?set=resources&page=os_projects
  *
  * Please also read LICENSE.txt -- Our Notice and GNU Lesser General Public License.
  *
- * 
- * This program is free software; you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License (as published by the Free Software 
+ *
+ * This program is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License (as published by the Free Software
  * Foundation) version 2.1 dated February 1999.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or 
- * FITNESS FOR A PARTICULAR PURPOSE. See the terms and conditions of the GNU 
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the terms and conditions of the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License along 
- * with this program; if not, write to the Free Software Foundation, Inc., 59 Temple 
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *--------------------------------------------------------------------------------			
+ *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        May  02 2018 KMD: Added aarch64 support
  *        Mar  06 2009 DHA: Remove dynloader_iden
- *        Mar  11 2008 DHA: Linux PowerPC support 
+ *        Mar  11 2008 DHA: Linux PowerPC support
  *        Feb  09 2008 DHA: Added LLNS Copyright
- *        Jan  09 2007 DHA: Linux X86-64 support 
+ *        Jan  09 2007 DHA: Linux X86-64 support
  *        Jan  11 2006 DHA: Created file.
- */ 
+ */
 
 #ifndef SDBG_LINUX_MACH_HXX
 #define SDBG_LINUX_MACH_HXX 1
@@ -50,13 +51,13 @@ extern "C" {
 
 #if X86_ARCHITECTURE || X86_64_ARCHITECTURE
 
-//! linux_x86_gpr_set_t: 
+//! linux_x86_gpr_set_t:
 /*!
-    The class represents linux x86 and x86-64 general purpose register set. 
+    The class represents linux x86 and x86-64 general purpose register set.
 
-    The offset in the USER area is calculated as following. 
+    The offset in the USER area is calculated as following.
 
-    Given the USER area of 
+    Given the USER area of
 
     === X86 (32 bit) ===
 
@@ -79,7 +80,7 @@ extern "C" {
     int                           u_debugreg [8];
     };
 
-    General purpose register set (regs) resides at the zero offset. 
+    General purpose register set (regs) resides at the zero offset.
     General purpose register set (struct user_regs_struct) is
 
     struct user_regs_struct
@@ -161,7 +162,7 @@ extern "C" {
 
  */
 
-class linux_x86_gpr_set_t 
+class linux_x86_gpr_set_t
   : public register_set_base_t<T_GRS, T_VA, T_WT>
 {
 
@@ -170,10 +171,10 @@ public:
   // constructors and destructor
   //
   linux_x86_gpr_set_t  ();
-  virtual ~linux_x86_gpr_set_t () { }  
+  virtual ~linux_x86_gpr_set_t () { }
 
   virtual void set_pc  (T_VA addr);
-  virtual T_VA const get_pc () const; 
+  virtual T_VA const get_pc () const;
   virtual T_VA const get_ret_addr() const;
   virtual T_VA const get_memloc_for_ret_addr() const;
 
@@ -187,10 +188,10 @@ private:
 //! linux_x86_frs_set_t:
 /*!
     The class represents linux x86 floating point register set.
-  
-    The offset in the USER area is calculated as following. 
 
-    Given the USER area of 
+    The offset in the USER area is calculated as following.
+
+    Given the USER area of
 
     === X86 (32 bit) ===
 
@@ -212,9 +213,9 @@ private:
     char                          u_comm [32];
     int                           u_debugreg [8];
     };
-  
+
     floating point register set resides in following offset.
-    offset = sizeof(struct user_regs_struct)+sizeof(int);    
+    offset = sizeof(struct user_regs_struct)+sizeof(int);
 
     === X86-64 (64 bit) ===
 
@@ -272,7 +273,7 @@ private:
     };
 
 */
-class linux_x86_fpr_set_t 
+class linux_x86_fpr_set_t
   : public register_set_base_t<T_FRS, T_VA, T_WT>
 {
 
@@ -294,14 +295,14 @@ private:
 //! class linux_x86_thread_t:
 /*!
     linux_x86_thread_t is linux x86 and x86-64 implementation of thread_base_t
-    class. The constructor sets register model. 
+    class. The constructor sets register model.
 */
-class linux_x86_thread_t 
-  : public thread_base_t<SDBG_LINUX_DFLT_INSTANTIATION> 
+class linux_x86_thread_t
+  : public thread_base_t<SDBG_LINUX_DFLT_INSTANTIATION>
 {
 
 public:
-  
+
   // constructors and destructor
   //
   linux_x86_thread_t();
@@ -310,7 +311,7 @@ public:
   // virtual method to convert thread id to lwp
   // which the kernel understands
   virtual pid_t thr2pid();
-   
+
 
 private:
   bool LEVELCHK(self_trace_verbosity level)
@@ -323,10 +324,10 @@ private:
 //! linux_x86_process_t:
 /*!
   linux_x86_process_t is linux x86 and x86-64 implementation of process_base_t
-  class. The constructor sets register model. 
+  class. The constructor sets register model.
 */
-class linux_x86_process_t 
-  : public process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> 
+class linux_x86_process_t
+  : public process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>
 {
 
 public:
@@ -334,26 +335,26 @@ public:
   // constructors and destructor
   //
   linux_x86_process_t ();
-  linux_x86_process_t ( const std::string& mi, 
-			const std::string& md, 
-			const std::string& mt,
-			const std::string& mc );
-  linux_x86_process_t ( const pid_t& pid, 
-			const std::string& mi, 
-			const std::string& md,
-			const std::string& mt,
-		        const std::string& mc );
-  linux_x86_process_t ( const pid_t& pid, 
-			const std::string& mi );
+  linux_x86_process_t ( const std::string& mi,
+      const std::string& md,
+      const std::string& mt,
+      const std::string& mc );
+  linux_x86_process_t ( const pid_t& pid,
+      const std::string& mi,
+      const std::string& md,
+      const std::string& mt,
+            const std::string& mc );
+  linux_x86_process_t ( const pid_t& pid,
+      const std::string& mi );
 
   explicit linux_x86_process_t ( const pid_t& pid );
-  ~linux_x86_process_t() { } 
+  ~linux_x86_process_t() { }
 
 protected:
-  bool basic_init ( const std::string& mi, 
-		    const std::string& md, 
-		    const std::string& mt,
-		    const std::string& mc );
+  bool basic_init ( const std::string& mi,
+        const std::string& md,
+        const std::string& mt,
+        const std::string& mc );
 
   bool basic_init ( const std::string& mi );
 
@@ -372,76 +373,46 @@ struct ps_prochandle {
   process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>* p;
 };
 
+#elif AARCH64_ARCHITECTURE
 
-#elif PPC_ARCHITECTURE
-
-//! linux_ppc_gpr_set_t:
+//! linux_aarch64_gpr_set_t:
 /*!
-    The class represents linux ppc general purpose register set.
- 
+    The class represents linux aarch64 general purpose register set.
+
     The offset in the USER area is calculated as following.
-    (This is defined in sys/user.h) 
- 
-    === ppc (32 bit process) ===
+    (This is defined in sys/user.h)
 
-    struct user {
-        struct pt_regs  regs;                   
-        size_t          u_tsize;               
-        size_t          u_dsize;             
-        size_t          u_ssize;            
-        unsigned long   start_code;        
-        unsigned long   start_data;       
-        unsigned long   start_stack;   
-        long int        signal;       
-        struct regs *   u_ar0;      
-        unsigned long   magic;     
-        char            u_comm[32]; 
-    };
- 
-    Thus, general purpose register set (regs) resides 
-    at the zero offset. General purpose register set 
-    (struct pt_regs: defined in ppc-asm/ptrace.h) is 
+    === AARCH64 (64 bit process) ===
 
-    struct pt_regs {
-        unsigned long gpr[32];
-        unsigned long nip;
-        unsigned long msr;
-        unsigned long orig_gpr3;        
-        unsigned long ctr;
-        unsigned long link;
-        unsigned long xer;
-        unsigned long ccr;
-        unsigned long mq;               
-        unsigned long trap;             
-        unsigned long dar;              
-        unsigned long dsisr;            
-        unsigned long result;           
+    struct user_regs_struct
+    {
+      unsigned long long regs[31];
+      unsigned long long sp;
+      unsigned long long pc;
+      unsigned long long pstate;
     };
 
-  The offset used by ptrace is also defined for this architecture
-  in ppc-asm/ptrace.h 
+    struct user_fpsimd_struct
+    {
+      __uint128_t  vregs[32];
+      unsigned int fpsr;
+      unsigned int fpcr;
+    };
 
-  GPR0  = RT_R0
-  GPR1  = RT_R1
-  ...
-  GPR31 = RT_R31)
+    General purpose register set resides at the zero offset.
+*/
 
-  Also, the header file defins PT_FPR0 = 48 with a caveat that 
-  Each FP reg occupies 2 slots in this space. PT_FPR31 (PT_FPR0 + 2*31)
-  and PT_FPSCR (PT_FPR0 + 2*32 + 1)
- */
- 
-class linux_ppc_gpr_set_t
+class linux_aarch64_gpr_set_t
   : public register_set_base_t<T_GRS, T_VA, T_WT>
 {
- 
+
 public:
- 
+
   // constructors and destructor
   //
-  linux_ppc_gpr_set_t  ();
-  virtual ~linux_ppc_gpr_set_t () { }
- 
+  linux_aarch64_gpr_set_t  ();
+  virtual ~linux_aarch64_gpr_set_t () { }
+
   virtual void set_pc  (T_VA addr);
   virtual T_VA const get_pc () const;
   virtual T_VA const get_ret_addr() const;
@@ -453,7 +424,216 @@ private:
 
   std::string MODULENAME;
 };
- 
+
+
+
+//! linux_aarch64_fpr_set_t
+/*!
+    The class represents linux aarch64 general purpose register set.
+
+    The offset in the USER area is calculated as following.
+    (This is defined in sys/user.h)
+
+    === AARCH64 (64 bit process) ===
+
+    struct user_regs_struct
+    {
+      unsigned long long regs[31];
+      unsigned long long sp;
+      unsigned long long pc;
+      unsigned long long pstate;
+    };
+
+    struct user_fpsimd_struct
+    {
+      __uint128_t  vregs[32];
+      unsigned int fpsr;
+      unsigned int fpcr;
+    };
+
+    General purpose register set resides at the zero offset.
+*/
+class linux_aarch64_fpr_set_t
+  : public register_set_base_t<T_FRS, T_VA, T_WT>
+{
+
+public:
+
+  // constructors and destructor
+  //
+  linux_aarch64_fpr_set_t ();
+  virtual ~linux_aarch64_fpr_set_t() { }
+
+private:
+  bool LEVELCHK(self_trace_verbosity level)
+       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
+
+  std::string MODULENAME;
+};
+
+
+//! class linux_aarch64_thread_t:
+/*!
+    linux_aarch64_thread_t is linux AARCH64 implementation of thread_base_t
+    class. The constructor sets register model.
+*/
+class linux_aarch64_thread_t
+  : public thread_base_t<SDBG_LINUX_DFLT_INSTANTIATION>
+{
+
+public:
+
+  // constructors and destructor
+  //
+  linux_aarch64_thread_t();
+  virtual ~linux_aarch64_thread_t();
+
+  // virtual method to convert thread id to lwp
+  // which the kernel understands
+  virtual pid_t thr2pid();
+
+
+private:
+  bool LEVELCHK(self_trace_verbosity level)
+       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
+
+  std::string MODULENAME;
+};
+
+
+//! linux_aarch64_process_t:
+/*!
+  linux_aarch64_process_t is AARCH64 implementation of process_base_t
+  class. The constructor sets register model.
+*/
+class linux_aarch64_process_t
+  : public process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>
+{
+
+public:
+
+  // constructors and destructor
+  //
+  linux_aarch64_process_t ();
+  linux_aarch64_process_t ( const std::string& mi,
+      const std::string& md,
+      const std::string& mt,
+      const std::string& mc );
+  linux_aarch64_process_t ( const pid_t& pid,
+      const std::string& mi,
+      const std::string& md,
+      const std::string& mt,
+            const std::string& mc );
+  linux_aarch64_process_t ( const pid_t& pid,
+      const std::string& mi );
+
+  explicit linux_aarch64_process_t ( const pid_t& pid );
+  ~linux_aarch64_process_t() { }
+
+protected:
+  bool basic_init ( const std::string& mi,
+        const std::string& md,
+        const std::string& mt,
+        const std::string& mc );
+
+  bool basic_init ( const std::string& mi );
+
+private:
+  void launcher_symbols_init();
+  bool LEVELCHK(self_trace_verbosity level)
+       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
+
+  std::string MODULENAME;
+
+};
+
+// data structure needed by proc service layer
+//
+struct ps_prochandle {
+  process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>* p;
+};
+
+#elif PPC_ARCHITECTURE
+
+//! linux_ppc_gpr_set_t:
+/*!
+    The class represents linux ppc general purpose register set.
+
+    The offset in the USER area is calculated as following.
+    (This is defined in sys/user.h)
+
+    === ppc (32 bit process) ===
+
+    struct user {
+        struct pt_regs  regs;
+        size_t          u_tsize;
+        size_t          u_dsize;
+        size_t          u_ssize;
+        unsigned long   start_code;
+        unsigned long   start_data;
+        unsigned long   start_stack;
+        long int        signal;
+        struct regs *   u_ar0;
+        unsigned long   magic;
+        char            u_comm[32];
+    };
+
+    Thus, general purpose register set (regs) resides
+    at the zero offset. General purpose register set
+    (struct pt_regs: defined in ppc-asm/ptrace.h) is
+
+    struct pt_regs {
+        unsigned long gpr[32];
+        unsigned long nip;
+        unsigned long msr;
+        unsigned long orig_gpr3;
+        unsigned long ctr;
+        unsigned long link;
+        unsigned long xer;
+        unsigned long ccr;
+        unsigned long mq;
+        unsigned long trap;
+        unsigned long dar;
+        unsigned long dsisr;
+        unsigned long result;
+    };
+
+  The offset used by ptrace is also defined for this architecture
+  in ppc-asm/ptrace.h
+
+  GPR0  = RT_R0
+  GPR1  = RT_R1
+  ...
+  GPR31 = RT_R31)
+
+  Also, the header file defins PT_FPR0 = 48 with a caveat that
+  Each FP reg occupies 2 slots in this space. PT_FPR31 (PT_FPR0 + 2*31)
+  and PT_FPSCR (PT_FPR0 + 2*32 + 1)
+ */
+
+class linux_ppc_gpr_set_t
+  : public register_set_base_t<T_GRS, T_VA, T_WT>
+{
+
+public:
+
+  // constructors and destructor
+  //
+  linux_ppc_gpr_set_t  ();
+  virtual ~linux_ppc_gpr_set_t () { }
+
+  virtual void set_pc  (T_VA addr);
+  virtual T_VA const get_pc () const;
+  virtual T_VA const get_ret_addr() const;
+  virtual T_VA const get_memloc_for_ret_addr() const;
+
+private:
+  bool LEVELCHK(self_trace_verbosity level)
+       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
+
+  std::string MODULENAME;
+};
+
 //! class linux_ppc_frs_set_t
 /*!
     The class represents linux ppc general purpose register set.
@@ -512,9 +692,9 @@ private:
 class linux_ppc_fpr_set_t
   : public register_set_base_t<T_FRS, T_VA, T_WT>
 {
- 
+
 public:
- 
+
   // constructors and destructor
   //
   linux_ppc_fpr_set_t ();
@@ -526,8 +706,8 @@ private:
 
   std::string MODULENAME;
 };
- 
- 
+
+
 //! linux_ppc_thread_t:
 /*!
     linux_ppc_thread_t is the linux ppc implementation of thread_base_t
@@ -536,15 +716,15 @@ private:
 class linux_ppc_thread_t
   : public thread_base_t<SDBG_LINUX_DFLT_INSTANTIATION>
 {
- 
+
 public:
 
   // constructors and destructor
   //
   linux_ppc_thread_t();
   virtual ~linux_ppc_thread_t();
- 
-  // virtual method to convert thread id to lwp 
+
+  // virtual method to convert thread id to lwp
   // which the kernel understand.
   virtual pid_t thr2pid();
 
@@ -555,8 +735,8 @@ private:
 
   std::string MODULENAME;
 };
- 
- 
+
+
 //!
 /*!
   linux_ppc_process_t is linux ppc implementation of process_base_t
@@ -565,9 +745,9 @@ private:
 class linux_ppc_process_t
   : public process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>
 {
- 
+
 public:
- 
+
   // constructors and destructor
   //
   linux_ppc_process_t ();
@@ -582,26 +762,26 @@ public:
                         const std::string& mc );
   linux_ppc_process_t ( const pid_t& pid,
                         const std::string& mi );
- 
+
   explicit linux_ppc_process_t ( const pid_t& pid );
   ~linux_ppc_process_t() { }
- 
+
 protected:
   bool basic_init ( const std::string& mi,
                     const std::string& md,
                     const std::string& mt,
                     const std::string& mc );
- 
+
   bool basic_init ( const std::string& mi );
- 
+
 private:
   void launcher_symbols_init();
   bool LEVELCHK(self_trace_verbosity level)
        { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
 
-  std::string MODULENAME; 
+  std::string MODULENAME;
 };
- 
+
 // data structure needed by proc service layer
 //
 struct ps_prochandle {

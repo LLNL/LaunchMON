@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Apr 01 2015 ADG: Added Cray CTI support.
  *        Feb 20 2015 andrewg@cray.com: Added support for RMs that build the
  *                         proctable on demand. Checks added for launch helpers
  *                         that are included with launchmon.
@@ -231,6 +232,10 @@ resource_manager_t::fill_rm_type(const std::string &v)
   else if (v == std::string("bgq_slurm"))
     {
       rm = RC_bgq_slurm;
+    }
+  else if (v == std::string("cray"))
+    {
+      rm = RC_cray;
     }
   else if (v == std::string("modelchecker"))
     {

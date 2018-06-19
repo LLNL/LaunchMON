@@ -29,6 +29,7 @@ dnl ----------------------------------------------------------------------------
 dnl
 dnl   Update Log:
 dnl         Apr 28 2016 DHA: Modernize autotool support 
+dnl         Apr 01 2015 ADG/KMD: Added Cray CTI support.
 dnl         Feb 20 2015 andrewg@cray.com: Added Cray support.
 dnl         Apr 30 2014 DHA: Declare 1.0.1 -- this doesn't have Cray support though.
 dnl         Apr 15 2014 DHA: Drop tools/cobo/test
@@ -268,6 +269,12 @@ AC_HEADER_STDBOOL
 AC_C_CONST
 AC_TYPE_PID_T
 AC_HEADER_TIME
+AC_CHECK_TYPES([struct user_regs_struct, 
+                struct user_pt_regs,
+                struct user_fpregs_struct,
+                struct user_fpsimd_struct,
+                struct user_fpsimd_state],
+                ,,[#include <sys/user.h>])
 
 dnl -----------------------------------------------
 dnl Checks for library functions.
@@ -292,6 +299,7 @@ AC_CONFIG_FILES([
   tools/cobo/src/Makefile
   tools/alps/Makefile
   tools/alps/src/Makefile
+  tools/cti/Makefile
   tools/handshake/Makefile
   launchmon/Makefile
   launchmon/src/Makefile

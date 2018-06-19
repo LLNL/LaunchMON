@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *              Apr 01 2015 ADG: Added Cray CTI support.
  *              Dec 14 2012 DHA: Add support to fix MPIR_Breakpoint
  *                               release race
  *              Nov 23 2011 DHA: File created
@@ -126,6 +127,7 @@ LMON_be_procctl_init ( rm_catalogue_e rmtype,
 
     case RC_orte:
     case RC_alps:
+    case RC_cray:
     case RC_gupc:
     case RC_mpiexec_hydra:
       //
@@ -184,6 +186,7 @@ LMON_be_procctl_stop ( rm_catalogue_e rmtype,
     case RC_slurm:
     case RC_orte:
     case RC_alps:
+    case RC_cray:
     case RC_gupc:
     case RC_mpiexec_hydra:
       //
@@ -254,6 +257,7 @@ LMON_be_procctl_run ( rm_catalogue_e rmtype,
     case RC_slurm:
     case RC_orte:
     case RC_alps:
+    case RC_cray:
     case RC_gupc:
     case RC_mpiexec_hydra:
       //
@@ -321,6 +325,7 @@ LMON_be_procctl_initdone( rm_catalogue_e rmtype,
 
     case RC_orte:
     case RC_alps:
+    case RC_cray:
     case RC_gupc:
     case RC_mpiexec_hydra:
       //
@@ -379,6 +384,7 @@ LMON_be_procctl_done(rm_catalogue_e rmtype,
     case RC_slurm:
     case RC_orte:
     case RC_alps:
+    case RC_cray:
     case RC_gupc:
     case RC_mpiexec_hydra:
       //
@@ -441,6 +447,7 @@ LMON_be_procctl_perf ( rm_catalogue_e rmtype,
     case RC_slurm:
     case RC_orte:
     case RC_alps:
+    case RC_cray:
     case RC_gupc:
     case RC_mpiexec_hydra:
       //

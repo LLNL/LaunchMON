@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        May  02 2018 KMD: Added aarch64 support
  *        Mar  11 2008 DHA: Added PowerPC support
  *        Feb  09 2008 DHA: Added LLNS Copyright
  *        Mar  13 2007 DHA: pipe_t support
@@ -102,6 +103,8 @@ linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::create_process (
   return_proc = new linux_ppc_process_t(pid, mi, md, mt, mc);
 #elif IA64_ARCHITECTURE
   return_proc = new linux_ia64_process_t(pid, mi, md, mt, mc);
+#elif AARCH64_ARCHITECTURE
+  return_proc = new linux_aarch64_process_t(pid, mi, md, mt, mc);
 #endif
 
   return return_proc;
@@ -134,6 +137,8 @@ linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::create_process (
   return_proc = new linux_ppc_process_t (pid, mi);
 #elif IA64_ARCHITECTURE
   return_proc = new linux_ia64_process_t (pid, mi);
+#elif AARCH64_ARCHITECTURE
+  return_proc = new linux_aarch64_process_t (pid, mi);
 #endif
 
   return return_proc;

@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        May  02 2018 KMD: Added aarch64 support
  *        Nov  08 2010 DHA: Added a lexical scope around the driver object
  *                          to support memory tools 
  *        Aug  10 2008 DHA: Now returns EXIT_FAILURE
@@ -53,10 +54,9 @@ int main(int argc, char* argv[])
 {
   try 
   {
-
     int rc = EXIT_FAILURE;
       {
-#if X86_ARCHITECTURE || X86_64_ARCHITECTURE || PPC_ARCHITECTURE
+#if X86_ARCHITECTURE || X86_64_ARCHITECTURE || PPC_ARCHITECTURE || AARCH64_ARCHITECTURE
         //
         // driver instantiation for the linux platform.
         //

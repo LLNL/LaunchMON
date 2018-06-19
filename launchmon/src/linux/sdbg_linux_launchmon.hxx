@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        Jul 22 2015 ADG: Fix for on demand proctable
  *        Oct 01 2010 DHA: Refactor handling of mpir variables setup to 
  *                         handle_mpir_variables.
  *        Sep 24 2008 DHA: Added handle_daemon_exit_event for 
@@ -159,6 +160,9 @@ private:
 
   bool check_dependent_SOs ( 
                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p );
+
+  bool continue_on_attach (
+                process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p, bool );
 
   bool acquire_proctable ( 
                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> &p, bool );

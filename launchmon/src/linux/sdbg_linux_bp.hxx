@@ -26,6 +26,7 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
+ *        May 02 2018 KMD: Added aarch64 support
  *        Mar 06 2008 DHA: Added indirect breakpoint support
  *        Mar 11 2008 DHA: Added Linux PowerPC support 
  *        Feb 09 2008 DHA: Added LLNS Copyright
@@ -40,7 +41,7 @@
 #include "sdbg_linux_mach.hxx"
 
 #if BIT64
-# if X86_64_ARCHITECTURE
+# if X86_64_ARCHITECTURE || AARCH64_ARCHITECTURE
   const int NUM_BYTE_INCR_AFTER_SINGLESTEP = 8;
 # else
   const int NUM_BYTE_INCR_AFTER_SINGLESTEP = 4;

@@ -1,11 +1,11 @@
 ## $Header: $
 ##
-## rm_info.conf
+## Makefile.am -- Process this file with automake to produce Makefile.in 
 ##
 ##--------------------------------------------------------------------------------
-## Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at
+## Copyright (c) 2010, Lawrence Livermore National Security, LLC. Produced at
 ## the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>.
-## LLNL-CODE-409469. All rights reserved.
+## LLNL-CODE-401141. All rights reserved.
 ##
 ## This file is part of LaunchMON. For details, see
 ## https://computing.llnl.gov/?set=resources&page=os_projects
@@ -28,48 +28,16 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
-##        Sep 30 2011 DHA: Created file.
-##        Apr 01 2015 ADG: Added CTI support.
-##        Mar 01 2018 KMD: Added aarch64 support
-##
-##
-## [platform]
-## config file for each supported RM
+##        Mar 31 2015 DHA: Made for cti_fe_colocator
 ##
 
-[linux-x86]
-rm_slurm.conf
-rm_openrte.conf
-rm_mchecker.conf
 
-[linux-x86_64]
-rm_slurm.conf
-rm_openrte.conf
-rm_alps.conf
-rm_cray.conf
-rm_mchecker.conf
-rm_mpiexec_hydra.conf
-rm_gupc.conf
+AM_CPPFLAGS                	= -I$(top_srcdir) \
+                           	  -I$(top_srcdir)/launchmon/src \
+                              -I$(top_srcdir)/@LMONAPILOC@
 
-[linux-aarch64]
-rm_slurm.conf
-rm_openrte.conf
-rm_alps.conf
-rm_cray.conf
-rm_mchecker.conf
-rm_gupc.conf
+bin_PROGRAMS                = cti_fe_colocator 
+cti_fe_colocator_SOURCES    = cti_fe_colocator.cxx 
+cti_fe_colocator_CXXFLAGS   = @LNCHR_BIT_FLAGS@ $(CRAY_CTI_CFLAGS)
+cti_fe_colocator_LDADD      = $(CRAY_CTI_LIBS)
 
-[linux-power]
-rm_bglrm.conf
-rm_bgprm.conf
-rm_bgqrm.conf
-rm_bgq_slurm.conf
-rm_mchecker.conf
-rm_openrte.conf
-
-[linux-power64]
-rm_bgqrm.conf
-rm_bgq_slurm.conf
-rm_mchecker.conf
-rm_gupc.conf
-rm_openrte.conf

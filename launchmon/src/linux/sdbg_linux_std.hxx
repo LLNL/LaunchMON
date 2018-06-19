@@ -26,7 +26,8 @@
  *--------------------------------------------------------------------------------			
  *
  *  Update Log:
- *        Sep 02 2010 DHA: Added MPIR_attach_fifo support
+ *        May  02 2018 KMD: Added aarch64 support
+ *        Sep  02 2010 DHA: Added MPIR_attach_fifo support
  *        Dec  16 2009 DHA: Moved backtrace support with C++ demangling here
  *        Aug  10 2009 DHA: Added more comments
  *        Mar  06 2008 DHA: Deprecate GLUESYM support
@@ -230,6 +231,27 @@ bool glic_backtrace_wrapper (std::string &bt)
   return true;
 }
 
+// The register and fp register structures are defined differently on
+// various levels of linux. This sets the appropriate struct based on
+// configure checks.
+#if X86_ARCHITECTURE || X86_64_ARCHITECTURE || AARCH64_ARCHITECTURE
+  #if defined(HAVE_STRUCT_USER_REGS_STRUCT)
+    #define SDBG_LINUX_REGS_STRUCT struct user_regs_struct
+  #elif defined(HAVE_STRUCT_USER_PT_REGS)
+    #define SDBG_LINUX_REGS_STRUCT struct user_pt_regs
+  #else
+    #error Missing required definition from <sys/user.h> for cpu registers!
+  #endif
+  #if defined(HAVE_STRUCT_USER_FPREGS_STRUCT)
+    #define SDBG_LINUX_FPREGS_STRUCT struct user_fpregs_struct
+  #elif defined(HAVE_STRUCT_USER_FPSIMD_STRUCT)
+    #define SDBG_LINUX_FPREGS_STRUCT struct user_fpsimd_struct
+  #elif defined(HAVE_STRUCT_USER_FPSIMD_STATE)
+    #define SDBG_LINUX_FPREGS_STRUCT struct user_fpsimd_state
+  #else
+    #error Missing required definition from <sys/user.h> for floating point registers!
+  #endif
+#endif
 
 #if X86_ARCHITECTURE
 
@@ -247,8 +269,8 @@ bool glic_backtrace_wrapper (std::string &bt)
   // T_IT is fine to represent an instruction
   //
   typedef u_int32_t                             T_IT;
-  typedef struct user_regs_struct               T_GRS;
-  typedef struct user_fpregs_struct             T_FRS;
+  typedef SDBG_LINUX_REGS_STRUCT                T_GRS;
+  typedef SDBG_LINUX_FPREGS_STRUCT              T_FRS;
 
   const T_IT T_TRAP_INSTRUCTION               = 0x000000cc;
   const T_IT T_BLEND_MASK                     = 0xffffff00;
@@ -279,8 +301,8 @@ bool glic_backtrace_wrapper (std::string &bt)
   typedef u_int64_t                             T_VA;
   typedef u_int64_t                             T_WT;
   typedef u_int64_t                             T_IT;
-  typedef struct user_regs_struct               T_GRS;
-  typedef struct user_fpregs_struct             T_FRS;
+  typedef SDBG_LINUX_REGS_STRUCT                T_GRS;
+  typedef SDBG_LINUX_FPREGS_STRUCT              T_FRS;
   const T_IT T_TRAP_INSTRUCTION               = 0x00000000000000cc;
   const T_IT T_BLEND_MASK                     = 0xffffffffffffff00;
   const T_IT IT_UNINIT_HEX                    = 0xdeadbeefdeadbeefULL;
@@ -292,10 +314,57 @@ bool glic_backtrace_wrapper (std::string &bt)
   typedef u_int32_t                             T_VA;
   typedef u_int32_t                             T_WT;
   typedef u_int32_t                             T_IT;
-  typedef struct user_regs_struct               T_GRS;
-  typedef struct user_fpregs_struct             T_FRS;
+  typedef SDBG_LINUX_REGS_STRUCT                T_GRS;
+  typedef SDBG_LINUX_FPREGS_STRUCT              T_FRS;
   const T_IT T_TRAP_INSTRUCTION               = 0x000000cc;
   const T_IT T_BLEND_MASK                     = 0xffffff00;
+  const T_IT IT_UNINIT_HEX                    = 0xdeadbeef;
+  const T_VA T_UNINIT_HEX                     = 0xdeadbeef;
+# endif // BIT64
+
+#define SDBG_LINUX_DFLT_INSTANTIATION T_VA, \
+                                      T_WT, \
+                                      T_IT, \
+                                      T_GRS,\
+                                      T_FRS,\
+                                      my_thrinfo_t,\
+                                      elf_wrapper
+
+#elif AARCH64_ARCHITECTURE
+
+  // 
+  // 
+  // insert linux AARCH64 architecture macros here ...
+  //
+  //
+  //
+
+# if BIT64
+  //
+  // if the target is 64 bit, use the following
+  //
+  typedef u_int64_t                             T_VA;
+  typedef u_int64_t                             T_WT;
+  typedef u_int32_t                             T_IT;
+  typedef SDBG_LINUX_REGS_STRUCT                T_GRS;
+  typedef SDBG_LINUX_FPREGS_STRUCT              T_FRS;
+  const T_IT T_TRAP_INSTRUCTION               = 0x00000000d4200000;
+  const T_IT T_BLEND_MASK                     = 0xffffffff00000000;
+  const T_IT IT_UNINIT_HEX                    = 0xdeadbeefdeadbeefULL;
+  const T_VA T_UNINIT_HEX                     = 0xdeadbeefdeadbeef;
+# else
+  // 32 bit arm is untested...
+  #error 32-bit target is not supported for the ARM architecture
+  //
+  // if the target is 32 bit, use the following
+  //
+  typedef u_int32_t                             T_VA;
+  typedef u_int32_t                             T_WT;
+  typedef u_int32_t                             T_IT;
+  typedef SDBG_LINUX_REGS_STRUCT                T_GRS;
+  typedef SDBG_LINUX_FPREGS_STRUCT              T_FRS;
+  const T_IT T_TRAP_INSTRUCTION               = 0xd4200000;
+  const T_IT T_BLEND_MASK                     = 0x00000000;
   const T_IT IT_UNINIT_HEX                    = 0xdeadbeef;
   const T_VA T_UNINIT_HEX                     = 0xdeadbeef;
 # endif // BIT64

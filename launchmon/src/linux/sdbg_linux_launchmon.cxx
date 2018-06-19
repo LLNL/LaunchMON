@@ -26,6 +26,8 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        May 02 2018 KMD: Added aarch64 support
+ *        Jul 22 2015 ADG: Fix for on demand proctable
  *        Feb 20 2015 andrewg@cray.com: Added support for RMs that build the
  *                         proctable on demand. Fixed a misplaced brace bug.
  *        Oct 26 2012 DHA: Removed catch clauses for deprecated thread tracers 
@@ -809,6 +811,106 @@ linux_launchmon_t::is_bp_prologue_done (
     }    
 }
 
+//! PRIVATE: linux_launchmon_t::continue_on_attach
+/*!
+    Builds the on-demand proctable if it hasn't been built already.
+
+*/
+bool
+linux_launchmon_t::continue_on_attach (
+                 process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>& p,
+         bool use_cxt )
+{
+  try
+    {
+      using namespace std;
+
+      image_base_t<T_VA,elf_wrapper>* main_im;
+
+      int local_pcount = 0;
+#if MEASURE_TRACING_COST
+      double c_start_ts;
+      double c_end_ts;
+      c_start_ts = gettimeofdayD();
+#endif
+      main_im  = p.get_myimage();
+      if (!main_im)
+        {
+          self_trace_t::trace (
+             true,
+             MODULENAME, 1,
+             "main image not processed");
+          return false;
+        }
+
+      //
+      // fetching the RPDTAB size
+      //
+      symbol_base_t<T_VA> debug_ps
+        = main_im->get_a_symbol ( p.get_launch_proctable_size() );
+
+      if (!debug_ps && p.get_myrmso_image())
+        {
+          debug_ps
+            = p.get_myrmso_image()->get_a_symbol(p.get_launch_proctable_size());
+        }
+
+      T_VA procsize_addr = debug_ps.get_relocated_address();
+
+      get_tracer()->tracer_read( p,
+                 procsize_addr,
+                 &(local_pcount),
+                 sizeof(local_pcount),
+                 use_cxt );
+
+      if (local_pcount < 0 )
+        {
+          self_trace_t::trace (
+             true,
+             MODULENAME, 1,
+             "MPIR_proctable_size is negative");
+          return false;
+        }
+
+      // If the local_pcount is non-zero, the proctable has already been built
+      // and we should not issue the continue command.
+      if (local_pcount > 0)
+        {
+          return false;
+        }
+
+      // Need to continue since the proctable hasn't been build yet.
+      get_tracer()->tracer_continue (p, use_cxt);
+
+#if MEASURE_TRACING_COST
+      c_end_ts = gettimeofdayD();
+      {
+        self_trace_t::trace ( true,
+           MODULENAME,0,
+           "PROCTAB(%d) Continue_on_attach: %f ",
+           local_pcount, (c_end_ts - c_start_ts));
+      }
+#endif
+
+      return true;
+    }
+  catch ( symtab_exception_t e )
+    {
+      e.report ();
+      return false;
+    }
+  catch ( tracer_exception_t e )
+    {
+      e.report ();
+      return false;
+    }
+  catch ( machine_exception_t e )
+    {
+      e.report ();
+      return false;
+    }
+}
+
 
 //! PRIVATE: linux_launchmon_t::acquire_proctable
 /*!
@@ -1073,17 +1175,17 @@ linux_launchmon_t::acquire_proctable (
   catch ( symtab_exception_t e ) 
     {
       e.report ();
-      return LAUNCHMON_FAILED;
+      return false;
     }
   catch ( tracer_exception_t e ) 
     {
       e.report ();
-      return LAUNCHMON_FAILED;
+      return false;
     }  
   catch ( machine_exception_t e )
     {
       e.report ();
-      return LAUNCHMON_FAILED;
+      return false;
     }
 }
 
@@ -2011,15 +2113,21 @@ linux_launchmon_t::handle_trap_after_attach_event (
         } // With MPIR Colocation service
       else
         {
+           bool ptab_ready = true;
            //
-           // Some RMs will build the Proctable on demand. If so, continue until
-           // the MPIR_Breakpoint is hit.
+           // Some RMs will build the Proctable on demand. If so, we may need to
+           // continue until the MPIR_Breakpoint is hit.
            //
            if (p.rmgr()->is_cont_on_att())
              {
-               get_tracer()->tracer_continue (p, use_cxt);
+               if (continue_on_attach ( p, use_cxt ))
+                 {
+                   ptab_ready = false;
+                 }
              }
-           else
+           // If the proctable was already built, we do not want to continue,
+           // instead we can read it right away.
+           if (ptab_ready)
              {
                //
                // Without MPIR Colocation service, you would have
@@ -3175,6 +3283,9 @@ linux_launchmon_t::handle_thrcreate_request (
 #elif PPC_ARCHITECTURE
           thread_base_t<SDBG_LINUX_DFLT_INSTANTIATION> *thrinfo
             = new linux_ppc_thread_t();
+#elif AARCH64_ARCHITECTURE
+          thread_base_t<SDBG_LINUX_DFLT_INSTANTIATION> *thrinfo
+            = new linux_aarch64_thread_t();
 #endif
           thrinfo->copy_thread_info(tinfo);
           // if the process doesn't contain tid of the given thread,
