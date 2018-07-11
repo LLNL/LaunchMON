@@ -1,27 +1,28 @@
 /*
- * $Header: $
  *--------------------------------------------------------------------------------
  * Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at
- * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>.
- * LLNL-CODE-409469. All rights reserved.
+ * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn
+ * <ahn1@llnl.gov>. LLNL-CODE-409469. All rights reserved.
  *
  * This file is part of LaunchMON. For details, see
  * https://computing.llnl.gov/?set=resources&page=os_projects
  *
- * Please also read LICENSE.txt -- Our Notice and GNU Lesser General Public License.
+ * Please also read LICENSE.txt -- Our Notice and GNU Lesser General Public
+ * License.
  *
  *
- * This program is free software; you can redistribute it and/or modify it under the
- * terms of the GNU General Public License (as published by the Free Software
- * Foundation) version 2.1 dated February 1999.
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (as published by the Free
+ * Software Foundation) version 2.1 dated February 1999.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the terms and conditions of the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
  *--------------------------------------------------------------------------------
  *
@@ -52,21 +53,20 @@
 
 extern "C" {
 
-#include <syscall.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/ptrace.h>
-#include <sys/uio.h>
+#include <elf.h>
 #include <errno.h>
 #include <signal.h>
+#include <sys/ptrace.h>
+#include <sys/types.h>
+#include <sys/uio.h>
 #include <sys/user.h>
-#include <elf.h>
+#include <syscall.h>
+#include <unistd.h>
 }
 
 #include <fstream>
 #include <sstream>
 #include "sdbg_linux_ptracer.hxx"
-
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -80,15 +80,11 @@ extern "C" {
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::linux_ptracer_t()
-  : MODULENAME (self_trace_t::self_trace().tracer_module_trace.module_name)
-{
-
-}
+    : MODULENAME(self_trace_t::self_trace().tracer_module_trace.module_name) {}
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::linux_ptracer_t
-(const linux_ptracer_t &pt)
-{
+linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::linux_ptracer_t(
+    const linux_ptracer_t& pt) {
   MODULENAME = pt.MODULENAME;
 }
 
@@ -99,25 +95,21 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::linux_ptracer_t
     can throw an exception of linux_tracer_exception_t type.
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setregs (
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-     bool use_cxt ) throw (linux_tracer_exception_t)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setregs(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
+    bool use_cxt) throw(linux_tracer_exception_t) {
   using namespace std;
 
   string e;
   string func = "[linux_ptracer_t::tracer_setregs]";
   pid_t tpid = p.get_pid(use_cxt);
 
-  register_set_base_t<GRS,VA,WT> *regset = p.get_gprset(use_cxt);
+  register_set_base_t<GRS, VA, WT>* regset = p.get_gprset(use_cxt);
 
-  if (!regset)
-    {
-      e = func +
-        " No register set is found with the thread ";
-      throw linux_tracer_exception_t(e,SDBG_TRACE_FAILED);
-    }
+  if (!regset) {
+    e = func + " No register set is found with the thread ";
+    throw linux_tracer_exception_t(e, SDBG_TRACE_FAILED);
+  }
 
   regset->set_ptr_to_regset();
 
@@ -126,16 +118,15 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setregs (
   struct iovec iov;
   int ret;
 
-  iov.iov_base = (void *)regset->get_rs_ptr();
+  iov.iov_base = (void*)regset->get_rs_ptr();
   iov.iov_len = regset->size();
 
   // Write all general purpose registers in one go
-  ret = Pptrace(PTRACE_SETREGSET, tpid, (void *)NT_PRSTATUS, (void *)&iov);
-  if (ret < 0)
-    {
-      e = func + ERRMSG_PTRACE + strerror (errno);
-      throw linux_tracer_exception_t(e,convert_error_code (errno));
-    }
+  ret = Pptrace(PTRACE_SETREGSET, tpid, (void*)NT_PRSTATUS, (void*)&iov);
+  if (ret < 0) {
+    e = func + ERRMSG_PTRACE + strerror(errno);
+    throw linux_tracer_exception_t(e, convert_error_code(errno));
+  }
 
 #else
 
@@ -144,39 +135,33 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setregs (
   unsigned int num_regs = regset->size_in_word();
   unsigned int i;
 
-  for ( i=0; i < num_regs; i++ )
-    {
-      if ( ((1 << i) & regset->get_writable_mask()) == 0 ) 
-        {
-          //
-          // We only write into what we are allowed to write into.
-          //
-          regset->inc_ptr_by_word();
-          offset += sizeof(WT);
-          continue;
-        }
+  for (i = 0; i < num_regs; i++) {
+    if (((1 << i) & regset->get_writable_mask()) == 0) {
+      //
+      // We only write into what we are allowed to write into.
+      //
+      regset->inc_ptr_by_word();
+      offset += sizeof(WT);
+      continue;
+    }
 
-      r = Pptrace(PTRACE_POKEUSER,
-            tpid,
-      (void *) offset,
-      (void *) *(regset->get_rs_ptr()));
+    r = Pptrace(PTRACE_POKEUSER, tpid, (void*)offset,
+                (void*)*(regset->get_rs_ptr()));
 
-    if (errno)
-      {
-        e = func + ERRMSG_PTRACE + strerror ( errno );
-        throw linux_tracer_exception_t(e,convert_error_code (errno));
-      }
+    if (errno) {
+      e = func + ERRMSG_PTRACE + strerror(errno);
+      throw linux_tracer_exception_t(e, convert_error_code(errno));
+    }
 
     regset->inc_ptr_by_word();
     offset += sizeof(WT);
-  } // for ( i=0; i < num_regs; i++ )
+  }  // for ( i=0; i < num_regs; i++ )
 
 #endif
 
   return SDBG_TRACE_OK;
 
-} // tracer_error_e linux_ptracer_t::tracer_setregs
-
+}  // tracer_error_e linux_ptracer_t::tracer_setregs
 
 //! PUBLIC: tracer_getregs
 /*!
@@ -185,25 +170,21 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setregs (
     an exception of linux_tracer_exception_t type.
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getregs (
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-     bool use_cxt ) throw (linux_tracer_exception_t)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getregs(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
+    bool use_cxt) throw(linux_tracer_exception_t) {
   using namespace std;
 
   string e;
   string func = "[linux_ptracer_t::tracer_getregs]";
   pid_t tpid = p.get_pid(use_cxt);
 
-  register_set_base_t<GRS,VA,WT> *regset = p.get_gprset(use_cxt);
+  register_set_base_t<GRS, VA, WT>* regset = p.get_gprset(use_cxt);
 
-  if (!regset)
-    {
-      e = func +
-        " No register set is found with the thread ";
-      throw linux_tracer_exception_t(e,SDBG_TRACE_FAILED);
-    }
+  if (!regset) {
+    e = func + " No register set is found with the thread ";
+    throw linux_tracer_exception_t(e, SDBG_TRACE_FAILED);
+  }
 
   regset->set_ptr_to_regset();
 
@@ -212,16 +193,15 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getregs (
   struct iovec iov;
   int ret;
 
-  iov.iov_base = (void *)regset->get_rs_ptr();
+  iov.iov_base = (void*)regset->get_rs_ptr();
   iov.iov_len = regset->size();
 
   // Read all general purpose registers in one go
-  ret = Pptrace(PTRACE_GETREGSET, tpid, (void *)NT_PRSTATUS, (void *)&iov);
-  if ( ret < 0 )
-    {
-      e = func + ERRMSG_PTRACE + strerror ( errno );
-      throw linux_tracer_exception_t(e,convert_error_code (errno));
-    }
+  ret = Pptrace(PTRACE_GETREGSET, tpid, (void*)NT_PRSTATUS, (void*)&iov);
+  if (ret < 0) {
+    e = func + ERRMSG_PTRACE + strerror(errno);
+    throw linux_tracer_exception_t(e, convert_error_code(errno));
+  }
 
 #else
 
@@ -230,27 +210,23 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getregs (
   unsigned int num_regs = regset->size_in_word();
   unsigned int i;
 
-  for ( i=0; i < num_regs; i++ ) 
-    {
-      r = Pptrace (PTRACE_PEEKUSER, tpid, (void *)offset, NULL);
+  for (i = 0; i < num_regs; i++) {
+    r = Pptrace(PTRACE_PEEKUSER, tpid, (void*)offset, NULL);
 
-      if (errno)
-        {
-          e = func + ERRMSG_PTRACE + strerror ( errno );
-          throw linux_tracer_exception_t(e,convert_error_code (errno));
-        }
+    if (errno) {
+      e = func + ERRMSG_PTRACE + strerror(errno);
+      throw linux_tracer_exception_t(e, convert_error_code(errno));
+    }
 
-      regset->write_word_to_ptr (r);
-      regset->inc_ptr_by_word();
-      offset += sizeof(WT);
-
+    regset->write_word_to_ptr(r);
+    regset->inc_ptr_by_word();
+    offset += sizeof(WT);
   }
 #endif
 
   return SDBG_TRACE_OK;
 
-} // tracer_error_e linux_ptracer_t::tracer_getfpregs
-
+}  // tracer_error_e linux_ptracer_t::tracer_getfpregs
 
 //! PUBLIC: tracer_getfpregs
 /*!
@@ -258,25 +234,21 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getregs (
     process_base_t object.
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getfpregs (
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-     bool use_cxt ) throw (linux_tracer_exception_t)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getfpregs(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
+    bool use_cxt) throw(linux_tracer_exception_t) {
   using namespace std;
 
   string e;
   string func = "[linux_ptracer_t::tracer_getfpregs]";
   pid_t tpid = p.get_pid(use_cxt);
 
-  register_set_base_t<FRS,VA,WT>* regset = p.get_fprset(use_cxt);
+  register_set_base_t<FRS, VA, WT>* regset = p.get_fprset(use_cxt);
 
-  if (!regset)
-    {
-      e = func +
-        " No register set is found with the thread ";
-      throw linux_tracer_exception_t(e,SDBG_TRACE_FAILED);
-    }
+  if (!regset) {
+    e = func + " No register set is found with the thread ";
+    throw linux_tracer_exception_t(e, SDBG_TRACE_FAILED);
+  }
 
   regset->set_ptr_to_regset();
 
@@ -285,16 +257,15 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getfpregs (
   struct iovec iov;
   int ret;
 
-  iov.iov_base = (void *)regset->get_rs_ptr();
+  iov.iov_base = (void*)regset->get_rs_ptr();
   iov.iov_len = regset->size();
 
   // Read all floating point registers in one go
-  ret = Pptrace(PTRACE_GETREGSET, tpid, (void *)NT_FPREGSET, (void *)&iov);
-  if (ret < 0)
-    {
-      e = func + ERRMSG_PTRACE + strerror ( errno );
-      throw linux_tracer_exception_t(e,convert_error_code (errno));
-    }
+  ret = Pptrace(PTRACE_GETREGSET, tpid, (void*)NT_FPREGSET, (void*)&iov);
+  if (ret < 0) {
+    e = func + ERRMSG_PTRACE + strerror(errno);
+    throw linux_tracer_exception_t(e, convert_error_code(errno));
+  }
 
 #else
 
@@ -303,28 +274,24 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getfpregs (
   unsigned int num_regs = regset->size_in_word();
   unsigned int i;
 
-  for ( i=0; i < num_regs; i++ )
-    {
+  for (i = 0; i < num_regs; i++) {
+    r = Pptrace(PTRACE_PEEKUSER, tpid, (void*)offset, NULL);
 
-      r = Pptrace (PTRACE_PEEKUSER, tpid, (void *)offset, NULL);
-
-      if (errno)
-        {
-          e = func + ERRMSG_PTRACE + strerror (errno);
-          throw linux_tracer_exception_t(e, convert_error_code (errno));
-        }
-
-      regset->write_word_to_ptr (r);
-      regset->inc_ptr_by_word();
-      offset += sizeof(WT);
+    if (errno) {
+      e = func + ERRMSG_PTRACE + strerror(errno);
+      throw linux_tracer_exception_t(e, convert_error_code(errno));
     }
+
+    regset->write_word_to_ptr(r);
+    regset->inc_ptr_by_word();
+    offset += sizeof(WT);
+  }
 
 #endif
 
   return SDBG_TRACE_OK;
 
-} // tracer_error_e linux_ptracer_t::tracer_getfpregs
-
+}  // tracer_error_e linux_ptracer_t::tracer_getfpregs
 
 //! PUBLIC: tracer_setregs
 /*!
@@ -332,53 +299,13 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getfpregs (
     the process_base_t object. Currently, not implemented.
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setfpregs (
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-     bool use_cxt ) throw (linux_tracer_exception_t)
-{
-  /* It looks like there are some problems in calculating offset
-     in the USER area to peek and poke FP register set values.
-     I am commenting this out for now.
-     Please modify sdbg_linux_x86_machine.hxx to fix this issue.
-  */
-#if 0
-  WT r;
-  int i, num_regs, offset;
-  register_set_base_t<FRS,VA,WT>* regset = p.get_fprset();
-
-  if (!regset)
-    return SDBG_TRACE_FAILED;
-
-  regset->set_ptr_to_regset();
-  num_regs = regset->size_in_word();
-  offset = regset->get_offset_in_user();
-
-  for ( i=0; i < num_regs; i++ ) {
-    if ( ((1 << i) & regset->get_writable_mask()) == 0 ) {
-        regset->inc_ptr_by_word();
-        offset += sizeof(WT);
-        continue;
-    }
-
-    r = Pptrace (PTRACE_POKEUSER,
-     p.get_pid(use_cxt),
-     (void*) offset,
-     (void*) *(regset->get_rs_ptr()));
-
-    if (errno) {
-      perror("linux_ptracer_t::tracer_getregs");
-      return SDBG_TRACE_FAILED;
-    }
-    regset->inc_ptr_by_word();
-    offset += sizeof(WT);
-  }
-#endif
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setfpregs(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
+    bool use_cxt) throw(linux_tracer_exception_t) {
 
   return SDBG_TRACE_UNIMPLEMENTED;
 
-} // tracer_error_e linux_ptracer_t::tracer_setfpregs
-
+}  // tracer_error_e linux_ptracer_t::tracer_setfpregs
 
 //! PUBLIC: tracer_read
 /*!
@@ -386,14 +313,9 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setfpregs (
     buf upto whatever the size in buf argument tells to do.
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read (
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-     VA addr,
-     void* buf,
-     int size,
-     bool use_cxt ) throw (linux_tracer_exception_t)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, VA addr, void* buf, int size,
+    bool use_cxt) throw(linux_tracer_exception_t) {
   using namespace std;
 
   WT r;
@@ -401,41 +323,36 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read (
   string func = "[linux_ptracer_t::tracer_read]";
   pid_t tpid = p.get_pid(use_cxt);
   VA addr_trav = addr;
-  VA trav_end = addr+size;
-  WT* buf_trav = (WT*) buf;
+  VA trav_end = addr + size;
+  WT* buf_trav = (WT*)buf;
 
-  for ( addr_trav = addr; (addr_trav + sizeof(WT)) <= trav_end;
-        addr_trav += sizeof(WT)) {
+  for (addr_trav = addr; (addr_trav + sizeof(WT)) <= trav_end;
+       addr_trav += sizeof(WT)) {
+    r = Pptrace(PTRACE_PEEKDATA, tpid, (void*)addr_trav, 0);
 
-    r = Pptrace ( PTRACE_PEEKDATA, tpid, (void*) addr_trav, 0);
-
-    if ( r == -1 && errno != 0 )
-      {
-        e = func + ERRMSG_PTRACE + strerror ( errno );
-        throw linux_tracer_exception_t(e, convert_error_code (errno));
-      }
+    if (r == -1 && errno != 0) {
+      e = func + ERRMSG_PTRACE + strerror(errno);
+      throw linux_tracer_exception_t(e, convert_error_code(errno));
+    }
 
     (*buf_trav) = r;
     buf_trav++;
   }
 
-  if ( addr_trav != trav_end )
-    {
-      r = Pptrace ( PTRACE_PEEKDATA, tpid, (void*) addr_trav, 0);
+  if (addr_trav != trav_end) {
+    r = Pptrace(PTRACE_PEEKDATA, tpid, (void*)addr_trav, 0);
 
-      if ( r == -1 && errno != 0 )
-        {
-          e = func + ERRMSG_PTRACE + strerror ( errno );
-          throw linux_tracer_exception_t(e, convert_error_code (errno));
-        }
-
-      memcpy((void*) buf_trav, (void*) &r, trav_end - addr_trav);
+    if (r == -1 && errno != 0) {
+      e = func + ERRMSG_PTRACE + strerror(errno);
+      throw linux_tracer_exception_t(e, convert_error_code(errno));
     }
+
+    memcpy((void*)buf_trav, (void*)&r, trav_end - addr_trav);
+  }
 
   return SDBG_TRACE_OK;
 
-} // linux_ptracer_t::tracer_read
-
+}  // linux_ptracer_t::tracer_read
 
 //! PUBLIC: tracer_read_string
 /*!
@@ -445,14 +362,9 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read (
     truncated
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read_string (
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-     VA addr,
-     void* buf,
-     int size,
-     bool use_cxt ) throw (linux_tracer_exception_t)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read_string(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, VA addr, void* buf, int size,
+    bool use_cxt) throw(linux_tracer_exception_t) {
   using namespace std;
 
   WT r;
@@ -460,73 +372,62 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read_string (
   string func = "[linux_ptracer_t::tracer_read_string]";
   pid_t tpid = p.get_pid(use_cxt);
   VA addr_trav = addr;
-  VA trav_end = addr+size;
-  WT* buf_trav = (WT*) buf;
+  VA trav_end = addr + size;
+  WT* buf_trav = (WT*)buf;
   bool end_of_string = false;
 
-  for ( addr_trav = addr; (addr_trav + sizeof(WT)) <= trav_end;
-        addr_trav += sizeof(WT))
-    {
-      r = Pptrace (PTRACE_PEEKDATA, tpid, (void*) addr_trav, 0);
+  for (addr_trav = addr; (addr_trav + sizeof(WT)) <= trav_end;
+       addr_trav += sizeof(WT)) {
+    r = Pptrace(PTRACE_PEEKDATA, tpid, (void*)addr_trav, 0);
 
-      if ( r == -1 && errno != 0 )
-        {
-          e = func + ERRMSG_PTRACE + strerror (errno);
-          throw linux_tracer_exception_t(e, convert_error_code (errno));
-        }
+    if (r == -1 && errno != 0) {
+      e = func + ERRMSG_PTRACE + strerror(errno);
+      throw linux_tracer_exception_t(e, convert_error_code(errno));
+    }
 
-      (*buf_trav) = r;
-      buf_trav++;
+    (*buf_trav) = r;
+    buf_trav++;
 
 #if BIT64
-      if ( !( r & 0xff00000000000000ULL) || !( r & 0x00ff000000000000ULL)
-           || !( r & 0x0000ff0000000000ULL) || !( r & 0x000000ff00000000ULL)
-           || !( r & 0x00000000ff000000ULL) || !( r & 0x0000000000ff0000ULL)
-           || !( r & 0x000000000000ff00ULL) || !( r & 0x00000000000000ffULL) )
-        {
-          end_of_string = true;
-          break;
-        }
-#else
-      if ( !( r & 0xff000000) || !( r & 0x00ff0000)
-     || !( r & 0x0000ff00) || !( r & 0x000000ff) )
-        {
-          end_of_string = true;
-          break;
-        }
-#endif
-    } // for (addr_trav ...
-
-  if ( addr_trav != trav_end && !end_of_string)
-    {
-      r = Pptrace ( PTRACE_PEEKDATA, tpid, (void*) addr_trav,0);
-
-      if ( r == -1 && errno != 0 )
-        {
-          e = func + ERRMSG_PTRACE + strerror (errno);
-          throw linux_tracer_exception_t(e, convert_error_code (errno));
-        }
-
-      memcpy((void*) buf_trav, (void*) &r, trav_end - addr_trav);
+    if (!(r & 0xff00000000000000ULL) || !(r & 0x00ff000000000000ULL) ||
+        !(r & 0x0000ff0000000000ULL) || !(r & 0x000000ff00000000ULL) ||
+        !(r & 0x00000000ff000000ULL) || !(r & 0x0000000000ff0000ULL) ||
+        !(r & 0x000000000000ff00ULL) || !(r & 0x00000000000000ffULL)) {
+      end_of_string = true;
+      break;
     }
+#else
+    if (!(r & 0xff000000) || !(r & 0x00ff0000) || !(r & 0x0000ff00) ||
+        !(r & 0x000000ff)) {
+      end_of_string = true;
+      break;
+    }
+#endif
+  }  // for (addr_trav ...
+
+  if (addr_trav != trav_end && !end_of_string) {
+    r = Pptrace(PTRACE_PEEKDATA, tpid, (void*)addr_trav, 0);
+
+    if (r == -1 && errno != 0) {
+      e = func + ERRMSG_PTRACE + strerror(errno);
+      throw linux_tracer_exception_t(e, convert_error_code(errno));
+    }
+
+    memcpy((void*)buf_trav, (void*)&r, trav_end - addr_trav);
+  }
 
   return SDBG_TRACE_OK;
 
-} // linux_ptracer_t::tracer_read_string
-
+}  // linux_ptracer_t::tracer_read_string
 
 //! PUBLIC: tracer_get_event_msg
 /*!
     Method that fetch information about the last debug event
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_get_event_msg (
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
-                 VA addr,
-                 void* buf,
-                 bool use_cxt ) throw (tracer_exception_t)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_get_event_msg(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, VA addr, void* buf,
+    bool use_cxt) throw(tracer_exception_t) {
   using namespace std;
 
   WT r;
@@ -534,31 +435,23 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_get_event_msg (
   string func = "[linux_ptracer_t::tracer_get_event_msg]";
   pid_t tpid = p.get_pid(use_cxt);
 
-  r = Pptrace ((__ptrace_request)PTRACE_GETEVENTMSG, tpid, NULL, buf);
-  if ( r == -1 && errno != 0 )
-    {
-      e = func + ERRMSG_PTRACE + strerror (errno);
-      throw linux_tracer_exception_t(e, convert_error_code (errno));
-    }
+  r = Pptrace((__ptrace_request)PTRACE_GETEVENTMSG, tpid, NULL, buf);
+  if (r == -1 && errno != 0) {
+    e = func + ERRMSG_PTRACE + strerror(errno);
+    throw linux_tracer_exception_t(e, convert_error_code(errno));
+  }
 
   return SDBG_TRACE_OK;
 }
-
-
 
 //! PUBLIC: tracer_write
 /*!
     Method that write into a thread or a process
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_write (
-     process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-     VA addr,
-     const void* buf,
-     int size,
-     bool use_cxt ) throw (linux_tracer_exception_t)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_write(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, VA addr, const void* buf,
+    int size, bool use_cxt) throw(linux_tracer_exception_t) {
   using namespace std;
 
   WT r;
@@ -566,59 +459,50 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_write (
   string func = "[linux_ptracer_t::tracer_write]";
   pid_t tpid = p.get_pid(use_cxt);
   VA addr_trav = addr;
-  VA trav_end = addr+size;
-  WT* buf_trav = (WT*) buf;
+  VA trav_end = addr + size;
+  WT* buf_trav = (WT*)buf;
 
-  for ( addr_trav = addr; (addr_trav + sizeof(WT)) <= trav_end;
-                    addr_trav += sizeof(WT) )
-    {
-      r = Pptrace (PTRACE_POKEDATA, tpid, (void*) addr_trav, (void*) *buf_trav);
+  for (addr_trav = addr; (addr_trav + sizeof(WT)) <= trav_end;
+       addr_trav += sizeof(WT)) {
+    r = Pptrace(PTRACE_POKEDATA, tpid, (void*)addr_trav, (void*)*buf_trav);
 
-      if ( r == -1 && errno != 0 )
-        {
-          e = func + ERRMSG_PTRACE + strerror (errno);
-          throw linux_tracer_exception_t(e, convert_error_code (errno));
-        }
+    if (r == -1 && errno != 0) {
+      e = func + ERRMSG_PTRACE + strerror(errno);
+      throw linux_tracer_exception_t(e, convert_error_code(errno));
+    }
 
-      buf_trav++;
+    buf_trav++;
 
-    } // for
+  }  // for
 
-  if ( addr_trav != trav_end )
-    {
+  if (addr_trav != trav_end) {
+    r = Pptrace(PTRACE_PEEKDATA, tpid, (void*)addr_trav, 0);
+    if (r == -1 && errno != 0) {
+      e = func + ERRMSG_PTRACE + strerror(errno);
+      throw linux_tracer_exception_t(e, convert_error_code(errno));
+    }
 
-      r = Pptrace (PTRACE_PEEKDATA, tpid, (void*) addr_trav,0);
-      if ( r == -1 && errno != 0 )
-        {
-          e = func + ERRMSG_PTRACE + strerror (errno);
-          throw linux_tracer_exception_t(e, convert_error_code (errno));
-        }
+    memcpy((void*)&r, (void*)buf_trav, trav_end - addr_trav);
 
-      memcpy((void*) &r, (void*) buf_trav, trav_end - addr_trav);
-
-      r = Pptrace (PTRACE_POKEDATA, tpid, (void*) addr_trav, (void*) r);
-      if ( r == -1 && errno != 0 )
-        {
-          e = func + ERRMSG_PTRACE + strerror (errno);
-          throw linux_tracer_exception_t(e, convert_error_code (errno));
-        }
-    } // if ( addr_trav != trav_end )
+    r = Pptrace(PTRACE_POKEDATA, tpid, (void*)addr_trav, (void*)r);
+    if (r == -1 && errno != 0) {
+      e = func + ERRMSG_PTRACE + strerror(errno);
+      throw linux_tracer_exception_t(e, convert_error_code(errno));
+    }
+  }  // if ( addr_trav != trav_end )
 
   return SDBG_TRACE_OK;
 
-} // linux_ptracer_t::tracer_write
-
+}  // linux_ptracer_t::tracer_write
 
 //! PUBLIC: tracer_continue
 /*!
     Method that continues a thread or a process
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_continue (
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-     bool use_cxt ) throw (linux_tracer_exception_t)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_continue(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
+    bool use_cxt) throw(linux_tracer_exception_t) {
   using namespace std;
   WT r;
   tracer_error_e rc = SDBG_TRACE_OK;
@@ -627,11 +511,10 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_continue (
   pid_t tpid = p.get_pid(use_cxt);
   errno = 0;
 
-  if ( (r = Pptrace (PTRACE_CONT, tpid, 0, 0)) != 0 )
-    {
-      e = func + ERRMSG_PTRACE + strerror (errno);
-      throw linux_tracer_exception_t(e, convert_error_code (errno));
-    }
+  if ((r = Pptrace(PTRACE_CONT, tpid, 0, 0)) != 0) {
+    e = func + ERRMSG_PTRACE + strerror(errno);
+    throw linux_tracer_exception_t(e, convert_error_code(errno));
+  }
 
   //
   // We now mark the state of the target thread as LMON_RM_RUNNING
@@ -640,33 +523,28 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_continue (
 
   return SDBG_TRACE_OK;
 
-} // linux_ptracer_t::tracer_continue
-
+}  // linux_ptracer_t::tracer_continue
 
 //! PUBLIC: tracer_deliver_signal
 /*!
     Method that continues a thread or a process with a signal
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_deliver_signal (
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-     int sig,
-     bool use_cxt ) throw (linux_tracer_exception_t)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_deliver_signal(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, int sig,
+    bool use_cxt) throw(linux_tracer_exception_t) {
   using namespace std;
 
   WT r;
   string e;
   string func = "[linux_ptracer_t::tracer_deliver_signal]";
   pid_t tpid = p.get_pid(use_cxt);
-  VA s= (VA) sig;
+  VA s = (VA)sig;
 
-  if ( (r = Pptrace (PTRACE_CONT, tpid, 0, (void*) s)) != 0 )
-    {
-      e = func + ERRMSG_PTRACE + strerror (errno);
-      throw linux_tracer_exception_t(e, convert_error_code (errno));
-    }
+  if ((r = Pptrace(PTRACE_CONT, tpid, 0, (void*)s)) != 0) {
+    e = func + ERRMSG_PTRACE + strerror(errno);
+    throw linux_tracer_exception_t(e, convert_error_code(errno));
+  }
 
   //
   // We now mark the state of the target thread as LMON_RM_RUNNING
@@ -676,17 +554,13 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_deliver_signal (
   return SDBG_TRACE_OK;
 }
 
-
 //! PUBLIC: tracer_stop
 /*!
 
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_stop (
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
-     bool use_cxt)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_stop(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt) {
   using namespace std;
 
   WT r;
@@ -698,10 +572,9 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_stop (
   // Trying tkill instead of kill, to send a signal to a thread more
   // reliably
   //
-  if ( (r = syscall(__NR_tkill, tpid, SIGSTOP)) != 0)
-    {
-      return SDBG_TRACE_FAILED;
-    }
+  if ((r = syscall(__NR_tkill, tpid, SIGSTOP)) != 0) {
+    return SDBG_TRACE_FAILED;
+  }
 
   //
   // We must not set "stop" state here because it will be marked
@@ -709,19 +582,16 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_stop (
   //
   return SDBG_TRACE_OK;
 
-} // linux_ptracer_t::tracer_stop
-
+}  // linux_ptracer_t::tracer_stop
 
 //! PUBLIC: tracer_kill
 /*!
 
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_kill (
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-     bool use_cxt ) throw (linux_tracer_exception_t)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_kill(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
+    bool use_cxt) throw(linux_tracer_exception_t) {
   using namespace std;
 
   WT r;
@@ -729,11 +599,10 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_kill (
   string func = "[linux_ptracer_t::tracer_kill]";
   pid_t tpid = p.get_pid(use_cxt);
 
-  if ( (r = Pptrace (PTRACE_KILL, tpid, 0, 0)) != 0 )
-    {
-      e = func + ERRMSG_PTRACE + strerror (errno);
-      throw linux_tracer_exception_t(e, convert_error_code (errno));
-    }
+  if ((r = Pptrace(PTRACE_KILL, tpid, 0, 0)) != 0) {
+    e = func + ERRMSG_PTRACE + strerror(errno);
+    throw linux_tracer_exception_t(e, convert_error_code(errno));
+  }
 
   //
   // We must not set "kill" state here because it will be marked
@@ -742,17 +611,14 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_kill (
   return SDBG_TRACE_OK;
 }
 
-
 //! PUBLIC: tracer_singlestep
 /*!
 
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_singlestep (
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-     bool use_cxt ) throw (linux_tracer_exception_t)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_singlestep(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
+    bool use_cxt) throw(linux_tracer_exception_t) {
   using namespace std;
 
   WT r;
@@ -760,11 +626,10 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_singlestep (
   string func = "[linux_ptracer_t::tracer_singlestep]";
   pid_t tpid = p.get_pid(use_cxt);
 
-  if ( (r = Pptrace (PTRACE_SINGLESTEP, tpid, 0, 0)) != 0 )
-    {
-      e = func + ERRMSG_PTRACE + strerror (errno);
-      throw linux_tracer_exception_t(e, convert_error_code (errno));
-    }
+  if ((r = Pptrace(PTRACE_SINGLESTEP, tpid, 0, 0)) != 0) {
+    e = func + ERRMSG_PTRACE + strerror(errno);
+    throw linux_tracer_exception_t(e, convert_error_code(errno));
+  }
 
   //
   // We now mark the state of the target thread as LMON_RM_RUNNING
@@ -775,19 +640,16 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_singlestep (
 
   return SDBG_TRACE_OK;
 
-} // linux_ptracer_t::tracer_syscall
-
+}  // linux_ptracer_t::tracer_syscall
 
 //! PUBLIC: tracer_syscall
 /*!
 
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_syscall (
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-     bool use_cxt) throw (linux_tracer_exception_t)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_syscall(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
+    bool use_cxt) throw(linux_tracer_exception_t) {
   using namespace std;
 
   WT r;
@@ -795,11 +657,10 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_syscall (
   string func = "[linux_ptracer_t::tracer_syscall]";
   pid_t tpid = p.get_pid(use_cxt);
 
-  if ( (r = Pptrace (PTRACE_SYSCALL, tpid, 0, 0)) != 0 )
-    {
-      e = func + ERRMSG_PTRACE + strerror (errno);
-      throw linux_tracer_exception_t(e, convert_error_code (errno));
-    }
+  if ((r = Pptrace(PTRACE_SYSCALL, tpid, 0, 0)) != 0) {
+    e = func + ERRMSG_PTRACE + strerror(errno);
+    throw linux_tracer_exception_t(e, convert_error_code(errno));
+  }
 
   //
   // We now mark the state of the target thread as LMON_RM_RUNNING
@@ -810,19 +671,15 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_syscall (
 
   return SDBG_TRACE_OK;
 
-} // linux_ptracer_t::tracer_singlestep
-
+}  // linux_ptracer_t::tracer_singlestep
 
 //! PUBLIC: tracer_detach
 /*!
 
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_detach (
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-     bool use_cxt )
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_detach(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt) {
   using namespace std;
 
   WT r;
@@ -830,11 +687,10 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_detach (
   string func = "[linux_ptracer_t::tracer_detach]";
   pid_t tpid = p.get_pid(use_cxt);
 
-  if ( (r = Pptrace (PTRACE_DETACH, tpid, 0, 0)) != 0 )
-    {
-      errno = 0;
-      return SDBG_TRACE_FAILED;
-    }
+  if ((r = Pptrace(PTRACE_DETACH, tpid, 0, 0)) != 0) {
+    errno = 0;
+    return SDBG_TRACE_FAILED;
+  }
 
   //
   // We now mark the state of the target thread as LMON_RM_RUNNING
@@ -843,20 +699,16 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_detach (
 
   return SDBG_TRACE_OK;
 
-} // linux_ptracer_t::tracer_detach
-
+}  // linux_ptracer_t::tracer_detach
 
 //! PUBLIC: tracer_unsetoptions
 /*!
 
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_unsetoptions (
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-     bool use_cxt,
-     pid_t newtid) throw (linux_tracer_exception_t)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_unsetoptions(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt,
+    pid_t newtid) throw(linux_tracer_exception_t) {
   using namespace std;
 
   WT r;
@@ -865,42 +717,35 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_unsetoptions (
   pid_t who_to_attach_to = p.get_pid(use_cxt);
   WT options = 0;
 
-  if (newtid != -1)
-    {
-      who_to_attach_to = newtid;
-    }
+  if (newtid != -1) {
+    who_to_attach_to = newtid;
+  }
 
-  if ( (r = Pptrace ((__ptrace_request)PTRACE_SETOPTIONS, who_to_attach_to,
-                     NULL, (void *) options)) != 0 )
+  if ((r = Pptrace((__ptrace_request)PTRACE_SETOPTIONS, who_to_attach_to, NULL,
+                   (void*)options)) != 0) {
     {
-      {
-        self_trace_t::trace ( true,
-        MODULENAME, 0,
-        "unsetoptions returned non-zero for %d...",
-        who_to_attach_to);
-      }
-      errno = 0;
+      self_trace_t::trace(true, MODULENAME, 0,
+                          "unsetoptions returned non-zero for %d...",
+                          who_to_attach_to);
+    }
+    errno = 0;
 #if 0
       e = func + ERRMSG_PTRACE + strerror (errno);
       throw linux_tracer_exception_t(e, convert_error_code (errno));
 #endif
-    }
+  }
 
   return SDBG_TRACE_OK;
 }
-
 
 //! PUBLIC: tracer_setoptions
 /*!
 
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setoptions (
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-     bool use_cxt,
-     pid_t newtid) throw (linux_tracer_exception_t)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setoptions(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt,
+    pid_t newtid) throw(linux_tracer_exception_t) {
   using namespace std;
 
   WT r;
@@ -913,42 +758,31 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setoptions (
   options |= PTRACE_O_TRACEVFORK;
   options |= PTRACE_O_TRACEFORK;
 
-  if (newtid != -1)
-    {
-      who_to_attach_to = newtid;
-    }
+  if (newtid != -1) {
+    who_to_attach_to = newtid;
+  }
 
-  if ( (r = Pptrace ((__ptrace_request)PTRACE_SETOPTIONS, who_to_attach_to,
-                     NULL, (void *) options)) != 0 )
+  if ((r = Pptrace((__ptrace_request)PTRACE_SETOPTIONS, who_to_attach_to, NULL,
+                   (void*)options)) != 0) {
     {
-      {
-        self_trace_t::trace ( true,
-        MODULENAME, 0,
-        "setoptions returned non-zero for %d...",
-        who_to_attach_to);
-      }
-      errno = 0;
-#if 0
-      e = func + ERRMSG_PTRACE + strerror (errno);
-      throw linux_tracer_exception_t(e, convert_error_code (errno));
-#endif
+      self_trace_t::trace(true, MODULENAME, 0,
+                          "setoptions returned non-zero for %d...",
+                          who_to_attach_to);
     }
+    errno = 0;
+  }
 
   return SDBG_TRACE_OK;
 }
-
 
 //! PUBLIC: tracer_attach
 /*!
 
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_attach (
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-     bool use_cxt,
-     pid_t newtid) throw (linux_tracer_exception_t)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_attach(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt,
+    pid_t newtid) throw(linux_tracer_exception_t) {
   using namespace std;
 
   WT r;
@@ -956,23 +790,20 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_attach (
   string func = "[linux_ptracer_t::tracer_attach]";
   pid_t who_to_attach_to = p.get_pid(use_cxt);
 
-  if (newtid != -1)
+  if (newtid != -1) {
+    who_to_attach_to = newtid;
+  }
+
+  if ((r = Pptrace(PTRACE_ATTACH, who_to_attach_to, 0, 0)) != 0) {
     {
-      who_to_attach_to = newtid;
+      self_trace_t::trace(true, MODULENAME, 0,
+                          "attach returned non-zero for %d, continue...",
+                          who_to_attach_to);
     }
 
-  if ( (r = Pptrace (PTRACE_ATTACH, who_to_attach_to, 0, 0)) != 0 )
-    {
-      {
-        self_trace_t::trace ( true,
-        MODULENAME, 0,
-        "attach returned non-zero for %d, continue...",
-        who_to_attach_to);
-      }
-
-      e = func + ERRMSG_PTRACE + strerror (errno);
-      throw linux_tracer_exception_t(e, convert_error_code (errno));
-    }
+    e = func + ERRMSG_PTRACE + strerror(errno);
+    throw linux_tracer_exception_t(e, convert_error_code(errno));
+  }
 
   //
   // We must not set "stop" state here because it will be marked
@@ -980,19 +811,15 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_attach (
   //
   return SDBG_TRACE_OK;
 
-} // linux_ptracer_t::tracer_attach
-
+}  // linux_ptracer_t::tracer_attach
 
 //! PUBLIC: status
 /*!
 
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::status (
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-                 bool use_cxt)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::status(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt) {
   using namespace std;
 
   stringstream sst;
@@ -1003,36 +830,32 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::status (
   string func = "[linux_ptracer_t::status]";
   pid_t tpid = p.get_pid(use_cxt);
 
-  sst << "/proc/" << (int) tpid << "/stat";
+  sst << "/proc/" << (int)tpid << "/stat";
   sst >> ss;
-  if ( access(ss.c_str(), R_OK) < 0 )
-    {
-      //
-      // This means tpid is nonexistent.
-      //
-      return SDBG_TRACE_ESRCH_ERR;
-    }
+  if (access(ss.c_str(), R_OK) < 0) {
+    //
+    // This means tpid is nonexistent.
+    //
+    return SDBG_TRACE_ESRCH_ERR;
+  }
 
   ifstream fst(ss.c_str());
-  if (!fst)
-    {
-      return SDBG_TRACE_ESRCH_ERR;
-    }
+  if (!fst) {
+    return SDBG_TRACE_ESRCH_ERR;
+  }
 
   fst >> snapTid;
   fst >> execName;
   fst >> tState;
 
-  if (tState == string("T"))
-    {
-      return SDBG_TRACE_STOPPED;
-    }
+  if (tState == string("T")) {
+    return SDBG_TRACE_STOPPED;
+  }
 
   fst.close();
 
   return SDBG_TRACE_RUNNING;
 }
-
 
 //! PUBLIC: tracer_trace_me
 /*!
@@ -1040,25 +863,22 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::status (
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_trace_me ()
-  throw (linux_tracer_exception_t)
-{
+linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_trace_me() throw(
+    linux_tracer_exception_t) {
   using namespace std;
 
   WT r;
   string e;
   string func = "[linux_ptracer_t::tracer_trace_me]";
 
-  if ((r = Pptrace (PTRACE_TRACEME, 0, NULL, NULL)) != 0 )
-    {
-      e = func + ERRMSG_PTRACE + strerror (errno);
-      throw linux_tracer_exception_t(e, convert_error_code (errno));
-    }
+  if ((r = Pptrace(PTRACE_TRACEME, 0, NULL, NULL)) != 0) {
+    e = func + ERRMSG_PTRACE + strerror(errno);
+    throw linux_tracer_exception_t(e, convert_error_code(errno));
+  }
 
   return SDBG_TRACE_OK;
 
-} // linux_ptracer_t::tracer_trace_me
-
+}  // linux_ptracer_t::tracer_trace_me
 
 //! PUBLIC: enable_breakpoint
 /*!
@@ -1066,84 +886,52 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_trace_me ()
   "disabel" to the BP
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::enable_breakpoint (
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-     breakpoint_base_t<VA, IT>& bp, bool use_cxt, bool change_state )
-  throw (linux_tracer_exception_t)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::enable_breakpoint(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, breakpoint_base_t<VA, IT>& bp,
+    bool use_cxt, bool change_state) throw(linux_tracer_exception_t) {
   IT blend;
   IT origInst;
 
-  if ( !(bp.is_set() || bp.is_disabled()) )
-    {
-      return SDBG_TRACE_STATE_UNKNOWN;
+  if (!(bp.is_set() || bp.is_disabled())) {
+    return SDBG_TRACE_STATE_UNKNOWN;
+  }
+
+  if (bp.get_use_indirection()) {
+    if (bp.get_indirect_address_at() == T_UNINIT_HEX) {
+      //
+      // The upper layer could have filled the
+      // indirect address to handle special cases.
+      //
+      VA indAddr;
+      tracer_read(p, bp.get_address_at(), &indAddr, sizeof(VA), use_cxt);
+      bp.set_indirect_address_at(indAddr);
     }
 
-  if (bp.get_use_indirection())
-    {
-       if (bp.get_indirect_address_at() == T_UNINIT_HEX)
-         {
-           //
-           // The upper layer could have filled the
-           // indirect address to handle special cases.
-           //
-           VA indAddr;
-           tracer_read (p,
-       bp.get_address_at(),
-                   &indAddr,
-       sizeof(VA),
-       use_cxt);
-           bp.set_indirect_address_at(indAddr);
-         }
-
-       tracer_read (p,
-                    bp.get_indirect_address_at(),
-                    &origInst,
-              sizeof(IT),
-        use_cxt);
-    }
-  else
-    {
-      tracer_read (p,
-                   bp.get_address_at(),
-                   &origInst,
-             sizeof(IT),
-                   use_cxt);
-     }
+    tracer_read(p, bp.get_indirect_address_at(), &origInst, sizeof(IT),
+                use_cxt);
+  } else {
+    tracer_read(p, bp.get_address_at(), &origInst, sizeof(IT), use_cxt);
+  }
 
   bp.set_orig_instruction(origInst);
   blend = bp.get_orig_instruction();
   blend &= bp.get_blend_mask();
   blend = blend | bp.get_trap_instruction();
 
-  if (bp.get_use_indirection())
-    {
-      tracer_write (p,
-        bp.get_indirect_address_at(),
-                    &blend,
-                    sizeof(IT),
-                    use_cxt);
-    }
-  else
-    {
-      tracer_write (p,
-        bp.get_address_at(),
-                    &blend,
-                    sizeof(IT),
-                    use_cxt);
-    }
+  if (bp.get_use_indirection()) {
+    tracer_write(p, bp.get_indirect_address_at(), &blend, sizeof(IT), use_cxt);
+  } else {
+    tracer_write(p, bp.get_address_at(), &blend, sizeof(IT), use_cxt);
+  }
 
   //
   // BP state transitioned to enabled
   //
-  if (change_state)
-    bp.enable();
+  if (change_state) bp.enable();
 
   return SDBG_TRACE_OK;
 
-} // linux_ptracer_t::enable_breakpoint
-
+}  // linux_ptracer_t::enable_breakpoint
 
 //! PUBLIC: disable_breakpoint
 /*!
@@ -1151,121 +939,96 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::enable_breakpoint (
   "disable" to the BP.
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::disable_breakpoint (
-                 process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-     breakpoint_base_t<VA, IT>& bp, bool use_cxt, bool change_state )
-  throw (linux_tracer_exception_t)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::disable_breakpoint(
+    process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, breakpoint_base_t<VA, IT>& bp,
+    bool use_cxt, bool change_state) throw(linux_tracer_exception_t) {
   IT origInst;
 
-  if ( !bp.is_enabled() )
-    {
-      return SDBG_TRACE_STATE_UNKNOWN;
-    }
+  if (!bp.is_enabled()) {
+    return SDBG_TRACE_STATE_UNKNOWN;
+  }
 
   origInst = bp.get_orig_instruction();
 
-  if (bp.get_use_indirection())
-    {
-      tracer_write (p,
-        bp.get_indirect_address_at(),
-                    &origInst,
-                    sizeof(IT),
-                    use_cxt);
-    }
-  else
-    {
-      tracer_write (p,
-        bp.get_address_at(),
-        &origInst,
-                    sizeof(IT),
-                    use_cxt);
-    }
+  if (bp.get_use_indirection()) {
+    tracer_write(p, bp.get_indirect_address_at(), &origInst, sizeof(IT),
+                 use_cxt);
+  } else {
+    tracer_write(p, bp.get_address_at(), &origInst, sizeof(IT), use_cxt);
+  }
 
   //
   // BP state transitioned to disabled
   //
-  if (change_state)
-    bp.disable();
+  if (change_state) bp.disable();
 
   return SDBG_TRACE_OK;
 
-} // linux_ptracer_t::disable_breakpoint
-
+}  // linux_ptracer_t::disable_breakpoint
 
 //! PUBLIC: convert_error_code
 /*!
 
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::convert_error_code ( int en )
-  throw (linux_tracer_exception_t)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::convert_error_code(
+    int en) throw(linux_tracer_exception_t) {
   tracer_error_e err_code;
 
   switch (en) {
-  case EACCES:
-    err_code = SDBG_TRACE_EACCESS_ERR;
-    break;
-  case EIO:
-    err_code = SDBG_TRACE_EIO_ERR;
-    break;
-  case ESRCH:
-    err_code = SDBG_TRACE_ESRCH_ERR;
-    break;
-  case EINVAL:
-    err_code = SDBG_TRACE_EINVAL_ERR;
-    break;
-  case EPERM:
-    err_code = SDBG_TRACE_EPERM_ERR;
-    break;
-  case EFAULT:
-    err_code = SDBG_TRACE_EFAULT_ERR;
-    break;
-  case EBUSY:
-    err_code = SDBG_TRACE_EBUSY_ERR;
-    break;
-  default:
-    err_code = SDBG_TRACE_FAILED;
-    break;
+    case EACCES:
+      err_code = SDBG_TRACE_EACCESS_ERR;
+      break;
+    case EIO:
+      err_code = SDBG_TRACE_EIO_ERR;
+      break;
+    case ESRCH:
+      err_code = SDBG_TRACE_ESRCH_ERR;
+      break;
+    case EINVAL:
+      err_code = SDBG_TRACE_EINVAL_ERR;
+      break;
+    case EPERM:
+      err_code = SDBG_TRACE_EPERM_ERR;
+      break;
+    case EFAULT:
+      err_code = SDBG_TRACE_EFAULT_ERR;
+      break;
+    case EBUSY:
+      err_code = SDBG_TRACE_EBUSY_ERR;
+      break;
+    default:
+      err_code = SDBG_TRACE_FAILED;
+      break;
   }
 
   return err_code;
 
-} // linux_ptracer_t::convert_error_code
-
+}  // linux_ptracer_t::convert_error_code
 
 //! PUBLIC: baretracer
 /*!
 
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::baretracer (
-                 int __tag,
-     pid_t __p,
-     VA __addr,
-     WT* __wd ) throw (linux_tracer_exception_t)
-{
+tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::baretracer(
+    int __tag, pid_t __p, VA __addr, WT* __wd) throw(linux_tracer_exception_t) {
   using namespace std;
 
   WT r;
   string e;
   string func = "[linux_ptracer_t::baretracer]";
 
-  r = Pptrace ((__ptrace_request)__tag, __p, (void *) __addr, (void*) __wd );
+  r = Pptrace((__ptrace_request)__tag, __p, (void*)__addr, (void*)__wd);
 
-  if ( r == -1 && errno)
-    {
-      e = func + ERRMSG_PTRACE + strerror (errno);
-      throw linux_tracer_exception_t(e, convert_error_code (errno));
-    }
+  if (r == -1 && errno) {
+    e = func + ERRMSG_PTRACE + strerror(errno);
+    throw linux_tracer_exception_t(e, convert_error_code(errno));
+  }
 
   return SDBG_TRACE_OK;
 
-} // linux_ptracer_t::baretracer
-
+}  // linux_ptracer_t::baretracer
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -1274,24 +1037,20 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::baretracer (
 //
 
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
-long
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::Pptrace (
-                 __ptrace_request request,
-     pid_t pid,
-     void *addr,
-     void *data )
-{
-
+long linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::Pptrace(__ptrace_request request,
+                                                       pid_t pid, void* addr,
+                                                       void* data) {
   {
-    self_trace_t::trace ( LEVELCHK(level3),
-      MODULENAME, 0,
-      "ptrace(request[%d], pid[%d], addr[0x%8x], data[0x%8x]",
-      request,
-      pid,
-      addr);
+    self_trace_t::trace(LEVELCHK(level3), MODULENAME, 0,
+                        "ptrace(request[%d], pid[%d], addr[0x%8x], data[0x%8x]",
+                        request, pid, addr);
   }
 
-  return ( ptrace ( request, pid, addr, data ) );
+  return (ptrace(request, pid, addr, data));
 }
 
-#endif // __SDBG_LINUX_PTRACER_IMPL_HXX
+#endif  // __SDBG_LINUX_PTRACER_IMPL_HXX
+
+/*
+ * ts=2 sw=2 expandtab
+ */
