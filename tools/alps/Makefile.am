@@ -1,6 +1,6 @@
 ## $Header: $
 ##
-## Makefile.am -- Process this file with automake to produce Makefile.in 
+## Makefile.am -- Process this file with automake to produce Makefile.in
 ##
 ##--------------------------------------------------------------------------------
 ## Copyright (c) 2010, Lawrence Livermore National Security, LLC. Produced at
@@ -31,4 +31,4 @@
 ##        Jun 12 2010 DHA: Copied from the old Makefile.
 ##
 
-SUBDIRS         = src 
+SUBDIRS         = src

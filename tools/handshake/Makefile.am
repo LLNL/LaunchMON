@@ -1,6 +1,6 @@
 ## $Header: $
 ##
-## Makefile.am -- Process this file with automake to produce Makefile.in 
+## Makefile.am -- Process this file with automake to produce Makefile.in
 ##
 ##--------------------------------------------------------------------------------
 ## Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at
@@ -38,7 +38,7 @@
 ##        Mar 10 2014 MPL: Add secure handshake
 ##
 
-noinst_LTLIBRARIES = libhandshake.la 
+noinst_LTLIBRARIES = libhandshake.la
 libhandshake_la_SOURCES = handshake.c handshake.h
 libhandshake_la_LIBADD = $(MUNGE_LIBS)
 

@@ -1,6 +1,6 @@
 ## $Header: $
 ##
-## Makefile.am -- Process this file with automake to produce Makefile.in 
+## Makefile.am -- Process this file with automake to produce Makefile.in
 ##
 ##--------------------------------------------------------------------------------
 ## Copyright (c) 2010, Lawrence Livermore National Security, LLC. Produced at
@@ -36,8 +36,8 @@ AM_CPPFLAGS                	= -I$(top_srcdir) \
                            	  -I$(top_srcdir)/launchmon/src \
                               -I$(top_srcdir)/@LMONAPILOC@
 
-bin_PROGRAMS                = cti_fe_colocator 
-cti_fe_colocator_SOURCES    = cti_fe_colocator.cxx 
+bin_PROGRAMS                = cti_fe_colocator
+cti_fe_colocator_SOURCES    = cti_fe_colocator.cxx
 cti_fe_colocator_CXXFLAGS   = @LNCHR_BIT_FLAGS@ $(CRAY_CTI_CFLAGS)
 cti_fe_colocator_LDADD      = $(CRAY_CTI_LIBS)
 

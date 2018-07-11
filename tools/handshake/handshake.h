@@ -1,8 +1,8 @@
 /*
  * $Header: Exp $
  *--------------------------------------------------------------------------------
- * Copyright (c) 2014, Lawrence Livermore National Security, LLC. Produced at 
- * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>. 
+ * Copyright (c) 2014, Lawrence Livermore National Security, LLC. Produced at
+ * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>.
  * LLNL-CODE-409469. All rights reserved.
  *
  * This file is part of LaunchMON. For details, see
@@ -49,7 +49,7 @@ extern "C" {
 
 typedef enum {
    hs_none,         //No security validation in handshake
-   hs_munge,        //Use munge 
+   hs_munge,        //Use munge
    hs_key_in_file,  //Use gcrypt with key from file
    hs_explicit_key  //Use gcrypt with provided key
 } handshake_security_t;

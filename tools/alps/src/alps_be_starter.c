@@ -1,33 +1,33 @@
 /*
  * $Header: Exp $
  *--------------------------------------------------------------------------------
- * Copyright (c) 2010, Lawrence Livermore National Security, LLC. Produced at 
- * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>. 
+ * Copyright (c) 2010, Lawrence Livermore National Security, LLC. Produced at
+ * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>.
  * LLNL-CODE-409469. All rights reserved.
  *
- * This file is part of LaunchMON. For details, see 
+ * This file is part of LaunchMON. For details, see
  * https://computing.llnl.gov/?set=resources&page=os_projects
  *
  * Please also read LICENSE.txt -- Our Notice and GNU Lesser General Public License.
  *
- * 
- * This program is free software; you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License (as published by the Free Software 
+ *
+ * This program is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License (as published by the Free Software
  * Foundation) version 2.1 dated February 1999.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or 
- * FITNESS FOR A PARTICULAR PURPOSE. See the terms and conditions of the GNU 
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the terms and conditions of the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License along 
- * with this program; if not, write to the Free Software Foundation, Inc., 59 Temple 
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *--------------------------------------------------------------------------------                      
+ *--------------------------------------------------------------------------------
  *
  *  Update Log:
- *        May 12 2010 DHA: Created based on UW's daemon_launcher. Credit to 
- *                         Ramya Olichandran 
+ *        May 12 2010 DHA: Created based on UW's daemon_launcher. Credit to
+ *                         Ramya Olichandran
  */
 
 #include <stdio.h>
@@ -39,7 +39,7 @@
 int main(int argc,char **argv)
 {
   /*
-   * This BE starter stub for ALPS must be invoked with 
+   * This BE starter stub for ALPS must be invoked with
    * alps_be_starter alpsJobId toolDaemonPath <args>
    *
    */
@@ -55,25 +55,25 @@ int main(int argc,char **argv)
   }
 
   snprintf (reloc_ld_lib_path, PATH_MAX,
-	   "/var/spool/alps/%d/toolhelper%d", 
+	   "/var/spool/alps/%d/toolhelper%d",
            my_apid, my_apid);
 
   if ( access (reloc_ld_lib_path, R_OK) < 0 ) {
     fprintf(stderr, "access to %s failed\n", reloc_ld_lib_path);
     exit(1);
   }
-  
+
   if ( lib_path = getenv("LD_LIBRARY_PATH") ) {
     sprintf(add_lib_path, "%s:%s", lib_path, reloc_ld_lib_path);
   }
   else {
     sprintf(add_lib_path, "%s", reloc_ld_lib_path);
-  }  
-  
+  }
+
   if ( setenv("LD_LIBRARY_PATH", (const char *) add_lib_path, 1) < 0 ) {
     fprintf(stderr, "setenv return neg");
     exit(1);
-  } 
+  }
 
   daemon_argv = &argv[2];
 

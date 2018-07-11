@@ -1,6 +1,6 @@
 ## $Header: $
 ##
-## Makefile.am -- Process this file with automake to produce Makefile.in 
+## Makefile.am -- Process this file with automake to produce Makefile.in
 ##
 ##--------------------------------------------------------------------------------
 ## Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at
@@ -33,10 +33,10 @@
 ##        Dec 16 2009 DHA: Made for COBO
 ##
 
-lib_LTLIBRARIES    = libcobo.la 
+lib_LTLIBRARIES    = libcobo.la
 libcobo_la_SOURCES = cobo.c \
                      cobo.h
-noinst_HEADERS     = cobo.h 
+noinst_HEADERS     = cobo.h
 libcobo_la_LDFLAGS = -version-info @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
 libcobo_la_CFLAGS  = -I$(top_srcdir)/tools/handshake
 libcobo_la_LIBADD  = $(top_builddir)/tools/handshake/libhandshake.la
