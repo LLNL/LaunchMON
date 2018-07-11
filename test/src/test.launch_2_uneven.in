@@ -27,11 +27,11 @@
 # Place, Suite 330, Boston, MA 02111-1307 USA
 #--------------------------------------------------------------------------------
 #
-#  Launch a unevenly populated job at $NUMTASK and co-locate daemons, 
+#  Launch a unevenly populated job at $NUMTASK and co-locate daemons,
 #  one daemon per node, which unlock the initial hang of all tasks.
 #
 #  Update Log:
-#        May 04 2016 DHA: Add test in-tree and installed support 
+#        May 04 2016 DHA: Add test in-tree and installed support
 #        Oct 21 2011 DHA: Added dynamic RM detection support.
 #        Mar 06 2009 DHA: Changed bglrm to bgrm
 #        Dec 14 2008 DHA: configurable NUMNODES

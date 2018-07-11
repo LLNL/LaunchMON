@@ -27,18 +27,18 @@
 # Place, Suite 330, Boston, MA 02111-1307 USA
 #--------------------------------------------------------------------------------
 #
-#  Attach the tool to a running program and unlock the hang. 
+#  Attach the tool to a running program and unlock the hang.
 #
 #  Update Log:
-#        May 04 2016 DHA: Add test in-tree and installed support 
+#        May 04 2016 DHA: Add test in-tree and installed support
 #        Oct 21 2011 DHA: Added dynamic RM detection support.
 #        Mar 06 2009 DHA: Changed bglrm to bgrm
 #        Jun 16 2008 DHA: Created file.
 #
- 
+
 NUMNODES=16
 NUMTASKS=`expr $NUMNODES \* @SMP@`
-WAITAMOUNT=$NUMNODES 
+WAITAMOUNT=$NUMNODES
 if test $NUMNODES -lt 10 ; then
   WAITAMOUNT=20
 fi
@@ -57,7 +57,7 @@ if test "x$RM_TYPE" = "xRC_bglrm" -o "x$RM_TYPE" = "xRC_bgprm"; then
   echo "[LMON FE] Test Not Implemented Yet"
   exit 1
 fi
- 
+
 if test "x$RM_TYPE" = "xRC_slurm" ; then
   $MPI_JOB_LAUNCHER_PATH -n$NUMTASKS -N$NUMNODES -ppdebug `pwd`/hang_on_SIGUSR1@EXE@ &
 elif test "x$RM_TYPE" = "xRC_bglrm" -o "x$RM_TYPE" = "xRC_bgprm"; then
@@ -72,13 +72,13 @@ elif test "x$RM_TYPE" = "xRC_mpiexec_hydra" ; then
   WAITAMOUNT=`expr $WAITAMOUNT`
   $MPI_JOB_LAUNCHER_PATH -n $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
 else
-  echo "This RM is not supported yet" 
+  echo "This RM is not supported yet"
 fi
- 
-PID=`echo $!` 
- 
-sleep $WAITAMOUNT #wait until the job gets stalled 
- 
-fe_attach_smoketest@EXE@ $PID `pwd`/be_kicker@EXE@ $SIGNUM 
- 
+
+PID=`echo $!`
+
+sleep $WAITAMOUNT #wait until the job gets stalled
+
+fe_attach_smoketest@EXE@ $PID `pwd`/be_kicker@EXE@ $SIGNUM
+
 sleep $WAITAMOUNT

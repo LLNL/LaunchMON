@@ -1,6 +1,6 @@
 ## $Header: $
 ##
-## Makefile.am -- Process this file with automake to produce Makefile.in 
+## Makefile.am -- Process this file with automake to produce Makefile.in
 ##
 ##
 ##--------------------------------------------------------------------------------
@@ -101,13 +101,13 @@ fe_launch_smoketest_SOURCES = fe_launch_smoketest.cxx util.c
 fe_launch_smoketest_CFLAGS = $(AM_CFLAGS)
 fe_launch_smoketest_CXXFLAGS = $(AM_CXXFLAGS)
 fe_launch_smoketest_LDFLAGS = -L$(API_LIB_DIR)
-fe_launch_smoketest_LDADD = -lmonfeapi 
+fe_launch_smoketest_LDADD = -lmonfeapi
 
 fe_launch_usrpayload_test_SOURCES = fe_launch_usrpayload_test.cxx util.c
 fe_launch_usrpayload_test_CFLAGS = $(AM_CFLAGS)
 fe_launch_usrpayload_test_CXXFLAGS = $(AM_CXXFLAGS)
 fe_launch_usrpayload_test_LDFLAGS = -L$(API_LIB_DIR)
-fe_launch_usrpayload_test_LDADD = -lmonfeapi 
+fe_launch_usrpayload_test_LDADD = -lmonfeapi
 
 fe_attach_smoketest_SOURCES = fe_attach_smoketest.cxx util.c
 fe_attach_smoketest_CFLAGS = $(AM_CFLAGS)
@@ -119,7 +119,7 @@ be_kicker_SOURCES = be_kicker.cxx util.c
 be_kicker_CFLAGS = $(AM_CFLAGS)
 be_kicker_CXXFLAGS = $(AM_CXXFLAGS)
 be_kicker_LDFLAGS = -L$(API_LIB_DIR)
-be_kicker_LDADD = -lmonbeapi 
+be_kicker_LDADD = -lmonbeapi
 
 be_kicker_usrpayload_test_SOURCES = be_kicker_usrpayload_test.cxx
 be_kicker_usrpayload_test_CFLAGS = $(AM_CFLAGS)
@@ -131,7 +131,7 @@ fe_launch_middleware_SOURCES = fe_launch_middleware.cxx util.c
 fe_launch_middleware_CFLAGS = $(AM_CFLAGS)
 fe_launch_middleware_CXXFLAGS = $(AM_CXXFLAGS)
 fe_launch_middleware_LDFLAGS = -L$(API_LIB_DIR)
-fe_launch_middleware_LDADD = -lmonfeapi 
+fe_launch_middleware_LDADD = -lmonfeapi
 
 be_standalone_kicker_SOURCES = be_standalone_kicker.cxx
 be_standalone_kicker_CFLAGS = $(AM_CFLAGS)
@@ -143,13 +143,13 @@ be_mem_fetcher_SOURCES = be_mem_fetcher.cxx util.c
 be_mem_fetcher_CFLAGS = $(AM_CFLAGS)
 be_mem_fetcher_CXXFLAGS = $(AM_CXXFLAGS)
 be_mem_fetcher_LDFLAGS = -L$(API_LIB_DIR)
-be_mem_fetcher_LDADD = -lmonbeapi 
+be_mem_fetcher_LDADD = -lmonbeapi
 
 fe_jobsnap_SOURCES = fe_jobsnap.cxx util.c
 fe_jobsnap_CFLAGS = $(AM_CFLAGS)
 fe_jobsnap_CXXFLAGS = $(AM_CXXFLAGS)
 fe_jobsnap_LDFLAGS = -L$(API_LIB_DIR)
-fe_jobsnap_LDADD = -lmonfeapi 
+fe_jobsnap_LDADD = -lmonfeapi
 
 be_jobsnap_SOURCES = be_jobsnap.cxx util.c
 be_jobsnap_CFLAGS = $(AM_CFLAGS)
@@ -217,11 +217,11 @@ $(check_SCRIPTS): %: %.in
 	chmod +x $@
 
 run_3mins$(EXEEXT): run_3mins.c Makefile
-	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) -I$(BASE_SRC_DIR) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -o $@ $<	
+	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) -I$(BASE_SRC_DIR) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -o $@ $<
 
 hang_on_SIGUSR1$(EXEEXT): hang_on_SIGUSR1.c Makefile
-	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) -I$(BASE_SRC_DIR) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -o $@ $<	
+	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) -I$(BASE_SRC_DIR) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -o $@ $<
 
 simple_MPI$(EXEEXT): simple_MPI.c Makefile
-	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) -I$(BASE_SRC_DIR) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -o $@ $<	
+	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) -I$(BASE_SRC_DIR) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -o $@ $<
 

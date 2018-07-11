@@ -27,11 +27,11 @@
 # Place, Suite 330, Boston, MA 02111-1307 USA
 #--------------------------------------------------------------------------------
 #
-#  Launch a fully populated job at $NUMTASK and co-locate daemons, 
-#  one daemon per node, which unlocks the initial hang of all tasks. 
+#  Launch a fully populated job at $NUMTASK and co-locate daemons,
+#  one daemon per node, which unlocks the initial hang of all tasks.
 #
 #  Update Log:
-#        May 04 2016 DHA: Add test in-tree and installed support 
+#        May 04 2016 DHA: Add test in-tree and installed support
 #        Aug 2 2012 DHA: Created file.
 #
 

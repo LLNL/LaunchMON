@@ -27,19 +27,19 @@
 # Place, Suite 330, Boston, MA 02111-1307 USA
 #--------------------------------------------------------------------------------
 #
-#  Attach the tool to a running program, unlock the hang. 
+#  Attach the tool to a running program, unlock the hang.
 #  and kill the BE daemons.
 #
 #  Update Log:
-#        May 04 2016 DHA: Add test in-tree and installed support 
+#        May 04 2016 DHA: Add test in-tree and installed support
 #        Aug 02 2012 DHA: Created file.
 #
- 
+
 RM_TYPE=@TEST_RMTP@
 NUMNODES=@NNODES@
 
 NUMTASKS=`expr $NUMNODES \* @SMP@`
-WAITAMOUNT=$NUMNODES 
+WAITAMOUNT=$NUMNODES
 if test $NUMNODES -lt 20 ; then
   WAITAMOUNT=20
 fi
@@ -76,14 +76,14 @@ elif test "x$RM_TYPE" = "xRC_mpiexec_hydra" ; then
   WAITAMOUNT=`expr $WAITAMOUNT`
   $MPI_JOB_LAUNCHER_PATH -n $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
 else
-  echo "This RM is not supported yet" 
+  echo "This RM is not supported yet"
 fi
- 
-PID=`echo $!` 
- 
-sleep $WAITAMOUNT #wait until the job gets stalled 
- 
+
+PID=`echo $!`
+
+sleep $WAITAMOUNT #wait until the job gets stalled
+
 fe_attach_smoketest@EXE@ $PID `pwd`/be_kicker@EXE@ $SIGNUM 1
- 
+
 sleep $WAITAMOUNT
 

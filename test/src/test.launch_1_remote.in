@@ -27,13 +27,13 @@
 # Place, Suite 330, Boston, MA 02111-1307 USA
 #--------------------------------------------------------------------------------
 #
-#  Launch a fully populated job at $NUMTASK and co-locate daemons, 
-#  one daemon per node, which unlocks the initial hang of all tasks. 
-#  A difference with test.launch_1 is that this case locates a launcthmon 
+#  Launch a fully populated job at $NUMTASK and co-locate daemons,
+#  one daemon per node, which unlocks the initial hang of all tasks.
+#  A difference with test.launch_1 is that this case locates a launcthmon
 #  engine remotely on a node in which the job launcher process runs.
 #
 #  Update Log:
-#        May 04 2016 DHA: Add test in-tree and installed support 
+#        May 04 2016 DHA: Add test in-tree and installed support
 #        Oct 21 2011 DHA: Added dynamic RM detection support.
 #        Mar 06 2009 DHA: Changed bglrm to bgrm
 #        Dec 14 2008 DHA: configurable NUMNODES

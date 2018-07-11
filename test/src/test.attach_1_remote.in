@@ -27,11 +27,11 @@
 # Place, Suite 330, Boston, MA 02111-1307 USA
 #--------------------------------------------------------------------------------
 #
-#  Attach the tool to a remote RM process and unlock the hang 
+#  Attach the tool to a remote RM process and unlock the hang
 #  of its associated job.
 #
 #  Update Log:
-#        May 04 2016 DHA: Add test in-tree and installed support 
+#        May 04 2016 DHA: Add test in-tree and installed support
 #        Oct 21 2011 DHA: Added dynamic RM detection support.
 #        Dec 17 2009 DHA: Added minimum waittime
 #        Mar 06 2009 DHA: Changed bglrm to bgrm
@@ -80,11 +80,11 @@ elif test "x$RM_TYPE" = "xRC_mpiexec_hydra" ; then
 else
   echo "This RM is not supported yet"
 fi
- 
+
 PID=`echo $!`
- 
+
 sleep $WAITAMOUNT #wait until the job gets stalled
- 
+
 fe_attach_smoketest@EXE@ $PID `pwd`/be_kicker@EXE@ $SIGNUM -k 20
 
 sleep $WAITAMOUNT

@@ -28,16 +28,16 @@
 #--------------------------------------------------------------------------------
 #
 #  Attach the tool to a running program that occupies an uneven number
-#  number of processors per node, and unlock the hang. 
+#  number of processors per node, and unlock the hang.
 #
 #  Update Log:
-#        May 04 2016 DHA: Add test in-tree and installed support 
+#        May 04 2016 DHA: Add test in-tree and installed support
 #        Oct 21 2011 DHA: Added dynamic RM detection support.
 #        Mar 06 2009 DHA: Changed bglrm to bgrm
 #        Dec 14 2008 DHA: configurable NUMNODES
 #        Jun 16 2008 DHA: Created file.
 #
- 
+
 RM_TYPE=@TEST_RMTP@
 NUMNODES=@NNODES@
 
@@ -46,7 +46,7 @@ if test "x$RM_TYPE" = "xRC_bglrm" -o "x$RM_TYPE" = "xRC_bgprm"; then
 fi
 
 NUMTASKS=`expr $NUMNODES / 2 \* @SMP@ + 2`
-WAITAMOUNT=$NUMNODES 
+WAITAMOUNT=$NUMNODES
 if test $NUMNODES -lt 20 ; then
   WAITAMOUNT=20
 fi
@@ -60,7 +60,7 @@ else
     export LMON_RM_CONFIG_DIR=@RMCONFIGDIR@
     export LMON_COLOC_UTIL_DIR=@COLOCDIR@
 fi
- 
+
 if test "x$RM_TYPE" = "xRC_slurm" ; then
   WAITAMOUNT=`expr $WAITAMOUNT`
   $MPI_JOB_LAUNCHER_PATH -n$NUMTASKS -N$NUMNODES -ppdebug `pwd`/hang_on_SIGUSR1@EXE@ &
@@ -83,13 +83,13 @@ elif test "x$RM_TYPE" = "xRC_mpiexec_hydra" ; then
   WAITAMOUNT=`expr $WAITAMOUNT`
   $MPI_JOB_LAUNCHER_PATH -n $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
 else
-  echo "This RM is not supported yet" 
+  echo "This RM is not supported yet"
 fi
- 
-PID=`echo $!` 
- 
-sleep $WAITAMOUNT #wait until the job gets stalled 
- 
-fe_attach_smoketest@EXE@ $PID `pwd`/be_kicker@EXE@ $SIGNUM 
+
+PID=`echo $!`
+
+sleep $WAITAMOUNT #wait until the job gets stalled
+
+fe_attach_smoketest@EXE@ $PID `pwd`/be_kicker@EXE@ $SIGNUM
 
 sleep $WAITAMOUNT

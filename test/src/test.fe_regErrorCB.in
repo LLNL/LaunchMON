@@ -27,12 +27,12 @@
 # Place, Suite 330, Boston, MA 02111-1307 USA
 #--------------------------------------------------------------------------------
 #
-#  Check if attachAndSpawnDaemons can handle an invalid pid case correctly 
-#  and report the error message through a previously registered callback 
+#  Check if attachAndSpawnDaemons can handle an invalid pid case correctly
+#  and report the error message through a previously registered callback
 #  function.
 #
 #  Update Log:
-#        May 04 2016 DHA: Add test in-tree and installed support 
+#        May 04 2016 DHA: Add test in-tree and installed support
 #        May 19 2009 DHA: Created file.
 #
 
