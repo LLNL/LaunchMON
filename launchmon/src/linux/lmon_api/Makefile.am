@@ -1,6 +1,6 @@
 ## $Header: $
 ##
-## Makefile.am -- Process this file with automake to produce Makefile.in 
+## Makefile.am -- Process this file with automake to produce Makefile.in
 ##
 ##
 ##--------------------------------------------------------------------------------
@@ -29,7 +29,7 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
-##        Apr 28 2016 DHA: Modernize autotools and build support 
+##        Apr 28 2016 DHA: Modernize autotools and build support
 ##        Jun 01 2012 DHA: Merged with the 0.8-middleware-support branch.
 ##        Nov 28 2011 DHA: Added MPI-tool sync layer.
 ##        Jun 12 2008 DHA: Added header files to the dependency list
@@ -81,7 +81,7 @@ libmonfeapi_la_SOURCES = \
   $(BASE_SRC_DIR)/sdbg_opt.hxx \
   $(BASE_SRC_DIR)/sdbg_rm_map.hxx \
   $(BASE_SRC_DIR)/lmon_api/lmon_say_msg.hxx \
-  $(BASE_SRC_DIR)/sdbg_base_spawner.hxx 
+  $(BASE_SRC_DIR)/sdbg_base_spawner.hxx
 libmonfeapi_la_CFLAGS = $(AM_CFLAGS)
 libmonfeapi_la_CXXFLAGS = $(AM_CXXFLAGS)
 libmonfeapi_la_LDFLAGS = \
@@ -126,7 +126,7 @@ libmonbeapi_la_LDFLAGS = \
   @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
 libmonbeapi_la_LIBADD = \
   $(top_builddir)/@COMMLOC@/@LIBCOMM@ \
-  $(GCRYPT_LIBS) 
+  $(GCRYPT_LIBS)
 
 #####################################################
 # Middleware API
@@ -156,5 +156,5 @@ libmonmwapi_la_LDFLAGS = \
   @LMON_CURRENT@:@LMON_REVISION@:@LMON_AGE@
 libmonmwapi_la_LIBADD = \
   $(top_builddir)/@COMMLOC@/@LIBCOMM@ \
-  $(GCRYPT_LIBS) 
+  $(GCRYPT_LIBS)
 
