@@ -1,30 +1,30 @@
 /*
- * $Header: /usr/gapps/asde/cvs-vault/sdb/launchmon/src/sdbg_opt.cxx,v 1.9.2.4 2008/03/06 00:13:57 dahn Exp $
  *--------------------------------------------------------------------------------
- * Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at 
- * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>. 
- * LLNL-CODE-409469. All rights reserved.
+ * Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at
+ * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn
+ * <ahn1@llnl.gov>. LLNL-CODE-409469. All rights reserved.
  *
- * This file is part of LaunchMON. For details, see 
+ * This file is part of LaunchMON. For details, see
  * https://computing.llnl.gov/?set=resources&page=os_projects
  *
- * Please also read LICENSE.txt -- Our Notice and GNU Lesser General Public License.
+ * Please also read LICENSE.txt -- Our Notice and GNU Lesser General Public
+ * License.
  *
- * 
- * This program is free software; you can redistribute it and/or modify it under the 
- * terms of the GNU General Public License (as published by the Free Software 
- * Foundation) version 2.1 dated February 1999.
-
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY 
- * WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or 
- * FITNESS FOR A PARTICULAR PURPOSE. See the terms and conditions of the GNU 
+ *
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (as published by the Free
+ * Software Foundation) version 2.1 dated February 1999.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the terms and conditions of the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License along 
- * with this program; if not, write to the Free Software Foundation, Inc., 59 Temple 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
  *--------------------------------------------------------------------------------
- *	
  *
  *  Update Log:
  *        Apr 22 2014 DHA: Applied a patch to store RM args/opts into
@@ -34,7 +34,7 @@
  *        Oct 07 2010 DHA: Dynamic resource manager detection support
  *        Jun 30 2010 DHA: Added faster engine parsing error detection support
  *                         Deprecated option_sanity_check();
- *        Jun 10 2010 DHA: Added RM MAP support. Removed Linux-specific getexec 
+ *        Jun 10 2010 DHA: Added RM MAP support. Removed Linux-specific getexec
  *                         from here
  *        Mar 16 2009 DHA: Added COBO support
  *                         Added 2010 to copyright
@@ -51,35 +51,30 @@
  *                         for attaching case.
  *        Jun 08 2006 DHA: Added attach-to-a-running-job support
  *        Jun 06 2006 DHA: File created
- */ 
+ */
 
 #ifndef HAVE_LAUNCHMON_CONFIG_H
 #include "config.h"
 #endif
 
-#include <lmon_api/common.h>
 #include <limits.h>
+#include <lmon_api/common.h>
+#include "lmon_api/lmon_say_msg.hxx"
 #include "sdbg_opt.hxx"
 #include "sdbg_rm_map.hxx"
-#include "lmon_api/lmon_say_msg.hxx"
 #include "sdbg_self_trace.hxx"
 
-
-const std::string software_name
-   = PACKAGE_NAME;
-const std::string version
-   = PACKAGE_VERSION;
-const std::string copyright 
-   = "Copyright (C) 2008-2012, "
-     "Lawrence Livermore National Security, LLC.";
-const std::string produced 
-   = "Produced at Lawrence Livermore National Laboratory.";
-const std::string right 
-   = "LLNL-CODE-409469 All rights reserved.";
-const std::string LAUNCHMON_COPYRIGHT 
-   = software_name + " " +  version + "\n" + copyright 
-       + "\n" + produced + "\n" + right + "\n";
-
+const std::string software_name = PACKAGE_NAME;
+const std::string version = PACKAGE_VERSION;
+const std::string copyright =
+    "Copyright (C) 2008-2012, "
+    "Lawrence Livermore National Security, LLC.";
+const std::string produced =
+    "Produced at Lawrence Livermore National Laboratory.";
+const std::string right = "LLNL-CODE-409469 All rights reserved.";
+const std::string LAUNCHMON_COPYRIGHT = software_name + " " + version + "\n" +
+                                        copyright + "\n" + produced + "\n" +
+                                        right + "\n";
 
 ///////////////////////////////////////////////////////////////////
 //
@@ -87,14 +82,12 @@ const std::string LAUNCHMON_COPYRIGHT
 //
 ///////////////////////////////////////////////////////////////////
 
-
 //!
 /*!  opt_args_t constructor
 
 
 */
-opts_args_t::opts_args_t ()
-{
+opts_args_t::opts_args_t() {
   my_opt = new opt_struct_t();
   my_opt->verbose = 0;
   my_opt->attach = false;
@@ -114,15 +107,13 @@ opts_args_t::opts_args_t ()
   MODULENAME = self_trace_t::self_trace().opt_module_trace.module_name;
 }
 
-
 //!
 /*!  opt_args_t destructor
 
 
 */
-opts_args_t::~opts_args_t()
-{
-  if(my_opt) {
+opts_args_t::~opts_args_t() {
+  if (my_opt) {
     delete my_opt;
   }
   my_opt = NULL;
@@ -130,18 +121,15 @@ opts_args_t::~opts_args_t()
   if (my_rmconfig) {
     delete my_rmconfig;
   }
- my_rmconfig = NULL;
+  my_rmconfig = NULL;
 }
-
 
 //!
 /*!  opt_args_t::process_args
 
 
 */
-bool 
-opts_args_t::process_args ( int *argc, char ***argv )
-{ 
+bool opts_args_t::process_args(int *argc, char ***argv) {
   using std::string;
 
   bool fin_parsing = false;
@@ -155,313 +143,291 @@ opts_args_t::process_args ( int *argc, char ***argv )
   int i = 1;
   self_trace_verbosity ver = quiet;
 
-  if ((*argc) < 2) 
-    {
-      print_usage();
-      return false;
-    }
+  if ((*argc) < 2) {
+    print_usage();
+    return false;
+  }
 
   my_opt->remote = false;
 
-  for (i=1; (i < (*argc)) && !fin_parsing ; i++) 
-    {
-      if (nargv[i][0] == '-') 
-	{
-	  c = nargv[i][1];
-	  if ( c == '-') 
-	    {
-	      if ( string(&nargv[i][2]) == string("verbose"))
-		c = 'v';
-	      else if ( string(&nargv[i][2]) == string("help"))
-		c = 'h';
-	      else if ( string(&nargv[i][2]) == string("daemonpath"))
-		c = 'd';
-	      else if ( string(&nargv[i][2]) == string("selftrace"))
-		c = 'x';
-	      else if ( string(&nargv[i][2]) == string("daemonopts"))
-		c = 't';
-	      else if ( string(&nargv[i][2]) == string("pid"))
-		c = 'p';
-	      else if ( string(&nargv[i][2]) == string("traceout"))
-		c = 'o';
-	      else if ( string(&nargv[i][2]) == string("remote"))
-		c = 'r';
-	      else if ( string(&nargv[i][2]) == string("lmonsec"))	
-	        c = 's';
-	    }
+  for (i = 1; (i < (*argc)) && !fin_parsing; i++) {
+    if (nargv[i][0] == '-') {
+      c = nargv[i][1];
+      if (c == '-') {
+        if (string(&nargv[i][2]) == string("verbose"))
+          c = 'v';
+        else if (string(&nargv[i][2]) == string("help"))
+          c = 'h';
+        else if (string(&nargv[i][2]) == string("daemonpath"))
+          c = 'd';
+        else if (string(&nargv[i][2]) == string("selftrace"))
+          c = 'x';
+        else if (string(&nargv[i][2]) == string("daemonopts"))
+          c = 't';
+        else if (string(&nargv[i][2]) == string("pid"))
+          c = 'p';
+        else if (string(&nargv[i][2]) == string("traceout"))
+          c = 'o';
+        else if (string(&nargv[i][2]) == string("remote"))
+          c = 'r';
+        else if (string(&nargv[i][2]) == string("lmonsec"))
+          c = 's';
+      }
 
-	  switch (c)
-	    {
+      switch (c) {
+        case 'a':
+          if (debugtarget) {
+            nargv[i] = debugtarget;
+            my_opt->remaining = &(nargv[i]);
+          } else {
+            has_parse_error = true;
+            rv = false;
+          }
+          fin_parsing = true;
+          break;
 
-	    case 'a':
-	      if(debugtarget)
-	        {
-		  nargv[i] = debugtarget;
-	          my_opt->remaining = &(nargv[i]);
-                }
-	      else
- 	        {
-		  has_parse_error = true;
-		  rv = false;
-	        }
-	      fin_parsing = true;
-	      break;
+        case 'o':
+          self_trace_t::tracefptr = fopen(nargv[i + 1], "w+");
+          assert(self_trace_t::tracefptr != NULL);
+          i++;
+          break;
 
-	    case 'o':
-	      self_trace_t::tracefptr = fopen (nargv[i+1], "w+");
-	      assert ( self_trace_t::tracefptr != NULL);
-	      i++;
-	      break;
+        case 'v':
+          my_opt->verbose = atoi(nargv[i + 1]);
 
-	    case 'v':
-	      my_opt->verbose = atoi(nargv[i+1]);
+          if (my_opt->verbose == 0)
+            ver = quiet;
+          else if (my_opt->verbose == 1)
+            ver = level1;
+          else if (my_opt->verbose == 2)
+            ver = level2;
+          else
+            my_opt->verbose = 1;
 
-	      if (my_opt->verbose == 0)
-		ver = quiet;
-	      else if (my_opt->verbose == 1 )
-		ver = level1;
-	      else if (my_opt->verbose == 2 )
-		ver = level2;
-	      else
-		my_opt->verbose = 1;
-
-	      self_trace_t::self_trace().launchmon_module_trace.verbosity_level = ver;
-	      self_trace_t::self_trace().tracer_module_trace.verbosity_level = ver;
-	      self_trace_t::self_trace().symtab_module_trace.verbosity_level = ver;
-	      self_trace_t::self_trace().event_module_trace.verbosity_level = ver;
-	      self_trace_t::self_trace().driver_module_trace.verbosity_level = ver;
-	      self_trace_t::self_trace().machine_module_trace.verbosity_level = ver;
-	      self_trace_t::self_trace().opt_module_trace.verbosity_level = ver;
+          self_trace_t::self_trace().launchmon_module_trace.verbosity_level =
+              ver;
+          self_trace_t::self_trace().tracer_module_trace.verbosity_level = ver;
+          self_trace_t::self_trace().symtab_module_trace.verbosity_level = ver;
+          self_trace_t::self_trace().event_module_trace.verbosity_level = ver;
+          self_trace_t::self_trace().driver_module_trace.verbosity_level = ver;
+          self_trace_t::self_trace().machine_module_trace.verbosity_level = ver;
+          self_trace_t::self_trace().opt_module_trace.verbosity_level = ver;
           self_trace_t::self_trace().rm_module_trace.verbosity_level = ver;
 
-	      i++;
-	      break;
+          i++;
+          break;
 
-	    case 'h':
-	      print_usage();
-	      break;
+        case 'h':
+          print_usage();
+          break;
 
-	    case 'd':
-              {
-	        my_opt->tool_daemon =  nargv[i+1];
-                string dtar(nargv[i+1]);
-	        if (!check_path(dtar, my_opt->tool_daemon))
-		  {
-		    //
-	            // tool daemon nonexistent
-		    //
-		    has_parse_error = true;
-		    fin_parsing = true;
-		    rv = false;
-		  }
-	        i++;
-	        break;
-	      }
-	    case 't': {
-               int num_args = atoi(nargv[i+1]);
-               int j=0;
-               for (j = 0; j < num_args; j++) 
-               {
-                  my_opt->tool_daemon_opts.push_back(nargv[i+j+2]);
-               }
-               i += num_args + 1;
-               break;
-            }
+        case 'd': {
+          my_opt->tool_daemon = nargv[i + 1];
+          string dtar(nargv[i + 1]);
+          if (!check_path(dtar, my_opt->tool_daemon)) {
+            //
+            // tool daemon nonexistent
+            //
+            has_parse_error = true;
+            fin_parsing = true;
+            rv = false;
+          }
+          i++;
+          break;
+        }
+        case 't': {
+          int num_args = atoi(nargv[i + 1]);
+          int j = 0;
+          for (j = 0; j < num_args; j++) {
+            my_opt->tool_daemon_opts.push_back(nargv[i + j + 2]);
+          }
+          i += num_args + 1;
+          break;
+        }
 
-	    case 'p':
-	      my_opt->launcher_pid = (pid_t)atoi(nargv[i+1]);
-	      if (LMON_get_execpath(my_opt->launcher_pid, my_opt->debugtarget) <  0)
-                {
-		  has_parse_error = true;
-		  fin_parsing = true;
-		  rv = false;
-                }
-	      my_opt->attach = true;
-	      i++;
-	      break;
+        case 'p':
+          my_opt->launcher_pid = (pid_t)atoi(nargv[i + 1]);
+          if (LMON_get_execpath(my_opt->launcher_pid, my_opt->debugtarget) <
+              0) {
+            has_parse_error = true;
+            fin_parsing = true;
+            rv = false;
+          }
+          my_opt->attach = true;
+          i++;
+          break;
 
-	    case 'r':
-	      my_opt->remote = true;
-	      my_opt->remote_info = nargv[i+1]; // it should have hostname:port
-	      i++;
-	      break;
+        case 'r':
+          my_opt->remote = true;
+          my_opt->remote_info = nargv[i + 1];  // it should have hostname:port
+          i++;
+          break;
 
- 	    case 's':
-	      my_opt->lmon_sec_info = nargv[i+1];
-	      i++;
-	      break;	
+        case 's':
+          my_opt->lmon_sec_info = nargv[i + 1];
+          i++;
+          break;
 
-	    case 'x':
-	      //
-	      // this is a hidden option for self-tracing
-	      //
-	      tracingmodule = strdup(nargv[i+1]);
-	      modulename = strtok(tracingmodule, ":");
-	      level = atoi(strtok(NULL, ":"));;
+        case 'x':
+          //
+          // this is a hidden option for self-tracing
+          //
+          tracingmodule = strdup(nargv[i + 1]);
+          modulename = strtok(tracingmodule, ":");
+          level = atoi(strtok(NULL, ":"));
+          ;
 
-	      if (level == 0)
-		ver = quiet;
-	      else if (level == 1 )
-		ver = level1;
-	      else if (level == 2 )
-		ver = level2;
-	      else if (level == 3 )
-		ver = level3;
-	      else if (level == 4 )
-		ver = level4;
-	      else
-		ver = level1;
+          if (level == 0)
+            ver = quiet;
+          else if (level == 1)
+            ver = level1;
+          else if (level == 2)
+            ver = level2;
+          else if (level == 3)
+            ver = level3;
+          else if (level == 4)
+            ver = level4;
+          else
+            ver = level1;
 
-	      if ( modulename== self_trace_t::self_trace().launchmon_module_trace.module_symbol )
-		self_trace_t::self_trace().launchmon_module_trace.verbosity_level = ver;
-	      else if ( modulename
-			== self_trace_t::self_trace().tracer_module_trace.module_symbol )
-		self_trace_t::self_trace().tracer_module_trace.verbosity_level = ver;
-	      else if ( modulename
-			== self_trace_t::self_trace().symtab_module_trace.module_symbol )
-		self_trace_t::self_trace().symtab_module_trace.verbosity_level = ver;
-	      else if ( modulename
-			== self_trace_t::self_trace().machine_module_trace.module_symbol )
-		self_trace_t::self_trace().machine_module_trace.verbosity_level = ver;
-	      else if ( modulename
-			== self_trace_t::self_trace().event_module_trace.module_symbol )
-		self_trace_t::self_trace().event_module_trace.verbosity_level = ver;
-	      else if ( modulename
-			== self_trace_t::self_trace().driver_module_trace.module_symbol )
-		self_trace_t::self_trace().driver_module_trace.verbosity_level = ver;
-	      else if ( modulename
-			== self_trace_t::self_trace().opt_module_trace.module_symbol )
-		self_trace_t::self_trace().opt_module_trace.verbosity_level = ver;
-	      else if ( modulename
-			== self_trace_t::self_trace().rm_module_trace.module_symbol )
-		self_trace_t::self_trace().rm_module_trace.verbosity_level = ver;
-	      else if ( modulename
-			== self_trace_t::self_trace().sighandler_module_trace.module_symbol )
-		self_trace_t::self_trace().sighandler_module_trace.verbosity_level = ver;
+          if (modulename ==
+              self_trace_t::self_trace().launchmon_module_trace.module_symbol)
+            self_trace_t::self_trace().launchmon_module_trace.verbosity_level =
+                ver;
+          else if (modulename ==
+                   self_trace_t::self_trace().tracer_module_trace.module_symbol)
+            self_trace_t::self_trace().tracer_module_trace.verbosity_level =
+                ver;
+          else if (modulename ==
+                   self_trace_t::self_trace().symtab_module_trace.module_symbol)
+            self_trace_t::self_trace().symtab_module_trace.verbosity_level =
+                ver;
+          else if (modulename ==
+                   self_trace_t::self_trace()
+                       .machine_module_trace.module_symbol)
+            self_trace_t::self_trace().machine_module_trace.verbosity_level =
+                ver;
+          else if (modulename ==
+                   self_trace_t::self_trace().event_module_trace.module_symbol)
+            self_trace_t::self_trace().event_module_trace.verbosity_level = ver;
+          else if (modulename ==
+                   self_trace_t::self_trace().driver_module_trace.module_symbol)
+            self_trace_t::self_trace().driver_module_trace.verbosity_level =
+                ver;
+          else if (modulename ==
+                   self_trace_t::self_trace().opt_module_trace.module_symbol)
+            self_trace_t::self_trace().opt_module_trace.verbosity_level = ver;
+          else if (modulename ==
+                   self_trace_t::self_trace().rm_module_trace.module_symbol)
+            self_trace_t::self_trace().rm_module_trace.verbosity_level = ver;
+          else if (modulename ==
+                   self_trace_t::self_trace()
+                       .sighandler_module_trace.module_symbol)
+            self_trace_t::self_trace().sighandler_module_trace.verbosity_level =
+                ver;
 
-	      i++;
-	      break;
+          i++;
+          break;
 
-	    default:
-	      print_usage();
-	      rv = false;
-	      break;
-	    }
-	}
-      else 
-	{
-	  debugtarget = nargv[i];
-	  my_opt->debugtarget = nargv[i];
-          string dtar(debugtarget);
-	  if (!check_path(dtar, my_opt->debugtarget))
-            {
-	      //
-	      // job launcher path nonexistent
-	      //
-	      has_parse_error = true;
-	      rv = false;	
-	    }
-	}
+        default:
+          print_usage();
+          rv = false;
+          break;
+      }
+    } else {
+      debugtarget = nargv[i];
+      my_opt->debugtarget = nargv[i];
+      string dtar(debugtarget);
+      if (!check_path(dtar, my_opt->debugtarget)) {
+        //
+        // job launcher path nonexistent
+        //
+        has_parse_error = true;
+        rv = false;
+      }
     }
-
+  }
 
   //
   // alternative way to set the engine's verbose level
   //
   char *l;
-  if ( (l = getenv("LMON_ENGINE_VERBOSE_LEVEL")) != NULL )
-    {
-      int il = atoi(l);
-      self_trace_verbosity verbo;
+  if ((l = getenv("LMON_ENGINE_VERBOSE_LEVEL")) != NULL) {
+    int il = atoi(l);
+    self_trace_verbosity verbo;
 
-      switch (il)
-        {
-        case 0:
-          verbo = quiet;
-          break;
-        case 1:
-          verbo = level1;
-          break;
-        case 2:
-          verbo = level2;
-          break;
-        case 3:
-          verbo = level3;
-          break;
-        default:
-          verbo = quiet;
-          break;
-
-        }
-
-      self_trace_t::self_trace().launchmon_module_trace.verbosity_level = verbo;
-      self_trace_t::self_trace().tracer_module_trace.verbosity_level = verbo;
-      self_trace_t::self_trace().symtab_module_trace.verbosity_level = verbo;
-      self_trace_t::self_trace().event_module_trace.verbosity_level = verbo;
-      self_trace_t::self_trace().driver_module_trace.verbosity_level = verbo;
-      self_trace_t::self_trace().machine_module_trace.verbosity_level = verbo;
-      self_trace_t::self_trace().opt_module_trace.verbosity_level = verbo;
+    switch (il) {
+      case 0:
+        verbo = quiet;
+        break;
+      case 1:
+        verbo = level1;
+        break;
+      case 2:
+        verbo = level2;
+        break;
+      case 3:
+        verbo = level3;
+        break;
+      default:
+        verbo = quiet;
+        break;
     }
 
-  if ( !has_parse_error && !construct_rm_map() )
-    {
-      if ( my_opt->remote && (my_opt->verbose == 0 ))
-        has_parse_error = true;
-      else
-        print_usage();
+    self_trace_t::self_trace().launchmon_module_trace.verbosity_level = verbo;
+    self_trace_t::self_trace().tracer_module_trace.verbosity_level = verbo;
+    self_trace_t::self_trace().symtab_module_trace.verbosity_level = verbo;
+    self_trace_t::self_trace().event_module_trace.verbosity_level = verbo;
+    self_trace_t::self_trace().driver_module_trace.verbosity_level = verbo;
+    self_trace_t::self_trace().machine_module_trace.verbosity_level = verbo;
+    self_trace_t::self_trace().opt_module_trace.verbosity_level = verbo;
+  }
 
-      rv = false;
-    }
+  if (!has_parse_error && !construct_rm_map()) {
+    if (my_opt->remote && (my_opt->verbose == 0))
+      has_parse_error = true;
+    else
+      print_usage();
 
-  if ( !(my_opt->remote && (my_opt->verbose == 0 )) )
-    print_copyright();
+    rv = false;
+  }
+
+  if (!(my_opt->remote && (my_opt->verbose == 0))) print_copyright();
 
   return rv;
 }
 
-
 //!  opts_args_t::construct_rm_map()
 /*!
- 
-*/
-bool
-opts_args_t::construct_rm_map ()
-{
-  if (!my_opt) 
-    {
-      {
-	self_trace_t::trace ( true, 
-	  MODULENAME,
-	  1,
-	  "options and arguments have not been parsed ");
-      }
 
-      return false;
+*/
+bool opts_args_t::construct_rm_map() {
+  if (!my_opt) {
+    {
+      self_trace_t::trace(true, MODULENAME, 1,
+                          "options and arguments have not been parsed ");
     }
+
+    return false;
+  }
 
   bool initc = my_rmconfig->init(std::string(TARGET_OS_ISA_STRING));
 
-  if(!initc)
-    {
-      self_trace_t::trace ( true,
-        MODULENAME,
-        1,
-        "unable to initialize the RM map object ");
+  if (!initc) {
+    self_trace_t::trace(true, MODULENAME, 1,
+                        "unable to initialize the RM map object ");
 
-      return false;
-    }
+    return false;
+  }
 
   return true;
 }
 
-
 //!  opts_args_t::print_usage()
-/*!  
+/*!
      prints the usage
 */
-void 
-opts_args_t::print_usage()
-{
+void opts_args_t::print_usage() {
   using std::cerr;
   using std::endl;
 
@@ -472,39 +438,37 @@ opts_args_t::print_usage()
   cerr << "options:" << endl;
   cerr << "\t\t-v, --verbose 0~2           sets the verbosity level." << endl;
   cerr << "\t\t-h, --help                  prints this message." << endl;
-  cerr << "\t\t-r, --remote ip:port        invokes launchmon in API mode." << endl;
-  cerr << "\t\t-d, --daemonpath path       sets the tool daemon path." << endl;
-  cerr << "\t\t-t, --daemonopts \"opts\"     sets the tool daemon option set." << endl;
-  cerr << "\t\t-p, --pid pid               attaches to pid, the pid of running parallel "
-       << "job launcher process." << endl; 
-  cerr << "\t\t-a  args                    pass all subsequent arguments to the parallel job launcher. "
-       << endl << endl;
-  cerr << "example: launchmon -v 1 -d tooldaemon -t \"-k -r\" "
-       << "srun -a -n 4 -N 2 -ppdebug ./code"
+  cerr << "\t\t-r, --remote ip:port        invokes launchmon in API mode."
        << endl;
-  cerr << "         launchmon --daemonpath tooldaemon -pid 1234" 
-       << endl << endl;
+  cerr << "\t\t-d, --daemonpath path       sets the tool daemon path." << endl;
+  cerr << "\t\t-t, --daemonopts \"opts\"     sets the tool daemon option set."
+       << endl;
+  cerr << "\t\t-p, --pid pid               attaches to pid, the pid of running "
+          "parallel "
+       << "job launcher process." << endl;
+  cerr << "\t\t-a  args                    pass all subsequent arguments to "
+          "the parallel job launcher. "
+       << endl
+       << endl;
+  cerr << "example: launchmon -v 1 -d tooldaemon -t \"-k -r\" "
+       << "srun -a -n 4 -N 2 -ppdebug ./code" << endl;
+  cerr << "         launchmon --daemonpath tooldaemon -pid 1234" << endl
+       << endl;
 
-  exit(-1); 
+  exit(-1);
 }
-
 
 //!  opts_args_t::print_copyright()
 /*!
      print the copyright
 */
-void 
-opts_args_t::print_copyright()
-{
+void opts_args_t::print_copyright() {
   {
-     self_trace_t::trace ( LEVELCHK(level1),
-        MODULENAME,
-        0,
-        my_opt->copyright.c_str());
+    self_trace_t::trace(LEVELCHK(level1), MODULENAME, 0,
+                        my_opt->copyright.c_str());
   }
   std::cout << my_opt->copyright << std::endl;
 }
-
 
 ///////////////////////////////////////////////////////////////////
 //
@@ -512,14 +476,11 @@ opts_args_t::print_copyright()
 //
 ///////////////////////////////////////////////////////////////////
 
-
 //!  opts_args_t::check_path
 /*!
 
 */
-bool
-opts_args_t::check_path ( std::string &base, std::string &path )
-{
+bool opts_args_t::check_path(std::string &base, std::string &path) {
   using namespace std;
 
   char *pth = NULL;
@@ -531,44 +492,35 @@ opts_args_t::check_path ( std::string &base, std::string &path )
   mypath = strdup(getenv("PATH"));
   mypathstart = mypath;
 
-  while ( stat( path.c_str(), &pathchk ) != 0 )
-    {
-      pth = strtok(mypathstart, ":");
-      if ( (base[0] != '/') && pth != NULL )
-	{
-	  string dt = string(pth) + string("/") +  string(base);
-	  path = dt;
-	}
-      else
-        {
-	  {
-	    self_trace_t::trace ( LEVELCHK(quiet),
-	    MODULENAME,
-	    1,
-	    "the path[%s] does not exit.",
-	    base.c_str());
-	  }
-	  rc = false;
-	  break;
-        }
-      mypathstart = NULL;	
+  while (stat(path.c_str(), &pathchk) != 0) {
+    pth = strtok(mypathstart, ":");
+    if ((base[0] != '/') && pth != NULL) {
+      string dt = string(pth) + string("/") + string(base);
+      path = dt;
+    } else {
+      {
+        self_trace_t::trace(LEVELCHK(quiet), MODULENAME, 1,
+                            "the path[%s] does not exit.", base.c_str());
+      }
+      rc = false;
+      break;
     }
+    mypathstart = NULL;
+  }
 
   free(mypath);
 
   return rc;
 }
 
-
 //!
 /*!  opt_args_t copy constructor
      the only member it doesn't do the deep copy is "remaining"
 
-     Jun 09 2010, move this copy ctor to the private area to 
+     Jun 09 2010, move this copy ctor to the private area to
      prevent this object from being copied
 */
-opts_args_t::opts_args_t ( const opts_args_t& o )
-{
+opts_args_t::opts_args_t(const opts_args_t &o) {
   if (o.my_opt != NULL) {
     my_opt = new opt_struct_t();
     my_opt->verbose = o.my_opt->verbose;
@@ -587,3 +539,7 @@ opts_args_t::opts_args_t ( const opts_args_t& o )
     MODULENAME = o.MODULENAME;
   }
 }
+
+/*
+ * ts=2 sw=2 expandtab
+ */
