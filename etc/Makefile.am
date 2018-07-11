@@ -1,6 +1,6 @@
 ## $Header: $
 ##
-## Makefile.am -- Process this file with automake to produce Makefile.in 
+## Makefile.am -- Process this file with automake to produce Makefile.in
 ##
 ##
 ##--------------------------------------------------------------------------------
@@ -33,7 +33,7 @@
 ##        Apr 28 2016 DHA: Created file.
 ##
 
-SUBDIRS = pkg-specs 
+SUBDIRS = pkg-specs
 
 etcdir = ${prefix}/etc
 etc_SCRIPTS = \
