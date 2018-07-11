@@ -27,7 +27,7 @@
 #--------------------------------------------------------------------------------
 #
 #  Update Log:
-#        Apr 28 2016 DHA: Added debug prints 
+#        Apr 28 2016 DHA: Added debug prints
 #        Mar 11 2008 DHA: Added rm -f tools/libgcrypt/Makefile
 #        Jun 06 2008 DHA: Created file.
 #
@@ -40,7 +40,7 @@ echo "Running autoheader ..."
 autoheader
 echo "Running automake ..."
 touch NEWS README AUTHORS ChangeLog
-automake --add-missing --copy 
+automake --add-missing --copy
 echo "Running autoconf ..."
 autoconf
 mv aclocal.m4 config/
