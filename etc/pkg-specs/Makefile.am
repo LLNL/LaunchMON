@@ -1,6 +1,6 @@
 ## $Header: $
 ##
-## Makefile.am -- Process this file with automake to produce Makefile.in 
+## Makefile.am -- Process this file with automake to produce Makefile.in
 ##
 ##
 ##--------------------------------------------------------------------------------

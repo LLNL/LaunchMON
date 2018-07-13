@@ -28,7 +28,7 @@ dnl  Place, Suite 330, Boston, MA 02111-1307 USA
 dnl --------------------------------------------------------------------------------
 dnl
 dnl   Update Log:
-dnl         Apr 28 2016 DHA: Modernize autotool support 
+dnl         Apr 28 2016 DHA: Modernize autotool support
 dnl         Apr 01 2015 ADG/KMD: Added Cray CTI support.
 dnl         Feb 20 2015 andrewg@cray.com: Added Cray support.
 dnl         Apr 30 2014 DHA: Declare 1.0.1 -- this doesn't have Cray support though.
@@ -37,9 +37,9 @@ dnl         Mar 10 2014 MPL: Add secure handshake
 dnl         Aug 03 2010 DHA: Added X_AC_MW_HOSTLIST support
 dnl         Dec 28 2009 DHA: Deprecated X_AC_PREFIX_CONFIG_H to better support
 dnl                          binary distribution
-dnl         Mar 20 2009 DHA: Increase LMON_CURRENT by one as we've added 
+dnl         Mar 20 2009 DHA: Increase LMON_CURRENT by one as we've added
 dnl                          a few more API calls. Similarly, increase
-dnl                          LMON_AGE as this still supports 0th interface. 
+dnl                          LMON_AGE as this still supports 0th interface.
 dnl         Mar 11 2009 DHA: Added check for env, ssh|rsh, and totalview
 dnl         Mar 06 2009 DHA: Deprecate X_AC_THREAD_DB,
 dnl                          Added dlfcn.h presence check
@@ -48,21 +48,21 @@ dnl
 
 AC_PREREQ(2.59)
 
-dnl Users shouldn't bootstrap configure from the release tarball so 
+dnl Users shouldn't bootstrap configure from the release tarball so
 dnl this technique should be okay
 AC_INIT([LaunchMON],
-        m4_esyscmd([git describe --always | awk '/.*/ {printf "%s",$1; exit}'])) 
+        m4_esyscmd([git describe --always | awk '/.*/ {printf "%s",$1; exit}']))
 
 dnl
-dnl This implements 2nd LMON interface (increase current when the 
-dnl interface is changed, added, or removed.  
-dnl 
+dnl This implements 2nd LMON interface (increase current when the
+dnl interface is changed, added, or removed.
+dnl
 AC_SUBST(LMON_CURRENT, 2)
 
 dnl
-dnl This is the 1st revision (increase revision when the 
-dnl implementation has been changed but the interface stays the same) 
-dnl 
+dnl This is the 1st revision (increase revision when the
+dnl implementation has been changed but the interface stays the same)
+dnl
 AC_SUBST(LMON_REVISION, 0)
 
 dnl
@@ -71,13 +71,13 @@ dnl
 AC_SUBST(LMON_AGE, 1)
 
 dnl -----------------------------------------------
-dnl AC_CONFIG support 
+dnl AC_CONFIG support
 dnl -----------------------------------------------
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_HEADER([config.h])
-dnl config.guess and config.sub must be distributed 
+dnl config.guess and config.sub must be distributed
 AC_CANONICAL_SYSTEM
 
 dnl
@@ -89,7 +89,7 @@ PKG_PROG_PKG_CONFIG
 dnl -----------------------------------------------
 dnl Automake support
 dnl -----------------------------------------------
-dnl The new form for AM_INIT_AUTOMAKE takes only one argument 
+dnl The new form for AM_INIT_AUTOMAKE takes only one argument
 AM_INIT_AUTOMAKE
 dnl If you don't want silent make, make V=1
 AM_SILENT_RULES([yes])
@@ -119,8 +119,8 @@ X_AC_ENABLE_VERBOSE
 
 dnl -----------------------------------------------
 dnl COBO is now the only comm. fab choice use to
-dnl bootstrap launchmon's 
-dnl distributed components  
+dnl bootstrap launchmon's
+dnl distributed components
 dnl -----------------------------------------------
 AC_DEFINE(COBO_BASED, 1, [Define 1 for COBO_BASED])
 AC_DEFINE(TEST_MORE_COLL, 1, [Define test more coll support])
@@ -163,13 +163,13 @@ AC_CHECK_HEADERS([sys/types.h])
 X_AC_HANDSHAKE
 
 dnl -----------------------------------------------
-dnl enable tracing cost measurement codes? 
+dnl enable tracing cost measurement codes?
 dnl -----------------------------------------------
 X_AC_TRACING_COST
 
 dnl -----------------------------------------------
-dnl Checks for NNODES and Ncores per node 
-dnl for testing 
+dnl Checks for NNODES and Ncores per node
+dnl for testing
 dnl -----------------------------------------------
 X_AC_TESTNNODES
 X_AC_NCORE_SMP
@@ -236,7 +236,7 @@ dnl -----------------------------------------------
 dnl Checks for header files.
 dnl Note: I don't think we made the code base conditionally
 dnl compiled depending on the existence of these checks.
-dnl But the code at least errors out during compililation 
+dnl But the code at least errors out during compililation
 dnl if they don't exist
 dnl -----------------------------------------------
 AC_LANG_PUSH([C++])
@@ -245,9 +245,9 @@ AC_LANG_POP([C++])
 AC_HEADER_SYS_WAIT
 
 dnl
-dnl Jun 07 2012 DHA TODO: We need to check boost/tokenizer.hpp; 
+dnl Jun 07 2012 DHA TODO: We need to check boost/tokenizer.hpp;
 dnl doing so generates whole lot of errors on some platforms
-dnl so I'm skipping that check for now. We need to 
+dnl so I'm skipping that check for now. We need to
 dnl revisit that issue.
 
 AC_CHECK_HEADERS([libelf.h libelf/libelf.h],[],[],
@@ -269,7 +269,7 @@ AC_HEADER_STDBOOL
 AC_C_CONST
 AC_TYPE_PID_T
 AC_HEADER_TIME
-AC_CHECK_TYPES([struct user_regs_struct, 
+AC_CHECK_TYPES([struct user_regs_struct,
                 struct user_pt_regs,
                 struct user_fpregs_struct,
                 struct user_fpsimd_struct,
@@ -289,7 +289,7 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([gettimeofday memset strdup])
 
 dnl -----------------------------------------------
-dnl configure's OUTPUTS 
+dnl configure's OUTPUTS
 dnl -----------------------------------------------
 AC_CONFIG_FILES([
   Makefile

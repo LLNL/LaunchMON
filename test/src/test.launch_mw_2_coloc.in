@@ -31,7 +31,7 @@
 #  one daemon per node, which unlocks the initial hang of all tasks.
 #
 #  Update Log:
-#        May 04 2016 DHA: Add test in-tree and installed support 
+#        May 04 2016 DHA: Add test in-tree and installed support
 #        Jun 05 2012 DHA: Added subtest support.
 #        Jun 04 2012 DHA: Adjust the test script to 1.0 testing environment.
 #        Aug 04 2010 DHA: Created file.

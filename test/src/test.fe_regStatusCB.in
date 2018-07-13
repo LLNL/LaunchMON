@@ -27,10 +27,10 @@
 # Place, Suite 330, Boston, MA 02111-1307 USA
 #--------------------------------------------------------------------------------
 #
-#  Attach the tool to a running program and unlock the hang. 
+#  Attach the tool to a running program and unlock the hang.
 #
 #  Update Log:
-#        May 04 2016 DHA: Add test in-tree and installed support 
+#        May 04 2016 DHA: Add test in-tree and installed support
 #        Oct 21 2011 DHA: Added dynamic RM detection support.
 #        Jun 02 2009 DHA: Created file.
 #
@@ -43,7 +43,7 @@ if test "x$RM_TYPE" = "xRC_bgrm" ; then
 fi
 
 NUMTASKS=`expr $NUMNODES \* @SMP@`
-WAITAMOUNT=$NUMNODES 
+WAITAMOUNT=$NUMNODES
 if test $NUMNODES -lt 20 ; then
   WAITAMOUNT=20
 fi
@@ -78,14 +78,14 @@ elif test "x$RM_TYPE" = "xRC_mpiexec_hydra" ; then
   WAITAMOUNT=`expr $WAITAMOUNT`
   $MPI_JOB_LAUNCHER_PATH -n $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
 else
-  echo "This RM is not supported yet" 
+  echo "This RM is not supported yet"
 fi
 
-PID=`echo $!` 
+PID=`echo $!`
 
-sleep $WAITAMOUNT #wait until the job gets stalled 
+sleep $WAITAMOUNT #wait until the job gets stalled
 
-fe_attach_smoketest@EXE@ $PID `pwd`/be_kicker@EXE@ $SIGNUM 
+fe_attach_smoketest@EXE@ $PID `pwd`/be_kicker@EXE@ $SIGNUM
 
 sleep $WAITAMOUNT
 

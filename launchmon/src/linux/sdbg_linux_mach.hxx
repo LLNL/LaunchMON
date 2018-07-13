@@ -1,27 +1,28 @@
 /*
- * $Header: /usr/gapps/asde/cvs-vault/sdb/launchmon/src/linux/sdbg_linux_mach.hxx,v 1.3.2.1 2008/02/20 17:37:57 dahn Exp $
  *--------------------------------------------------------------------------------
  * Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at
- * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn <ahn1@llnl.gov>.
- * LLNL-CODE-409469. All rights reserved.
+ * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn
+ * <ahn1@llnl.gov>. LLNL-CODE-409469. All rights reserved.
  *
  * This file is part of LaunchMON. For details, see
  * https://computing.llnl.gov/?set=resources&page=os_projects
  *
- * Please also read LICENSE.txt -- Our Notice and GNU Lesser General Public License.
+ * Please also read LICENSE.txt -- Our Notice and GNU Lesser General Public
+ * License.
  *
  *
- * This program is free software; you can redistribute it and/or modify it under the
- * terms of the GNU General Public License (as published by the Free Software
- * Foundation) version 2.1 dated February 1999.
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License (as published by the Free
+ * Software Foundation) version 2.1 dated February 1999.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the terms and conditions of the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
  *--------------------------------------------------------------------------------
  *
@@ -43,11 +44,10 @@ extern "C" {
 }
 
 #include <string>
-#include "sdbg_std.hxx"
 #include "sdbg_base_mach.hxx"
 #include "sdbg_linux_std.hxx"
 #include "sdbg_linux_symtab.hxx"
-
+#include "sdbg_std.hxx"
 
 #if X86_ARCHITECTURE || X86_64_ARCHITECTURE
 
@@ -162,25 +162,23 @@ extern "C" {
 
  */
 
-class linux_x86_gpr_set_t
-  : public register_set_base_t<T_GRS, T_VA, T_WT>
-{
-
-public:
-
+class linux_x86_gpr_set_t : public register_set_base_t<T_GRS, T_VA, T_WT> {
+ public:
   // constructors and destructor
   //
-  linux_x86_gpr_set_t  ();
-  virtual ~linux_x86_gpr_set_t () { }
+  linux_x86_gpr_set_t();
+  virtual ~linux_x86_gpr_set_t() {}
 
-  virtual void set_pc  (T_VA addr);
-  virtual T_VA const get_pc () const;
+  virtual void set_pc(T_VA addr);
+  virtual T_VA const get_pc() const;
   virtual T_VA const get_ret_addr() const;
   virtual T_VA const get_memloc_for_ret_addr() const;
 
-private:
-  bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
+ private:
+  bool LEVELCHK(self_trace_verbosity level) {
+    return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >=
+            level);
+  }
 
   std::string MODULENAME;
 };
@@ -273,36 +271,29 @@ private:
     };
 
 */
-class linux_x86_fpr_set_t
-  : public register_set_base_t<T_FRS, T_VA, T_WT>
-{
-
-public:
-
+class linux_x86_fpr_set_t : public register_set_base_t<T_FRS, T_VA, T_WT> {
+ public:
   // constructors and destructor
   //
-  linux_x86_fpr_set_t ();
-  virtual ~linux_x86_fpr_set_t() { }
+  linux_x86_fpr_set_t();
+  virtual ~linux_x86_fpr_set_t() {}
 
-private:
-  bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
+ private:
+  bool LEVELCHK(self_trace_verbosity level) {
+    return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >=
+            level);
+  }
 
   std::string MODULENAME;
 };
-
 
 //! class linux_x86_thread_t:
 /*!
     linux_x86_thread_t is linux x86 and x86-64 implementation of thread_base_t
     class. The constructor sets register model.
 */
-class linux_x86_thread_t
-  : public thread_base_t<SDBG_LINUX_DFLT_INSTANTIATION>
-{
-
-public:
-
+class linux_x86_thread_t : public thread_base_t<SDBG_LINUX_DFLT_INSTANTIATION> {
+ public:
   // constructors and destructor
   //
   linux_x86_thread_t();
@@ -312,14 +303,14 @@ public:
   // which the kernel understands
   virtual pid_t thr2pid();
 
-
-private:
-  bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
+ private:
+  bool LEVELCHK(self_trace_verbosity level) {
+    return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >=
+            level);
+  }
 
   std::string MODULENAME;
 };
-
 
 //! linux_x86_process_t:
 /*!
@@ -327,44 +318,35 @@ private:
   class. The constructor sets register model.
 */
 class linux_x86_process_t
-  : public process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>
-{
-
-public:
-
+    : public process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> {
+ public:
   // constructors and destructor
   //
-  linux_x86_process_t ();
-  linux_x86_process_t ( const std::string& mi,
-      const std::string& md,
-      const std::string& mt,
-      const std::string& mc );
-  linux_x86_process_t ( const pid_t& pid,
-      const std::string& mi,
-      const std::string& md,
-      const std::string& mt,
-            const std::string& mc );
-  linux_x86_process_t ( const pid_t& pid,
-      const std::string& mi );
+  linux_x86_process_t();
+  linux_x86_process_t(const std::string& mi, const std::string& md,
+                      const std::string& mt, const std::string& mc);
+  linux_x86_process_t(const pid_t& pid, const std::string& mi,
+                      const std::string& md, const std::string& mt,
+                      const std::string& mc);
+  linux_x86_process_t(const pid_t& pid, const std::string& mi);
 
-  explicit linux_x86_process_t ( const pid_t& pid );
-  ~linux_x86_process_t() { }
+  explicit linux_x86_process_t(const pid_t& pid);
+  ~linux_x86_process_t() {}
 
-protected:
-  bool basic_init ( const std::string& mi,
-        const std::string& md,
-        const std::string& mt,
-        const std::string& mc );
+ protected:
+  bool basic_init(const std::string& mi, const std::string& md,
+                  const std::string& mt, const std::string& mc);
 
-  bool basic_init ( const std::string& mi );
+  bool basic_init(const std::string& mi);
 
-private:
+ private:
   void launcher_symbols_init();
-  bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
+  bool LEVELCHK(self_trace_verbosity level) {
+    return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >=
+            level);
+  }
 
   std::string MODULENAME;
-
 };
 
 // data structure needed by proc service layer
@@ -402,30 +384,26 @@ struct ps_prochandle {
     General purpose register set resides at the zero offset.
 */
 
-class linux_aarch64_gpr_set_t
-  : public register_set_base_t<T_GRS, T_VA, T_WT>
-{
-
-public:
-
+class linux_aarch64_gpr_set_t : public register_set_base_t<T_GRS, T_VA, T_WT> {
+ public:
   // constructors and destructor
   //
-  linux_aarch64_gpr_set_t  ();
-  virtual ~linux_aarch64_gpr_set_t () { }
+  linux_aarch64_gpr_set_t();
+  virtual ~linux_aarch64_gpr_set_t() {}
 
-  virtual void set_pc  (T_VA addr);
-  virtual T_VA const get_pc () const;
+  virtual void set_pc(T_VA addr);
+  virtual T_VA const get_pc() const;
   virtual T_VA const get_ret_addr() const;
   virtual T_VA const get_memloc_for_ret_addr() const;
 
-private:
-  bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
+ private:
+  bool LEVELCHK(self_trace_verbosity level) {
+    return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >=
+            level);
+  }
 
   std::string MODULENAME;
 };
-
-
 
 //! linux_aarch64_fpr_set_t
 /*!
@@ -453,24 +431,21 @@ private:
 
     General purpose register set resides at the zero offset.
 */
-class linux_aarch64_fpr_set_t
-  : public register_set_base_t<T_FRS, T_VA, T_WT>
-{
-
-public:
-
+class linux_aarch64_fpr_set_t : public register_set_base_t<T_FRS, T_VA, T_WT> {
+ public:
   // constructors and destructor
   //
-  linux_aarch64_fpr_set_t ();
-  virtual ~linux_aarch64_fpr_set_t() { }
+  linux_aarch64_fpr_set_t();
+  virtual ~linux_aarch64_fpr_set_t() {}
 
-private:
-  bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
+ private:
+  bool LEVELCHK(self_trace_verbosity level) {
+    return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >=
+            level);
+  }
 
   std::string MODULENAME;
 };
-
 
 //! class linux_aarch64_thread_t:
 /*!
@@ -478,11 +453,8 @@ private:
     class. The constructor sets register model.
 */
 class linux_aarch64_thread_t
-  : public thread_base_t<SDBG_LINUX_DFLT_INSTANTIATION>
-{
-
-public:
-
+    : public thread_base_t<SDBG_LINUX_DFLT_INSTANTIATION> {
+ public:
   // constructors and destructor
   //
   linux_aarch64_thread_t();
@@ -492,14 +464,14 @@ public:
   // which the kernel understands
   virtual pid_t thr2pid();
 
-
-private:
-  bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
+ private:
+  bool LEVELCHK(self_trace_verbosity level) {
+    return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >=
+            level);
+  }
 
   std::string MODULENAME;
 };
-
 
 //! linux_aarch64_process_t:
 /*!
@@ -507,44 +479,35 @@ private:
   class. The constructor sets register model.
 */
 class linux_aarch64_process_t
-  : public process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>
-{
-
-public:
-
+    : public process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> {
+ public:
   // constructors and destructor
   //
-  linux_aarch64_process_t ();
-  linux_aarch64_process_t ( const std::string& mi,
-      const std::string& md,
-      const std::string& mt,
-      const std::string& mc );
-  linux_aarch64_process_t ( const pid_t& pid,
-      const std::string& mi,
-      const std::string& md,
-      const std::string& mt,
-            const std::string& mc );
-  linux_aarch64_process_t ( const pid_t& pid,
-      const std::string& mi );
+  linux_aarch64_process_t();
+  linux_aarch64_process_t(const std::string& mi, const std::string& md,
+                          const std::string& mt, const std::string& mc);
+  linux_aarch64_process_t(const pid_t& pid, const std::string& mi,
+                          const std::string& md, const std::string& mt,
+                          const std::string& mc);
+  linux_aarch64_process_t(const pid_t& pid, const std::string& mi);
 
-  explicit linux_aarch64_process_t ( const pid_t& pid );
-  ~linux_aarch64_process_t() { }
+  explicit linux_aarch64_process_t(const pid_t& pid);
+  ~linux_aarch64_process_t() {}
 
-protected:
-  bool basic_init ( const std::string& mi,
-        const std::string& md,
-        const std::string& mt,
-        const std::string& mc );
+ protected:
+  bool basic_init(const std::string& mi, const std::string& md,
+                  const std::string& mt, const std::string& mc);
 
-  bool basic_init ( const std::string& mi );
+  bool basic_init(const std::string& mi);
 
-private:
+ private:
   void launcher_symbols_init();
-  bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
+  bool LEVELCHK(self_trace_verbosity level) {
+    return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >=
+            level);
+  }
 
   std::string MODULENAME;
-
 };
 
 // data structure needed by proc service layer
@@ -611,25 +574,23 @@ struct ps_prochandle {
   and PT_FPSCR (PT_FPR0 + 2*32 + 1)
  */
 
-class linux_ppc_gpr_set_t
-  : public register_set_base_t<T_GRS, T_VA, T_WT>
-{
-
-public:
-
+class linux_ppc_gpr_set_t : public register_set_base_t<T_GRS, T_VA, T_WT> {
+ public:
   // constructors and destructor
   //
-  linux_ppc_gpr_set_t  ();
-  virtual ~linux_ppc_gpr_set_t () { }
+  linux_ppc_gpr_set_t();
+  virtual ~linux_ppc_gpr_set_t() {}
 
-  virtual void set_pc  (T_VA addr);
-  virtual T_VA const get_pc () const;
+  virtual void set_pc(T_VA addr);
+  virtual T_VA const get_pc() const;
   virtual T_VA const get_ret_addr() const;
   virtual T_VA const get_memloc_for_ret_addr() const;
 
-private:
-  bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
+ private:
+  bool LEVELCHK(self_trace_verbosity level) {
+    return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >=
+            level);
+  }
 
   std::string MODULENAME;
 };
@@ -689,36 +650,29 @@ private:
   Each FP reg occupies 2 slots in this space. PT_FPR31 (PT_FPR0 + 2*31)
   and PT_FPSCR (PT_FPR0 + 2*32 + 1)
 */
-class linux_ppc_fpr_set_t
-  : public register_set_base_t<T_FRS, T_VA, T_WT>
-{
-
-public:
-
+class linux_ppc_fpr_set_t : public register_set_base_t<T_FRS, T_VA, T_WT> {
+ public:
   // constructors and destructor
   //
-  linux_ppc_fpr_set_t ();
-  virtual ~linux_ppc_fpr_set_t() { }
+  linux_ppc_fpr_set_t();
+  virtual ~linux_ppc_fpr_set_t() {}
 
-private:
-  bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
+ private:
+  bool LEVELCHK(self_trace_verbosity level) {
+    return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >=
+            level);
+  }
 
   std::string MODULENAME;
 };
-
 
 //! linux_ppc_thread_t:
 /*!
     linux_ppc_thread_t is the linux ppc implementation of thread_base_t
     class. The constructor sets the register model.
 */
-class linux_ppc_thread_t
-  : public thread_base_t<SDBG_LINUX_DFLT_INSTANTIATION>
-{
-
-public:
-
+class linux_ppc_thread_t : public thread_base_t<SDBG_LINUX_DFLT_INSTANTIATION> {
+ public:
   // constructors and destructor
   //
   linux_ppc_thread_t();
@@ -728,14 +682,14 @@ public:
   // which the kernel understand.
   virtual pid_t thr2pid();
 
-
-private:
-  bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
+ private:
+  bool LEVELCHK(self_trace_verbosity level) {
+    return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >=
+            level);
+  }
 
   std::string MODULENAME;
 };
-
 
 //!
 /*!
@@ -743,41 +697,33 @@ private:
   class. The constructor sets the register model.
 */
 class linux_ppc_process_t
-  : public process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>
-{
-
-public:
-
+    : public process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> {
+ public:
   // constructors and destructor
   //
-  linux_ppc_process_t ();
-  linux_ppc_process_t ( const std::string& mi,
-                        const std::string& md,
-                        const std::string& mt,
-                        const std::string& mc );
-  linux_ppc_process_t ( const pid_t& pid,
-                        const std::string& mi,
-                        const std::string& md,
-                        const std::string& mt,
-                        const std::string& mc );
-  linux_ppc_process_t ( const pid_t& pid,
-                        const std::string& mi );
+  linux_ppc_process_t();
+  linux_ppc_process_t(const std::string& mi, const std::string& md,
+                      const std::string& mt, const std::string& mc);
+  linux_ppc_process_t(const pid_t& pid, const std::string& mi,
+                      const std::string& md, const std::string& mt,
+                      const std::string& mc);
+  linux_ppc_process_t(const pid_t& pid, const std::string& mi);
 
-  explicit linux_ppc_process_t ( const pid_t& pid );
-  ~linux_ppc_process_t() { }
+  explicit linux_ppc_process_t(const pid_t& pid);
+  ~linux_ppc_process_t() {}
 
-protected:
-  bool basic_init ( const std::string& mi,
-                    const std::string& md,
-                    const std::string& mt,
-                    const std::string& mc );
+ protected:
+  bool basic_init(const std::string& mi, const std::string& md,
+                  const std::string& mt, const std::string& mc);
 
-  bool basic_init ( const std::string& mi );
+  bool basic_init(const std::string& mi);
 
-private:
+ private:
   void launcher_symbols_init();
-  bool LEVELCHK(self_trace_verbosity level)
-       { return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >= level); }
+  bool LEVELCHK(self_trace_verbosity level) {
+    return (self_trace_t::self_trace().tracer_module_trace.verbosity_level >=
+            level);
+  }
 
   std::string MODULENAME;
 };
@@ -785,8 +731,12 @@ private:
 // data structure needed by proc service layer
 //
 struct ps_prochandle {
-  process_base_t<SDBG_LINUX_DFLT_INSTANTIATION> *p;
+  process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>* p;
 };
 
-#endif // ARCHITECTURES
-#endif // SDBG_LINUX_MACH_HXX
+#endif  // ARCHITECTURES
+#endif  // SDBG_LINUX_MACH_HXX
+
+/*
+ * ts=2 sw=2 expandtab
+ */

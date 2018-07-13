@@ -1,6 +1,6 @@
-LaunchMON's Error Handling Semantics 
+LaunchMON's Error Handling Semantics
 
-A. When the LaunchMON engine fails, the cleanup semantics of LaunchMON is to 
+A. When the LaunchMON engine fails, the cleanup semantics of LaunchMON is to
    detach from the job while keeping the client tool running.
 
        A.1. The LaunchMON engine fails. Unless it  is  due  to  SIGKILL,  the
@@ -22,9 +22,9 @@ B.  FE  API  extension to be able to communciate a session's status to the to-
 
        The status is returned through the "status" argument.
 
- C. When a client tool component (whether it is FE or  daemons)  fails, the 
+ C. When a client tool component (whether it is FE or  daemons)  fails, the
     basic  semantics  of the LaunchMON cleanup procedure is to detach from th-
-    e target job, and kill the daemons (when FE  fails)  or  notify the tool 
+    e target job, and kill the daemons (when FE  fails)  or  notify the tool
     front-end client (when a daemon failure is detected).
 
        C.1. If the tool FE fails, the engine first detects the socket discon-
@@ -54,14 +54,14 @@ B.  FE  API  extension to be able to communciate a session's status to the to-
 
        [OpenRTE Note] Identical to the IBM BlueGene, RM_daemon is equal to RM_job
        on OpenRTE and the system control system does not offer a mechanism to
-       detect failures that occurred in the back-end daemons. Hence, LaunchMON 
+       detect failures that occurred in the back-end daemons. Hence, LaunchMON
        does not currently enforce this semantics on this platform.
 
        [Cray ALPS Note] The ALPS tool helper service currently does not offer
-       a mechanism to detect failures in the daemons; LaunchMON does not enforce 
+       a mechanism to detect failures in the daemons; LaunchMON does not enforce
        this semantics on this platform.
 
-D. When the job fails, the basic cleanup semantics of LaunchMON is  to notify 
+D. When the job fails, the basic cleanup semantics of LaunchMON is  to notify
    the FEN tool while keeping the daemons running.
 
        D.1.  The target job fails, and this fatal event first gets propagated

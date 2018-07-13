@@ -24,13 +24,13 @@
 #define ENV_OPTIONAL (1)
 
 /* set env variable to configure socket timeout parameters */
-#ifndef COBO_CONNECT_TIMEOUT       
+#ifndef COBO_CONNECT_TIMEOUT
 #define COBO_CONNECT_TIMEOUT (10) /* milliseconds -- wait this long before a connect() call times out*/
 #endif
 #ifndef COBO_CONNECT_BACKOFF
 #define COBO_CONNECT_BACKOFF (2) /* exponential backoff factor for timeout */
 #endif
-#ifndef COBO_CONNECT_SLEEP  
+#ifndef COBO_CONNECT_SLEEP
 #define COBO_CONNECT_SLEEP   (10) /* milliseconds -- wait this long before trying a new round of connects() */
 #endif
 #ifndef COBO_CONNECT_TIMELIMIT
@@ -55,7 +55,7 @@
 /*
  * DHA 4/11/2014: Security protocol blurb
  * cobo_sec_protocol should be set properly by
- * the upper layer. 
+ * the upper layer.
  *
  */
 handshake_protocol_t cobo_sec_protocol;
@@ -462,7 +462,7 @@ done:
 */
         return -1;
     }
- 
+
     return 0;
 }
 
@@ -506,7 +506,7 @@ static int cobo_connect_hostname(char* hostname, int rank)
     /* lookup host address by name */
     struct hostent* he = gethostbyname(hostname);
     if (!he) {
-       /* gethostbyname doesn't know how to resolve hostname, trying inet_addr */ 
+       /* gethostbyname doesn't know how to resolve hostname, trying inet_addr */
        saddr.s_addr = inet_addr(hostname);
        if (saddr.s_addr == -1) {
            cobo_error("Hostname lookup failed (gethostbyname(%s) %s h_errno=%d) @ file %s:%d",
@@ -700,7 +700,7 @@ static int cobo_send_hostlist(int s, char* hostname, int rank, int ranks, void* 
     return COBO_SUCCESS;
 }
 
-/* 
+/*
  * =============================
  * Functions to open/close the TCP/socket tree.
  * =============================
@@ -1012,7 +1012,7 @@ static int cobo_close_tree()
     return COBO_SUCCESS;
 }
 
-/* 
+/*
  * =============================
  * Functions to bcast/gather/scatter with root as rank 0 using the TCP/socket tree.
  * =============================
@@ -1196,7 +1196,7 @@ int cobo_get_parent_socket(int* fd)
         return COBO_SUCCESS;
     }
 
-    return -1; /* failure RCs? */ 
+    return -1; /* failure RCs? */
 }
 
 /* Perform barrier, each task writes an int then waits for an int */
@@ -1481,7 +1481,7 @@ int cobo_open(unsigned int sessionid, int* portlist, int num_ports, int* rank, i
     );
 
     /* DHA 4/11/2014: enable security handshake timeout */
-    handshake_enable_read_timeout(cobo_connect_timeout); 
+    handshake_enable_read_timeout(cobo_connect_timeout);
 
     /* copy port list from user */
     cobo_num_ports = num_ports;

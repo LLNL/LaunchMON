@@ -1,6 +1,6 @@
 ## $Header: $
 ##
-## Makefile.am -- Process this file with automake to produce Makefile.in 
+## Makefile.am -- Process this file with automake to produce Makefile.in
 ##
 ##--------------------------------------------------------------------------------
 ## Copyright (c) 2010, Lawrence Livermore National Security, LLC. Produced at
@@ -28,10 +28,10 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
-##        May 05 2016 DHA: Adapt @agontarek's Cray port patch 
+##        May 05 2016 DHA: Adapt @agontarek's Cray port patch
 ##        Apr 29 2016 DHA: Mondernize build support
 ##        Nov 23 2010 DHA: Changed bin_SCRIPTS to etc_SCRIPTS for CLE dso list
-##        Nov 04 2010 DHA: Added lib_SCRIPTS 
+##        Nov 04 2010 DHA: Added lib_SCRIPTS
 ##        Jun 10 2010 DHA: Added alps_fe_colocator support
 ##        May 13 2010 DHA: Made for alps_be_starter
 ##
@@ -39,16 +39,16 @@
 AM_CPPFLAGS = \
   -I$(abs_top_srcdir) \
   -I$(abs_top_srcdir)/launchmon/src \
-  -I$(abs_top_srcdir)/@LMONAPILOC@ 
+  -I$(abs_top_srcdir)/@LMONAPILOC@
 
-bin_PROGRAMS = alps_be_starter alps_fe_colocator 
-alps_be_starter_SOURCES = alps_be_starter.c 
+bin_PROGRAMS = alps_be_starter alps_fe_colocator
+alps_be_starter_SOURCES = alps_be_starter.c
 alps_fe_colocator_SOURCES = alps_fe_colocator.cxx
 alps_fe_colocator_CXXFLAGS = @LNCHR_BIT_FLAGS@ $(CRAY_ALPS_CFLAGS)
 alps_fe_colocator_LDADD = @LIBELF@ $(CRAY_ALPS_LIBS)
 
 alps_be_starter$(EXEEXT): alps_be_starter.c Makefile
-	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CFLAGS) $(CFLAGS) -o $@ $<   
+	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CFLAGS) $(CFLAGS) -o $@ $<
 
 etcdir = ${prefix}/etc
 etc_SCRIPTS = \

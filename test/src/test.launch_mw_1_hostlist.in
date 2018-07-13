@@ -31,7 +31,7 @@
 #  one daemon per node, which unlocks the initial hang of all tasks.
 #
 #  Update Log:
-#        May 04 2016 DHA: Add test in-tree and installed support 
+#        May 04 2016 DHA: Add test in-tree and installed support
 #        Jun 04 2012 DHA: Adjust the test script to 1.0 testing environment.
 #        Aug 03 2010 DHA: Created file.
 #
@@ -58,7 +58,7 @@ fi
 
 NUMTASKS=`expr $NUMNODES \* @SMP@`
 
-$NOHUP fe_launch_middleware@EXE@ `pwd`/simple_MPI@EXE@ $NUMTASKS $NUMNODES pdebug `pwd`/mw_comm_helper@EXE@ `pwd`/be_kicker@EXE@ 
+$NOHUP fe_launch_middleware@EXE@ `pwd`/simple_MPI@EXE@ $NUMTASKS $NUMNODES pdebug `pwd`/mw_comm_helper@EXE@ `pwd`/be_kicker@EXE@
 
 if test -f nohup.out; then
   sleep $NUMNODES

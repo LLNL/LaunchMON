@@ -27,13 +27,13 @@
 # Place, Suite 330, Boston, MA 02111-1307 USA
 #--------------------------------------------------------------------------------
 #
-#  Attach the tool to a running program and unlock the hang. 
+#  Attach the tool to a running program and unlock the hang.
 #
 #  Update Log:
-#        May 04 2016 DHA: Add test in-tree and installed support 
+#        May 04 2016 DHA: Add test in-tree and installed support
 #        Jun 16 2008 DHA: Created file.
 #
- 
+
 SIGNUM=10
 
 export LMON_LAUNCHMON_ENGINE_PATH=@LMON@
