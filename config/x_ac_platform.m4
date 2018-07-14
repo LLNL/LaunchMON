@@ -28,7 +28,8 @@
 # --------------------------------------------------------------------------------
 #
 #   Update Log:
-#         May 02 2018 KMD: Added aarch64 support
+#         Jul 13 2018 DHA: Add powerle support.
+#         May 02 2018 KMD: Added aarch64 support.
 #         Apr 01 2015 ADG: Added Cray CTI support.
 #         Feb 20 2015 andrewg@cray.com: Fixes for Cray systems.
 #         Jun 11 2008 DHA: File created.
@@ -77,6 +78,12 @@ AC_DEFUN([X_AC_PLATFORM], [
               ac_have_known_isa="yes"
               ac_target_isa="x86"
               AC_SUBST(LNCHR_BIT_FLAGS, -m32)
+              AC_DEFINE(BIT64, 1, [64bit])
+              ;;
+    *powerpc64le*)AC_DEFINE(POWERLE_ARCHITECTURE,1,[Define 1 for POWERLEC_ARCHITECTURE])
+              ac_have_known_isa="yes"
+              ac_target_isa="powerle"
+              AC_SUBST(LNCHR_BIT_FLAGS, -m64)
               AC_DEFINE(BIT64, 1, [64bit])
               ;;
     *powerpc*)AC_DEFINE(PPC_ARCHITECTURE,1,[Define 1 for PPC_ARCHITECTURE])
