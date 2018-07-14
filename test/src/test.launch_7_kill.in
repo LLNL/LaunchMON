@@ -31,6 +31,7 @@
 #  one daemon per node, which unlocks the initial hang of all tasks.
 #
 #  Update Log:
+#        Jul 16 2018 DHA: Add IBM JSM Spectrum support.
 #        May 04 2016 DHA: Add test in-tree and installed support
 #        Aug 1 2012 DHA: Created file.
 #
@@ -48,7 +49,7 @@ export LMON_FE_KILL_TEST=1
 
 NUMNODES=@NNODES@
 NOHUP=""
-if test "x$RM_TYPE" = "xRC_bglrm" -o "x$RM_TYPE" = "xRC_bgprm"; then
+if test "x$RM_TYPE" = "xRC_bglrm" -o "x$RM_TYPE" = "xRC_bgprm" -o "x$RM_TYPE" = "xRC_ibm_spectrum"; then
   NOHUP=nohup
   rm -f nohup.out
 fi

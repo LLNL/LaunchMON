@@ -27,6 +27,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Jul 16 2018 DHA: Add IBM JSM Spectrum support.
  *        Mar 04 2008 DHA: Added generic BlueGene support
  *        Jun 17 2008 DHA: Added BlueGene support
  *        Jun 12 2008 DHA: Added GNU build system support
@@ -273,6 +274,13 @@ int main(int argc, char *argv[]) {
     launcher_argv[3] = strdup(argv[1]);
     launcher_argv[4] = NULL;
     fprintf(stdout, "[LMON_FE] launching the job/daemons via %s\n", mylauncher);
+  } else if (rmenv_str == std::string("RC_ibm_spectrum")) {
+    numprocs_opt     = string("-p") + string(argv[2]);
+    launcher_argv    = (char **) malloc (4*sizeof(char*));
+    launcher_argv[0] = strdup(mylauncher);
+    launcher_argv[1] = strdup(numprocs_opt.c_str());
+    launcher_argv[2] = strdup(argv[1]);
+    launcher_argv[3] = NULL;
   }
 
   if ((rc = LMON_fe_init(LMON_VERSION)) != LMON_OK) {

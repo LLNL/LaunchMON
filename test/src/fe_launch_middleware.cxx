@@ -35,6 +35,7 @@
  *
  *
  *  Update Log:
+ *        Jul 18 2018 DHA: Add IBM JSM Spectrum support 
  *        Jun 01 2012 DHA: Copied from 0.8-middleware-support branch and merged
  *                         with 1.0-BGQ
  *        Aug 03 2020 DHA: Created file.
@@ -213,6 +214,13 @@ int main(int argc, char *argv[]) {
     launcher_argv[3] = strdup(argv[1]);
     launcher_argv[4] = NULL;
     fprintf(stdout, "[LMON_FE] launching the job/daemons via %s\n", mylauncher);
+  } else if (rmenv_str == std::string("RC_ibm_spectrum")) {
+    numprocs_opt     = string("-p") + string(argv[2]);
+    launcher_argv    = (char **) malloc (4*sizeof(char*));
+    launcher_argv[0] = strdup(mylauncher);
+    launcher_argv[1] = strdup(numprocs_opt.c_str());
+    launcher_argv[2] = strdup(argv[1]);
+    launcher_argv[3] = NULL;
   }
 
   fprintf(stderr, "[LMON_FE] launching the job/daemons via %s\n", mylauncher);
