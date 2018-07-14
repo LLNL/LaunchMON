@@ -91,7 +91,7 @@ linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::create_process(pid_t pid,
 
 #if X86_ARCHITECTURE || X86_64_ARCHITECTURE
   return_proc = new linux_x86_process_t(pid, mi, md, mt, mc);
-#elif PPC_ARCHITECTURE
+#elif PPC_ARCHITECTURE || POWERLE_ARCHITECTURE
   return_proc = new linux_ppc_process_t(pid, mi, md, mt, mc);
 #elif IA64_ARCHITECTURE
   return_proc = new linux_ia64_process_t(pid, mi, md, mt, mc);
@@ -122,7 +122,7 @@ linux_driver_t<LINUX_DRIVER_TEMPLPARAM>::create_process(pid_t pid,
 //
 #if X86_ARCHITECTURE || X86_64_ARCHITECTURE
   return_proc = new linux_x86_process_t(pid, mi);
-#elif PPC_ARCHITECTURE
+#elif PPC_ARCHITECTURE || POWERLE_ARCHITECTURE
   return_proc = new linux_ppc_process_t(pid, mi);
 #elif IA64_ARCHITECTURE
   return_proc = new linux_ia64_process_t(pid, mi);

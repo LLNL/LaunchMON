@@ -27,6 +27,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        May 19 2018 DHA: Added dual entry points for IBM OpenPower ABI
  *        Feb  09 2008 DHA: Added LLNS Copyright
  *        Jan  10 2006 DHA: Created file.
  */
@@ -79,11 +80,17 @@ template <BASE_SYMTAB_TEMPLATELIST>
 symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::symbol_base_t(const std::string &n,
                                                      const std::string &bln,
                                                      const VA rd,
-                                                     const VA rla) {
+                                                     const VA rla,
+                                                     const VA lo,
+                                                     const char i,
+                                                     const char o) {
   name = n;
   base_lib_name = bln;
   raw_address = rd;
   relocated_address = rla;
+  local_entry_offset = lo;
+  info = i;
+  other = o;
 }
 
 //!  symbol_base_t<> destructor
@@ -123,12 +130,32 @@ const std::string &symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::get_base_lib_name()
 }
 
 template <BASE_SYMTAB_TEMPLATELIST>
+const char symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::get_other() const {
+  return other;
+}
+
+template <BASE_SYMTAB_TEMPLATELIST>
+void symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::set_other(const char o) {
+  other = o;
+}
+
+template <BASE_SYMTAB_TEMPLATELIST>
+const char symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::get_info() const {
+  return info;
+}
+
+template <BASE_SYMTAB_TEMPLATELIST>
+void symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::set_info(const char i) {
+  info = i;
+}
+
+template <BASE_SYMTAB_TEMPLATELIST>
 void symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::set_raw_address(const VA &ra) {
   raw_address = ra;
 }
 
 template <BASE_SYMTAB_TEMPLATELIST>
-const VA &symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::get_raw_address() const {
+const VA symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::get_raw_address() const {
   return raw_address;
 }
 
@@ -139,9 +166,29 @@ void symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::set_relocated_address(
 }
 
 template <BASE_SYMTAB_TEMPLATELIST>
-const VA &symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::get_relocated_address() const {
+const VA symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::get_relocated_address() const {
   return relocated_address;
 }
+
+template <BASE_SYMTAB_TEMPLATELIST>
+void symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::set_local_entry_offset (
+    const VA &lo) {
+  local_entry_offset = lo;
+}
+
+template <BASE_SYMTAB_TEMPLATELIST>
+const VA symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::get_local_entry_offset () const {
+  return local_entry_offset;
+}
+
+template <BASE_SYMTAB_TEMPLATELIST>
+const VA symbol_base_t<BASE_SYMTAB_TEMPLPARAM>::get_relocated_lowest_address ()
+     const {
+  return (local_entry_offset == SYMTAB_UNINIT_ADDR)
+             ? relocated_address
+             : relocated_address + local_entry_offset;
+}
+
 
 ////////////////////////////////////////////////////////////////////
 //

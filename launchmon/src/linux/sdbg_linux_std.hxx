@@ -356,7 +356,7 @@ const T_VA T_UNINIT_HEX = 0xdeadbeef;
 #define SDBG_LINUX_DFLT_INSTANTIATION \
   T_VA, T_WT, T_IT, T_GRS, T_FRS, my_thrinfo_t, elf_wrapper
 
-#elif PPC_ARCHITECTURE
+#elif PPC_ARCHITECTURE || POWERLE_ARCHITECTURE
 
 //
 //

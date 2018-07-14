@@ -116,6 +116,7 @@ lmon_rc_e LMON_be_procctl_init(rm_catalogue_e rmtype, MPIR_PROCDESC_EXT *ptab,
     case RC_cray:
     case RC_gupc:
     case RC_mpiexec_hydra:
+    case RC_ibm_spectrum:
       //
       // Call generic Linux init
       //
@@ -170,6 +171,7 @@ lmon_rc_e LMON_be_procctl_stop(rm_catalogue_e rmtype, MPIR_PROCDESC_EXT *ptab,
     case RC_cray:
     case RC_gupc:
     case RC_mpiexec_hydra:
+    case RC_ibm_spectrum:
       //
       // Call generic Linux stop
       //
@@ -230,6 +232,7 @@ lmon_rc_e LMON_be_procctl_run(rm_catalogue_e rmtype, int signum,
     case RC_cray:
     case RC_gupc:
     case RC_mpiexec_hydra:
+    case RC_ibm_spectrum:
       //
       // Call generic Linux run
       //
@@ -292,6 +295,7 @@ lmon_rc_e LMON_be_procctl_initdone(rm_catalogue_e rmtype,
     case RC_cray:
     case RC_gupc:
     case RC_mpiexec_hydra:
+    case RC_ibm_spectrum:
       //
       // Call generic Linux initdone
       //
@@ -346,6 +350,7 @@ lmon_rc_e LMON_be_procctl_done(rm_catalogue_e rmtype, MPIR_PROCDESC_EXT *ptab,
     case RC_cray:
     case RC_gupc:
     case RC_mpiexec_hydra:
+    case RC_ibm_spectrum:
       //
       // You need to do nothing for these resource managers
       //
@@ -402,6 +407,7 @@ lmon_rc_e LMON_be_procctl_perf(rm_catalogue_e rmtype, MPIR_PROCDESC_EXT *ptab,
     case RC_cray:
     case RC_gupc:
     case RC_mpiexec_hydra:
+    case RC_ibm_spectrum:
       //
       // You need to do nothing for these resource managers
       //

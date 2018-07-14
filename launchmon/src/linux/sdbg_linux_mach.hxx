@@ -516,7 +516,7 @@ struct ps_prochandle {
   process_base_t<SDBG_LINUX_DFLT_INSTANTIATION>* p;
 };
 
-#elif PPC_ARCHITECTURE
+#elif PPC_ARCHITECTURE || POWERLE_ARCHITECTURE
 
 //! linux_ppc_gpr_set_t:
 /*!

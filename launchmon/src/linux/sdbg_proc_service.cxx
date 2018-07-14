@@ -62,7 +62,7 @@ extern "C" {
 #include <limits.h>
 }
 
-#if X86_ARCHITECTURE || PPC_ARCHITECTURE
+#if X86_ARCHITECTURE || PPC_ARCHITECTURE || POWERLE_ARCHITECTURE
 
 #ifndef PTRACE_GET_THREAD_AREA
 #define PTRACE_GET_THREAD_AREA 25
@@ -243,7 +243,7 @@ extern "C" ps_err_e ps_get_thread_area(const struct ps_prochandle *ph,
                                        lwpid_t lpid, int x, psaddr_t *addr) {
   bool use_cxt = true;
 
-#if X86_ARCHITECTURE || PPC_ARCHITECTURE
+#if X86_ARCHITECTURE || PPC_ARCHITECTURE || POWERLE_ARCHITECTURE
   /*
    * How to fetch thread-specific area for x86/linux and powerPC/linux
    *

@@ -352,7 +352,8 @@ bool opts_args_t::process_args(int *argc, char ***argv) {
   // alternative way to set the engine's verbose level
   //
   char *l;
-  if ((l = getenv("LMON_ENGINE_VERBOSE_LEVEL")) != NULL) {
+  if ((l = getenv("LMON_ENGINE_VERBOSE_LEVEL")) != NULL
+      || (l = getenv("LMON_VERBOSITY")) != NULL) {
     int il = atoi(l);
     self_trace_verbosity verbo;
 
