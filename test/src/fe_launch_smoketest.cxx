@@ -168,18 +168,7 @@ int main(int argc, char *argv[]) {
     launcher_argv[4] = strdup(argv[2]);
     launcher_argv[5] = strdup("--exe");
     launcher_argv[6] = strdup(argv[1]);
-    // manually fill the block
-    // launcher_argv[7] = strdup("--block");
-    // launcher_argv[8] = strdup("R00-M0-N04");
-    // manually fill the corner
-    // launcher_argv[9] = strdup("--corner");
-    // launcher_argv[10] = strdup("R00-M0-N04-J07");
-    // manually fill the shape
-    // launcher_argv[11] = strdup("--shape");
-    // launcher_argv[12] = strdup("1x1x1x1x1");
-    // launcher_argv[13] = NULL;
     launcher_argv[7] = NULL;
-    fprintf(stdout, "[LMON_FE] launching the job/daemons via %s\n", mylauncher);
   } else if ((rmenv_str == std::string("RC_bgq_slurm"))) {
     launcher_argv = (char **)malloc(7 * sizeof(char *));
     launcher_argv[0] = strdup(mylauncher);
@@ -189,8 +178,6 @@ int main(int argc, char *argv[]) {
     launcher_argv[4] = strdup(argv[2]);
     launcher_argv[5] = strdup(argv[1]);
     launcher_argv[6] = NULL;
-    fprintf(stdout, "[LMON_FE] launching the job/daemons via %s\n",
-            "mylauncher");
   } else if ((rmenv_str == std::string("RC_bglrm")) ||
              (rmenv_str == std::string("RC_bgprm"))) {
     launcher_argv = (char **)malloc(8 * sizeof(char *));
@@ -202,7 +189,6 @@ int main(int argc, char *argv[]) {
     launcher_argv[5] = strdup("-exe");
     launcher_argv[6] = strdup(argv[1]);
     launcher_argv[7] = NULL;
-    fprintf(stdout, "[LMON_FE] launching the job/daemons via %s\n", mylauncher);
   } else if (rmenv_str == std::string("RC_slurm")) {
     numprocs_opt = string("-n") + string(argv[2]);
     numnodes_opt = string("-N") + string(argv[3]);
@@ -232,7 +218,6 @@ int main(int argc, char *argv[]) {
     launcher_argv[5] = strdup(argv[2]);
     launcher_argv[6] = strdup(argv[1]);
     launcher_argv[7] = NULL;
-    fprintf(stdout, "[LMON_FE] launching the job/daemons via %s\n", mylauncher);
   } else if (rmenv_str == std::string("RC_mpiexec_hydra")) {
     launcher_argv = (char **)malloc(5 * sizeof(char *));
     launcher_argv[0] = strdup(mylauncher);
@@ -240,7 +225,6 @@ int main(int argc, char *argv[]) {
     launcher_argv[2] = strdup(argv[2]);
     launcher_argv[3] = strdup(argv[1]);
     launcher_argv[4] = NULL;
-    fprintf(stdout, "[LMON_FE] launching the job/daemons via %s\n", mylauncher);
   } else if (rmenv_str == std::string("RC_ibm_spectrum")) {
     numprocs_opt     = string("-p") + string(argv[2]);
     launcher_argv    = (char **) malloc (4*sizeof(char*));
@@ -253,6 +237,8 @@ int main(int argc, char *argv[]) {
             rmenv_str.c_str());
     return EXIT_FAILURE;
   }
+
+  fprintf(stdout, "[LMON_FE] launching the job/daemons via %s\n", mylauncher);
 
   if ((rc = LMON_fe_init(LMON_VERSION)) != LMON_OK) {
     fprintf(stdout, "[LMON FE] FAILED\n");
