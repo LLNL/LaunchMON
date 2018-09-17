@@ -1683,14 +1683,7 @@ launchmon_rc_e linux_launchmon_t::handle_trap_after_attach_event(
           get_tracer()->tracer_continue(p, use_cxt);
           int fifofd = 0;
           if ((fifofd = open(fifopathbuf, O_WRONLY)) >= 0) {
-#if POWERLE_ARCHITECTURE
-            char wakeup = '1';
-            self_trace_t::trace(
-                  true, MODULENAME, 0,
-                  "Warning: Sending ASCII 1 to FIFO to work around a jsrun bug");
-#else
             char wakeup = (char)1;
-#endif
             if (lmon_write_raw(fifofd, &wakeup, 1) != 1) {
               self_trace_t::trace(
                   true, MODULENAME, 0,
