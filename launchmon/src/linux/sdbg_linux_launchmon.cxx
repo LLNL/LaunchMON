@@ -1676,11 +1676,16 @@ launchmon_rc_e linux_launchmon_t::handle_trap_after_attach_event(
           std::string fip = fifopathbuf;
           p.rmgr()->set_attach_fifo_path(fip);
 
-          //
-          // We have to continue the target process before starting FIFO
-          // otherwise open on the FIFO will block
-          //
           get_tracer()->tracer_continue(p, use_cxt);
+          //
+          // NOTE: Depending on how FIFO is polled within the target
+          // RM process, poking the FIFO may not be effected. RM designer
+          // must ensure that FIFO is being polled in a way such that
+          // when 1 is sent to the FIFO while it is being stopped, it
+          // will ultimately picked up when the process resumes execution.
+          //
+          self_trace_t::trace(LEVELCHK(level2), MODULENAME,
+                              0, "MPIR_attach_fifo: %s", fifopathbuf);
           int fifofd = 0;
           if ((fifofd = open(fifopathbuf, O_WRONLY)) >= 0) {
             char wakeup = (char)1;
