@@ -1752,12 +1752,6 @@ launchmon_rc_e linux_launchmon_t::handle_trap_after_attach_event(
     // is invoked just once per job
 #endif
 
-    {
-      self_trace_t::trace(
-          true,  // print always
-          MODULENAME, 0, "Just continued the RM process out of the first trap");
-    }
-
     set_last_seen(gettimeofdayD());
 
     return LAUNCHMON_OK;
@@ -1919,13 +1913,6 @@ launchmon_rc_e linux_launchmon_t::handle_trap_after_exec_event(
     endTS = gettimeofdayD();
     accum += endTS - beginTS;
     countHandler++;
-    // accum and countHandler now contain the cost of this handler which
-    // is invoked just once per job
-    {
-      self_trace_t::trace(
-          true,  // print always
-          MODULENAME, 0, "Just continued the RM process out of the first trap");
-    }
 #endif
 
 
