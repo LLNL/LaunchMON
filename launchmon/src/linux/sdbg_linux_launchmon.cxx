@@ -27,6 +27,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Oct 10 2018 DHA: Added PowerLE support for Sierra
  *        May 02 2018 KMD: Added aarch64 support
  *        Jul 22 2015 ADG: Fix for on demand proctable
  *        Feb 20 2015 andrewg@cray.com: Added support for RMs that build the
