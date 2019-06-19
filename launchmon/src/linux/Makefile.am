@@ -48,6 +48,7 @@
 ##        Dec 27 2006 DHA: Created file.
 ##
 
+AUTOMAKE_OPTIONS = subdir-objects
 SUBDIRS = lmon_api
 BASE_SRC_DIR = $(top_srcdir)/launchmon/src
 API_SRC_DIR = $(srcdir)/lmon_api

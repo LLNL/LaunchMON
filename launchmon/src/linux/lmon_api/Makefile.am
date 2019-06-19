@@ -41,6 +41,7 @@
 ##        Dec 27 2006 DHA: Created file.
 ##
 
+AUTOMAKE_OPTIONS = subdir-objects
 PLAT_SRC_DIR = $(top_srcdir)/launchmon/src/linux
 BASE_SRC_DIR = $(top_srcdir)/launchmon/src
 VPATH = $(PLAT_SRC_DIR):$(BASE_SRC_DIR):$(srcdir)
