@@ -89,7 +89,7 @@ dnl -----------------------------------------------
 dnl Automake support
 dnl -----------------------------------------------
 dnl The new form for AM_INIT_AUTOMAKE takes only one argument 
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 dnl If you don't want silent make, make V=1
 AM_SILENT_RULES([yes])
 dnl You don't want configure to rebuild Makefile.ins
