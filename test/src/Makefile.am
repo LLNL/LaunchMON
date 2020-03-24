@@ -197,6 +197,12 @@ test_input_files =\
   test.fe_regStatusCB.in
 
 check_SCRIPTS = $(test_input_files:.in=)
+if WITH_INSTALL_TESTS
+if WITH_TEST_INSTALLED
+test_PROGRAMS = $(check_PROGRAMS)
+test_SCRIPTS = $(check_SCRIPTS)
+endif
+endif
 CLEANFILES = $(check_SCRIPTS)
 EXTRA_DIST = $(test_input_files)
 
@@ -215,7 +221,6 @@ do_subst = \
 $(check_SCRIPTS): %: %.in
 	$(do_subst) < $< > $@
 	chmod +x $@
-
 run_3mins$(EXEEXT): run_3mins.c Makefile
 	$(MPICC) $(DEFS) $(DEFAULT_INCLUDES) -I$(BASE_SRC_DIR) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -o $@ $<
 
