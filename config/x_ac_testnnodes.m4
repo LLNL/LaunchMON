@@ -335,11 +335,12 @@ AC_DEFUN([X_AC_MW_HOSTLIST], [
 AC_DEFUN([X_AC_TEST_INSTALLED], [
   AC_MSG_CHECKING([whether to configure tests on installed launchmon])
   AC_ARG_WITH([test-installed],
-    AS_HELP_STRING(--with-test-installed,configure tests on installed launchmon),
+    AS_HELP_STRING(--with-test-installed,set to "yes" to configure tests on installed launchmon and set to "install-tests" to install test binaries and scripts. "install-tests" implies "yes."),
     [with_test_inst=$withval],
     [with_test_inst=no])
 
   AC_MSG_RESULT($with_test_inst)
-  AM_CONDITIONAL([WITH_TEST_INSTALLED], [test "x$with_test_inst" = "xyes"])
+  AM_CONDITIONAL([WITH_TEST_INSTALLED], [test "x$with_test_inst" != "xno"])
+  AM_CONDITIONAL([WITH_INSTALL_TESTS], [test "x$with_test_inst" = "xinstall-tests"])
 ])
 
