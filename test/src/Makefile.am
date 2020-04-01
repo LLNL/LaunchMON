@@ -51,20 +51,18 @@ CIOD_INC_FLAGS = -I@ARCHHEADER@ \
 endif
 
 if WITH_TEST_INSTALLED
-API_DIR = $(prefix)/include
-API_LIB_DIR = $(prefix)/lib
 ENGINE_PATH = $(prefix)/bin/launchmon$(EXEEXT)
 LMONPREFIX = $(prefix)
 IN_TREE_RM_CONFIG_DIR = 0
 IN_TREE_COLOC_UTIL_DIR = 0
 else
-API_DIR = ${abs_top_srcdir}/launchmon/src
-API_LIB_DIR = $(abs_top_builddir)/launchmon/src/linux/lmon_api
 ENGINE_PATH = $(abs_top_builddir)/launchmon/src/linux/launchmon$(EXEEXT)
 LMONPREFIX = 0
 IN_TREE_RM_CONFIG_DIR = $(abs_top_srcdir)/etc
 IN_TREE_COLOC_UTIL_DIR = $(abs_top_builddir)/tools/alps/src
 endif
+API_DIR = ${abs_top_srcdir}/launchmon/src
+API_LIB_DIR = $(abs_top_builddir)/launchmon/src/linux/lmon_api
 
 AM_CPPFLAGS = \
   -I$(API_DIR) \
