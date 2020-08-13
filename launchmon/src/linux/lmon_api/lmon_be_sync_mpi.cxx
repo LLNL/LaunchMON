@@ -27,6 +27,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *              Aug 12 2020 DHA: Add Flux support.
  *              Apr 01 2015 ADG: Added Cray CTI support.
  *              Dec 14 2012 DHA: Add support to fix MPIR_Breakpoint
  *                               release race
@@ -101,6 +102,7 @@ lmon_rc_e LMON_be_procctl_init(rm_catalogue_e rmtype, MPIR_PROCDESC_EXT *ptab,
 
   switch (rmtype) {
     case RC_slurm:
+    case RC_flux:
       //
       // Call generic Linux init
       //
@@ -165,6 +167,7 @@ lmon_rc_e LMON_be_procctl_stop(rm_catalogue_e rmtype, MPIR_PROCDESC_EXT *ptab,
 
   switch (rmtype) {
     case RC_slurm:
+    case RC_flux:
     case RC_orte:
     case RC_alps:
     case RC_cray:
@@ -225,6 +228,7 @@ lmon_rc_e LMON_be_procctl_run(rm_catalogue_e rmtype, int signum,
 
   switch (rmtype) {
     case RC_slurm:
+    case RC_flux:
     case RC_orte:
     case RC_alps:
     case RC_cray:
@@ -280,6 +284,7 @@ lmon_rc_e LMON_be_procctl_initdone(rm_catalogue_e rmtype,
 
   switch (rmtype) {
     case RC_slurm:
+    case RC_flux:
       //
       // Call ptrace Linux initdone for launch case
       //
@@ -341,6 +346,7 @@ lmon_rc_e LMON_be_procctl_done(rm_catalogue_e rmtype, MPIR_PROCDESC_EXT *ptab,
 
   switch (rmtype) {
     case RC_slurm:
+    case RC_flux:
     case RC_orte:
     case RC_alps:
     case RC_cray:
@@ -397,6 +403,7 @@ lmon_rc_e LMON_be_procctl_perf(rm_catalogue_e rmtype, MPIR_PROCDESC_EXT *ptab,
 
   switch (rmtype) {
     case RC_slurm:
+    case RC_flux:
     case RC_orte:
     case RC_alps:
     case RC_cray:

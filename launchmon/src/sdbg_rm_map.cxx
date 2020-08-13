@@ -28,6 +28,7 @@
  *
  *
  *  Update Log:
+ *        Aug 12 2020 DHA: Add Flux support.
  *        Apr 01 2015 ADG: Added Cray CTI support.
  *        Feb 20 2015 andrewg@cray.com: Added support for RMs that build the
  *                         proctable on demand. Checks added for launch helpers
@@ -193,6 +194,8 @@ void resource_manager_t::fill_rm_type(const std::string &v) {
     rm = RC_orte;
   } else if (v == std::string("slurm")) {
     rm = RC_slurm;
+  } else if (v == std::string("flux")) {
+    rm = RC_flux;
   } else if (v == std::string("mpiexec_hydra")) {
     rm = RC_mpiexec_hydra;
   } else if (v == std::string("gupc")) {
