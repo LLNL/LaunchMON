@@ -441,7 +441,7 @@ bool rc_rm_t::init(const std::string &os_isa_string) {
 }
 
 bool rc_rm_t::set_paramset(int n_nodes, int n_daemons, char *secret,
-                           char *ran_id, int resource_id,
+                           char *ran_id, int64_t resource_id,
                            char *host_file_name) {
   if (!secret || !ran_id) {
     self_trace_t::trace(LEVELCHK(level1), MODULENAME, 1,

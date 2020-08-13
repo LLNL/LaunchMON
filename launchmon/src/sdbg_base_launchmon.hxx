@@ -27,6 +27,8 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Aug 12 2020 DHA: Change resid to 64-bit to support modern RMs
+ *                         that use JOBIDs with wider width.
  *        Oct 26 2012 DHA: Removed references to ttracer that has been
  *                         deprecated.
  *        May 11 2010 DHA: Removed gettimeofdayD from this file
@@ -148,7 +150,7 @@ class launchmon_base_t {
   void set_tracer(tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *t);
   void set_engine_state(int);
   tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> *get_tracer();
-  define_gset(int, resid)
+  define_gset(int64_t, resid)
   define_gset(int, pcount)
   define_gset(int, toollauncherpid)
   define_gset(int, FE_sockfd)
@@ -279,7 +281,7 @@ class launchmon_base_t {
   //
   // ships the resource handle to the FE API client
   //
-  launchmon_rc_e ship_resourcehandle_msg(lmonp_fe_to_fe_msg_e, int);
+  launchmon_rc_e ship_resourcehandle_msg(lmonp_fe_to_fe_msg_e, int64_t);
 
   //
   // ships the rminfo to the FE API client
@@ -333,7 +335,7 @@ class launchmon_base_t {
   //
   // resource id, for slurm it is what totalview_jobid contains.
   //
-  int resid;
+  int64_t resid;
   int pcount;
   int toollauncherpid;
 

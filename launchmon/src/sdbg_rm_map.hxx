@@ -27,6 +27,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Aug 12 2020 DHA: Change JOBID to 64bit.
  *        Feb 20 2015 andrewg@cray.com: Added Cray support.
  *        Dec 07 2012 DHA: init_rm_instance returns a meaningful return code
  *        Oct 06 2011 DHA: Restructuring to support
@@ -168,7 +169,7 @@ struct coloc_str_param_t {
   int ndaemons;
   char *sharedsec;
   char *randomid;
-  int resourceid;
+  int64_t resourceid;
   char *hnfilename;
 };
 
@@ -237,7 +238,7 @@ class rc_rm_t {
   bool init(const std::string &os_isa_string);
 
   bool set_paramset(int n_nodes, int n_daemons, char *secret, char *ran_id,
-                    int resource_id, char *host_file_name);
+                    int64_t resource_id, char *host_file_name);
 
   const std::list<std::string> expand_launch_string(std::string &s);
 
