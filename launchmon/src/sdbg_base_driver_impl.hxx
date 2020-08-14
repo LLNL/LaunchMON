@@ -233,17 +233,20 @@ driver_error_e driver_base_t<SDBG_DEFAULT_TEMPLPARAM>::drive_engine(
     std::string bulklauncher = opt->get_my_opt()->debugtarget;
 
 #ifdef RM_FE_COLOC_CMD
-    char *bnbuf = strdup(bulklauncher.c_str());
-    char *dt = basename(bnbuf);
-
-    char *pref2;
     bulklauncher = RM_FE_COLOC_CMD;
-    if (pref2 = getenv("LMON_PREFIX")) {
-      bulklauncher = std::string(pref2) + std::string("/bin/") + bulklauncher;
-    } else if (pref2 = getenv("LMON_COLOC_UTIL_DIR")) {
-      bulklauncher = std::string(pref2) + std::string("/") + bulklauncher;
-    }
 #endif
+
+    char *pref2 = NULL, *pref3 = NULL;
+    if ((pref2 = getenv("LMON_PREFIX")) != NULL
+        || (pref3 = getenv("LMON_COLOC_UTIL_DIR")) != NULL) {
+      char *existing;
+      std::string paths = pref2? std::string(pref2) + std::string("/bin/")
+                               : std::string(pref3);
+      if ((existing = getenv ("PATH")) != NULL)
+          paths += std::string (":") + existing;
+      setenv ("PATH", paths.c_str (), 1);
+    }
+
     rc_rm_plat_matcher<VA, EXECHANDLER> platobj;
     bool initc = platobj.init_rm_instance(
         *(opt->get_my_rmconfig()), bulklauncher, opt->get_my_opt()->tool_daemon,
