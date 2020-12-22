@@ -21,7 +21,11 @@ addons:
     packages:
       - libelf-dev
       - libboost-dev
+      - libgcrypt-dev
       - munge
+      - build-essential
+      - pkg-config
+      - autoconf-archive
 
 before_install:
   - eval $(./test/src/travis-dep-builder.sh --printenv)
