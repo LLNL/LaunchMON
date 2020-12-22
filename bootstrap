@@ -35,7 +35,7 @@
 echo "Running aclocal ..."
 aclocal -I config
 echo "Running libtoolize ..."
-libtoolize --copy
+libtoolize --force --copy
 echo "Running autoheader ..."
 autoheader
 echo "Running automake ..."

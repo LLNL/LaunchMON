@@ -1175,6 +1175,7 @@ bool linux_launchmon_t::handle_mpir_variables(
     e.report();
     return false;
   }
+  return true;
 }
 
 //!  PRIVATE: linux_launchmon_t::enable_all_BPs

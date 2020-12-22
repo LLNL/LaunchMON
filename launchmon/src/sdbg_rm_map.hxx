@@ -116,6 +116,7 @@ struct launch_method_t {
   launch_method_t &operator=(const launch_method_t &rhs) {
     launch_method = rhs.launch_method;
     launcher_command = rhs.launcher_command;
+    return *this;
   }
 
   launch_method_e launch_method;
@@ -157,6 +158,7 @@ struct coloc_str_param_t {
     randomid = rhs.randomid;
     resourceid = rhs.resourceid;
     hnfilename = rhs.hnfilename;
+    return *this;
   }
 
   std::string rm_daemon_path;

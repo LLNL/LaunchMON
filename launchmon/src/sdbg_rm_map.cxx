@@ -162,6 +162,7 @@ resource_manager_t &resource_manager_t::operator=(const resource_manager_t &r) {
   has_launcher_so = r.has_launcher_so;
   launcher_so_name = r.launcher_so_name;
   attach_fifo_path = r.attach_fifo_path;
+  return *this;
 }
 
 const std::vector<rm_id_t> &resource_manager_t::get_const_launcher_ids() const {
@@ -376,6 +377,7 @@ rc_rm_t::rc_rm_t(const rc_rm_t &o) {
 rc_rm_t &rc_rm_t::operator=(const rc_rm_t &rhs) {
   resource_manager = rhs.resource_manager;
   coloc_paramset = rhs.coloc_paramset;
+  return *this;
 }
 
 rc_rm_t::~rc_rm_t() {
