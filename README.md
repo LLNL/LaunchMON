@@ -14,6 +14,7 @@ LaunchMON requires the following packages to build
 ```
 libelf
 boost
+boost-devel
 libgcrypt >= 1.4.5
 libgpg-error >= 1.7.0
 # for secure handshake
