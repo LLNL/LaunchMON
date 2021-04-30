@@ -27,6 +27,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Jul 13 2018 DHA: Remove event_entity support 
  *        May 02 2018 ADG: Added aarch64 support
  *        Sep 02 2010 DHA: Added MPIR_attach_fifo support
  *        May 08 2008 DHA: Added an alias (is_master_thread)
@@ -157,8 +158,6 @@ enum debug_event_e {
   EV_INVALID
 };
 
-enum eventing_entity_e { EV_ENTITY_THREAD, EV_ENTITY_PROCESS, EV_ENTITY_NONE };
-
 class debug_event_t {
  public:
   debug_event_t() {
@@ -167,13 +166,11 @@ class debug_event_t {
   }
   ~debug_event_t() {}
   void set_ev(const enum debug_event_e e) { ev = e; }
-  void set_en(const enum eventing_entity_e t) { en = t; }
   void set_signum(const int s) { u.signum = s; }
   void set_exitcode(const int ec) { u.exitcode = ec; }
   void set_rawstatus(const int st) { rawstatus = st; }
   void set_id(const int i) { id = i; }
   const debug_event_e get_ev() const { return ev; }
-  const eventing_entity_e get_en() const { return en; }
   const int get_signum() const { return u.signum; }
   const int get_exitcode() const { return u.exitcode; }
   const int get_rawstatus() const { return rawstatus; }
@@ -181,7 +178,6 @@ class debug_event_t {
 
  private:
   debug_event_e ev;
-  eventing_entity_e en;
   union {
     int signum;
     int exitcode;

@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
   try {
     int rc = EXIT_FAILURE;
 #if X86_ARCHITECTURE || X86_64_ARCHITECTURE || PPC_ARCHITECTURE || \
-    AARCH64_ARCHITECTURE
+    AARCH64_ARCHITECTURE || POWERLE_ARCHITECTURE
     //
     // driver instantiation for the linux platform.
     //

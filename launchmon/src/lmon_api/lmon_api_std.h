@@ -119,6 +119,7 @@ typedef enum _rm_catalogue_e
   RC_orte,
   RC_mpiexec_hydra,
   RC_gupc,
+  RC_ibm_spectrum,
   RC_none
   /*
     new RMs should be added here as LaunchMON is ported 

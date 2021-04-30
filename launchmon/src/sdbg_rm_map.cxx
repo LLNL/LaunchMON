@@ -197,6 +197,8 @@ void resource_manager_t::fill_rm_type(const std::string &v) {
     rm = RC_mpiexec_hydra;
   } else if (v == std::string("gupc")) {
     rm = RC_gupc;
+  } else if (v == std::string("spectrum")) {
+    rm = RC_ibm_spectrum;
   } else {
     rm = RC_none;
   }

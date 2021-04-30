@@ -79,9 +79,9 @@ AC_DEFUN([X_AC_NCORE_SMP], [
 
 
 AC_DEFUN([X_AC_TEST_RM], [
-  AC_MSG_CHECKING([resource manager to test @<:@slurm bgqrm alps orte mpiexec_hydra@:>@])
+  AC_MSG_CHECKING([resource manager to test @<:@slurm bgqrm alps orte mpiexec_hydra ibm_spectrum@:>@])
   AC_ARG_WITH([test-rm],
-    AS_HELP_STRING(--with-test-rm@<:@=RM@:>@,specify a resource manager type to test @<:@slurm bgqrm alps orte mpiexec_hydra@:>@ @<:@default=slurm on linux-x86 and linux-x86_64; alps on Cray; bgqrm on linux-power64@:>@),
+    AS_HELP_STRING(--with-test-rm@<:@=RM@:>@,specify a resource manager type to test @<:@slurm bgqrm alps orte mpiexec_hydra ibm_spectrum@:>@ @<:@default=slurm on linux-x86 and linux-x86_64; alps on Cray; bgqrm on linux-power64; ibm_spectrum on linux-power64le@:>@),
     [with_rm=$withval],
     [with_rm="check"])
 
@@ -172,6 +172,44 @@ AC_DEFUN([X_AC_TEST_RM], [
           rm_found="yes"
           AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
           AC_SUBST(RM_TYPE, RC_orte)
+          break
+        fi
+      done
+    fi
+
+    #
+    # This answers whether RM given and found
+    #
+    AC_MSG_RESULT($with_rm:$rm_found)
+
+  elif test "x$with_rm" = "xibm_spectrum" ; then
+    #
+    # Configure for IBM Spectrum (jsrun)
+    #
+    if test "x$with_launcher" != "xcheck"; then
+      #
+      # launcher path given
+      #
+      if test ! -z "$with_launcher" -a -f "$with_launcher"; then
+        pth=`$srcdir/config/ap $with_launcher`
+        ac_job_launcher_path=$pth
+        rm_found="yes"
+        AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
+        AC_SUBST(RM_TYPE, RC_ibm_spectrum)
+      fi
+    else
+      rm_default_dirs="/opt/ibm/spectrum_mpi/jsm_pmix/bin/stock /usr/bin /usr/local/bin"
+      for rm_dir in $rm_default_dirs; do
+        if test ! -z "$rm_dir" -a ! -d "$rm_dir" ; then
+          continue;
+        fi
+
+        if test ! -z "$rm_dir/jsrun" -a -f "$rm_dir/jsrun"; then
+          pth=`$srcdir/config/ap $rm_dir/jsrun`
+          ac_job_launcher_path=$pth
+          rm_found="yes"
+          AC_SUBST(TARGET_JOB_LAUNCHER_PATH,$ac_job_launcher_path)
+          AC_SUBST(RM_TYPE, RC_ibm_spectrum)
           break
         fi
       done

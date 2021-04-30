@@ -112,23 +112,13 @@ bool monitor_proc_thread_t<SDBG_DEFAULT_TEMPLPARAM>::wait_for_all(
   pid_t rpid;
   int status;
   bool rs = false;
-  eventing_entity_e entity = EV_ENTITY_THREAD;
 
-  rpid = waitpid(-1, &status, WNOHANG | WUNTRACED);
-  if (rpid <= 0) {
-    rpid = waitpid(-1, &status, WNOHANG | __WCLONE);
-  } else {
-    entity = EV_ENTITY_PROCESS;
-  }
-
-  if (rpid <= 0) {
+  if ((rpid = waitpid(-1, &status, WNOHANG | WUNTRACED | __WCLONE)) <= 0) {
     rc.set_ev(EV_NOCHILD);
-    rc.set_en(EV_ENTITY_NONE);
     rc.set_id(rpid);
     return rs;
   }
 
-  rc.set_en(entity);
   rc.set_id(rpid);
 
   if (WIFEXITED(status)) {
@@ -202,69 +192,52 @@ bool event_manager_t<SDBG_DEFAULT_TEMPLPARAM>::poll_processes(
   launchmon_rc_e rc = LAUNCHMON_OK;
   launchmon_event_e ev;
 
-  if (ev_monitor->wait_for_all(event)) {
-    if (event.get_en() == EV_ENTITY_PROCESS) {
-      //
-      // A process event is reported
-      //
-      if (event.get_id() == p.get_pid(false)) {
-        //
-        // The target RM_process reported
-        //
-        p.make_context(event.get_id());
-        ev = lm.decipher_an_event(p, event);
-        rc = lm.invoke_handler(p, ev, event.get_signum());
-        p.check_and_undo_context(event.get_id());
-      } else if (event.get_id() == lm.get_toollauncherpid()) {
-        // RM_process that launched tool daemons reported
-        // error handling semantics for C.2
-        //
-        if ((event.get_ev() == EV_EXITED) ||
-            (event.get_ev() == EV_TERMINATED)) {
-          //
-          // this means that back-end daemons have exited
-          // Enforcing C.2 error handling semantics.
-          //
-          rc = lm.handle_daemon_exit_event(p);
-        }
-        //
-        // in this case rpid won't be part of the thread list
-        // so that the following loop body won't be executed.
-        //
-      } else {
-        //
-        // a unknown new process reported
-        //
-        if (event.get_ev() == EV_STOPPED) {
-          p.make_context(event.get_id());
-          rc = lm.invoke_handler(p, LM_STOP_NEW_FORKED_PROCESS, event.get_id());
-          p.check_and_undo_context(event.get_id());
-        }
-      }
-    } else if (event.get_en() == EV_ENTITY_THREAD) {
-      //
-      // A thread of the target RM_process reported
-      //
-      map<int, thread_base_t<SDBG_DEFAULT_TEMPLPARAM>*, ltstr>& tl =
-          p.get_thrlist();
+  if (!ev_monitor->wait_for_all(event))
+    goto done;
 
-      if (tl.find(event.get_id()) == tl.end()) {
-        //
-        // Possibly an unknown thread to pick up
-        //
-        if (event.get_ev() == EV_STOPPED) {
-          rc = lm.invoke_handler(p, LM_REQUEST_NEW_THREAD, event.get_id());
-        }
-      }
-
-      if (tl.find(event.get_id()) != tl.end()) {
-        p.make_context(event.get_id());
-        ev = lm.decipher_an_event(p, event);
-        rc = lm.invoke_handler(p, ev, event.get_signum());
-        p.check_and_undo_context(event.get_id());
-      }
+  if (event.get_id() == p.get_pid(false)) {
+    //
+    // The target RM_process reported
+    //
+    p.make_context ( event.get_id());
+    ev = lm.decipher_an_event ( p, event );
+    rc = lm.invoke_handler ( p, ev, event.get_signum() );
+    p.check_and_undo_context ( event.get_id() );
+  } else if (event.get_id() == lm.get_toollauncherpid()) {
+    // RM_process that launched tool daemons reported
+    // error handling semantics for C.2
+    //
+    if ((event.get_ev() == EV_EXITED)
+           || (event.get_ev() == EV_TERMINATED)) {
+      // this means that back-end daemons have exited
+      // Enforcing C.2 error handling semantics.
+      //
+      rc = lm.handle_daemon_exit_event(p);
     }
+  } else if ( p.get_thrlist().find (event.get_id()) != p.get_thrlist().end()) {
+    p.make_context(event.get_id());
+    ev = lm.decipher_an_event(p, event);
+    rc = lm.invoke_handler (p, ev, event.get_signum());
+    p.check_and_undo_context(event.get_id());
+  } else {
+    //
+    // a new process reported -- don't follow
+    //
+    if (event.get_ev() == EV_STOPPED) {
+      p.make_context (event.get_id());
+      rc = lm.invoke_handler(p,
+                             LM_STOP_NEW_FORKED_PROCESS,
+                             event.get_id() );
+      p.check_and_undo_context (event.get_id());
+    }
+    //p.make_context(event.get_id());
+    //ev = lm.decipher_an_event(p, event);
+    //rc = lm.invoke_handler (p, ev, event.get_signum());
+    //lm.handle_thrcreate_trap_event (p);
+    //p.check_and_undo_context(event.get_id());
   }
+
+done:
   return ((rc == LAUNCHMON_OK) ? true : false);
 }
 

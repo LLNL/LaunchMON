@@ -203,6 +203,8 @@ class linux_image_t : public image_base_t<VA, elf_wrapper> {
             level);
   }
 
+  VA get_local_entry_point (const unsigned char o);
+
   // For self tracing
   //
   std::string MODULENAME;

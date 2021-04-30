@@ -47,7 +47,8 @@ etc_SCRIPTS = \
   rm_mchecker.conf \
   rm_openrte.conf \
   rm_slurm.conf \
-  rm_mpiexec_hydra.conf
+  rm_mpiexec_hydra.conf \
+  rm_ibm_spectrum.conf
 
 EXTRA_DIST = \
   rm_info.conf \
@@ -61,5 +62,6 @@ EXTRA_DIST = \
   rm_mchecker.conf \
   rm_openrte.conf \
   rm_slurm.conf \
-  rm_mpiexec_hydra.conf
+  rm_mpiexec_hydra.conf \
+  rm_ibm_spectrum.conf
 

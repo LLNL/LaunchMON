@@ -27,6 +27,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        May 19 2018 DHA: Added OpenPower ABI's dual entry points.
  *        Oct 27 2010 DHA: Added is_defined, is_globally_visible,
  *                         is_locally_visible virtual methods.
  *        Feb 09 2008 DHA: Added LLNS Copyright
@@ -112,7 +113,10 @@ class symbol_base_t {
 
   symbol_base_t(const std::string &n, const std::string &bln,
                 const VA rd = SYMTAB_UNINIT_ADDR,
-                const VA rla = SYMTAB_UNINIT_ADDR);
+                const VA rla = SYMTAB_UNINIT_ADDR,
+                const VA lo=SYMTAB_UNINIT_ADDR,
+                const char i='\0',
+                const char o='\0');
 
   symbol_base_t(const symbol_base_t &sobj);
 
@@ -125,10 +129,17 @@ class symbol_base_t {
   void set_base_lib_name(const std::string &bln);
   void set_raw_address(const VA &ra);
   void set_relocated_address(const VA &ra);
+  void set_local_entry_offset (const VA &ra);
+  void set_other (const char o);
+  void set_info (const char i);
   const std::string &get_name() const;
   const std::string &get_base_lib_name() const;
-  const VA &get_raw_address() const;
-  const VA &get_relocated_address() const;
+  const VA get_raw_address() const;
+  const VA get_relocated_address() const;
+  const VA get_local_entry_offset() const;
+  const VA get_relocated_lowest_address() const;
+  const char get_other() const;
+  const char get_info() const;
 
   virtual bool is_defined() const { return false; }
   virtual bool is_globally_visible() const { return false; }
@@ -146,6 +157,9 @@ class symbol_base_t {
   std::string base_lib_name;
   VA raw_address;
   VA relocated_address;
+  VA local_entry_offset; // Support arch like OpenPower with dual entry points
+  unsigned char info;
+  unsigned char other;
 };
 
 //! ltstr

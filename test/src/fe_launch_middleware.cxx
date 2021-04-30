@@ -1,40 +1,33 @@
 /*
- * $Header: $
  *--------------------------------------------------------------------------------
- * Copyright (c) 2008-2010, Lawrence Livermore National Security, LLC. Produced
- *at
+ * Copyright (c) 2008, Lawrence Livermore National Security, LLC. Produced at
  * the Lawrence Livermore National Laboratory. Written by Dong H. Ahn
- *<ahn1@llnl.gov>.
- * LLNL-CODE-409469. All rights reserved.
+ * <ahn1@llnl.gov>. LLNL-CODE-409469. All rights reserved.
  *
  * This file is part of LaunchMON. For details, see
  * https://computing.llnl.gov/?set=resources&page=os_projects
  *
  * Please also read LICENSE.txt -- Our Notice and GNU Lesser General Public
- *License.
+ * License.
  *
  *
  * This program is free software; you can redistribute it and/or modify it under
- *the
- * terms of the GNU General Public License (as published by the Free Software
- * Foundation) version 2.1 dated February 1999.
+ * the terms of the GNU General Public License (as published by the Free
+ * Software Foundation) version 2.1 dated February 1999.
  *
  * This program is distributed in the hope that it will be useful, but WITHOUT
- *ANY
- * WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or
+ * ANY WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the terms and conditions of the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- *along
- * with this program; if not, write to the Free Software Foundation, Inc., 59
- *Temple
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
  *--------------------------------------------------------------------------------
  *
- *
- *
  *  Update Log:
+ *        Jul 18 2018 DHA: Add IBM JSM Spectrum support 
  *        Jun 01 2012 DHA: Copied from 0.8-middleware-support branch and merged
  *                         with 1.0-BGQ
  *        Aug 03 2020 DHA: Created file.
@@ -141,17 +134,7 @@ int main(int argc, char *argv[]) {
     launcher_argv[4] = strdup(argv[2]);
     launcher_argv[5] = strdup("--exe");
     launcher_argv[6] = strdup(argv[1]);
-    // manually fill the block
-    // launcher_argv[7] = strdup("--block");
-    // launcher_argv[8] = strdup("R00-M0-N04");
-    // manually fill the corner
-    // launcher_argv[9] = strdup("--corner");
-    // launcher_argv[10] = strdup("R00-M0-N04-J07");
-    // manually fill the shape
-    // launcher_argv[11] = strdup("--shape");
-    // launcher_argv[12] = strdup("1x1x1x1x1");
     launcher_argv[7] = NULL;
-    fprintf(stdout, "[LMON_FE] launching the job/daemons via %s\n", mylauncher);
   } else if ((rmenv_str == std::string("RC_bgq_slurm"))) {
     launcher_argv = (char **)malloc(7 * sizeof(char *));
     launcher_argv[0] = strdup(mylauncher);
@@ -161,8 +144,6 @@ int main(int argc, char *argv[]) {
     launcher_argv[4] = strdup(argv[2]);
     launcher_argv[5] = strdup(argv[1]);
     launcher_argv[6] = NULL;
-    fprintf(stdout, "[LMON_FE] launching the job/daemons via %s\n",
-            "mylauncher");
   } else if ((rmenv_str == std::string("RC_bglrm")) ||
              (rmenv_str == std::string("RC_bgprm"))) {
     launcher_argv = (char **)malloc(8 * sizeof(char *));
@@ -174,7 +155,6 @@ int main(int argc, char *argv[]) {
     launcher_argv[5] = strdup("-exe");
     launcher_argv[6] = strdup(argv[1]);
     launcher_argv[7] = NULL;
-    fprintf(stdout, "[LMON_FE] launching the job/daemons via %s\n", mylauncher);
   } else if (rmenv_str == std::string("RC_slurm")) {
     numprocs_opt = string("-n") + string(argv[2]);
     numnodes_opt = string("-N") + string(argv[3]);
@@ -204,7 +184,6 @@ int main(int argc, char *argv[]) {
     launcher_argv[5] = strdup(argv[2]);
     launcher_argv[6] = strdup(argv[1]);
     launcher_argv[7] = NULL;
-    fprintf(stdout, "[LMON_FE] launching the job/daemons via %s\n", mylauncher);
   } else if (rmenv_str == std::string("RC_mpiexec_hydra")) {
     launcher_argv = (char **)malloc(5 * sizeof(char *));
     launcher_argv[0] = strdup(mylauncher);
@@ -212,7 +191,13 @@ int main(int argc, char *argv[]) {
     launcher_argv[2] = strdup(argv[2]);
     launcher_argv[3] = strdup(argv[1]);
     launcher_argv[4] = NULL;
-    fprintf(stdout, "[LMON_FE] launching the job/daemons via %s\n", mylauncher);
+  } else if (rmenv_str == std::string("RC_ibm_spectrum")) {
+    numprocs_opt     = string("-p") + string(argv[2]);
+    launcher_argv    = (char **) malloc (4*sizeof(char*));
+    launcher_argv[0] = strdup(mylauncher);
+    launcher_argv[1] = strdup(numprocs_opt.c_str());
+    launcher_argv[2] = strdup(argv[1]);
+    launcher_argv[3] = NULL;
   }
 
   fprintf(stderr, "[LMON_FE] launching the job/daemons via %s\n", mylauncher);

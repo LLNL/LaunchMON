@@ -31,6 +31,7 @@
 #  number of processors per node, and unlock the hang.
 #
 #  Update Log:
+#        Jul 16 2018 DHA: Add IBM JSM support.
 #        May 04 2016 DHA: Add test in-tree and installed support
 #        Oct 21 2011 DHA: Added dynamic RM detection support.
 #        Mar 06 2009 DHA: Changed bglrm to bgrm
@@ -82,6 +83,9 @@ elif test "x$RM_TYPE" = "xRC_orte" ; then
 elif test "x$RM_TYPE" = "xRC_mpiexec_hydra" ; then
   WAITAMOUNT=`expr $WAITAMOUNT`
   $MPI_JOB_LAUNCHER_PATH -n $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
+elif test "x$RM_TYPE" = "xRC_ibm_spectrum" ; then
+  WAITAMOUNT=`expr $WAITAMOUNT`
+  $MPI_JOB_LAUNCHER_PATH -p $NUMTASKS `pwd`/hang_on_SIGUSR1@EXE@ &
 else
   echo "This RM is not supported yet"
 fi

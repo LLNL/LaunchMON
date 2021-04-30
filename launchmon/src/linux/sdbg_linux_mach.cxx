@@ -520,7 +520,7 @@ bool linux_x86_process_t::basic_init(const std::string& mi,
   return true;
 }
 
-#elif PPC_ARCHITECTURE
+#elif PPC_ARCHITECTURE || POWERLE_ARCHITECTURE
 
 ////////////////////////////////////////////////////////////////////
 //

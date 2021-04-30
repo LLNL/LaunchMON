@@ -28,6 +28,7 @@
  *
  *
  *  Update Log:
+ *        May 19 2018 DHA: Added OpenPower ABI's dual entry points.
  *        Oct 27 2010 DHA: Added is_defined, is_globally_visible,
  *                         is_locally_visible virtual methods.
  *        Dec 20 2009 DHA: Fixed a bug that arose when Mark's patch
@@ -482,6 +483,10 @@ linux_image_t<LINUX_IMAGE_TEMPLPARAM>::read_linkage_symbols() throw(
       decode_type(first_sym->st_info, tmp);
       a_linksym->set_type(tmp);
       a_linksym->set_defined((first_sym->st_shndx != SHN_UNDEF) ? true : false);
+      a_linksym->set_info(first_sym->st_info);
+      a_linksym->set_other(first_sym->st_other);
+      a_linksym->set_local_entry_offset(
+          get_local_entry_point(first_sym->st_other));
 
       string keystr(symname);
 
@@ -863,6 +868,47 @@ void linux_image_t<LINUX_IMAGE_TEMPLPARAM>::decode_visibility(
       break;
   }
 }
+
+
+//! PRIVATE: linux_image_t<VA>::get_local_entry_point --
+/*!
+    Calculate the entry point used by an intramodule function call
+*/
+template <LINUX_IMAGE_TEMPLATELIST>
+VA
+linux_image_t<LINUX_IMAGE_TEMPLPARAM>::get_local_entry_point (const unsigned char o)
+{
+  VA rc = 0;
+#if POWERLE_ARCHITECTURE
+  /* The "OpenPOWER ABI for Linux Supplement, Power Architecture 64-Bit ELF V2
+   * ABI, Advance":
+   * "The OpenPOWER ABI uses the three most-significant bits
+   * in the symbol st_other field to specify the number of instructions between a
+   * function's global entry point and local entry point. The global entry point
+   * is used when it is necessary to set up the TOC pointer (r2) for the
+   * function. The local entry point is used when r2 is known to already be valid
+   * for the function. A value of zero in these bits asserts that the function
+   * does not use r2."
+   */
+  const int code = (o >> 5) & 0x7;
+  switch (code)
+    {
+    case 2: /* 1 instruction */
+    case 3: /* 2 instructions */
+    case 4: /* 4 instructions */
+    case 5: /* 8 instructions */
+    case 6: /* 16 instructions */
+      rc = (1 << (code - 2)) * 4; /* TODO: augment template param to includ IT */
+      break;
+    case 0: /* local == global */
+    case 1: /* local == global */
+    case 7: /* Reserved */
+      break;
+    }  /* switch */
+#endif
+  return rc;
+}
+
 
 template <LINUX_IMAGE_TEMPLATELIST>
 void linux_image_t<LINUX_IMAGE_TEMPLPARAM>::set_image_base_address(VA ba) {
