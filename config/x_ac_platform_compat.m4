@@ -58,3 +58,20 @@ AC_DEFUN([X_AC_SGI_HOSTNAMES], [
   fi
   AC_MSG_RESULT($enable_sgi_hostnames)
 ])
+
+AC_DEFUN([X_AC_SLURM_OVERLAP], [
+  SRUN_OVERLAP=""
+  AC_CHECK_PROG(SRUN, srun, "yes")
+  if test "$SRUN" = "yes"; then
+    AC_MSG_CHECKING([srun version >= 20.11 and supports --overlap])
+    slurm_version=`srun --version | cut -f 2 -d " "`
+    slurm_min=`printf '%s\n' "20.11" "$slurm_version" | sort -V | head -n 1`
+    if test $slurm_min = "20.11" ; then
+      AC_MSG_RESULT("yes")
+      SRUN_OVERLAP=" --overlap "
+    else
+      AC_MSG_RESULT("no")
+    fi
+  fi
+])
+AC_SUBST(SRUN_OVERLAP)

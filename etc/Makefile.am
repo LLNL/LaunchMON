@@ -60,6 +60,6 @@ EXTRA_DIST = \
   rm_bgq_slurm.conf \
   rm_mchecker.conf \
   rm_openrte.conf \
-  rm_slurm.conf \
+  rm_slurm.conf.in \
   rm_mpiexec_hydra.conf
 
