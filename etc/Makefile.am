@@ -31,6 +31,7 @@
 ##  Update Log:
 ##        May 18 2018 ADG: Added Cray CTI support
 ##        Apr 28 2016 DHA: Created file.
+##        Aug 13 2021 GLL: use input file for slurm to allow configure-time options
 ##
 
 SUBDIRS = pkg-specs
@@ -60,6 +61,6 @@ EXTRA_DIST = \
   rm_bgq_slurm.conf \
   rm_mchecker.conf \
   rm_openrte.conf \
-  rm_slurm.conf \
+  rm_slurm.conf.in \
   rm_mpiexec_hydra.conf
 
