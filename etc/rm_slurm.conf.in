@@ -31,6 +31,7 @@
 ##        Sep 30 2011 DHA: Created file.
 ##        Feb 02 2016 GLL: Added sattach.
 ##        May 18 2018 ADG: Modified launch string to avoid requesting resources.
+##        Aug 13 2021 GLL: Add --overlap to launch_str if configure detects srun version >= 20.11
 ##
 ##
 ## RM: the name of Resource Manager

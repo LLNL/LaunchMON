@@ -29,6 +29,7 @@
 #
 #   Update Log:
 #         May 06 2016 DHA: File created
+#         Aug 13 2021 GLL: Add srun version check to see if --overlap needed
 #
 
 AC_DEFUN([X_AC_SLURM_MPAO_WR], [
