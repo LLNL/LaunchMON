@@ -252,7 +252,7 @@ elf_wrapper::~elf_wrapper() {
 
 
 */
-symtab_error_e elf_wrapper::init() throw(symtab_exception_t) {
+symtab_error_e elf_wrapper::init() {
   using namespace std;
 
   string e;
@@ -357,8 +357,7 @@ linux_image_t<LINUX_IMAGE_TEMPLPARAM>::~linux_image_t() {}
 
 */
 template <LINUX_IMAGE_TEMPLATELIST>
-symtab_error_e linux_image_t<LINUX_IMAGE_TEMPLPARAM>::init() throw(
-    symtab_exception_t) {
+symtab_error_e linux_image_t<LINUX_IMAGE_TEMPLPARAM>::init() {
   using namespace std;
 
   elf_wrapper* elfw;
@@ -388,8 +387,7 @@ symtab_error_e linux_image_t<LINUX_IMAGE_TEMPLPARAM>::init() throw(
 */
 template <LINUX_IMAGE_TEMPLATELIST>
 symtab_error_e
-linux_image_t<LINUX_IMAGE_TEMPLPARAM>::read_linkage_symbols() throw(
-    symtab_exception_t) {
+linux_image_t<LINUX_IMAGE_TEMPLPARAM>::read_linkage_symbols() {
   using namespace std;
 
   string e;
@@ -503,7 +501,7 @@ linux_image_t<LINUX_IMAGE_TEMPLPARAM>::read_linkage_symbols() throw(
 template <LINUX_IMAGE_TEMPLATELIST>
 symtab_error_e linux_image_t<LINUX_IMAGE_TEMPLPARAM>::fetch_DSO_info(
     std::string& where_is_interpreter,
-    bool& found_interp) throw(symtab_exception_t) {
+    bool& found_interp) {
   using namespace std;
 
   string e;

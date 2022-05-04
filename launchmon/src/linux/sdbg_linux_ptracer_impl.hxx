@@ -97,7 +97,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::linux_ptracer_t(
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setregs(
     process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-    bool use_cxt) throw(linux_tracer_exception_t) {
+    bool use_cxt) {
   using namespace std;
 
   string e;
@@ -172,7 +172,7 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setregs(
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getregs(
     process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-    bool use_cxt) throw(linux_tracer_exception_t) {
+    bool use_cxt) {
   using namespace std;
 
   string e;
@@ -236,7 +236,7 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getregs(
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getfpregs(
     process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-    bool use_cxt) throw(linux_tracer_exception_t) {
+    bool use_cxt) {
   using namespace std;
 
   string e;
@@ -301,7 +301,7 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_getfpregs(
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setfpregs(
     process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-    bool use_cxt) throw(linux_tracer_exception_t) {
+    bool use_cxt) {
 
   return SDBG_TRACE_UNIMPLEMENTED;
 
@@ -315,7 +315,7 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setfpregs(
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read(
     process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, VA addr, void* buf, int size,
-    bool use_cxt) throw(linux_tracer_exception_t) {
+    bool use_cxt) {
   using namespace std;
 
   WT r;
@@ -364,7 +364,7 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read(
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read_string(
     process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, VA addr, void* buf, int size,
-    bool use_cxt) throw(linux_tracer_exception_t) {
+    bool use_cxt) {
   using namespace std;
 
   WT r;
@@ -427,7 +427,7 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_read_string(
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_get_event_msg(
     process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, VA addr, void* buf,
-    bool use_cxt) throw(tracer_exception_t) {
+    bool use_cxt) {
   using namespace std;
 
   WT r;
@@ -451,7 +451,7 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_get_event_msg(
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_write(
     process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, VA addr, const void* buf,
-    int size, bool use_cxt) throw(linux_tracer_exception_t) {
+    int size, bool use_cxt) {
   using namespace std;
 
   WT r;
@@ -502,7 +502,7 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_write(
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_continue(
     process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-    bool use_cxt) throw(linux_tracer_exception_t) {
+    bool use_cxt) {
   using namespace std;
   WT r;
   tracer_error_e rc = SDBG_TRACE_OK;
@@ -532,7 +532,7 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_continue(
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_deliver_signal(
     process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, int sig,
-    bool use_cxt) throw(linux_tracer_exception_t) {
+    bool use_cxt) {
   using namespace std;
 
   WT r;
@@ -591,7 +591,7 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_stop(
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_kill(
     process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-    bool use_cxt) throw(linux_tracer_exception_t) {
+    bool use_cxt) {
   using namespace std;
 
   WT r;
@@ -618,7 +618,7 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_kill(
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_singlestep(
     process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-    bool use_cxt) throw(linux_tracer_exception_t) {
+    bool use_cxt) {
   using namespace std;
 
   WT r;
@@ -649,7 +649,7 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_singlestep(
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_syscall(
     process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p,
-    bool use_cxt) throw(linux_tracer_exception_t) {
+    bool use_cxt) {
   using namespace std;
 
   WT r;
@@ -708,7 +708,7 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_detach(
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_unsetoptions(
     process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt,
-    pid_t newtid) throw(linux_tracer_exception_t) {
+    pid_t newtid) {
   using namespace std;
 
   WT r;
@@ -745,7 +745,7 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_unsetoptions(
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setoptions(
     process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt,
-    pid_t newtid) throw(linux_tracer_exception_t) {
+    pid_t newtid) {
   using namespace std;
 
   WT r;
@@ -782,7 +782,7 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_setoptions(
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_attach(
     process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, bool use_cxt,
-    pid_t newtid) throw(linux_tracer_exception_t) {
+    pid_t newtid) {
   using namespace std;
 
   WT r;
@@ -863,8 +863,7 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::status(
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e
-linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_trace_me() throw(
-    linux_tracer_exception_t) {
+linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_trace_me() {
   using namespace std;
 
   WT r;
@@ -888,7 +887,7 @@ linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::tracer_trace_me() throw(
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::enable_breakpoint(
     process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, breakpoint_base_t<VA, IT>& bp,
-    bool use_cxt, bool change_state) throw(linux_tracer_exception_t) {
+    bool use_cxt, bool change_state) {
   IT blend;
   IT origInst;
 
@@ -941,7 +940,7 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::enable_breakpoint(
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::disable_breakpoint(
     process_base_t<SDBG_DEFAULT_TEMPLPARAM>& p, breakpoint_base_t<VA, IT>& bp,
-    bool use_cxt, bool change_state) throw(linux_tracer_exception_t) {
+    bool use_cxt, bool change_state) {
   IT origInst;
 
   if (!bp.is_enabled()) {
@@ -972,7 +971,7 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::disable_breakpoint(
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::convert_error_code(
-    int en) throw(linux_tracer_exception_t) {
+    int en) {
   tracer_error_e err_code;
 
   switch (en) {
@@ -1012,7 +1011,7 @@ tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::convert_error_code(
 */
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 tracer_error_e linux_ptracer_t<SDBG_DEFAULT_TEMPLPARAM>::baretracer(
-    int __tag, pid_t __p, VA __addr, WT* __wd) throw(linux_tracer_exception_t) {
+    int __tag, pid_t __p, VA __addr, WT* __wd) {
   using namespace std;
 
   WT r;

@@ -129,92 +129,91 @@ class linux_ptracer_t : public tracer_base_t<SDBG_DEFAULT_TEMPLPARAM> {
   //
   virtual tracer_error_e tracer_setregs(
       process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
-      bool use_cxt) throw(linux_tracer_exception_t);
+      bool use_cxt);
 
   virtual tracer_error_e tracer_getregs(
       process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
-      bool use_cxt) throw(linux_tracer_exception_t);
+      bool use_cxt);
 
   virtual tracer_error_e tracer_setfpregs(
       process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
-      bool use_cxt) throw(linux_tracer_exception_t);
+      bool use_cxt);
 
   virtual tracer_error_e tracer_getfpregs(
       process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
-      bool use_cxt) throw(linux_tracer_exception_t);
+      bool use_cxt);
 
   virtual tracer_error_e tracer_read(
       process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, VA addr, void *buf, int size,
-      bool use_cxt) throw(linux_tracer_exception_t);
+      bool use_cxt);
 
   virtual tracer_error_e tracer_read_string(
       process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, VA addr, void *buf, int size,
-      bool use_cxt) throw(linux_tracer_exception_t);
+      bool use_cxt);
 
   virtual tracer_error_e tracer_get_event_msg(
       process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, VA addr, void *buf,
-      bool use_cxt) throw(tracer_exception_t);
+      bool use_cxt);
 
   virtual tracer_error_e tracer_write(
       process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, VA addr, const void *buf,
-      int size, bool use_cxt) throw(linux_tracer_exception_t);
+      int size, bool use_cxt);
 
   virtual tracer_error_e tracer_continue(
       process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
-      bool use_cxt) throw(linux_tracer_exception_t);
+      bool use_cxt);
 
   virtual tracer_error_e tracer_deliver_signal(
       process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, int sig,
-      bool use_cxt) throw(linux_tracer_exception_t);
+      bool use_cxt);
 
   virtual tracer_error_e tracer_stop(process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
                                      bool use_cxt);
 
   virtual tracer_error_e tracer_kill(
       process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
-      bool use_cxt) throw(linux_tracer_exception_t);
+      bool use_cxt);
 
   virtual tracer_error_e tracer_singlestep(
       process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
-      bool use_cxt) throw(linux_tracer_exception_t);
+      bool use_cxt);
 
   virtual tracer_error_e tracer_syscall(
       process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
-      bool use_cxt) throw(linux_tracer_exception_t);
+      bool use_cxt);
 
   virtual tracer_error_e tracer_detach(
       process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt);
 
   virtual tracer_error_e tracer_setoptions(
       process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt,
-      pid_t newtid = -1) throw(linux_tracer_exception_t);
+      pid_t newtid = -1);
 
   virtual tracer_error_e tracer_unsetoptions(
       process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt,
-      pid_t newtid) throw(linux_tracer_exception_t);
+      pid_t newtid);
 
   virtual tracer_error_e tracer_attach(
       process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, bool use_cxt,
-      pid_t newtid = -1) throw(linux_tracer_exception_t);
+      pid_t newtid = -1);
 
   virtual tracer_error_e status(process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p,
                                 bool use_cxt);
 
-  virtual tracer_error_e tracer_trace_me() throw(linux_tracer_exception_t);
+  virtual tracer_error_e tracer_trace_me();
 
   virtual tracer_error_e enable_breakpoint(
       process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, breakpoint_base_t<VA, IT> &bp,
-      bool use_cxt, bool change_state = true) throw(linux_tracer_exception_t);
+      bool use_cxt, bool change_state = true);
 
   virtual tracer_error_e disable_breakpoint(
       process_base_t<SDBG_DEFAULT_TEMPLPARAM> &p, breakpoint_base_t<VA, IT> &bp,
-      bool use_cxt, bool change_state = true) throw(linux_tracer_exception_t);
+      bool use_cxt, bool change_state = true);
 
-  virtual tracer_error_e convert_error_code(int err) throw(
-      linux_tracer_exception_t);
+  virtual tracer_error_e convert_error_code(int err);
 
   tracer_error_e baretracer(int __tag, pid_t __p, VA __addr,
-                            WT *__wd) throw(linux_tracer_exception_t);
+                            WT *__wd);
 
  private:
   bool LEVELCHK(self_trace_verbosity level) {
