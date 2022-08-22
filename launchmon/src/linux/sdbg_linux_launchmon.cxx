@@ -27,6 +27,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Aug 12 2020 DHA: Add 64-bit totalview_jobid support.
  *        May 02 2018 KMD: Added aarch64 support
  *        Jul 22 2015 ADG: Fix for on demand proctable
  *        Feb 20 2015 andrewg@cray.com: Added support for RMs that build the
@@ -944,27 +945,31 @@ bool linux_launchmon_t::acquire_proctable(
           get_tracer()->tracer_read_string(p, where_is_rid, (void *)resource_id,
                                            MAX_STRING_SIZE, use_cxt);
 
-          set_resid(atoi(resource_id));
-          p.set_rid(get_resid());
-
-          // -1 is the init value that SLURM sets internally
-          // for "totalview_jobid"
-          if (get_resid() == -1) {
+          // Modern resource managers like Flux use 64bit integer
+          // for JOBIDs.
+          int64_t id = -1;
+          if (resource_id)
+            id = static_cast<int64_t> (strtol (resource_id, NULL, 10));
+          if (id < 0 || id >= LONG_MAX) {
             self_trace_t::trace(LEVELCHK(level1), MODULENAME, 1,
                                 "resource ID is not valid!");
 
             return false;
           }
+
+          set_resid(id);
+          p.set_rid(get_resid());
+
         } else if (r_mgr.get_job_id().dtype == integer32) {
           uint32_t int_val;
 
           get_tracer()->tracer_read(p, rid.get_relocated_address(),
                                     (void *)&int_val, sizeof(int_val), use_cxt);
-          set_resid(int_val);
+          set_resid(static_cast<int64_t>(int_val));
           p.set_rid(get_resid());
         }
       } else if (p.get_myopts()->get_my_rmconfig()->is_rid_via_pid()) {
-        set_resid(p.get_pid(false));
+        set_resid(static_cast<int64_t>(p.get_pid(false)));
         p.set_rid(get_resid());
       }
     }

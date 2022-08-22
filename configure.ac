@@ -301,6 +301,7 @@ AC_CONFIG_FILES([
   tools/alps/Makefile
   tools/alps/src/Makefile
   tools/cti/Makefile
+  tools/flux/Makefile
   tools/handshake/Makefile
   launchmon/Makefile
   launchmon/src/Makefile

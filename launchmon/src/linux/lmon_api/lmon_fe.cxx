@@ -27,6 +27,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Aug 12 2020 DHA: lmon_reshandle_t is now typedef'ed to int64_t.
  *        Apr 01 2015 ADG: Added Cray CTI support.
  *        Apr 22 2014 DHA: Applied a patch to store RM args/opts into
  *                         a std::list object instead of a std:string string.
@@ -224,7 +225,7 @@ typedef enum _comm_pair_e {
 } comm_pair_e;
 const int conn_size = 3;
 
-typedef int lmon_reshandle_t;
+typedef int64_t lmon_reshandle_t;
 
 class lexGraphCmp {
  public:
@@ -2339,10 +2340,10 @@ static int LMON_handle_proctab_event(int readingFd, lmon_session_desc_t *mydesc,
 static int LMON_handle_resourcehandle_event(int readingFd,
                                             lmon_session_desc_t *mydesc,
                                             lmonp_t *msg) {
-  uint32_t rid;
+  int64_t rid;
   int bytesread;
 
-  if ((msg->lmon_payload_length + msg->usr_payload_length) != sizeof(int)) {
+  if ((msg->lmon_payload_length + msg->usr_payload_length) != sizeof(int64_t)) {
     LMON_say_msg(LMON_FE_MSG_PREFIX, true,
                  "payload size mismatch detected during "
                  "LMON_handle_resourcehandle_event");
@@ -4244,7 +4245,8 @@ extern "C" lmon_rc_e LMON_fe_getResourceHandle(int sessionHandle, char *handle,
     return LMON_EDUNAV;
   }
 
-  if (sprintf(resbuf, "%d", mydesc->resourceHandle) < 0) {
+  if (sprintf(resbuf, "%jd",
+              static_cast<intmax_t> (mydesc->resourceHandle)) < 0) {
     pthread_mutex_unlock(&(mydesc->watchdogThr.eventMutex));
     return LMON_ESYS;
   }

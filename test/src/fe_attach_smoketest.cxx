@@ -295,8 +295,8 @@ int main(int argc, char *argv[]) {
               "\n[LMON FE] Please check the correctness of the following "
               "resource handle\n");
       fprintf(stdout,
-              "[LMON FE] resource handle[jobid or job launcher's pid]: %s\n",
-              jobid);
+              "[LMON FE] resource handle[jobid or job launcher's pid]: %jd\n",
+              static_cast<intmax_t> (strtol (jobid, NULL, 10)));
       fprintf(stdout, "[LMON FE]");
     }
   }

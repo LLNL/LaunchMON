@@ -29,6 +29,7 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        Aug 12 2020 DHA: Add Flux support.
 ##        Apr 28 2016 DHA: Modernize autotools and build environments
 ##        Aug 03 2010 DHA: Added LMONHOSTLIST support
 ##        May 29 2009 DHA: Added fe_regErrorCB.in test
@@ -59,7 +60,7 @@ else
 ENGINE_PATH = $(abs_top_builddir)/launchmon/src/linux/launchmon$(EXEEXT)
 LMONPREFIX = 0
 IN_TREE_RM_CONFIG_DIR = $(abs_top_srcdir)/etc
-IN_TREE_COLOC_UTIL_DIR = $(abs_top_builddir)/tools/alps/src
+IN_TREE_COLOC_UTIL_DIR = $(abs_top_builddir)/@COLOC_UTIL_DIR@
 endif
 API_DIR = ${abs_top_srcdir}/launchmon/src
 API_LIB_DIR = $(abs_top_builddir)/launchmon/src/linux/lmon_api

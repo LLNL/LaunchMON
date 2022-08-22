@@ -27,6 +27,7 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Aug 12 2020 DHA: Use int64_t for resource id in ship_resourcehandle_msg.
  *        Oct 26 2012 DHA: Removed methods on ttracer that has been
  *                         deprecated.
  *        Sep 12 2011 DHA: Added a be_fail_detection_supported check
@@ -577,7 +578,7 @@ launchmon_rc_e launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_proctab_msg(
 template <SDBG_DEFAULT_TEMPLATE_WIDTH>
 launchmon_rc_e
 launchmon_base_t<SDBG_DEFAULT_TEMPLPARAM>::ship_resourcehandle_msg(
-    lmonp_fe_to_fe_msg_e t, int rid) {
+    lmonp_fe_to_fe_msg_e t, int64_t rid) {
   using namespace std;
 
   lmonp_t msg;

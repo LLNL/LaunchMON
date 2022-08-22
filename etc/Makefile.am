@@ -29,6 +29,7 @@
 ##--------------------------------------------------------------------------------
 ##
 ##  Update Log:
+##        Aug 05 2020 DHA: Added Flux support.
 ##        May 18 2018 ADG: Added Cray CTI support
 ##        Apr 28 2016 DHA: Created file.
 ##        Aug 13 2021 GLL: use input file for slurm to allow configure-time options
@@ -48,7 +49,8 @@ etc_SCRIPTS = \
   rm_mchecker.conf \
   rm_openrte.conf \
   rm_slurm.conf \
-  rm_mpiexec_hydra.conf
+  rm_mpiexec_hydra.conf \
+  rm_flux.conf
 
 EXTRA_DIST = \
   rm_info.conf \
@@ -62,5 +64,5 @@ EXTRA_DIST = \
   rm_mchecker.conf \
   rm_openrte.conf \
   rm_slurm.conf.in \
-  rm_mpiexec_hydra.conf
-
+  rm_mpiexec_hydra.conf \
+  rm_flux.conf

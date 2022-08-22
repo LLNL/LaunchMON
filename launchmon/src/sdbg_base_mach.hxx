@@ -27,6 +27,8 @@
  *--------------------------------------------------------------------------------
  *
  *  Update Log:
+ *        Aug 12 2020 DHA: Change rid to 64-bit to support modern RMs
+ *                         that use JOBIDs with wider width.
  *        May 02 2018 ADG: Added aarch64 support
  *        Sep 02 2010 DHA: Added MPIR_attach_fifo support
  *        May 08 2008 DHA: Added an alias (is_master_thread)
@@ -365,7 +367,7 @@ class process_base_t {
   define_gset(std::string, loader_r_debug_sym)
   define_gset(std::string, resource_handler_sym)
   // define_gset(int,key_to_thread_context)
-  define_gset(int, rid)
+  define_gset(int64_t, rid)
   define_gset(int, new_child_pid)
   int get_cur_thread_ctx();
 
@@ -398,7 +400,7 @@ class process_base_t {
 
   opts_args_t *myopts;
 
-  int rid;
+  int64_t rid;
 
   //
   // hidden breakpoints
