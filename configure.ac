@@ -101,6 +101,7 @@ dnl Checks for the OS/CPU/RM type
 dnl -----------------------------------------------
 X_AC_PLATFORM
 X_AC_SLURM_MPAO_WR
+X_AC_SLURM_OVERLAP
 
 dnl -----------------------------------------------
 dnl Checks whether to enable SGI hostnames
@@ -308,6 +309,7 @@ AC_CONFIG_FILES([
   launchmon/src/linux/lmon_api/Makefile
   launchmon/man/Makefile
   etc/Makefile
+  etc/rm_slurm.conf
   etc/pkg-specs/Makefile
   etc/pkg-specs/llnl/Makefile
   test/Makefile
