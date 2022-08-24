@@ -45,6 +45,7 @@
 #endif
 
 #include <limits.h>
+#include <stdint.h>
 #include <lmon_api/common.h>
 #include <unistd.h>
 #include <cstdarg>
