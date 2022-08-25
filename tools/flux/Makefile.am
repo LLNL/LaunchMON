@@ -32,5 +32,5 @@
 ##
 
 
-bin_SCRIPTS                = flux-helper.sh
+dist_bin_SCRIPTS                = flux-helper.sh
 
