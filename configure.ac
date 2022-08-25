@@ -63,12 +63,12 @@ dnl
 dnl This is the 1st revision (increase revision when the
 dnl implementation has been changed but the interface stays the same)
 dnl
-AC_SUBST(LMON_REVISION, 0)
+AC_SUBST(LMON_REVISION, 2)
 
 dnl
 dnl Increase age when the interface has been added not removed.
 dnl
-AC_SUBST(LMON_AGE, 1)
+AC_SUBST(LMON_AGE, 0)
 
 dnl -----------------------------------------------
 dnl AC_CONFIG support
