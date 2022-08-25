@@ -142,7 +142,7 @@ class elf_wrapper {
   Elf* get_elf_handler() { return elf_handler; }
 
   symtab_error_e init(std::string& lib);
-  symtab_error_e init() throw(symtab_exception_t);
+  symtab_error_e init();
   symtab_error_e finalize();
 
  private:
@@ -182,12 +182,11 @@ class linux_image_t : public image_base_t<VA, elf_wrapper> {
   elf_wrapper* get_native_exec_handler();
   std::map<std::string, symbol_base_t<VA>*, ltstr>& get_linkage_symtab();
 
-  virtual symtab_error_e init() throw(symtab_exception_t);
-  virtual symtab_error_e read_linkage_symbols() throw(symtab_exception_t);
+  virtual symtab_error_e init();
+  virtual symtab_error_e read_linkage_symbols();
   virtual symtab_error_e fetch_DSO_info(std::string&,
-                                        bool&) throw(symtab_exception_t);
+                                        bool&);
   // virtual symtab_error_e read_debug_symbols() = 0;
-  //   throw ( symtab_exception_t ) = 0;
 
   //
   // Some Util methods.

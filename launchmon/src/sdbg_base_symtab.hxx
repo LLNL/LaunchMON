@@ -194,19 +194,18 @@ class image_base_t {
   // OPs on symtabs
   //
   void print_sorted_linkage_symtab();
-  symtab_error_e compute_reloc() throw(symtab_exception_t);
+  symtab_error_e compute_reloc();
   // void print_sorted_debug_symtab();
 
   //
   // pure virtual methods
   //
-  symtab_error_e init(const std::string &lib) throw(symtab_exception_t);
-  virtual symtab_error_e init() throw(symtab_exception_t) = 0;
-  virtual symtab_error_e read_linkage_symbols() throw(symtab_exception_t) = 0;
+  symtab_error_e init(const std::string &lib);
+  virtual symtab_error_e init() = 0;
+  virtual symtab_error_e read_linkage_symbols() = 0;
   virtual symtab_error_e fetch_DSO_info(std::string &,
-                                        bool &) throw(symtab_exception_t) = 0;
-  // virtual symtab_error_e read_debug_symbols()
-  //   throw ( symtab_exception_t ) = 0;
+                                        bool &) = 0;
+  // virtual symtab_error_e read_debug_symbols() = 0;
 
   //
   // Some Util methods.

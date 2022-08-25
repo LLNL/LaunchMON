@@ -290,8 +290,7 @@ const symbol_base_t<BASE_SYMTAB_TEMPLPARAM>
     computes the relocated address for each symbol
 */
 template <BASE_IMAGE_TEMPLATELIST>
-symtab_error_e image_base_t<BASE_IMAGE_TEMPLPARAM>::compute_reloc() throw(
-    symtab_exception_t) {
+symtab_error_e image_base_t<BASE_IMAGE_TEMPLPARAM>::compute_reloc() {
   using namespace std;
   string e;
   string func = "[image_base_t::compute_reloc]";
@@ -334,7 +333,7 @@ void image_base_t<BASE_IMAGE_TEMPLPARAM>::print_sorted_linkage_symtab() {
 
 template <BASE_IMAGE_TEMPLATELIST>
 symtab_error_e image_base_t<BASE_IMAGE_TEMPLPARAM>::init(
-    const std::string &lib) throw(symtab_exception_t) {
+    const std::string &lib) {
   char tempstr[PATH_MAX];
 
   sprintf(tempstr, "%s", lib.c_str());
